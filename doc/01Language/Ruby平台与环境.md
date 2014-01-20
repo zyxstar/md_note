@@ -275,7 +275,7 @@ String定义了一组用于字符串解析数字的方法，以及用于把字�
 
 正则表达式修饰符
 
-![修饰符 aa](../imgs/ruby_regex_modifier_characters.png)
+![修饰符 aa](../../imgs/ruby_regex_modifier_characters.png)
 
 Ruby正则表达式可用`%r`跟一个分隔符来定义，当正则表达式中有许多斜杠符时，如果不想转义，这会很有用处
 
@@ -427,9 +427,9 @@ Ruby正则表达式可用`%r`跟一个分隔符来定义，当正则表达式中
 
 正则表达式句法
 
-![句法](../imgs/ruby_regex_syntax01.png)
+![句法](../../imgs/ruby_regex_syntax01.png)
 
-![句法](../imgs/ruby_regex_syntax02.png)
+![句法](../../imgs/ruby_regex_syntax02.png)
 
 ### 用正则表达式进行模式匹配
 `=~`是Ruby基本的模式匹配操作符，一个操作符必须是一个正则表达式，另一个则必须是一个字符串（左右位置无所谓），发现匹配则返回所在位置，否则返回nil
@@ -530,7 +530,7 @@ Regexp对象定义了`===`操作符来测试匹配性(matching)，如果匹配�
 
 #### 用于匹配数据的全局变量
 
-![正则变量](../imgs/ruby_regex_variables.png)
+![正则变量](../../imgs/ruby_regex_variables.png)
 
 如果把某个MatchData对象赋给`$~`，其他的变量也会改变，其它变量是只读的。这些变量是线程局部并且方法局部的，__无须担心多线程时相互干扰__
 
@@ -2256,7 +2256,7 @@ File类定义了一些操作文件名的方法
 
 `File.open`第二个参数指定“文件方式”的字符串，它必须是下表中的值，在其后加上"b"可以阻止在Windows平台下对换行符的自动转换。对于文本文件，可为文件方式字符串加上字符编码模式，对于二进制文件，则应该加上":binary"
 
-![文件打开方式](../imgs/ruby_filemode.png)
+![文件打开方式](../../imgs/ruby_filemode.png)
 
 `File.open`可以带一个代码块，用于处理相应的`File`对象，代码块结束后，该对象自动关闭，代码块的返回值成为`File.open`的返回值
 
@@ -2925,7 +2925,7 @@ Ruby解析器在主线程完成时会停止运行，即使在主线程创建的�
 #### 查询线程状态
 `Thread`类定义了若干实例方法用于检测线程的状态，当线程处于可运行状态或休眠时，`alive?`返回true，当一个线程处于不可运行状态时，`stop?`返回true，最后`status`方法返回线程的状态。
 
-![ruby_thread_status](../imgs/ruby_thread_status.png)
+![ruby_thread_status](../../imgs/ruby_thread_status.png)
 
 #### 状态转换:暂停,唤醒和杀死
 在创建时，线程处于可运行状态，可能被立刻执行，线程可以调用`Thread.stop`方法暂停执行，这将使线程进入休眠状态，这是一个类方法，只对当前线程生效。它有对应的实例方法，因此不能强制其他线程暂停。
@@ -3221,28 +3221,28 @@ arguments可以是任意数量的标识，成为`ARGV`数组的元素。
 
 ### 常用选项
 
-![ruby_common_options01](../imgs/ruby_common_options01.png)
+![ruby_common_options01](../../imgs/ruby_common_options01.png)
 
-![ruby_common_options02](../imgs/ruby_common_options02.png)
+![ruby_common_options02](../../imgs/ruby_common_options02.png)
 
 ### 警告和信息选项
 
-![ruby_warnings_options](../imgs/ruby_warnings_options.png)
+![ruby_warnings_options](../../imgs/ruby_warnings_options.png)
 
 ### 编码选项
 指定Ruby进程的外部编码方式，也可以为那些没有使用注释指定编码的文件指定一个默认的源代码编码方式。如果没有指定任何选项，默认的外部编码方式会从地区(locale)设置继承而来，而默认的源程序编码则为ASCII，[参考](#TOP1.7.2)
 
-![ruby_encoding_options](../imgs/ruby_encoding_options.png)
+![ruby_encoding_options](../../imgs/ruby_encoding_options.png)
 
 ### 文本处理选项
 下面的选项会改变Ruby默认的文本处理操作，或者对执行`-e`选项指定的单行脚本有所帮助：
 
-![ruby_text_processing_options01](../imgs/ruby_text_processing_options01.png)
+![ruby_text_processing_options01](../../imgs/ruby_text_processing_options01.png)
 
-![ruby_text_processing_options02](../imgs/ruby_text_processing_options02.png)
+![ruby_text_processing_options02](../../imgs/ruby_text_processing_options02.png)
 
 ### 杂项选项
-![ruby_miscellaneous_options](../imgs/ruby_miscellaneous_options.png)
+![ruby_miscellaneous_options](../../imgs/ruby_miscellaneous_options.png)
 
 ## 顶层环境
 当Ruby解释器启动时，它定义一些类、模块、常量、全局变量和全局方法，它们都可以被程序使用。
