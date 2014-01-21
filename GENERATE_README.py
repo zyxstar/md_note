@@ -11,13 +11,10 @@ GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/markdown_note/master/docs"
 
 def build_one_file(folders,filename):
     _note_url = "%s/%s/%s" % (GITHUB_BASE_URL, "/".join([urllib.quote_plus(_fo.encode('utf-8')) for _fo in folders]), urllib.quote_plus(filename.encode('utf-8')))
-
     _parse_lines = []
     for _k,_v in PARSE_URL_DIC.items():
         if not _v =="":
-            _parse_lines.append("[View On %s](%s%s)" % (_k, _v, urllib.quote_plus(_note_url)))
-
-
+            _parse_lines.append("[On %s](%s%s)" % (_k, _v, urllib.quote_plus(_note_url)))
     return "- %s %s" % (" ".join(_parse_lines),filename)
 
 
