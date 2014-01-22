@@ -35,7 +35,7 @@ def yield_subfiles():
 
 def build_subfiles(iter_subfiles):
     _marks = []
-    _lines = []
+    _lines = ["# Manual"]
     for _folders, _filename in yield_subfiles():
         if len(_folders) and not _folders[-1] in _marks:
             _lines.append("\n%s %s" %
