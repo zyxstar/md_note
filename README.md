@@ -22,6 +22,3 @@ Note Index
 ## 05Knowledge
 - [八王之乱.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2F05Knowledge%2F%25E5%2585%25AB%25E7%258E%258B%25E4%25B9%258B%25E4%25B9%25B1.md)
 - [国家_易中天.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2F05Knowledge%2F%25E5%259B%25BD%25E5%25AE%25B6_%25E6%2598%2593%25E4%25B8%25AD%25E5%25A4%25A9.md)
-
-
-<script>Array.prototype.slice.call(document.querySelectorAll("a")).forEach(function(a) {a.target="_blank";});</script>
