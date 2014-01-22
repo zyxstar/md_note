@@ -22,9 +22,9 @@ def yield_subfiles():
     def _find_subfiles(*folders):
         _folder_path = os.path.join(_docs_dir, '/'.join(folders))
         for _dirpath, _dirnames, _filenames in os.walk(_folder_path):
-            for _f in sorted(_filenames):
+            for _f in _filenames:
                 yield map(lambda _fo: _fo.decode(_sys_encoding), folders), _f.decode(_sys_encoding)
-            for _d in sorted(_dirnames):
+            for _d in _dirnames:
                 _folders = list(folders)
                 _folders.append(_d)
                 for _a, _b in _find_subfiles(*_folders):
@@ -35,11 +35,11 @@ def yield_subfiles():
 
 def build_subfiles(iter_subfiles):
     _marks = []
-    _lines = ["Note Index", "=========="]
+    _lines = []
     for _folders, _filename in yield_subfiles():
         if len(_folders) and not _folders[-1] in _marks:
             _lines.append("\n%s %s" %
-                          ("#" * (len(_folders) + 1), _folders[-1]))
+                          ("#" * len(_folders), _folders[-1]))
             _marks.append(_folders[-1])
         _lines.append(build_one_file(_folders, _filename))
     return _lines
