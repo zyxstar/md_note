@@ -1,10 +1,33 @@
-概述
-====
+为什么有它
+==========
 
-本工具主要是为了方便程序开发人员作笔记，能在文档中 __直接运行代码__ 小片断，从而提高笔记的效果。又因为文档的原始文件为纯文本格式，非常适合做 __版本管理__。
+- 你有没有，到处散落的小随笔而没有归档，没有层次，没有目录结构
+> 你想到了用word来记录东西，方便做目录，按大纲查看，但是恢复word中以前的内容，好像有点困难
+- 你有没有，记录里的东西被删除了，但某天突然想起某个重要信息在上面，想恢复它
+> 你想到了git来做版本控制，但纯文本的东西，怎么提炼目录?
+- 如果你是程序员，记录的东西里面也可能有一些代码，想看看运行效果怎么办？毕竟所见即所得的效果还是不错的
+> 打开语言IDE/编译器，CtrlC + CtrlV，编译/运行它？！ 如果本地环境没有该编程语言呢？
+
+嗯，是的，这就是本工具产生的主要原因，它使用纯文本格式（Markdown）作笔记，非常适合做 __版本管理__，同时能根据Markdown中的标题自动生成 __目录结构__，如果文档中包含代码小片断，还能在文档中 __直接运行代码__ ，从而提高笔记的效果。
+
 
 快速使用
 ========
+## 示意图
+![示意图](../imgs/manual_struct.png)
+
+## 第1步：创建文档
+推荐在网络上一个可访问的地址空间，如[github](https://github.com/)上创建文档，使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写
+
+## 第2步：查看文档
+取得第1步的url址址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
+
+如[我就是一个查看文档的链接](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FManual.md)
+
+
+
+
+
 ## 环境搭建
 ### python(必选)
 - 建议使用版本2.7.x，windows环境下可使用[activepython](http://www.activestate.com/activepython/downloads)
@@ -20,17 +43,6 @@
 ### 环境变量(可选)
 - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
 
-## 创建文档
-以创建xx文件为例，在`md_note/doc`中创建`xx.md`文件
-
-## 编写文档
-主要使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写文档
-
-## 查看文档
-
-- __本地模式__：运行`md_note/runshell.bat`进入shell命令行，输入`.\rundoc.bat .\doc\xx.md`即打开 __本地file:///请求__ 的`.doc\xx.html`文件<br/>
-- __Http模式__：运行`md_note/runhttp.bat`，启动python简易http的server，再在运行`md_note/runshell.bat`进入shell命令行，输入`.\rundoc.bat .\doc\xx.md http`即打开 __基于http://请求的__ `http://localhost:8000/doc/xx.html`　
-- 以上述方式查看文档，默认是滚动到文件尾部，因为一般情况下文件尾部是作者刚编写的部分，如果想回到文件首部，需点击目录右下侧`Top`按钮。
 
 扩展特性
 ========
@@ -91,68 +103,7 @@
     }
 
 ## 代码即时运行
-使用时，与代码高亮一样，只是首行为`<!-- language: !«brush» -->`，其中的`!`代表是可执行的。目前支持以下几种语言，以下示例需先将环境配置好([参考](#TOC2.1.2))，所有示例中，Manual.md中为编写规则，Manual.html中为展示效果：
-
-> ps: 如果以firefox打开时，请在http模式下运行，否则会因权限受限不能正常运行
-
-### javascript
-首行加`<!-- language: !js -->`或`<!-- language: !javascript -->`，
-
-<!-- language: !js -->
-
-    function MyClass(name) {
-        this.name = name;
-        this.say = function() {
-            return "hello, " + name;
-        };
-    }
-    var m = new MyClass("javascript");
-    alert(m.say());
-
-使用js库，在代码的首部使用`//import «lib.version»`的方式引入，库的代码存放在`/vendor`文件夹中，如`//import jquery.1.9.0`，将引用`/vendor/jquery/1.9.0/jquery.js`文件，如果没有版本时，如`//import json2`，将引用`/vendor/json2/json2.js`文件
-
-<!-- language: !js -->
-
-    //import jquery.1.9.0
-    $(function(){
-        alert(typeof jQuery);
-    });
-
-### web
-首行加`<!-- language: web -->`，并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
-
-![web编写规则](../imgs/manual_web_rule.png web编写规则)
-
-<!-- language: web -->
-
-    <!-- language: html -->
-    <div>
-        <input id='txt_say' type='text'/>
-        <input type='button' value='Say'/>
-    </div>
-
-    <!-- language: css -->
-    @import url(../css/normalize.css);
-    body{
-        padding:20px;
-    }
-    input[type='button']{
-        padding:3px 5px;
-        font-size:14px;
-        font-weight:bold;
-        background-color:black;
-        color:white;
-    }
-
-    <!-- language: js -->
-    //import jquery.1.9.0
-    $(function(){
-        $("#txt_say").val("hello, web")
-        $("input[type='button']").click(function(){
-            alert($("#txt_say").val())
-        });
-    })
-
+使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。目前支持以下几种语言，以下示例需先将环境配置好([参考](#TOC2.1.2))，所有示例中，Manual.md中为编写规则，Manual.html中为展示效果：
 
 ### python
 首行加`<!-- language: !py -->`或`<!-- language: !python -->`
@@ -189,14 +140,113 @@
     m = MyClass.new "ruby"
     puts m.say
 
+### javascript
+首行加`<!-- language: !js -->`或`<!-- language: !javascript -->`，
+
+<!-- language: !js -->
+
+    function MyClass(name) {
+        this.name = name;
+        this.say = function() {
+            return "hello, " + name;
+        };
+    }
+    var m = new MyClass("javascript");
+    alert(m.say());
+
+使用js库，在代码的首部使用`//import «lib.version»`的方式引入，库的代码存放在`/vendor`文件夹中，如`//import jquery.1.9.0`，将引用`/vendor/jquery/1.9.0/jquery.js`文件，如果没有版本时，如`//import json2`，将引用`/vendor/json2/json2.js`文件
+
+<!-- language: !js -->
+
+    //import jquery.1.9.0
+    $(function(){
+        alert(typeof jQuery);
+    });
+
+### web页面
+首行加`<!-- language: web -->`，并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
+
+![web编写规则](../imgs/manual_web_rule.png web编写规则)
+
+<!-- language: web -->
+
+    <!-- language: html -->
+    <div>
+        <input id='txt_say' type='text'/>
+        <input type='button' value='Say'/>
+    </div>
+
+    <!-- language: css -->
+    @import url(../css/normalize.css);
+    body{
+        padding:20px;
+    }
+    input[type='button']{
+        padding:3px 5px;
+        font-size:14px;
+        font-weight:bold;
+        background-color:black;
+        color:white;
+    }
+
+    <!-- language: js -->
+    //import jquery.1.9.0
+    $(function(){
+        $("#txt_say").val("hello, web")
+        $("input[type='button']").click(function(){
+            alert($("#txt_say").val())
+        });
+    })
+
+
+### c语言
+首行加`<!-- language: !c -->`
+
+<!-- language: !c -->
+
+    #include <stdio.h>
+    #include <string.h>
+
+    main()
+    {
+        char* lang= "c language";
+        printf("hello, %s", lang );
+    }
+
+### c++
+首行加`<!-- language: !cpp -->`
+
+<!-- language: !cpp -->
+
+    #include <iostream>
+    #include <string>
+
+    using namespace std;
+
+    class MyClass{
+        public:
+            MyClass(string name){
+                _name = name;
+            }
+            string say(){
+                return string("hello, ") + _name;
+            }
+        private:
+            string _name;
+    };
+
+    int main(){
+        cout << MyClass("cpp").say() << endl;
+        return 0;
+    }
+
+
 ### csharp
 首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`
 
 <!-- language: !csharp -->
 
     using System;
-    using System.Collections.Generic;
-    using System.Text;
 
     class Program
     {
