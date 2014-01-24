@@ -307,13 +307,16 @@
 
 其它要求
 ========
+通过java
 
+编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。
+- 安装完了java后，还需要在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
+- 打开 控制面板 - Java (32bit) - Security，设置为Medium
+- 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，
 
+修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
 
-感谢
-=====
-
-
+语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
 
 
 浏览器支持
@@ -323,6 +326,29 @@
 - Firefox
 - IE9+
 - Safari
+
+后期计划
+========
+chrome blog math
+
+- <del>支持在线编辑器，并有语法高亮与即时运行</del>
+- <del>提供整个web项目demo的制作，例如[jsfiddle](http://jsfiddle.net/)或[dabblet](http://dabblet.com/)，但侧重点不同，以文档为主，代码为辅，主要应
+
+用于教程的制作</del>
+- <del>支持更多语言的运行</del>
+- 代码运行的实现，使用[compileonline](http://www.compileonline.com)代替applet
+- markdown生成使用js代码代替python脚本
+- 将项目构建在GAE与Github上，去掉本地相关脚本
+- web运行页面支持coffeescript,sass,less等
+
+
+感谢
+=====
+
+
+
+给我反馈
+=======
 
 
 
