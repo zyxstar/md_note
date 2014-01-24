@@ -10,42 +10,26 @@
 
 嗯，是的，这就是本工具产生的主要原因，它使用纯文本格式（Markdown）作笔记，非常适合做 __版本管理__，同时能根据Markdown中的标题自动生成 __目录结构__，如果文档中包含代码小片断，还能在文档中 __直接运行代码__ ，从而提高笔记的效果。
 
+哦，本例也是用Markdown写的，[在Github的地址](https://raw2.github.com/zyxstar/markdown_note/master/docs/Manual.md)，除此之外，[看看我用它来做什么](#TOC4)
 
-快速使用
-========
-## 示意图
-![示意图](../imgs/manual_struct.png)
+
+快速使用(只需2步)
+=================
 
 ## 第1步：创建文档
-推荐在网络上一个可访问的地址空间，如[github](https://github.com/)上创建文档，使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写
+在网络上一个可访问的地址空间，如在[github](https://github.com/)上创建文档，使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写
 
 ## 第2步：查看文档
 取得第1步的url址址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
 
 如[我就是一个查看文档的链接](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FManual.md)
 
+## 示意图
+![示意图](../imgs/manual_struct.png)
 
 
-
-
-## 环境搭建
-### python(必选)
-- 建议使用版本2.7.x，windows环境下可使用[activepython](http://www.activestate.com/activepython/downloads)
-- 在cmd中进入Python27\Scripts\目录，运行`easy_install markdown`安装python的Markdown模块
-
-### java(可选)
-- 如果仅需要制作javascript相关的笔记，则不需要安装java环境，但 __如果需要运行其它语言时，则java环境是必装的__，因为运行其它语言的机制是，通过java编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。
-- 安装完了java后，还需要在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
-- 打开 控制面板 - Java (32bit) - Security，设置为Medium
-- 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
-- 如需要重新生成applet，[查看](../applet/ReadMe.html)，这种情况并不多见
-
-### 环境变量(可选)
-- 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
-
-
-扩展特性
-========
+支持的特性
+==========
 ## 可缩放的层级目录
 生成的html文件，会自动根据Markdown中标题(h1~h6)生成层级目录，并支持目录的展开与收缩
 
@@ -86,7 +70,11 @@
 > ps: `<!-- language: «brush» -->`的想法[参考](http://stackoverflow.com/editing-help#syntax-highlighting)，通过html的comment来标识语法，对于Markdown的解析无侵入性。<br/>
 已知的BUG，在代码注释中，不要使用`'`与`"`，否则容易将注释中引号与代码中的引号相匹配；不要在注释中使用html标签，否则生成的高亮代码块中会产生该标签，影响代码阅读
 
-如css需高亮，则在首行加`<!-- language: css -->`(Manual.md中为编写规则，Manual.html中为展示效果)：
+如css需高亮，则在首行加`<!-- language: css -->`：
+
+![css编写规则](../imgs/manual_css_rule.png)
+
+生成效果如下(你见到的效果就是生成出来的)：
 
 <!-- language: css -->
 
@@ -103,7 +91,7 @@
     }
 
 ## 代码即时运行
-使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。目前支持以下几种语言，以下示例需先将环境配置好([参考](#TOC2.1.2))，所有示例中，Manual.md中为编写规则，Manual.html中为展示效果：
+使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的，«language»等义于前面的«brush»。目前支持以下几种语言，你看到的效果都是生成出来的：
 
 ### python
 首行加`<!-- language: !py -->`或`<!-- language: !python -->`
@@ -154,7 +142,7 @@
     var m = new MyClass("javascript");
     alert(m.say());
 
-使用js库，在代码的首部使用`//import «lib.version»`的方式引入，库的代码存放在`/vendor`文件夹中，如`//import jquery.1.9.0`，将引用`/vendor/jquery/1.9.0/jquery.js`文件，如果没有版本时，如`//import json2`，将引用`/vendor/json2/json2.js`文件
+使用js库，在代码的首部使用`//import «lib.version»`的方式引入，如`//import jquery.1.9.0`
 
 <!-- language: !js -->
 
@@ -299,44 +287,43 @@
 ## 外链的样式与打开
 根据链接的host，判断是否是外链，如果是，则以特殊样式 ([示例](http://www.baidu.com))表示，并在点击链接时，在新窗口打开
 
-## 特别强调的样式
-Markdown中`特别强调`的表示方式如下：
 
-<!-- language: plain -->
+我用它来做什么
+==============
 
-    ***特别强调*** 或者 ___特别强调___
+## 读书时的整理
+- [JavaScript语言精髓与编程实践.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%25E4%25B8%258E%25E7%25BC%2596%25E7%25A8%258B%25E5%25AE%259E%25E8%25B7%25B5.md)
+- [RubyProgramming.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FRubyProgramming.md)
+- [Ruby平台与环境.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%25E5%25B9%25B3%25E5%258F%25B0%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583.md)
 
-默认情况下样式是<i><b>粗斜体</b></i>，现在表现为 ___特别强调___
+## 培训时的笔记
+- [需求分析_徐锋.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FAnalysis%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590_%25E5%25BE%2590%25E9%2594%258B.md)
 
-> ps: 只是修改一个样式而已，不值一提，只为提醒本人
+## 框架学习与示例
+- [Backbone_intro.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_intro.md)
+- [Backbone_todo.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_todo.md)
 
-## 浏览器支持
+
+
+其它要求
+========
+
+
+
+感谢
+=====
+
+
+
+
+浏览器支持
+==========
+
 - Chrome
 - Firefox
 - IE9+
+- Safari
 
-文件结构
-=========
-- applet文件夹：applet的源代码及applet的配置说明
-- css文件夹：存放样式
-- doc文件夹：文档存放位置，一般情况情况下，用户只需使用该目录即可
-- font文件夹：字体存放位置
-- imgs文件夹：文档中图片存放位置
-- js文件夹：存放本工具所使用的javascript文件
-- popup文件夹：运行代码所需的弹出页面
-- scripts文件夹：该工具使用的相关脚本，用以生成html
-- vendor文件夹：第三方插件存放位置，如syntaxhighlighter，以及存放js常用库，如jquery
-- rundoc.bat脚本：用来生成文档
-- runhttp.bat脚本：用来启动http服务
-- runshell.bat脚本：用来启动powershell，并使md_note为当前目录
 
-后续计划
-=========
-- <del>支持在线编辑器，并有语法高亮与即时运行</del>
-- <del>提供整个web项目demo的制作，例如[jsfiddle](http://jsfiddle.net/)或[dabblet](http://dabblet.com/)，但侧重点不同，以文档为主，代码为辅，主要应用于教程的制作</del>
-- <del>支持更多语言的运行</del>
-- 代码运行的实现，使用[compileonline](http://www.compileonline.com)代替applet
-- markdown生成使用js代码代替python脚本
-- 将项目构建在GAE与Github上，去掉本地相关脚本
-- web运行页面支持coffeescript,sass,less等
+
 
