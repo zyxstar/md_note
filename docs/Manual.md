@@ -173,7 +173,7 @@
 > - 安装java，并在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
 > - 打开 控制面板 - Java (32bit) - Security，设置为Medium
 > - 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
-> - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
+> - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe（目前只支持这几种语言） __所在的目录__ 需要添加到环境变量PATH中
 
 ### Ruby
 首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`
@@ -200,14 +200,25 @@
 
 <!-- language: !c -->
 
-    #include <stdio.h>
-    #include <string.h>
+    typedef struct {
+        char* name;
+        char* (*pSay)(void*);
+    } MyStruct;
 
-    main()
-    {
-        char* lang= "c language";
-        printf("hello, %s", lang );
+    char* Say(void* ins) {
+        return ((MyStruct*)ins)->name;
     }
+
+    int main(){
+        MyStruct myIns;
+
+        myIns.name = "c language";
+        myIns.pSay = Say;
+
+        printf("hello, %s", myIns.pSay(&myIns));
+        return 0;
+    }
+
 
 ### C++
 首行加`<!-- language: !cpp -->`
