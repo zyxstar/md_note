@@ -131,7 +131,7 @@
     </div>
 
     <!-- language: css -->
-    @import url(../css/normalize.css);
+    @import url(/static/css/normalize.css);
     body{
         padding:20px;
     }
