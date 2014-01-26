@@ -15,21 +15,22 @@
 
 快速使用(只需2步)
 =================
-
+![示意图](../imgs/manual_struct.png)
 ## 第1步：创建文档
 在网络上一个可访问的地址空间，如在[github](https://github.com/)上创建文档，使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写
 
+> 版本控制其实由gibhub来支持
+
 ## 第2步：查看文档
-取得第1步的url址址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
+取得第1步的url地址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
 
 如[我就是一个查看文档的链接](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FManual.md)
 
-## 示意图
-![示意图](../imgs/manual_struct.png)
+> 不知道什么是urlencode? [看这里](http://tool.chinaz.com/Tools/URLEncode.aspx)；还需要更详细的参数说明，请[移步这里](http://chinapub.duapp.com)
 
 
-支持的特性
-==========
+看看它能做什么
+==============
 ## 可缩放的层级目录
 生成的html文件，会自动根据Markdown中标题(h1~h6)生成层级目录，并支持目录的展开与收缩
 
@@ -93,42 +94,7 @@
 ## 代码即时运行
 使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的，«language»等义于前面的«brush»。目前支持以下几种语言，你看到的效果都是生成出来的：
 
-### python
-首行加`<!-- language: !py -->`或`<!-- language: !python -->`
-
-<!-- language: !py -->
-
-    #coding:utf-8
-    class MyClass(object):
-        def __init__(self, name):
-            self.name = name
-
-        def say(self):
-            return "hello, %s" % self.name
-
-    m = MyClass("python")
-    print m.say()
-
-### ruby
-首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`
-
-<!-- language: !rb -->
-
-    #coding:utf-8
-    class MyClass
-        def initialize(name)
-            @name = name
-        end
-
-        def say
-            return "hello, #{@name}"
-        end
-    end
-
-    m = MyClass.new "ruby"
-    puts m.say
-
-### javascript
+### JavaScript
 首行加`<!-- language: !js -->`或`<!-- language: !javascript -->`，
 
 <!-- language: !js -->
@@ -151,10 +117,10 @@
         alert(typeof jQuery);
     });
 
-### web页面
+### Web页面
 首行加`<!-- language: web -->`，并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
 
-![web编写规则](../imgs/manual_web_rule.png web编写规则)
+![web编写规则](../imgs/manual_web_rule.png)
 
 <!-- language: web -->
 
@@ -186,8 +152,50 @@
         });
     })
 
+### Python
+首行加`<!-- language: !py -->`或`<!-- language: !python -->`
 
-### c语言
+<!-- language: !py -->
+
+    #coding:utf-8
+    class MyClass(object):
+        def __init__(self, name):
+            self.name = name
+
+        def say(self):
+            return "hello, %s" % self.name
+
+    m = MyClass("python")
+    print m.say()
+
+> 细心的你可能发现，有一个"►applet"的按钮，这是通过java编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。所以，如果你需要看到编写的代码运行在本机上的效果时，可以点此按钮。使用它之前有几点特殊要求（当然，你可以忽略它，直接使用"►online"）：
+
+> - 安装java，并在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
+> - 打开 控制面板 - Java (32bit) - Security，设置为Medium
+> - 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
+> - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
+
+### Ruby
+首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`
+
+<!-- language: !rb -->
+
+    #coding:utf-8
+    class MyClass
+        def initialize(name)
+            @name = name
+        end
+
+        def say
+            return "hello, #{@name}"
+        end
+    end
+
+    m = MyClass.new "ruby"
+    puts m.say
+
+
+### C语言
 首行加`<!-- language: !c -->`
 
 <!-- language: !c -->
@@ -201,7 +209,7 @@
         printf("hello, %s", lang );
     }
 
-### c++
+### C++
 首行加`<!-- language: !cpp -->`
 
 <!-- language: !cpp -->
@@ -229,7 +237,7 @@
     }
 
 
-### csharp
+### CSharp
 首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`
 
 <!-- language: !csharp -->
@@ -257,7 +265,7 @@
         }
     }
 
-### java
+### Java
 首行加`<!-- language: !java -->`
 
 <!-- language: !java -->
@@ -303,21 +311,7 @@
 - [Backbone_intro.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_intro.md)
 - [Backbone_todo.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_todo.md)
 
-
-
-其它要求
-========
-通过java
-
-编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。
-- 安装完了java后，还需要在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
-- 打开 控制面板 - Java (32bit) - Security，设置为Medium
-- 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，
-
-修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
-
-语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe等 __所在的目录__ 需要添加到环境变量PATH中
-
+[更多...](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmarkdown_note%2Fraw%2Fmaster%2FREADME.md)
 
 浏览器支持
 ==========
@@ -327,29 +321,28 @@
 - IE9+
 - Safari
 
-后期计划
+未完待续
 ========
-chrome blog math
 
-- <del>支持在线编辑器，并有语法高亮与即时运行</del>
-- <del>提供整个web项目demo的制作，例如[jsfiddle](http://jsfiddle.net/)或[dabblet](http://dabblet.com/)，但侧重点不同，以文档为主，代码为辅，主要应
-
-用于教程的制作</del>
-- <del>支持更多语言的运行</del>
-- 代码运行的实现，使用[compileonline](http://www.compileonline.com)代替applet
-- markdown生成使用js代码代替python脚本
-- 将项目构建在GAE与Github上，去掉本地相关脚本
+- chrome插件
+- blog插件
+- 自定义样式
+- LaTeX公式
 - web运行页面支持coffeescript,sass,less等
 
 
 感谢
-=====
+====
+- [jsfiddle](http://jsfiddle.net/)
+- [dabblet](http://dabblet.com/)
+- [plnkr](http://plnkr.co/)
+- [compileonline](http://compileonline.com)
 
 
 
 给我反馈
-=======
-
+========
+zyxstar2013#163.com
 
 
 
