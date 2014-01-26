@@ -200,6 +200,8 @@
 
 <!-- language: !c -->
 
+    #include <stdio.h>
+
     typedef struct {
         char* name;
         char* (*pSay)(void*);
