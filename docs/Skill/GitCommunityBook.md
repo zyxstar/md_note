@@ -305,11 +305,91 @@ Git会输出:
 
 __Git跟踪的是内容不是文件__
 
-很多版本控制系统都提供了一个 "add" 命令：告诉系统开始去跟踪某一个文件的改动。但是Git里的 ”add” 命令从某种程度上讲更为简单和强大. git add 不但是用来添加不在版本控制中的新文件，也用于添加已在版本控制中但是刚修改过的文件; 在这两种情况下, Git都会获得当前文件的快照并且把内容暂存(stage)到索引中，为下一次commit做好准备。
+很多版本控制系统都提供了一个 "add" 命令：告诉系统开始去跟踪某一个文件的改动。但是Git里的 ”add” 命令从某种程度上讲更为简单和强大. git add __不但是用来添加不在版本控制中的新文件，也用于添加已在版本控制中但是刚修改过的文件__; 在这两种情况下, Git都会获得当前文件的快照并且把内容暂存(stage)到索引中，为下一次commit做好准备。
 
+分支与合并@基础
+===============
 
+一个Git仓库可以维护很多开发分支。现在我们来创建一个新的叫”experimental”的分支：
 
+<!--language: shell-->
 
+    $ git branch experimental
 
+如果你运行下面这条命令：
+
+<!--language: shell-->
+
+    $ git branch
+
+你会得到当前仓库中存在的所有分支列表：
+
+<!--language: plain-->
+
+      experimental
+    * master
+
+“experimental” 分支是你刚才创建的，“master”分支是Git系统默认创建的主分支。星号(“*”)标识了你当工作在哪个分支下，输入：
+
+<!--language: shell-->
+
+    $ git checkout experimental
+
+切换到”experimental”分支，先编辑里面的一个文件，再提交(commit)改动，最后切换回 “master”分支。
+
+<!--language: shell-->
+
+    (edit file)
+    $ git commit -a
+    $ git checkout master
+
+你现在可以看一下你原来在“experimental”分支下所作的修改还在不在；因为你现在切换回了“master”分支，所以原来那些修改就不存在了。
+
+你现在可以在“master”分支下再作一些不同的修改:
+
+<!--language: shell-->
+
+    (edit file)
+    $ git commit -a
+
+这时，两个分支就有了各自不同的修改(diverged)；我们可以通过下面的命令来合并“experimental”和“master”两个分支:
+
+<!--language: shell-->
+
+    $ git merge experimental
+
+如果这个两个分支间的修改没有冲突(conflict), 那么合并就完成了。如有有冲突，输入下面的命令就可以查看当前有哪些文件产生了冲突:
+
+<!--language: shell-->
+
+    $ git diff
+
+当你编辑了有冲突的文件，解决了冲突后就可以提交了：
+
+<!--language: shell-->
+
+    $ git commit -a
+
+提交(commit)了合并的内容后就可查看一下:
+
+<!--language: shell-->
+
+    $ gitk
+
+执行了gitk后会有一个很漂亮的图形的显示项目的历史。
+
+这时你就可以删除掉你的 “experimental” 分支了(如果愿意)：
+
+<!--language: shell-->
+
+    $ git branch -d experimental
+
+git branch -d只能删除那些已经被当前分支的合并的分支. 如果你要强制删除某个分支的话就用git branch –D；下面假设你要强制删除一个叫”crazy-idea”的分支：
+
+<!--language: shell-->
+
+    $ git branch -D crazy-idea
+
+分支是很轻量级且容易的，这样就很容易来尝试它。
 
 
