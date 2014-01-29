@@ -346,9 +346,9 @@
 
 感谢
 ====
+- [SyntaxHighlighter](http://alexgorbatchev.com/SyntaxHighlighter)
+- [CodeMirror](http://codemirror.net/)
 - [jsfiddle](http://jsfiddle.net/)
-- [dabblet](http://dabblet.com/)
-- [plnkr](http://plnkr.co/)
 - [compileonline](http://compileonline.com)
 
 
