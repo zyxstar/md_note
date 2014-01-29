@@ -20,4 +20,5 @@
 - [Ruby平台与环境.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%25E5%25B9%25B3%25E5%258F%25B0%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583.md)
 
 # Skill
+- [GitCommunityBook.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FSkill%2FGitCommunityBook.md)
 - [谈判力.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FSkill%2F%25E8%25B0%2588%25E5%2588%25A4%25E5%258A%259B.md)

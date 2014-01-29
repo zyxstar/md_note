@@ -29,8 +29,8 @@
 > 不知道什么是urlencode? [看这里](http://tool.chinaz.com/Tools/URLEncode.aspx)；还需要更详细的参数说明，请[移步这里](http://chinapub.duapp.com)
 
 
-看看它能做什么
-==============
+看看它有什么特性
+================
 ## 可缩放的层级目录
 生成的html文件，会自动根据Markdown中标题(h1~h6)生成层级目录，并支持目录的展开与收缩
 
