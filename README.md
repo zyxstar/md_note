@@ -15,9 +15,14 @@
 - [国家_易中天.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FKnowledge%2F%25E5%259B%25BD%25E5%25AE%25B6_%25E6%2598%2593%25E4%25B8%25AD%25E5%25A4%25A9.md)
 
 # Language
+- [JavaScript语言精粹.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E7%25B2%25B9.md)
 - [JavaScript语言精髓与编程实践.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%25E4%25B8%258E%25E7%25BC%2596%25E7%25A8%258B%25E5%25AE%259E%25E8%25B7%25B5.md)
+- [PythonCookBook.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FPythonCookBook.md)
+- [Python标准库.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FPython%25E6%25A0%2587%25E5%2587%2586%25E5%25BA%2593.md)
+- [Python高级编程.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FPython%25E9%25AB%2598%25E7%25BA%25A7%25E7%25BC%2596%25E7%25A8%258B.md)
 - [RubyProgramming.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FRubyProgramming.md)
 - [Ruby平台与环境.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%25E5%25B9%25B3%25E5%258F%25B0%25E4%25B8%258E%25E7%258E%25AF%25E5%25A2%2583.md)
+- [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FLanguage%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
 
 # Skill
 - [GitCommunityBook.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmarkdown_note%2Fmaster%2Fdocs%2FSkill%2FGitCommunityBook.md)
