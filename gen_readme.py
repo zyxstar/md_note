@@ -8,6 +8,8 @@ import urllib
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/markdown_note/master/docs"
 
+FOLDERS_ORDER = dict(Analysis=10,Language=20,Framework=30,Skill=40,Knowledge=50)
+
 
 def build_one_file(folders, filename):
     _note_path = "/".join(
@@ -24,7 +26,7 @@ def yield_subfiles():
         for _dirpath, _dirnames, _filenames in os.walk(_folder_path):
             for _f in _filenames:
                 yield map(lambda _fo: _fo.decode(_sys_encoding), folders), _f.decode(_sys_encoding)
-            for _d in _dirnames:
+            for _d in sorted(_dirnames,key=lambda _dir:FOLDERS_ORDER.setdefault(_dir,999)):
                 _folders = list(folders)
                 _folders.append(_d)
                 for _a, _b in _find_subfiles(*_folders):
@@ -36,11 +38,18 @@ def yield_subfiles():
 def build_subfiles(iter_subfiles):
     _marks = []
     _lines = ["# Manual"]
+
+    def _build_path_to_tocs(folders):
+        for i in range(1, len(folders)+1):
+            _folder_pieces=folders[0:i]
+            if not _folder_pieces in _marks:
+                _marks.append(_folder_pieces)
+                _lines.append("\n%s %s" % ("#" * len(_folder_pieces), _folder_pieces[-1]))
+
     for _folders, _filename in yield_subfiles():
-        if len(_folders) and not _folders[-1] in _marks:
-            _lines.append("\n%s %s" %
-                          ("#" * len(_folders), _folders[-1]))
-            _marks.append(_folders[-1])
+        if len(_folders):
+            _build_path_to_tocs(_folders)
+
         _lines.append(build_one_file(_folders, _filename))
     return _lines
 
