@@ -57,7 +57,7 @@ C/C++关于int，float等数据的底层表示
     #include <stdio.h>
 
     int main(){
-        short s = 321; /* 00000001 01000001*/
+        short s = 321; /*00000001 01000001*/
         char ch = s;
         printf("%c", ch);
     }
@@ -69,7 +69,7 @@ C/C++关于int，float等数据的底层表示
     #include <stdio.h>
 
     int main(){
-        char ch = 'A'; /* 01000001*/
+        char ch = 'A'; /*01000001*/
         short s = ch;
         printf("%d", s);
     }
@@ -83,7 +83,7 @@ C/C++关于int，float等数据的底层表示
     #include <stdio.h>
 
     int main(){
-        int i = 98305; /* 00000000 00000001 10000000 00000001*/
+        int i = 98305; /*00000000 00000001 10000000 00000001*/
         short s = i;
         printf("%d", s);
     }
@@ -95,14 +95,14 @@ C/C++关于int，float等数据的底层表示
     #include <stdio.h>
 
     int main(){
-        short s = -1;/* 11111111 11111111*/
+        short s = -1; /*11111111 11111111*/
         int i = s;
         printf("%d", i);
     }
 
 ### 整型与浮点型转换
 
-- 直接进行赋值，而类型不同，因此会先计算出来值，然后转换一种类型表示出来，__底层byte发生变化__
+- 直接进行赋值，而类型不同，因此会先计算出来值，然后转换一种类型表示出来，__底层byte pattern发生变化__
 
 <!--language: !c-->
 
@@ -115,20 +115,61 @@ C/C++关于int，float等数据的底层表示
     }
 
 ### 将内存中byte强制为某类型
+总的来说就是 __just copy bit pattern!__ 大小尾系统 __没有__ 区别，因为 __地址&总指向 *最低* 字节__
 
-- 少byte类型引用多byte类型的地址时
+- `int i = 98305; short s = *(short*)&i;` 保留低位，丢失高位
 
 <!--language: !c-->
 
     #include <stdio.h>
 
     int main(){
-        int i = 98305; /* 00000000 00000001 10000000 00000001*/
+        int i = 98305; /*00000000 00000001 10000000 00000001*/
         short s = *(short*)&i;
-        printf("%d", s);
+        printf("%x %d", s, s); /*ffff8001 -32767*/
     }
 
+- `int i = 1078523331; float f = *(float*)&i;` 意义完全不同，变成极小的数(见下节float表示)
 
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    int main(){
+        int i = 1078523331; /*01000000 01001000 11110101 11000011*/
+        float f = *(float*)&i;
+        printf("%f", f); /*3.14*/
+    }
+
+> ps. 如何得到`i = 1078523331`
+
+<!--language: !c-->
+
+    #include <stdio.h>
+    union ufloat {
+        float f;
+        int i;
+    };
+
+    int main(){
+        union ufloat uf;
+        uf.f = 3.14;
+        printf("%d", uf.i);
+    }
+
+- `double d = 3.1416; char c = *(char*)&d;` 保留1byte低位，其余丢失
+
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    int main(){
+        double d = 3.1416;
+        char c = *(char*)&d;
+        printf("%c", c);
+    }
+
+- `short s = 45; double d = *(double*)&s;` 比较危险，越界访问s后面6byte空间
 
 ## float的表示
 3部分构成：表示为`(-1)^s * 1.f * 2^(e-127)`
@@ -163,6 +204,31 @@ C/C++关于int，float等数据的底层表示
 
 > double有11位exp，偏移量为1023
 
+> 大尾存储就是最重要的数存在前部（低位），即数据的高位，保存在内存的低地址中（地址的增长顺序与值的增长顺序相反）。一双字87654321H，则大尾存储就是 87H 65H 43H 21H ，存储地址递增，判断当前系统大小尾
+
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    union data
+    {
+        short inter;
+        char ch;
+    };
+
+    int main(void)
+    {
+        union data c;
+        c.inter = 0x1122;
+        if(c.ch == 0x22)
+            printf("The compute is little-endian.\n");
+        else
+            printf("The compute is big-endian,\n");
+    }
+
+
+第三课
+=========
 
 
 

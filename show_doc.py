@@ -38,7 +38,7 @@ def trans_note_urlpara(file_path, port):
 
 
 def run_md2pg_srv(port):
-    os.chdir("F:\study\md_proj\md2page\server\WEBPY")
+    os.chdir("F:\study\md_proj\md2page_with_webpy")
     subprocess.Popen("python home.py "+ str(port))
 
 def show_doc(port,url):

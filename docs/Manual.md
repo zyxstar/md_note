@@ -202,13 +202,13 @@
 
     #include <stdio.h>
 
-    typedef struct {
+    typedef struct MyStruct {
         char* name;
-        char* (*pSay)(void*);
+        char* (*pSay)(struct MyStruct*);
     } MyStruct;
 
-    char* Say(void* ins) {
-        return ((MyStruct*)ins)->name;
+    char* Say(MyStruct* ins) {
+        return ins->name;
     }
 
     int main(){
