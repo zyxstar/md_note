@@ -10,7 +10,7 @@ import subprocess
 
 
 def run_notes_srv(port):
-    os.chdir("F:\study\md_note\markdown_note")
+    os.chdir("F:\study\md_proj\md_note")
     subprocess.Popen("python -m SimpleHTTPServer "+ str(port))
 
 
@@ -38,7 +38,7 @@ def trans_note_urlpara(file_path, port):
 
 
 def run_md2pg_srv(port):
-    os.chdir("F:\study\md_note\markdown2page\server\WEBPY")
+    os.chdir("F:\study\md_proj\md2page\server\WEBPY")
     subprocess.Popen("python home.py "+ str(port))
 
 def show_doc(port,url):
