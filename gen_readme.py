@@ -8,7 +8,7 @@ import urllib
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
 
-FOLDERS_ORDER = dict(Analysis=10,Language=20,Framework=30,Skill=40,Knowledge=50)
+FOLDERS_ORDER = dict(Analysis=10,Language=20,Framework=30,Skill=40,Knowledge=50,ProgrammingParadigm=10)
 
 
 def build_one_file(folders, filename):
