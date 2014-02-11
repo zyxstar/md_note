@@ -1,9 +1,9 @@
-第一课
-======
+Lesson 1
+========
 概述
 
-第二课
-=======
+Lesson 2
+========
 ## 数据的底层表示
 C/C++关于int，float等数据的底层表示
 
@@ -227,9 +227,187 @@ C/C++关于int，float等数据的底层表示
     }
 
 
-第三课
-=========
+Lesson 3
+========
+## 结构体内存访问
 
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    typedef struct {
+        int num;
+        int denom;
+    } fraction;
+
+    int main(){
+        fraction pi;
+        pi.num = 22;
+        pi.denom = 7;
+
+        ((fraction *)&(pi.denom))->num = 12;
+        ((fraction *)&(pi.denom))->denom = 33;
+        printf("%d\n", pi.denom);
+        printf("%d\n", (&pi)[1].num);
+        printf("%d", (&pi+1)->num);
+    }
+
+- 当定义一个`fraction pi;`时，`pi`是个变量名，当声明后，得到存储一个`fraction`类型的内存空间，8bytes，这些成员尽可能紧密的打包起来，而 __整体的地址，与第0个域的地址一致__。
+
+<!--language: plain-->
+
+             ┌──────────┐
+             │    33    │ ((fraction *)&(pi.denom))->denom
+             ├──────────┤
+    pi.denom │   7/12   │ ((fraction *)&(pi.denom))->num
+             ├──────────┤
+    pi.num   │    22    │
+    &base -> └──────────┘
+
+- 除非知道上下文，否则并不知道`num`存储在什么地方，当执行`pi.num=22;`时，将在基地址处存入22，`pi.denom=7;`将在 __基地址之上4字节__ 存入7。
+- 接下来进行`(fraction *)&(pi.denom)`，`&(pi.denom)`得到一个`int*`类型，但现在并 __不__ 被理解成一个单独的整数了，而是地址空间为8bytes的fraction类型，则基地址向高位前进4字节，并 __越界__ 了4字节，原先denom现在成了12
+
+## 数组内存访问
+`int array[10];`声明它时，将得到40bytes的空间
+
+- `array === &array[0]`，__数组本身与数组的第0个元素的地址等同__，其实当你传递数组给函数参数时，只是把第0个元素的地址指定了，然后再传入数组的长度
+- `array[10]=1;`不会进行数组边界检查，会把它放在 __基地址偏移10*sizeof(int)字节__ 的地方(有可能崩溃)，甚至可以接受负数，表示基地址向低地址偏移
+- `array+k === &array[k]`，array理解为基地址，k是int类型，参与指针算术运算，但基地址并不是直接将k加上，而是 __根据数组元素类型自动扩大寻址类型的大小(`sizeof(int)`)的k倍__，这就是上面fraction示例中`(&pi)[1].num`应用的 __原理，虽然pi _不是数组_，但同样可以使用该方式来访问内存__
+- `*array === array[0]`，`*(array+k)===array[k]`，一个`array[-4]=77;`将被解引用成`*(array-4)=77;`即基地址`-sizeof(int)*4`处容纳77这个数
+
+## 地址与指针类型
+
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    int main(){
+        int arr[5];
+        arr[3] = 128; /*00000000 10000000*/
+
+        ((short*)arr)[7] = 2;
+        printf("%d\n", arr[3]); /*00000000 00000010 00000000 10000000*/
+
+        ((short *)(((char *)(&arr[1]))+8))[3] = 100;
+        printf("%d\n", ((short*)arr)[9]);
+    }
+
+> ps 大小尾有区别，小尾系统中`((short*)arr)[7]=2;`，大尾的则为`((short*)arr)[6]=2;`
+
+- `(short*)arr`将认为有10个short空间，第7的位置修改了原先基于int*时的第3位置的数据。
+- `
+((short *)(((char *)(&arr[1]))+8))[3]=100;`可以非常灵活的控制需要访问的地址空间
+
+<!--language: plain-->
+
+    0       1       2       3       4       5
+    ┌───────┬───────┬───────┬───────┬───────┐
+    └───────┴───────┴───────┴───────┴───────┘
+            ^
+            |
+            (char *)(&arr[1]) 即地址&arr[1] 理解成 char* 类型
+
+            0 1 2 3 4 5 6 7 8
+            ┌─┬─┬─┬─┬─┬─┬─┬─┐
+            └─┴─┴─┴─┴─┴─┴─┴─┘
+                            ^
+                            |
+                            (char *)(&arr[1]))+8，sizeof是基于char的
+
+                            0   1   2   3   4
+                            ┌───┬───┬───┬───┐
+                            └───┴───┴───┴───┘
+                            ^           ^
+                            |           |
+                            此地址理解成short*
+                                        |
+                                        该地址存入100
+
+
+- 结构体、数组、强制类型等内存访问技巧还可以用来访问活动记录中其他的变量
+
+## 结构体数组
+
+<!--language: !c-->
+
+    #include <stdio.h>
+    #include <malloc.h>
+    #include <string.h>
+
+    typedef struct {
+        char *name;
+        char suid[8];
+        int numUnits;
+    } student;
+
+    int main(){
+        student pupils[4];
+        pupils[0].numUnits = 21;
+        pupils[2].name = strdup("Adam");
+        pupils[3].name = pupils[0].suid + 6;
+        strcpy(pupils[1].suid, "40415xx");
+        strcpy(pupils[3].name, "123456");
+
+        printf("%d\n", pupils[0].numUnits);
+        free(pupils[2].name);
+    }
+
+- 定义了一个16bytes的结构体，name 4bytes + suid 8bytes + numUnits 4bytes。
+
+<!--language: plain-->
+
+             0       1       2       3
+             ┌───────┬───────┬───────┬───────┐
+    numUnits │  21   │       │       │       │
+             ├─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┤
+             │ │ │b│ │5│x│x│\│ │ │ │ │ │ │ │ │
+             ├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤
+    stuid    │ │ │ │ │4│0│4│1│ │ │ │ │ │ │ │ │
+             ├─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┤
+    name     │       │       │   *a  │   *b  │
+             └───────┴───────┴───────┴───────┘
+
+                                  ┌─┬─┬─┬─┬──┐
+                                  │A│d│a│m│\0│
+                               a─>└─┴─┴─┴─┴──┘
+
+- pupils是 __局部变量__，将存在 __*栈*__ 中，`strdup("Adam")`是 __动态分配 _堆_ __的内存，并将地址返回给pupils[2].name，该内存是需要手工free的
+- `pupils[0].suid + 6`，是上图中b所在的地址，6是基于suid数组元素类型char的长度
+- `strcpy(pupils[1].suid, "40415xx");`并不申请内存，在第一个参数指定的内存地址，写入字符串。
+- `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中b，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
+
+Lesson 4
+========
+
+## 泛型swap
+
+<!--language: !c-->
+
+    #include <malloc.h>
+    #include <string.h>
+    #include <stdio.h>
+
+    void swap(void *vp1, void *vp2, int size){
+        char buffer[size];
+        /* char* buffer = malloc(size);*/
+        memcpy(buffer, vp1, size);
+        memcpy(vp1, vp2, size);
+        memcpy(vp2, buffer, size);
+        /* free(buffer);*/
+    }
+
+    int main(){
+        int x=10, y=7;
+        swap(&x,&y,sizeof(int));
+        printf("%d %d\n", x, y);
+
+        char* hasband=strdup("Fred");
+        char* wife=strdup("Wilama");
+        swap(&hasband,&wife,sizeof(char*));
+        printf("%s %s\n", hasband, wife);
+        free(hasband);
+        free(wife);
+    }
 
 
 

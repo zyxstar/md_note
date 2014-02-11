@@ -174,9 +174,8 @@ OOP(Object-Oritented programming)是一种计算机编程模式，它将对象�
 常用范式
 =========
 ## 泛型范式-抽象你的算法
-关键词：STL、容器、迭代器
 
-- 泛型编程(Generic Programming，简称GP)是 __算法导向__ 的，即以算法为起点和中心点，逐渐将其所涉及的概念内涵模糊化、外延扩大化，将其所涉及的运算抽象化、一般化，从而 __扩展算法的适用范围__。
+- 泛型编程(Generic Programming，简称GP)是 __算法导向__ 的，即以算法为起点和中心点，逐渐将其所涉及的 __概念__(数据结构、类)内涵模糊化、外延扩大化，将其所涉及的 __运算__(函数、方法、接口)抽象化、一般化，从而 __扩展算法的适用范围__。
 
 - 基本思想是：将算法与其作用的数据结构分离，并将 __后者__ 尽可能泛化，这种泛化是基于模板(template)的 __参数多态__(parametric polymorphism)，相比OOP的基于继承(inheritance)的 __子类型多态__(subtyping polymorphism)，普适性更强，效率也更高。但用法稍微复杂一些，可读性稍差一些。
 
@@ -200,12 +199,121 @@ C(宏定义)
 
     #define max(a,b) ((a) > (b) ? (a) : (b))
 
+在C中可用宏定义(macro definition)来实现，但无法保证类型安全，而C++模板兼顾类型安全和代码重用，并且由于在编译期间展开，效率上也不损失，且由于C++支持运算符重载，一切定义了`>`运算的数据类型均可调用`max`函数
+
+### STL三要素
+- __算法__(algorithm)：一系列切实有效的步骤
+- __容器__(container)：是数据的集合，可理解为抽象的数组
+- __迭代器__(iterator)：是算法与容器之间的接口，可理解为抽象的指针或游标
 
 
+### STL示例
+- 请问它们共同之处，能否共享代码
+    - 从一个整数数组中随机抽取十个数，对其中的素数求和
+    - 将一个无序整数集中所有的完全平方数换成其平方根
+    - 从学生成绩表中，列出门门都及格且平均分在70分以上的学生名单
+    - 在一个着色二元树中，将所有红色结点涂成蓝色
+    - 将一个字符串从倒数第3个字符开始反向拷贝到另一个字符串中
+    - 每从标准输入读取一个非数字的字符X，于标准输出打印"X不是数字字符"
 
+- 只有抽象出表面的数据，算法的脊梁才能显现，以上几题运算泛型思维，可发现它们共性：对指定集合中满足指定条件的元素进行指定处理
+
+<!--language: cpp-->
+
+    template <class Iterator, class Act, class Test>
+    void process(Iterator begin, Iterator end, Act act, Test test){
+        for (; begin != end; ++begin)
+            if (test(*begin)) act(*begin);
+    }
+
+比起前面`max`模板，这里连元素的数据类型T都没有，因为元素被容器封装了，只需通过它的迭代器参与算法：
+
+- 泛化了 __容器__，可以是数组、列表、集合、映射、队列、栈、字符串等
+- 泛化了 __元素__，可以是任何数据类型
+- 泛化了 __处理方法和限定条件__，可以是任何函数，甚至是函子(functor)－－自带状态的函数对象，即除了泛化概念，还能 __泛化行为__
+- 泛化了 __迭代器__，可以从前往后移动，也可以从后往前移动，可以来回移动，可以随机移动，可以按任意预先定义规律移动
+
+以下为第6题实现：
+
+<!--language: cpp-->
+
+    #include <iostream>
+    #include <vector>
+    #include <fstream>
+    #include <iterator>
+
+    using namespace std;
+
+    template <class Iterator, class Act, class Test>
+    void process(Iterator begin, Iterator end, Act act, Test test){
+        for (; begin != end; ++begin)
+            if (test(*begin)) act(*begin);
+    }
+
+    bool notDigit(char c){
+        return (c<'0') || (c>'9');
+    }
+
+    void printNondigit(char c){
+        cout << c << " not digit" <<endl;
+    }
+
+    int main() {
+        process(istream_iterator<char>(cin), istream_iterator<char>(), printNondigit, notDigit);
+
+        return 0;
+    }
+
+完全看不到IO读取的过程，也看不到迭代循环，让人摆脱了底层编码细节，在更高 __更抽象__ 的层次上进行编程设计，用一种新的视角去审视问题。
 
 ## 超级范式-提升语言级别
+元程序 __将程序作为数据对待__，能自我发现、自我赋权和自我升级，有着其他程序所不具备的自觉性、自适应性和智能性，是一种更高级的程序。
+
+### 元编程
+- 模板元编程(Template Metaprogramming)与泛型编程密切相关但自成一派，隶属于另一种编程范式－__元编程__(Metaprogramming，简称MP)
+
+<!--language:!cpp-->
+
+    #include <iostream>
+    using namespace std;
+
+    template <int N>
+    struct factorial{
+        enum { value = N * factorial<N-1>::value};
+    };
+
+    template <>
+    struct factorial<0>{
+        enum { value = 1};
+    };
+
+    int main(){
+        cout << factorial<5>::value << endl;
+        return 0;
+    }
+
+这里阶乘的值是在 __编译时__ 而非运行时计算出来的，是以模板形式通过编译器生成了新的代码，并在编译期间获得执行。
+
+- Lex和Yacc编写编译器和解析器的工具
+- 除上述在编译期间生成源代码的 __静态元编程__，还有在运行期间修改程序的 __动态元编程__，如JavaScript用字符串构建`Function`，Ruby提供了`define_method`、`instance_eval`等元编程方法
+
+
+### DSL
+
+- 领域特定语言DSL，灵活方便地处理客户逻辑，比通用语言更简单、更抽象、更专业、更接近自然语言和声明式语言，开发效率提高
+- Hiberate中HQL就是典型的DSL，通过ANTLR来解析(ANother Tool for Language Recognition，能生成C,C++,Java,C#,Python等)
+- 语言导向式编程(Language-Oriented Programming，简称LOP)，在建立一套DSL体系之后，直接用它们来编写软件
+
+### 代码生成
+- 各种IDE通过向导、拖放控件等方式自动生成源代码；UML建模工具将类图转换为代码；Servlet引擎将JSP转换为Java代码等
+- 生成的代码，不需要被管理（小操作造成生成上差异很大，削弱版本控制意义），而元程序数据需要版本化，简明而直观
+> 同理，没法记录的东西，不方便自动化与重放，比如调试，用单元测试与log取而代之
+- 自动生成源代码的编程也属于另一种编程范式－产生式编程(Generative Programming)，只是它更看重代码的生成，而元编程看重的是生成代码的可执行性。
+
 ## 切面范式-多角度看问题
+p69
+
+
 ## 事件驱动-有事我叫你,没事别烦我
 
 
