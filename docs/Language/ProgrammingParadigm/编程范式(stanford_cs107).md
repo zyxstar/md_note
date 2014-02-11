@@ -1,8 +1,8 @@
-Lesson 1
+Lecture 1
 ========
 概述
 
-Lesson 2
+Lecture 2
 ========
 ## 数据的底层表示
 C/C++关于int，float等数据的底层表示
@@ -115,7 +115,7 @@ C/C++关于int，float等数据的底层表示
     }
 
 ### 将内存中byte强制为某类型
-总的来说就是 __just copy bit pattern!__ 大小尾系统 __没有__ 区别，因为 __地址&总指向 *最低* 字节__
+总的来说就是 __字节拷贝__，大小尾系统 __没有__ 区别，因为 __地址&总指向 *最低* 字节__
 
 - `int i = 98305; short s = *(short*)&i;` 保留低位，丢失高位
 
@@ -227,7 +227,7 @@ C/C++关于int，float等数据的底层表示
     }
 
 
-Lesson 3
+Lecture 3
 ========
 ## 结构体内存访问
 
@@ -376,10 +376,51 @@ Lesson 3
 - `strcpy(pupils[1].suid, "40415xx");`并不申请内存，在第一个参数指定的内存地址，写入字符串。
 - `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中b，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
 
-Lesson 4
+Lecture 4
 ========
 
-## 泛型swap
+## swap int版本
+首先实现一个基于int的版本，两个整型，__无论是包括在数组中，或结构体中__，都能被正确的交换
+
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    void swap(int *ap, int *bp) {
+        int temp = *ap;
+        *ap = *bp;
+        *bp = temp;
+    }
+
+    int main(){
+        int x=10, y=7;
+        swap(&x,&y);
+        printf("%d %d\n", x, y);
+    }
+
+- temp声明了一个4bytes的空间，将ap盒子中的内容复制过来，机器能辩明ap盒子中也是4bytes的内存布局
+- 这里的空间大小都是隐式的，被限定为4bytes，如果要转换double，或自定义的结构体是做不到的
+
+## 错误的swap泛型版本
+接下来实现类似C++中泛型模板的方式
+
+<!--language: c-->
+
+    void swap(void *vp1, void *vp2){
+        void temp = *vp1;
+        *vp1 = *vp2;
+        *vp2 = temp;
+    }
+
+- vp1和vp2指向需要交换的地址的起始位置，一个通用地址，也许是int,char,结构体等
+- 仿造int的版本写法，但是有错误：
+    1. 不能声明void型的temp变量
+        - void用在函数返回值，声明没有什么可返回:`void fun(){}`
+        - void可作为函数指针，传递给函数的参数:`void fun(int(*p)(int)){};fun(void);`
+        - void作为方法的唯一参数说明:`int main(void){}`
+    1. 不能对vp1进行解引用，因为没类型信息，机器不知道要提取多少个字节
+
+## 正确的swap泛型版本
 
 <!--language: !c-->
 
@@ -401,35 +442,24 @@ Lesson 4
         swap(&x,&y,sizeof(int));
         printf("%d %d\n", x, y);
 
-        char* hasband=strdup("Fred");
-        char* wife=strdup("Wilama");
-        swap(&hasband,&wife,sizeof(char*));
-        printf("%s %s\n", hasband, wife);
-        free(hasband);
-        free(wife);
-    }
-
-
-
-
-<!--language: !c-->
-
-    #include <malloc.h>
-    #include <string.h>
-    #include <stdio.h>
-
-    void swap(void *vp1, void *vp2, int size){
-        char buffer[size];
-        memcpy(buffer, vp1, size);
-        memcpy(vp1, vp2, size);
-        memcpy(vp2, buffer, size);
-    }
-
-    int main(){
         double a = 23.0, b = 34.0;
         swap(&a, &b, sizeof(double));
         printf("%lf %lf", a, b);
     }
+
+- 比上个版本多出size参数，表示需要交换的byte长度
+    - 不需要const修饰，参数上使用const更多用于共享信息时，起到保护作用，防止被意外修改
+- `char buffer[size]`，现在版本编译器 __允许声明一个大小依赖于参数的数组__
+    - 虽然声明成char，其实只是利用该字符缓冲区来留出足够内存空间存放size大小的字节，该空间位于 __栈__ 中（buffer是局部变量），函数运行后空间 __自动释放__
+    - vp1并不介意解释成字符串，只是作为一个存储空间，并不利用该buffer去做字符相关操作
+    - 如果不支持该 __非常数__ 作为数组长度的声明，可使用`malloc`在 __堆__ 中创建一个缓冲区，并记得最后 __释放__
+- `memcpy`进行内存单元的拷贝，注意此函数并不关心你的数据类型，单纯的进行单元的拷贝而已，所以虽然编译可能通过，但是还需要自己进行判断和控制
+- void*的使用，通过它能够实现泛型，即针对于int，short，char，struct等类型都能够保证能够拷贝交换成功
+- C++的template和这里的区别和优缺点。使用模板的话，编译后，会为每种类型都生成一种代码，比如int对应的，float对应的，这样如果调用次数很多的话，代码体积会增大，冗余过多。而这里编译出来就一套代码，更加简洁。但因为没有类型检查，调用时需要很小心
+- 但不同长度类型的vp1与vp2是不能被调用的，如int与short的类型的数据swap，简单的结果就是，截断拷贝或者多拷贝数据，大小尾表现还不一样。
+
+
+### 指针的swap调用
 
 <!--language: !c-->
 
@@ -446,8 +476,10 @@ Lesson 4
 
     int main(){
         char *husband = strdup("Fred"); char *wife = strdup("Wilma");
-        swap(&husband, &wife, sizeof(char *));
+        swap(&husband, &wife, sizeof(char*));
         printf("%s %s", husband, wife);
+        free(hasband);　free(wife);
     }
 
-http://www.cppblog.com/deercoder/archive/2012/06/24/180038.html
+- size参数可以传入一个常数，但可读性不好，而用`sizeof(char*)`则明确的指出了需要转换的数据类型
+

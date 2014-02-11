@@ -311,10 +311,151 @@ C(宏定义)
 - 自动生成源代码的编程也属于另一种编程范式－产生式编程(Generative Programming)，只是它更看重代码的生成，而元编程看重的是生成代码的可执行性。
 
 ## 切面范式-多角度看问题
-p69
 
+### 抽象与分解
+- 不良代码的病征：
+    - __结构混乱__，或聚至纠缠打结、或散至七零八落
+    - __代码重复__，叠床架屋、臃肿不堪
+- 有效方式是 __抽象与分解__：从问题中抽象出一些关注点，再以此为基础进行分解。抽象是 __前提__，分解是 __方式__，模块化是 __结果__
+    - 将程序分别抽象为过程、函数、断言、对象和进程，就依次成为过程式、函数式、逻辑式、对象式和并发式
+    - 抽象出算法后与数据分离，就成了泛型式
+    - 切面式的AOP将程序抽象分解为 __切面__，以切面为模块
+- 抽象与分解原则：__单一化，正交化__。每个模块职责明确专一，模块间相互独立，高内聚低耦合(high cohesion & low coupling)。
+    - 此原则相当普适，是分析复杂事物的一种基本方法，在数学和物理中应用广泛：质因式分解、正交分解、谱分解
+    - 在数学中互为正交的两个向量在彼此方向上投影为零，意味着彼此独立、互不影响
+
+### Soc与DRY
+Soc(Separation of Concerns)即关注点分离，DRY(Don't Repeat Yourself)即尽量减少重复代码。
+
+### Aspect
+- 切面Aspect，描述的是横切关注点(cross-cutting concerns)，是与程序的 __纵向主流__ 执行方向 __横向正交__ 的关注焦点。
+- 调用某些对象的方法、读写某些对象的域、抛出某些异常等前后需要用到统一的业务逻辑，诸如日志输出、代码跟踪、性能监控、异常处理、安全检查、事务管理等，难以实现Soc与DRY时
+- AOP将每类横切关注点封装到单独的Aspect模块中，将程序中的一些执行点与相应的代码绑定起来
+    - 单个的执行点称为 __接入点__(join poing)，如调用某个对象的方法前后；
+    - 符合预先指定条件的 __接入点集合__ 称为 __切入点__(pointcut)，如所有以set为命令开头的方法；
+    - 每段绑定的代码称为一个 __建议__(advice)
+- __接入点 vs 切入点__
+    - 接入点是点，切入点是面，advice定义了切入点上，执行于接入点处，共享一段附加代码的接入点组成了一个切入点
+    - 切入点一般用条件表达式来描述，不仅有广泛性，还有预见性（以后新增的代码如果含有满足切入点条件的接入点，advice代码便自动附着其上）
+
+### AOP与OOP
+OOP只能沿着继承树的纵向方向重用，而AOP则弥补了该不足，可以在横向方向重用，AOP不是OOP的分支，也不能说超越了OOP，而是一种补充，尽管AOP并不局限于OOP语言
+
+### AOP实现机理
+如果一个程序是一个管道系统，AOP就是在管道上钻一些孔，在每个孔中注入新的代码流。因此AOP的实现关键是将advice的代码嵌入到主体程序中，术语称 __编织__(weaving)。
+    - 静态编织，通过修改源码或字节码(bytecode)在编译期(compile-time)、后编译期(post-compile)或加载期(load-time)嵌入代码，可能用到元编程和产生式编程
+    - 动态编织，通过代理(proxy)等技术在运行期(run-time)实现嵌入
+    - 工具：扩展性语言AspectJ、AspectC++、Aspect#；框架AspectWerkz、Spring等
 
 ## 事件驱动-有事我叫你,没事别烦我
+侦查事件与响应事件两项任务进行了正交分解，降低了软件的耦合度和复杂度。
+
+### 流程驱动 vs 事件驱动
+
+采用主动去轮询(polling)，行为取决于自身的观察判断，是流程驱动的，符合常规的流程驱动式编程(Flow-Driven Programming)的模式，采用被动等通知(notification)，行为取决于外来的突发事件，是事件驱动的，符合常规的事件驱动式编程(Event-Driven Programming，简称EDP)的模式
+
+### 事件的类型
+- 基于事件驱动的系统一般提供两类的内建事件(built-in event)：
+    - 底层事件(low-level event)或称原生事件(native event)，在GUI系统中，这类事件直接由鼠标、键盘等硬件设备触发
+    - 语义事件(semantic event)，一般代表用户的行为逻辑，是若干底层事件的组合，比如鼠标拖放多表示移动被拖放的对象，由鼠标按下、鼠标移动、鼠标释放三个底层事件组成
+- 除此之外，还有一类用户自定义事件(user-defined event)，可以是在原有的内建事件的基础上进行的包装，也可以是纯粹的虚拟事件(virtual event)
+- 除外界激发的自然事件(natural event)，有时程序员需要主动激发一些事件，比如模拟用户鼠标点击或键盘输入(createEvent,trigerEvent)，称为合成事件(synthetic event)
+
+### Windows消息机制
+
+<!--language: c-->
+
+    ...WinMain(...){
+        // 第一步，注册窗口别
+        ...;
+        windowClass.lpfnWndProc = WndProc; // 指定该类窗口的回调函数
+
+        windowClass.lpszClassName = windowClassName;
+        RegisterClassEx(&windowClass);
+
+        // 第二步，创建一个上述类别的窗口
+        CreateWindowEx(..., windowClassName, ...);
+        ...;
+
+        // 第三步，消息循环
+        while (GetMessage(&msg, NULL, 0, 0) > 0) { // 获取消息
+            TranslateMessage(&msg); // 翻译消息
+            DispatchMessage(&msg); // 分派消息
+        }
+    }
+
+    // 第四步，窗口过程（处理消息）
+    ...WndProc(..., msg, ...){
+        switch (msg){
+            case WM_SIZE: ...; // 用户改变窗口尺寸
+            case WM_MOVE: ...;
+            case WM_CLOSE: ...;
+            ...;
+        }
+    }
+
+- 消息是Windows内部最基本的通信方法，事件需要通过消息来传递，是消息的主要来源，每当用户触发一个事件，系统将其转化为消息并放入相应程序的消息队列(message queue)中，先入系统消息队列，再放入应用程序消息队列。
+- `DispatchMessage`如何联系到`WinProc`？`DispatchMessage`的消息参数含有事发窗口的句柄(handle)，从而可以得到窗口过程`WinProc`，`(WNDPROC)GetWindowLong(msg.hwnd, GWL_WNDPROC)`，而当初创建窗口时指定了窗口类别，后者又绑定了窗口过程。
+- 编程者自己写的应用层函数`WinProc`，却不直接调用它，而是通过库函数间接调用，这类函数称为：回调函数(callback)
+- 消息循环不依赖于应用程序，完全可提炼出来作为library一部分，MFC就作了此处理
+，假设窗口过程由应用程序直接调用，那么消息循环中代码将不具独立性，__无法作为公因子分解出来__
+
+### 回调机制
+
+- 函数指针是C和C++用来实现callback的一种方式，此外抽象类、接口、C++中的泛型函子(generic functor)和C#中的委托(delegate)都可以实现callback
+
+![prog_paradigm_callback](../../../imgs/prog_paradigm_callback.png)
+
+- 在软件模块分层中，低层模块为高层模块提供服务，并且不能依赖高层模块，以保证其可重用性；另一方面，通常被调用者(callee)为调用者(caller)提供服务，调用者依赖被调者，两者结合，决定了低层模块多为被调用者，高层模块为调用者，但并不总合适，低层模块为了追求更强的 __普适性和可扩展性__，有时也有调用高层模块的需求
+
+<!--language: java-->
+
+    String[] strings = {"Please", "sort", "the", "strings", "in", "REVERSE", "order"};
+    Arrays.sort(string, new Comparator<String>(){
+        public int compare(String a, String b){
+            return -a.compareToIgnoreCase(b);
+        }
+    });
+
+- callback使得Array.sort不再局限于自然排序，允许用户自行排序规则，大大提高了算法的重用性
+
+### 同步回调 vs 异步回调
+- 字符串数组排序中，callback作为参数传入低层的函数后，很快就在该函数体中被调用；而窗口程序中，callback则先被储存起来，至于何时被调用是未定之数。前者称为同步(synchronous)回调，后者称为异步(asynchronous)回调
+- 都使用调用者，不再依赖调用者，将二者从 __代码上解耦__，异步调用更将二者从 __时间上解耦__
+
+![prog_paradigm_asyn_callback](../../../imgs/prog_paradigm_asyn_callback.png)
+
+- 图中处于低层的软件平台是在win32 API基础上的改增，主循环沉淀下来，而且将存储callback的过程封装在一个注册函数中，整个流程的 __控制权__ 已从应用程序的主程序 __转移到底层平台__ 的主循环中，符合好莱坞原则(Don't call us, we'll call you)
+
+### 控制反转
+好莱坞原则中，经纪公司处于主导地位，艺人们处于受控状态，这便是控制反转(Inversion of Control，简称IoC)
+
+- 一般库中用callback只是局部的控制反转
+- 框架则将IoC机制用到 __全局__，程序员牺牲了对应用程序流程的主导权，换来的是更简洁的代码和更高的生产效率。
+- 框架的可扩展性，通过 __插件__(plugin)体系达到
+
+![prog_paradigm_ioc](../../../imgs/prog_paradigm_ioc.png)
+
+### 依赖反转与依赖注射
+- __依赖反转__ 原则(Dependency-Inversion Principle，简称DIP)更加具体
+    - 高层模块不应依赖低层模块，它们都应依赖于抽象
+    - 抽象不应该依赖于细节，细节应依赖抽象
+
+- __依赖注射__(Dependency Injection，简称DI)，动态地为一个软件组件提供外部依赖
+- 控制反转、依赖反转和依赖注射的 __主题是控制与依赖，目的是解耦、方法是反转、而实现这一切的关键是抽象接口__
+    - 为什么是抽象接口，而不是回调函数
+
+
+“回调”强调的是行为方式－低层反调高层，而“抽象接口”强调的是实现方式－正是由于接口具有抽象性，低层才能在调用时无须考虑高层的具体细节，从而实现控制反转
+
+控制反转导致了事件驱动式编程的被动性
+
+事件驱动式还具有异步性的特征，这是由事件的不可预测性与随机性决定的
+
+独立是异步的前提，耗时是异步的理由
+
+发行订阅模式正是观察者模式的别名，一方面可看作简化或退化的事件驱动式，另一方面可看作事件驱动式的核心思想
+
 
 
 
