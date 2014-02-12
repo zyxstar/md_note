@@ -360,21 +360,22 @@ Lecture 3
              ┌───────┬───────┬───────┬───────┐
     numUnits │  21   │       │       │       │
              ├─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┤
-             │ │ │b│ │5│x│x│\│ │ │ │ │ │ │ │ │
+             │ │ │a│ │5│x│x│\│ │ │ │ │ │ │ │ │
              ├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤
     stuid    │ │ │ │ │4│0│4│1│ │ │ │ │ │ │ │ │
              ├─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┤
-    name     │       │       │   *a  │   *b  │
-             └───────┴───────┴───────┴───────┘
-
-                                  ┌─┬─┬─┬─┬──┐
-                                  │A│d│a│m│\0│
-                               a─>└─┴─┴─┴─┴──┘
+    name     │       │       │   *   │   *a  │
+             └───────┴───────┴───┼───┴───────┘
+                                 │
+                                 │  heap
+                                 │  ┌─┬─┬─┬─┬──┐
+                                 │  │A│d│a│m│\0│
+                                 └─>└─┴─┴─┴─┴──┘
 
 - pupils是 __局部变量__，将存在 __*栈*__ 中，`strdup("Adam")`是 __动态分配 _堆_ __的内存，并将地址返回给pupils[2].name，该内存是需要手工free的
-- `pupils[0].suid + 6`，是上图中b所在的地址，6是基于suid数组元素类型char的长度
+- `pupils[0].suid + 6`，是上图中a所在的地址，6是基于suid数组元素类型char的长度
 - `strcpy(pupils[1].suid, "40415xx");`并不申请内存，在第一个参数指定的内存地址，写入字符串。
-- `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中b，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
+- `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中a，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
 
 Lecture 4
 ========
@@ -449,6 +450,7 @@ Lecture 4
 
 - 比上个版本多出size参数，表示需要交换的byte长度
     - 不需要const修饰，参数上使用const更多用于共享信息时，起到保护作用，防止被意外修改
+    - size参数可以传入一个常数，但可读性不好，而用`sizeof(int)`则明确的指出了 __需要转换的数据类型__
 - `char buffer[size]`，现在版本编译器 __允许声明一个大小依赖于参数的数组__
     - 虽然声明成char，其实只是利用该字符缓冲区来留出足够内存空间存放size大小的字节，该空间位于 __栈__ 中（buffer是局部变量），函数运行后空间 __自动释放__
     - vp1并不介意解释成字符串，只是作为一个存储空间，并不利用该buffer去做字符相关操作
@@ -457,7 +459,6 @@ Lecture 4
 - void*的使用，通过它能够实现泛型，即针对于int，short，char，struct等类型都能够保证能够拷贝交换成功
 - C++的template和这里的区别和优缺点。使用模板的话，编译后，会为每种类型都生成一种代码，比如int对应的，float对应的，这样如果调用次数很多的话，代码体积会增大，冗余过多。而这里编译出来就一套代码，更加简洁。但因为没有类型检查，调用时需要很小心
 - 但不同长度类型的vp1与vp2是不能被调用的，如int与short的类型的数据swap，简单的结果就是，截断拷贝或者多拷贝数据，大小尾表现还不一样。
-
 
 ### 指针的swap调用
 
@@ -475,11 +476,117 @@ Lecture 4
     }
 
     int main(){
-        char *husband = strdup("Fred"); char *wife = strdup("Wilma");
+        char *husband = strdup("Fred");
+        char *wife = strdup("Wilma");
         swap(&husband, &wife, sizeof(char*));
         printf("%s %s", husband, wife);
-        free(hasband);　free(wife);
+        free(husband);
+        free(wife);
     }
 
-- size参数可以传入一个常数，但可读性不好，而用`sizeof(char*)`则明确的指出了需要转换的数据类型
+其对应的内存状态是
+
+<!--language: plain-->
+
+               0 1 2 3                  heap
+               ┌─┬─┬─┬─┐                ┌─┬─┬─┬─┬──┐
+               │  *────┼───┐            │F│r│e│d│\0│
+    &hushand ->└─┴─┴─┴─┘   └───────────>└─┴─┴─┴─┴──┘
+
+               0 1 2 3
+               ┌─┬─┬─┬─┐                ┌─┬─┬─┬─┬─┬──┐
+               │  *────┼───┐            │W│i│l│m│a│\0│
+    &wife    ->└─┴─┴─┴─┘   └───────────>└─┴─┴─┴─┴─┴──┘
+
+- `swap(&husband, &wife, sizeof(char*));`说明只是交换wife和husband变量中的内容 ，而它们的类型是char*，4bytes，即只交换左侧两个变量中的4bytes数据而已（交换的是栈中数据），与右侧堆中数据无关
+
+中间转换过程的内存状态是
+
+<!--language: plain-->
+
+               0 1 2 3               0 1 2 3               0 1 2 3
+               ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐
+               │ addr1 │             │ addr2 │             │ addr2 │
+    &hushand─┬>└─┴─┴─┴─┘  &hushand─┬>└─┴─┴─┴─┘  &hushand─┬>└─┴─┴─┴─┘
+             │                     │                     │
+    vp1 ─────┘            vp1 ─────┘            vp1 ─────┘
+               0 1 2 3               0 1 2 3               0 1 2 3
+               ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐
+               │ addr2 │             │ addr2 │             │ addr1 │
+    &wife ───┬>└─┴─┴─┴─┘  &wife ───┬>└─┴─┴─┴─┘  &wife ───┬>└─┴─┴─┴─┘
+             │                     │                     │
+    vp2 ─────┘            vp2 ─────┘            vp2 ─────┘
+               0 1 2 3               0 1 2 3               0 1 2 3
+               ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐             ┌─┬─┬─┬─┐
+               │ addr1 │             │ addr1 │             │ addr1 │
+    buffer ───>└─┴─┴─┴─┘  buffer ───>└─┴─┴─┴─┘  buffer ───>└─┴─┴─┴─┘
+
+    memcpy(buffer, vp1, size);
+                          memcpy(vp1, vp2, size);
+                                                memcpy(vp2, buffer, size);
+
+- 如果将`swap(&husband, &wife, sizeof(char*));`中的&去掉，程序还得执行，只不过，交换的是堆中数据（以husband和wife为地址的堆内存的起点），并且只交换了sizeof(char*)的长度。
+
+<!--language: !c-->
+
+    #include <malloc.h>
+    #include <string.h>
+    #include <stdio.h>
+
+    void swap(void *vp1, void *vp2, int size){
+        char buffer[size];
+        memcpy(buffer, vp1, size);
+        memcpy(vp1, vp2, size);
+        memcpy(vp2, buffer, size);
+    }
+
+    int main(){
+        char *husband = strdup("Fred");
+        char *wife = strdup("Wilma");
+        swap(husband, wife, sizeof(char*));
+        printf("%s %s", husband, wife);
+        free(husband);
+        free(wife);
+    }
+
+- 如果`swap(husband, &wife, sizeof(char*));`将是堆中数据char**与栈中数据char*交换，堆中字符数据将被认做栈的内存地址，程序很可崩溃，而栈中内存地址被认为字符。
+
+Lecture 5
+==========
+
+## 泛型lsearch
+
+<!--language: !c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+
+    void *lsearch(void *key, void *base, int n, int elemSize){
+        int i;
+        for (i = 0; i < n; i++) {
+            void* elemeAddr = (char*)base + i * elemSize;
+            if (memcmp(key, elemeAddr, elemSize) == 0)
+                return elemeAddr;
+        }
+        return NULL;
+    }
+
+    int main(){
+        int array[] = {4,2,3,7,11,6};
+        int number = 7;
+
+        int *found = lsearch(&number, array, 6, sizeof(int));
+        if(found != NULL)
+            printf("index: %d, found: %d", found-array, *found);
+    }
+
+- 在正常数组的寻址时，使用`&arr[i]`，它等效于`arr+i`，所以`void* elemeAddr = base + i;`尝试基于base向前跳i个元素，但编译器在没有base类型信息时，是不能进行指针算术运算的，所以正确的方式是纯手工计算，诱使编译器认为base是char*类型的，它的sizeof(char)为1，那么指针算术与平常算术效果就一致了
+- `memcmp`是比较两个内存地址中bytes是否完全相等，对于int,long,short,char,double,float等适用，但对于自定义的结构体、字符串、指针就不能很好工作了
+- `found-array`也是指针运算，会根据自动计算 地址差除以类型大小
+
+## 带函数指针的泛型lsearch
+
+
+Lecture 6
+==========
 
