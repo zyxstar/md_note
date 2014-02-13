@@ -587,10 +587,61 @@ C# lambda版本
 - 没有副作用的函数是引用透明的(referntial transparency)，即一个表达式随时可以用它的值来替换，因为一个表达式同样的输入一定是相同的输出
 
 ## 逻辑范式-当算法失去了控制
-P101
+算法=逻辑+控制，其中逻辑是算法的核心，控制主要用于改进算法的效率
+
+快速排序Prolog版本
+
+<!--language: prolog-->
+
+    /* 定义划分法 */
+    partition(_,[],[],[]).    /* 划分递归终点 */
+    /* 比基准小的归入Small */
+    partition(Pivot, [X|Rest], [X|Samll], Big) :-
+       X < Pivot, partition(Pivot,Rest,Samll,Big).
+    /* 比基准大的归入Big */
+    partition(Pivot, [X|Rest], Samll, [X|Big]) :-
+       X >= Pivot, partition(Pivot,Rest,Samll,Big).
+
+    /* 定义排序法 */
+    qsort([],[]).             /* 排序递归终点 */
+    qsort([Pivot|Rest],Sorted) :-
+    partition(Pivot,Rest,Samll,Big),  /* 按基准划分子列 */
+          qsort(Samll,SortedSamll),   /* 对前面的子列递归 */
+          qsort(Big,SortedBig),       /* 对后面的子列递归 */
+          /* 子列合并 */
+          append(SortedSamll,[Pivot|SortedBig],Sorted).
+
+- Prolog代码由一系列 __事实__(fact)、__规则__(rule)和 __查询__(query)语句组成的，事实与规则是公理，查询就是待证的定理
+- 大写字母或下划线开头的标识符是变量，其他的是常量或函数；`:-`等价于if，逗号`,`等价于and
+- `bachelor(X) :- unmarried(X), male(X).`如果一个人未婚且为男士，就是光棍
+- 过程式代码在描述规则时，会有许多嵌套与顺序要求，如果增加规则时，许多代码得改写，而Prolog只需 __引入新的规则和事实即可，不会影响原来的代码__。
+- 逻辑式 __没有明显的输入、输出之分__，能倒过来去查询
+- 逻辑式编程模拟人类的逻辑思维，在机器证明、专家系统、自然语言处理、博弈等人工智能领域，以及知识管理、智能决策分析方面大显身手，适合 __基于规则__(rule-based)，而不是基于状态(state-based)的应用
+> Prolog cafe和P#分别将Prolog转化为java和C#代码
 
 ## 汇总范式
+### 设计模式vs编程范式
+- 设计模式一般针对某一特定场景的问题，而编程范式针对的是广泛得多的问题领域，通常有一整套的思想和理论体系，具有全局性、系统性和渗透性
+- 同样的思想用在 __整体结构设计__ 上，则称为架构模式；用在 __局部模块的细节实现__ 上，则称设计模式；用在 __引导编程实践__ 上，则称为编程范式。
+- 设计模式是遵循设计原则的一些具体技巧，以保证代码的可维护性、扩展性和可重用性为目的，它重在设计，对语言一般没有要求。但编程范式则不同，对语言往往有专门的要求，通常会所某某范式的语言，事实上，语言本来就是围绕其所倡导的核心范式来设计的。
+
+### 常见的编程范式
+
+![prog_paradigm_lang1](../../../imgs/prog_paradigm_lang1.png)
+
+![prog_paradigm_lang2](../../../imgs/prog_paradigm_lang2.png)
+
+![prog_paradigm_lang3](../../../imgs/prog_paradigm_lang3.png)
+
+![prog_paradigm_lang4](../../../imgs/prog_paradigm_lang4.png)
+
+- 一种编程范式之所以能独树一帜，__关键__ 在于它 __突破__ 了原有的编程方式的某些限制，带来革命性的新思维和新方法，进一步解放了程序员的劳动力，这便是范式的核心价值所在
+
 ## 情景范式
+可以这么理解 __闭包__：所谓包，指函数与其周围的环境变量捆绑打包；所谓闭，指这些变量是封闭的，只能为该函数所专用
+
+
+
 
 
 抽象封装

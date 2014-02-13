@@ -417,7 +417,7 @@ Lecture 4
 - 仿造int的版本写法，但是有错误：
     1. 不能声明void型的temp变量
         - void用在函数返回值，声明没有什么可返回:`void fun(){}`
-        - void可作为函数指针，传递给函数的参数:`void fun(int(*p)(int)){};fun(void);`
+        - void可作为函数指针:`void* addr = &i;`
         - void作为方法的唯一参数说明:`int main(void){}`
     1. 不能对vp1进行解引用，因为没类型信息，机器不知道要提取多少个字节
 
@@ -580,13 +580,120 @@ Lecture 5
             printf("index: %d, found: %d", found-array, *found);
     }
 
-- 在正常数组的寻址时，使用`&arr[i]`，它等效于`arr+i`，所以`void* elemeAddr = base + i;`尝试基于base向前跳i个元素，但编译器在没有base类型信息时，是不能进行指针算术运算的，所以正确的方式是纯手工计算，诱使编译器认为base是char*类型的，它的sizeof(char)为1，那么指针算术与平常算术效果就一致了
+- 在正常数组的寻址时，使用`&arr[i]`，它等效于`arr + i`，所以`void* elemeAddr = base + i;`尝试基于base向前跳i个元素，但编译器在没有base类型信息时，是不能进行指针算术运算的，所以正确的方式是纯手工计算，诱使编译器认为base是char*类型的，它的sizeof(char)为1，那么指针算术与平常算术效果就一致了，elemSize刚好模拟了每跳一步的步长
 - `memcmp`是比较两个内存地址中bytes是否完全相等，对于int,long,short,char,double,float等适用，但对于自定义的结构体、字符串、指针就不能很好工作了
 - `found-array`也是指针运算，会根据自动计算 地址差除以类型大小
 
-## 带函数指针的泛型lsearch
+## 泛型lsearch(带函数指针)
 
+<!--language: !c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+
+    void* lsearch(void *key, void *base, int n,
+                  int elemSize, int(*cmpfn)(void*,void*)){
+        int i;
+        for(i=0; i<n; i++){
+            void* elemAddr = (char*)base + i * elemSize;
+            if(cmpfn(key, elemAddr) == 0)
+                return elemAddr;
+        }
+        return NULL;
+    }
+
+    int IntCmp(void *elem1, void *elem2){
+        int* ip1 = elem1;
+        int* ip2 = elem2;
+        return *ip1 - *ip2;
+    }
+
+    int main(){
+        int array[] = {4,2,3,7,11,6};
+        int size = 6;
+        int number = 7;
+
+        int *found = lsearch(&number, array, size,
+                             sizeof(int), IntCmp);
+        if(found != NULL)
+            printf("index: %d, found: %d", found-array, *found);
+    }
+
+- `int(*cmpfn)(void*,void*)`中的cmpfn前面可以不加`*`，但加上可读性更好，表示函数指针
+- `int IntCmp(void *elem1, void *elem2)`中，elem1指向&key的地址，elem2则是每次迭代数组元素的址，相当于&array[i]
+- `int* ip1 = elem1;`将`void*`强制转换成`int*`类型，即它本来的类型，但在`elem1`前面并不需要显式写成`(int*)elem1`，这个转换是隐式的
+- `cmpfn`应为函数，或类的静态方法，不能是实例方法，实例方法中，其实是将方法与对象相关的地址作为第一个隐含参数(即`this`指针)传递给方法
+
+## 泛型lsearch(字符串调用)
+
+<!--language: !c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+
+    void* lsearch(void *key, void *base, int n,
+                  int elemSize, int(*cmpfn)(void*,void*)){
+        int i;
+        for(i=0; i<n; i++){
+            void* elemAddr = (char*)base + i * elemSize;
+            if(cmpfn(key, elemAddr) == 0)
+                return elemAddr;
+        }
+        return NULL;
+    }
+
+    int StrCmp(void *elem1, void *elem2){
+        char* str1 = *(char**)elem1;
+        char* str2 = *(char**)elem2;
+        return strcmp(str1, str2);
+    }
+
+    int main(){
+        char *notes[]={"Ab","F#","B","Eb","Gb","D"};
+        char *favoriteNote = "Eb";
+        int size = 6;
+
+        char **found = lsearch(&favoriteNote, notes, 6,
+                               sizeof(char*), StrCmp);
+        if(found != NULL)
+            printf("index: %d, found: %s", found-notes, *found);
+    }
+
+内存结构如下：
+
+<!--language: plain-->
+
+                Ab\0            B\0             Gb\0
+                ^               ^               ^
+                │               │               │
+            ┌─┬─┼─┬─┬─┬─┬─┬─┬─┬─┼─┬─┬─┬─┬─┬─┬─┬─┼─┬─┬─┬─┬─┬─┐
+            │   *   │   *   │   *   │   *   │   *   │   *   │
+    notes ->└─┴─┴─┴─┴─┴─┼─┴─┴─┴─┴─┴─┴─┴─┼─┴─┴─┴─┴─┴─┴─┴─┼─┴─┘
+                        │               │               │
+                        v               v               v
+                        F#\0            Eb\0            D\0
+
+                     ┌─┬─┬─┬─┐
+                     │   *───┼──> Eb\0
+    &favoriteNote -> └─┴─┴─┴─┘
+    char**            char*       char
+
+- `*notes[]={"Ab","F#","B","Eb","Gb","D"};`字符串作为常量进行存储
+- 基于`notes`数组元素的地址(类型为`char**` 即存储char*地址)比较字符串，离真正的字符串，还有2步之遥，第1步，解引用得到`char*`，第2步，再解引用得到字符串数据
+- 为什么不直接将数组元素中`char*`传递给`StrCmp`作比较，因为`lsearch`中无法得知数组元素类型，它只能得到数组元素的地址，只不过此时它为`char**`
+- `char **found`指出返回的数组元素的地址的类型
+- `lsearch`中`elemSize`参数为`sizeof(char*)`代表数组元素空间大小
+- `lsearch`中`key`参数为`&favoriteNote`是为了保持与数组元素的地址的类型(`char**`)相一致，方便在`StrCmp`中对`void *`的参数理解一致，当然可以只传入`favoriteNote`，那样在`StrCmp`中对`elem1`则理解为`char*`，代码对称性差
+- `char* str1 = *(char**)elem1;`，`elem1`本身为`char**`，为了比较`strcmp`需要`char*`，所以`elem1`需要解引用一次
 
 Lecture 6
 ==========
+
+
+
+
+
+
+
 
