@@ -637,8 +637,87 @@ C# lambda版本
 
 - 一种编程范式之所以能独树一帜，__关键__ 在于它 __突破__ 了原有的编程方式的某些限制，带来革命性的新思维和新方法，进一步解放了程序员的劳动力，这便是范式的核心价值所在
 
-## 情景范式
-可以这么理解 __闭包__：所谓包，指函数与其周围的环境变量捆绑打包；所谓闭，指这些变量是封闭的，只能为该函数所专用
+## 情景编程
+
+- 可以这么理解 __闭包__：所谓包，指函数与其周围的环境变量捆绑打包；所谓闭，指这些变量是封闭的，只能为该函数所专用
+
+### 规则引擎
+- 搜集餐馆的菜式、顾客口味、忌讳，以及各种菜与口味、忌讳之间的关系等一系列事实和规则，用 __规则语言__(Rule Language)来描述，通过 __规则引擎__(Rule Engine)来导出符合顾客需求的菜肴。
+- 将业务规则与应用程序分离、将知识表示与逻辑实现分离，是SoC原理的一种应用，同时也是一种逻辑式编程
+- 与Java兼容的Jess、Drools、JLisa、JRules等，Sun还发布了Javax.rules API以统一对各类引擎的访问接口。.Net平台上也有业务规则引擎，Microsoft BUsiness Rule Engine、WF Rules均提供了业务规则引擎。
+- 上述规则引擎除WF Rules多是基于Rete算法(一种 __模式匹配__ 算法，用于实现规则生成系统 production rule system)，主要采用 __数据驱动__(data-driven)的正向推理(forward chaining)法，而Prolog引擎采用 __目标驱动__(goal-driven)的逆向推理(backward chaining)法。前者自底向上，利用推理规则从已有的事实数据推出更多的数据，直到达成目标；后者正好相反，自顶向下，从目标出发寻找满足结论的事实。
+
+语言小谈
+=========
+
+## 数据类型-规则与变通
+
+### 动态语言vs动态类型语言
+- 动态语言不一定是动态类型语言，如Scala是动态语言，却是静态类型的；动态类型语言也不一定是动态语言，如VB支持动态类型，却是静态语言。
+
+### 数据类型两个要素
+- __允许取值的集合__
+- __允许参与的运算__
+- 意义在于，限定一个变量的数据类型，就意味着限制了该变量的取值范围和所参与的运算，从一定程度上保证了代码的 __安全性__；用户自定义的数据类型，如结构、类、接口，赋予数据以逻辑内涵，提高了代码的 __抽象性__。
+- 数据类型即有针对机器的 __物理意义__，又有针对人的 __逻辑意义__，前者用于底层的内存分配和数值运算等，后者用于表达高层的逻辑概念。
+
+### 动态类型语言vs静态类型语言
+- 动态类型语言(dynamic typing language)指类型检查发生在 __运行期间__(run-time)的语言
+- 静态类型语言(static typing language)指类型检查发生在 __运行之前__ 的语言，不仅仅指 __编译期间__ 检查，否则容易误解为静态类型语言一定是编译型语言(一般情况下是)
+- 静态类型语言一般 __需要__ 变量声明，而动态类型语言则 __不需要__，但一些静态类型语言有时也不需要，如ML、Haskell之类的函数式语言(以及C#3.0以后)，编译器可以通过上下文来进行 __类型推断__(type inference)
+
+### 鸭子类型
+- 动态类型语言天然具有 __泛型__(generic)特征，具有一种被称为 __鸭子类型__(duck typing)的形式
+
+<!--language: !ruby-->
+
+    class Duck
+        def shout;puts 'ga-ga-ga';end
+        def swim;puts 'ya-swim';end
+    end
+
+    class Frog
+        def shout;puts 'gua-gua-gua';end
+        def swim;puts 'wa-swim';end
+    end
+
+    def shout_and_swim(duck)
+        duck.shout
+        duck.swim
+    end
+
+    shout_and_swim(Duck.new)
+    shout_and_swim(Frog.new)
+
+- 在Smalltalk,Python,Ruby等动态类型的OOP语言中，只要一个类型具有`shout`和`swim`的方法，就可为`shout_and_swim`所接受，这在C++,Java,C#等静态类型语言中是不可能的，除非`Duck`和`Frog`在同一继承树上，或均显式实现了一个包含`shout`和`swim`的公用接口
+
+- C++还可以用模板实现类似功能，并不须引入继承关系，但下面的代码却无能为力
+
+<!--language: !ruby-->
+
+    class Cock
+        def shout;puts 'wo-wo-wo';end
+    end
+
+    class Fish
+        def swim;puts 'fish-swim';end
+    end
+
+    def shout_or_swim(duck, flag)
+        flag ? duck.shout : duck.swim
+    end
+
+    shout_or_swim(Cock.new, true)
+    shout_or_swim(Fish.new, false)
+
+- 鸡没有`swim`方法，鱼没有`shout`方法，若采用C++模板，`shout_or_swim`是无法通过编译的，但支持Duck类型的语言中，只要在 __运行期间不让__ 鸡`swim`就平安无事
+- Duck类型的哲学是：名义不重要，重要的是能力。这种 __非继承性多态__ 为软件 __重用__ 开启了新窗口
+    - 类型的接口组织是隐性的，使用者必须要比普通interface更小心，以避免误用
+    - 维护者也须更小心，以避免破坏客户代码
+
+P 135
+静态类型检查类似“疑罪从有”的推定，动态类型检查类似“疑罪从无”的推定
+
 
 
 
