@@ -690,9 +690,69 @@ Lecture 5
 Lecture 6
 ==========
 
+## stack的int版本
+
+<!--language: !c-->
+
+    /* stack.h */
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+    #include <assert.h>
+
+    typdef struct{
+        int *elems;
+        int logicalLen;
+        int allocLen;
+    }stack;
+
+    void StackNew(stack *s);
+    void StackDispose(stack *s);
+    void StackPush(stack *s, int value);
+    int StackPop(stack *s);
+
+    /* stack.c */
+    void StackNew(stack *s){
+        s->logicLen = 0;
+        s->allocLen = 4;
+        s->elem = malloc(4 * sizeof(int));
+        assert(s->elems != NULL);
+    }
+
+    void StackDispose(stack *s){
+        free(s->elems);
+    }
+
+    void StackPush(stack *s, int value){
+        if(s->logicalLen == s->allocLen){
+            s->alloLen *= 2;
+            s->elems = realloc(s->elems,s->alloLen*sizeof(int))
+            assert(s->elems != NULL);
+        }
+        s->elems[s->logicalLen] = value;
+        s->logicalLen++;
+    }
 
 
+stack的内存结构
 
+<!--language: plain-->
+
+             ┌─┬─┬─┬─┐
+    allocLen │   4   │
+             ├─┼─┼─┼─┤     heap
+    logicLen │   2   │     ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+             ├─┼─┼─┼─┤     │   0   │   1   │ empty │ empty │
+    *elems   │   *───┼───> └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+         s-->└─┴─┴─┴─┘
+
+
+- 为了stack的泛型版本清理思路
+- 不应该直接操作`stack`这个结构体中的成员，而应该通过函数来操作
+- `malloc(4 * sizeof(int));`需要手工指定分配空间大小(堆中)，不像C++中的`new`，`new double[20]`那会隐式的考虑数据类型
+- `assert(s->elems != NULL);`，`assert`是宏，如果条件为真，什么都不做，但为假时(申请内存失败)，会终止程序，并告诉终止的地方，能有效防止错误漫延，快速定位错误。在编译时很容易去掉该宏。
+- `free(s->elems);`是释放在堆中分配的内存，不需要`free(s);`，我们假设它是已分配好的(本例中它是局部变量，已在栈中，完全不是动态申请的)，而且将它的地址传给`StackNew`的，也不需要做`s->allocLen=0;`的工作，因为调用`StackDispose`时，代表该`s`已被销毁，即使下次想再启动，也得先`StackNew`
+- `StackPush`需要做好存储分配工作，C++的做法是：当`logicalLen == allocLen`需要重新分配2倍于`allocLen`的内存空间(加倍策略)，将老内存地址内的内容复制过来，将`elems`指向新分配的地址，再将老内存地址给`free`掉；但C还有更底层的内存分配方式：`realloc`，它会检查先前分配的内存是否可以调整大小，即这块内存的后面没有被占用话，可以扩展它(查找堆中合适内存是比较耗时的)，就没必要找一块符合条件的内存，而是返回扩大了内存空间的同一地址，如果被占用的话，会自动查找符合条件的内存，并复制内容，返回新地址。如果`realloc`第一个参数传入`NULL`它就等同于`malloc`
 
 
 
