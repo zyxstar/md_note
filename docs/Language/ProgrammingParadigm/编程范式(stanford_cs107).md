@@ -700,9 +700,9 @@ Lecture 6
     #include <string.h>
     #include <assert.h>
 
-    typdef struct{
+    typedef struct{
         int *elems;
-        int logicalLen;
+        int logicLen;
         int allocLen;
     }stack;
 
@@ -715,7 +715,7 @@ Lecture 6
     void StackNew(stack *s){
         s->logicLen = 0;
         s->allocLen = 4;
-        s->elem = malloc(4 * sizeof(int));
+        s->elems = malloc(4 * sizeof(int));
         assert(s->elems != NULL);
     }
 
@@ -724,13 +724,33 @@ Lecture 6
     }
 
     void StackPush(stack *s, int value){
-        if(s->logicalLen == s->allocLen){
-            s->alloLen *= 2;
-            s->elems = realloc(s->elems,s->alloLen*sizeof(int))
+        if(s->logicLen == s->allocLen){
+            s->allocLen *= 2;
+            s->elems = realloc(s->elems,s->allocLen*sizeof(int));
             assert(s->elems != NULL);
         }
-        s->elems[s->logicalLen] = value;
-        s->logicalLen++;
+        s->elems[s->logicLen] = value;
+        s->logicLen++;
+    }
+
+    int StackPop(stack *s){
+        assert(s->logicLen > 0);
+        s->logicLen--;
+        return s->elems[s->logicLen];
+    }
+
+    /* app */
+    int main(){
+        int i;
+        stack s;
+        StackNew(&s);
+        for(i=0; i<5; i++){
+            StackPush(&s,i);
+        }
+        for(i--; i>=0; i--){
+            printf("%d\n", StackPop(&s));
+        }
+        StackDispose(&s);
     }
 
 
@@ -744,7 +764,7 @@ stack的内存结构
     logicLen │   2   │     ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
              ├─┼─┼─┼─┤     │   0   │   1   │ empty │ empty │
     *elems   │   *───┼───> └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
-         s-->└─┴─┴─┴─┘
+        &s-->└─┴─┴─┴─┘
 
 
 - 为了stack的泛型版本清理思路
@@ -752,8 +772,303 @@ stack的内存结构
 - `malloc(4 * sizeof(int));`需要手工指定分配空间大小(堆中)，不像C++中的`new`，`new double[20]`那会隐式的考虑数据类型
 - `assert(s->elems != NULL);`，`assert`是宏，如果条件为真，什么都不做，但为假时(申请内存失败)，会终止程序，并告诉终止的地方，能有效防止错误漫延，快速定位错误。在编译时很容易去掉该宏。
 - `free(s->elems);`是释放在堆中分配的内存，不需要`free(s);`，我们假设它是已分配好的(本例中它是局部变量，已在栈中，完全不是动态申请的)，而且将它的地址传给`StackNew`的，也不需要做`s->allocLen=0;`的工作，因为调用`StackDispose`时，代表该`s`已被销毁，即使下次想再启动，也得先`StackNew`
-- `StackPush`需要做好存储分配工作，C++的做法是：当`logicalLen == allocLen`需要重新分配2倍于`allocLen`的内存空间(加倍策略)，将老内存地址内的内容复制过来，将`elems`指向新分配的地址，再将老内存地址给`free`掉；但C还有更底层的内存分配方式：`realloc`，它会检查先前分配的内存是否可以调整大小，即这块内存的后面没有被占用话，可以扩展它(查找堆中合适内存是比较耗时的)，就没必要找一块符合条件的内存，而是返回扩大了内存空间的同一地址，如果被占用的话，会自动查找符合条件的内存，并复制内容，返回新地址。如果`realloc`第一个参数传入`NULL`它就等同于`malloc`
+- `StackPush`需要做好存储分配工作，C++的做法是：当`logicLen == allocLen`需要重新分配2倍于`allocLen`的内存空间(加倍策略)，将老内存地址内的内容复制过来，将`elems`指向新分配的地址，再将老内存地址给`free`掉；但C还有更底层的内存分配方式：`realloc`，它会检查先前分配的内存是否可以调整大小，即这块内存的后面没有被占用话，可以扩展它(查找堆中合适内存是比较耗时的)，就没必要找一块符合条件的内存，而是返回扩大了内存空间的同一地址，如果被占用的话，会自动查找符合条件的内存，并复制内容，返回新地址。如果`realloc`第一个参数传入`NULL`它就等同于`malloc`
 
 
+## stack的泛型版本
 
+<!--language: !c-->
+
+    /* stack.h */
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+    #include <assert.h>
+
+    typedef struct{
+        void *elems;
+        int elemSize;
+        int logicLen;
+        int allocLen;
+    }stack;
+
+    void StackNew(stack *s, int elemSize);
+    void StackDispose(stack *s);
+    void StackPush(stack *s, void *elemAddr);
+    void StackPop(stack *s, void *elemAddr);
+
+    /* stack.c */
+    void StackNew(stack *s, int elemSize){
+        assert(elemSize > 0);
+        s->elemSize = elemSize;
+        s->logicLen = 0;
+        s->allocLen = 4;
+        s->elems = malloc(4 * elemSize);
+        assert(s->elems != NULL);
+    }
+
+    void StackDispose(stack *s){
+        free(s->elems);
+    }
+
+    static void StackGrow(stack *s){
+        s->allocLen *= 2;
+        s->elems = realloc(s->elems,s->allocLen*s->elemSize);
+        assert(s->elems != NULL);
+    }
+
+    void StackPush(stack *s, void *elemAddr){
+        if(s->logicLen == s->allocLen){
+            StackGrow(s);
+        }
+        void *target = (char*)s->elems+s->logicLen*s->elemSize;
+        memcpy(target, elemAddr, s->elemSize);
+        s->logicLen++;
+    }
+
+    void StackPop(stack *s, void *elemAddr){
+        assert(s->logicLen > 0);
+        s->logicLen--;
+        void *source = (char*)s->elems+s->logicLen*s->elemSize;
+        memcpy(elemAddr, source, s->elemSize);
+    }
+
+    /* app */
+    int main(){
+        int i;
+        stack s;
+        StackNew(&s, sizeof(int));
+        for(i=0; i<5; i++){
+            StackPush(&s,&i);
+        }
+        for(i--; i>=0; i--){
+            StackPop(&s,&i);
+            printf("%d\n", i);
+        }
+        StackDispose(&s);
+    }
+
+- `void StackPop(stack *s, void *elemAddr);`出栈的数据不是通过返回值得到的，而是先提供一个地址，像直升机放下软梯，在该地址放入出栈的数据
+- 如果声明成`void* StackPop(stack *s)`，意味着将返回在堆中创建的内存地址，除了我们明确动态申请（如malloc,realloc,strdup）分配堆内存，否则不要在一般函数中返回在堆中创建的内存地址，因为：
+    - 这意味着调用者需要对它进行释放，这种责任不对称，更好的方式是 __谁申请的，谁就负责这些空间的释放__
+    - 如果`s`被`StackDispose`掉，则调用者得到的地址空间是无效的
+- `void *target = (char*)s->elems+s->logicLen*s->elemSize;`因为没有类型信息，无法有数组下标来定位地址，必须手工计算
+- `static`修改C或C++的函数时，说明这是一个私有函数，不能在函数所在文件之外对其引用，在技术上叫内链接，生成的.o文件中会被标示为局部的。
+- `static void StackGrow(stack *s)`的抽出，为了使`StackPush`更集中相同抽象级别的逻辑
+
+
+Lecture 7
+==========
+
+## stack的泛型版本改进
+
+<!--language: !c-->
+
+    /* stack.h */
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+    #include <assert.h>
+
+    typedef struct{
+        void *elems;
+        int elemSize;
+        int logicLen;
+        int allocLen;
+        void (*freefn)(void*);
+    }stack;
+
+    void StackNew(stack *s, int elemSize, void(*freefn)(void*));
+    void StackDispose(stack *s);
+    void StackPush(stack *s, void *elemAddr);
+    void StackPop(stack *s, void *elemAddr);
+
+    /* stack.c */
+    void StackNew(stack *s, int elemSize, void(*freefn)(void*)){
+        assert(elemSize > 0);
+        s->elemSize = elemSize;
+        s->logicLen = 0;
+        s->allocLen = 4;
+        s->elems = malloc(4 * elemSize);
+        s->freefn = freefn;
+        assert(s->elems != NULL);
+    }
+
+    void StackDispose(stack *s){
+        int i;
+        if(s->freefn != NULL) {
+            for(i = 0; i < s->logicLen; i++) {
+                s->freefn((char*)s->elems + i * s->elemSize);
+            }
+        }
+        free(s->elems);
+    }
+
+    static void StackGrow(stack *s){
+        s->allocLen *= 2;
+        s->elems = realloc(s->elems,s->allocLen*s->elemSize);
+        assert(s->elems != NULL);
+    }
+
+    void StackPush(stack *s, void *elemAddr){
+        if(s->logicLen == s->allocLen){
+            StackGrow(s);
+        }
+        void *target = (char*)s->elems+s->logicLen*s->elemSize;
+        memcpy(target, elemAddr, s->elemSize);
+        s->logicLen++;
+    }
+
+    void StackPop(stack *s, void *elemAddr){
+        assert(s->logicLen > 0);
+        s->logicLen--;
+        void *source = (char*)s->elems+s->logicLen*s->elemSize;
+        memcpy(elemAddr, source, s->elemSize);
+    }
+
+    /* app */
+    void stringFree(void* elemAddr) {
+        char** p = (char**)elemAddr;
+        free(*p);
+    }
+
+    int main(){
+        const char *friends[] = {"Al", "Bob", "Carl"};
+        stack stringStack;
+        int i;
+        StackNew(&stringStack, sizeof(char*), stringFree);
+        for(i = 0; i < 3; i++) {
+            char *copy = strdup(friends[i]);
+            StackPush(&stringStack, &copy);
+        }
+        char* name;
+        while(stringStack.logicLen > 1) {
+            StackPop(&stringStack, &name);
+            printf("%s\n", name);
+            free(name);
+        }
+        StackDispose(&stringStack);
+    }
+
+
+字符串stack内存结构
+
+<!--language: plain-->
+
+    stack memory                         heap memory
+    ───────────────────────────────────┼──────────────────
+
+             ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+             │A│l│\│B│o│B│\│C│a│r│l│\│
+    friends->└─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+
+                             ┌─┬─┬─┬─┐
+    allocLen                 │   4   │
+                             ├─┼─┼─┼─┤
+    logicLen                 │   1   │
+                             ├─┼─┼─┼─┤
+    elemSize                 │   4   │     ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+                             ├─┼─┼─┼─┤     │*addr1 │ empty │ empty │ empty │
+    *elems                   │   *───┼────>└─┼─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+    &stringStack   --------->└─┴─┴─┴─┘       │
+                                             │StackPush(&stringStack, &copy);
+                             ┌─┬─┬─┬─┐       │ ┌─┬─┬─┐
+                             │*addr1─┼─┐     │ │A│l│\│
+    &copy          --------->└─┴─┴─┴─┘ └─────┴>└─┴─┴─┘
+    char *copy = strdup(friends[i]);
+
+
+- 字符串处理，在内存堆中实际存储的是`char*`
+- `char *copy = strdup(friends[i]);`字符串 __深拷贝__[在堆中],如果不拷贝，让stack直接引用现存字符串[在栈中]，生命周期不一样，指针容易出现悬挂
+- `StackPush(&stringStack, &copy);`在循环中每次生成一个`copy`，它存储指向堆中字符串的基地址，`StackPush`是需要将该`copy`的内容(char*)[图中`*addr1`]复制，需要传入`copy`的地址
+- 如果有些数据并未`StackPop`，就没有机会将它`free`，当`StackDispose`后，将出现未释放的空间。所以需要升级`StackNew`与`StackDispose`，让它有机会处理未释放的内存空间
+    - 只检查还未`StackPop`的元素，即`logicLen`个，已被`StackPop`的释放由调用方去负责，因为`strdup`是调用方使用的，所以`free`它，职责还是对称的。如果在调用`StackPop`时，就`free`掉出栈的数据，也是不对的，控制权应该返给用户了
+    - 同样，`freefn`的调用，需要手要去计算每个元素的地址
+    - 当然，对于int,double这些类型，甚至是没有涉及动态分配的struct，并不需要`free`
+- `stringFree`中的`elemAddr`是`char**`类型，即元素的地址（如addr1的地址），而现在需要释放的是`strdup`分配的内存空间（如"Al\0"），前者指向后者，所以需要解引用，即为`free(*(char**)elemAddr)`
+    - 此条结合上条，发现所有用户`strdup`的，最后还是用户`free`的，即职责对称，`stringStack`只不过是个中间介质，并未将内存分配的职责转移
+
+## memcpy原理
+- `memcpy`将使用暴力复制，每次拷贝4个字节，它 __不会检查目标与源地址重叠__ 问题，当源地址在目标地址之前，容易出问题，目标地址在源地址之前，则能正常工作，但`memmove`就没有问题，但性能稍降低。当确信没有重叠时，优先使用`memcpy`
+
+<!--language :!c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+
+    int main(){
+        char *letter = strdup("ABCDEF");
+        memcpy(&letter[2], letter, 7);
+        printf("%s\n", &letter[2]); /* ABABAF */
+
+        char *letter2 = strdup("ABCDEF");
+        memcpy(&letter2[-2], letter2, 7);
+        printf("%s\n", &letter2[-2]); /* ABCDEF */
+
+        char *letter3 = strdup("ABCDEF");
+        memmove(&letter3[2], letter3, 7);
+        printf("%s\n", &letter3[2]); /* ABCDEF */
+    }
+
+## rotate方法
+- 实现类似STL中的rotate方法，front,middle,end（它是数组外的第一个元素地址）分别指向一个数组的不同边界，需要将front到middle之前的数据移到end的后面
+
+<!--language :!c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+
+    void rotate(void *front, void *middle, void *end){
+        int frontSize=(char *)middle - (char *)front;
+        int backSize=(char *)end - (char *)middle;
+
+        char buffer[frontSize];
+        memcpy(buffer,front,frontSize);
+        memmove(front,middle,backSize);
+        memcpy((char*)end-frontSize,buffer,frontSize);
+    }
+
+    int main(){
+        char *letter = strdup("ABCDEF");
+        rotate(letter,&letter[3],&letter[6]);
+        printf("%s\n", letter); /* DEFABC */
+    }
+
+内存情况：
+
+<!--language: plain-->
+
+             ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+             │ │ │ │ │ │ │ │ │ │ │ │ │
+    front->  └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘ <─end
+                     ^
+                     └ middle
+
+- `int fontSize=(char *)middle - (char *)front;`编译器是不允许void*进行指针算术运算的，两个地址相减，并不会返回它们之间的字节数，而是返回包含具体类型的个数，这样就和指针运算的加法相对应了
+    - 如两个int*类型相减，得到是它们地址之间int元素的个数
+
+## qsort泛型版本
+
+<!--language :!c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+    #include <string.h>
+
+    void qsort(void *base, int size, int elemSize, int(*cmpfn)(void*,void*)){
+
+    }
+
+    int main(){
+
+    }
+
+
+- 栈(stack segment)的管理一般由硬件来完成，而堆(heap segment)的管理由程序来控制
+
+
+Lecture 8
+==========
 
