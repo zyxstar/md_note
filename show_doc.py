@@ -42,7 +42,10 @@ def run_md2pg_srv(port):
     subprocess.Popen("python home.py "+ str(port))
 
 def show_doc(port,url):
-    subprocess.Popen("C:\Program Files (x86)\Google\Chrome\Application\chrome.exe http:127.0.0.1:%s/gen_md?%s#footer" % (port,url))
+    #add to path
+    #C:\Users\Administrator\AppData\Local\Google\Chrome\Application\
+    #C:\Program Files (x86)\Google\Chrome\Application\
+    subprocess.Popen("chrome.exe http:127.0.0.1:%s/gen_md?%s#footer" % (port,url))
 
 
 if __name__ == '__main__':
