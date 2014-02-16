@@ -575,7 +575,8 @@ Lecture 5
         int array[] = {4,2,3,7,11,6};
         int number = 7;
 
-        int *found = lsearch(&number, array, 6, sizeof(int));
+        int *found = lsearch(&number, array,
+            sizeof(array)/sizeof(int), sizeof(int));
         if(found != NULL)
             printf("index: %d, found: %d", found-array, *found);
     }
@@ -610,11 +611,10 @@ Lecture 5
 
     int main(){
         int array[] = {4,2,3,7,11,6};
-        int size = 6;
         int number = 7;
 
-        int *found = lsearch(&number, array, size,
-                             sizeof(int), IntCmp);
+        int *found = lsearch(&number, array,
+            sizeof(array)/sizeof(int), sizeof(int), IntCmp);
         if(found != NULL)
             printf("index: %d, found: %d", found-array, *found);
     }
@@ -652,10 +652,9 @@ Lecture 5
     int main(){
         char *notes[]={"Ab","F#","B","Eb","Gb","D"};
         char *favoriteNote = "Eb";
-        int size = 6;
 
-        char **found = lsearch(&favoriteNote, notes, 6,
-                               sizeof(char*), StrCmp);
+        char **found = lsearch(&favoriteNote, notes,
+            sizeof(notes)/sizeof(char*),sizeof(char*), StrCmp);
         if(found != NULL)
             printf("index: %d, found: %s", found-notes, *found);
     }
@@ -999,15 +998,15 @@ Lecture 7
 
     int main(){
         char *letter = strdup("ABCDEF");
-        memcpy(&letter[2], letter, 7);
+        memcpy(&letter[2], letter, strlen(letter)+1);
         printf("%s\n", &letter[2]); /* ABABAF */
 
         char *letter2 = strdup("ABCDEF");
-        memcpy(&letter2[-2], letter2, 7);
+        memcpy(&letter2[-2], letter2, strlen(letter2)+1);
         printf("%s\n", &letter2[-2]); /* ABCDEF */
 
         char *letter3 = strdup("ABCDEF");
-        memmove(&letter3[2], letter3, 7);
+        memmove(&letter3[2], letter3, strlen(letter3)+1);
         printf("%s\n", &letter3[2]); /* ABCDEF */
     }
 
