@@ -686,6 +686,9 @@ Lecture 5
 - `lsearch`中`key`参数为`&favoriteNote`是为了保持与数组元素的地址的类型(`char**`)相一致，方便在`StrCmp`中对`void *`的参数理解一致，当然可以只传入`favoriteNote`，那样在`StrCmp`中对`elem1`则理解为`char*`，代码对称性差
 - `char* str1 = *(char**)elem1;`，`elem1`本身为`char**`，为了比较`strcmp`需要`char*`，所以`elem1`需要解引用一次
 
+## 泛型bsearch
+
+
 Lecture 6
 ==========
 
@@ -1071,3 +1074,51 @@ Lecture 7
 Lecture 8
 ==========
 
+## 堆内存分配
+- `int *arr = malloc(40*sizeof(int));`其实会得到多于160bytes的空间，得到164 or 168bytes，因为会包含头部的4 or 8bytes（这和规范有关），用来记录该块内存的大小（164 or 168bytes），你得到返回地址，是在该头指针的4 or 8bytes之后，160bytes之前的那个地址。
+- 当将该地址传给`free`时，内存管理器假设这个指针之前曾经处理过，将解析arr之前的4 or 8bytes，得到记录了这块内存的大小，将以某种方式将该内存放回堆中
+
+<!--language: plain-->
+
+             0 4                     164
+             ┌─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┬─┐
+             │ │                     │
+    head->   └─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┴─┘
+               ^
+               └ arr
+
+如下代码将不能正常工作
+
+<!--language :c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+
+    int main(){
+        int *arr = malloc(100*sizeof(int));
+        free(arr+60);
+    }
+
+- 申请了100个int元素，发现多申请了，需要放回部分到堆中，但这种方式不会起效，`free(arr+60)`，这取决于实现，如果不进行错误检查，将会在`arr+60-(4 or 8)`的地方去获取内存分配的信息，恰好能正确解析这些数据时，将会`free`掉意外的内存空间，同样如果修改了`arr[-1]`的值，也是有问题的，导致`free`不能正常工作，造成特殊的内存泄漏
+
+<!--language :c-->
+
+    #include <malloc.h>
+    #include <stdio.h>
+
+    int main(){
+        int arr[100];
+        free(arr);
+    }
+
+- 对栈中的空间进行`free`，`free`不会做错误检查，只是机械的将arr之前4 or 8bytes解释成内存块的大小，并将其记录了空闲表数据结构中，让内存管理器误认为该空间是可用的，下次malloc将有可能被分配出去
+
+
+- 一些启发法，如果你需要160bytes，将可能给你192 or 256bytes（符合2的N次幂）
+- `free`时，并不会真正将内存中数据清空，只是将其并入空闲表数据结构
+
+## 栈段
+
+
+Lecture 9
+==========
