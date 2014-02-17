@@ -330,14 +330,26 @@ python代码总可以依赖`\n`作为文本行结束标记
 
 `scanner`没有对类型进行假设，所以`StringIO`,`cStringIO`,甚至是 __实现了`__iter__`的对象__ 均可使用
 
-## Title
-- __任务__：
+## 读取文件
+- __任务__：从文件中读取文本或数据
 
 - __解决方案__：
 
 <!--language: !python-->
 
+    all_the_text = open('thefile.txt').read( )    # all text from a text file
+    all_the_data = open('abinfile', 'rb').read( ) # all data from a binary file
+
+    file_object = open('thefile.txt')
+    try:
+        all_the_text = file_object.read( )
+    finally:
+        file_object.close( )
+
 - __讨论__：
+
+
+
 
 
 ## Title
