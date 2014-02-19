@@ -827,7 +827,53 @@ C# lambda版本
 - __契约式设计__(Design by Contract，简称DbC)，解决说明性文档规范在自然语言描述不够精确，不能确保规范的实施的弱点。
     - 契约式设计语言Eiffel/D，明确保障包括先验条件，后验条件，类不变量，副作用等在内的契约
     - Java语言引入`assert`等断言，就是为了支持契约式编程
-    - 子类的 __先验条件可以弱化__(接受更泛的参数)，__后验条件可以强化__(返回更细的返回值)，但不能反之
+    - 子类的 __先验条件可以弱化__(接受更泛的参数)，__后验条件可以强化__(返回更细的返回值)，但不能反之，如下面，根据里 __里氏替换原则__(Liskov Substitution principle)，参照下面第10、20行的方法签名
+
+<!--language: !csharp-->
+
+    using System;
+
+    class Tree{}
+    class BananaTree:Tree{}
+
+    class Fruit{}
+    class Banana:Fruit{}
+
+    class Animal{
+        public virtual Fruit findFood(BananaTree tree){
+            return new Fruit();
+        }
+    }
+
+    class Monkey: Animal{
+        public override Fruit findFood(BananaTree tree){
+            return _findFood(tree);
+        }
+
+        private Banana _findFood(Tree tree){
+            System.Console.WriteLine(tree.GetType().ToString());
+            System.Console.WriteLine("Monkey");
+            return new Banana();
+        }
+    }
+
+    class App{
+        public Animal animal{get;set;}
+        public void Do(){
+            Fruit f = animal.findFood(new BananaTree());
+            System.Console.WriteLine(f.GetType().ToString());
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var app = new App();
+            app.animal = new Monkey();
+            app.Do();
+        }
+    }
 
 - __防御性编程__(defensive programming)vs__契约式设计__
     - 防御性编程缺陷：
@@ -940,29 +986,151 @@ C# lambda版本
 抽象接口
 ==========
 
-## 软件应变
-软件变化-随需而变,适者生存
-P218
+## 软件应变-随需而变,适者生存
 
-- 出于 __内在__ 需求而作的 __结构性变化__，以改善软件质量为目的，包括重构、性能调优等
+### 信息隐藏vs抽象
+- 信息隐藏，这是为了实现数据抽象，将接口与实现分离开来，一方面，抽象接口描述了一个类最本质的行为特征，另一方面，具体实现随时可能变动，隐藏它们可以保证这种变动不会涉及客户代码
+
+- 许多编程设计思想包括OOP都以 __提高应变力__ 为主题的，__抽象与封装__ 便是典型代表
+
+- __抽象__ 一个对象模型即是将一类对象最本质而最不易变化的部分提炼出来，而 __封装(信息隐藏)__ 则是将非本质、容易变化的部分隐藏起来
+- 所以，__封装(信息隐藏)__ 是为了提高软件的 __抗变能力__，而不是 __软件安全__
+
+### 软件变化类型
+- 出于 __内在__ 需求而作的 __结构性变化__，以改善软件质量为目的，包括重构(code refactoring)、性能调优(performance tuning)等
 - 出于 __外在__ 需求而作的 __功能性变化__，以满足客户需求为目的
 
+### Pimpl与桥梁模式
+- C++需要头文件，即使私有成员也必须在头文件中声明，意味着改动任何私有数据结构甚至私有方法的签名，所有包含该头文件的源代码虽然不改写，却须要重新编译链接
+- 所以，设计与语言息息相关，依赖于语言细节
+- C++尽可能使用 __前置声明__(forward declaration)，__减少包含__ 的(included)头文件，另外，可经将一些私有静态(private static)成员从头文件转移到实现代码中，以匿名命名空间(anonymous namespace)的方式来实现完全隐藏
+- __Pimpl__惯用法(Pointer to Implementation idiom)，不仅解决了C++中头文件问题，对Java，C#等不需要头文件的语言也有用
+    - Pimpl也称编译器防火墙惯用法(compiler firewall idiom)、句柄类(handle classes)、不透明指针(opaque pointer)、柴郡猫(Cheshire Cat)
+    - 柄/体(handle/body)模式或桥梁模式(bridge pattern)
+
+C++头文件
+
+<!--language: cpp-->
+
+    //c.h
+    #include "x.h"
+    class C{
+        public:
+            void f1();
+        private:
+            X x; //与X强耦合
+    }
+
+使用Pimpl惯用法
+
+<!--language: cpp-->
+
+    //c.h
+    class X; //用前导声明取代include
+    class C{
+        public:
+            void f1();
+        private:
+            X* pimpl; //声明一个X*，在既定平台，指针大小都相同
+    }
+
+    //c.cpp
+    #include "x.h"
+
+    C::C() {
+        x = new X;
+    }
+
+    C::~C() {
+        delete x;
+    }
+
+- 桥梁模式，可以让客户在 __运行期间__ 选择实现方式，信息隐藏虽然能将抽象接口与具体实现分离，但仍然封装在同一类中，而该模式让二者彻底解耦，增强了对化的适应力，更大的灵活性和可扩展性
+
 ## 访问控制-代码的多级管理
-友函数常用于运算符重载
 
-一个类与其友类或友函数是联合关系而非主客关系，它们之间的互访与普通类内部成员互访没有本质的不同，甚至由于friend是单向授权的，反而是private的一种细化
+### 访问修饰符
+- 访问修饰符(access modifier)除了可以应用于类的成员外，在Java和C#中还能应用于整个类
 
-一个类的方法能访问除this之外的其它同类对象的private成员，盖因访问控制是对静态代码的控制，而不是动态对象，以代码而非对象为边界
+<!--language: table-->
+
+    |范围\语言   |C++          |Java         |C#                |
+    |------------|-------------|-------------|------------------|
+    |无限制      |public       |public       |public            |
+    |子类或同一包|-            |protected    |protected internal|
+    |同一类或子类|protected    |-            |protected         |
+    |同一包      |-            |package(默认)|internal          |
+    |同一类      |private(默认)|private      |private(默认)     |
+
+- `public`和`private`是两个极端，一个没有限制，一个仅限于同一类，Java和C#比C++多了包(package或assembly)概念，相应多了`package`和`internal`修饰符。Java中`protected`相当于C#中的`protected internal`，不仅可被同类和子类访问，还能被同一包内的任何类访问，而C++和C#中的`protected`只能被同类和子类访问。
+- 一个基本原则是 __尽可能地使用限制性更强的修饰符__，逐渐放宽
+- 如果将每个类看作一个服务者，它向不同范围内的客户承诺不同的服务，或 __层次化__ 服务，以Java为例：
+    - `public`向所有类提供的服务
+    - `protected`对该类的子类或同一package下类提供服务
+    - `package`仅对同一package下类提供服务
+    - `paivate`则只对该类本身提供服务
+
+### 嵌套类
+- 访问修饰符除了用于域成员和方法成员外，还可以用于类成员，也就是嵌套类(nested class)，又叫内部类(inner class)
+    - 嵌套类可能比内部类更广泛，如Java中有四种嵌套类：静态成员类、非静态成员类、匿名类、局部类，只有后三种才是内部类
+- OO化的 __闭包__ 在Java中就采用特殊的嵌套类－__匿名类__ 来实现的，一个类仅仅为另一个方法单独服务时
+
+### C++中friend
+- C++没有顶层类的访问修饰符（但C++在类作为基类 __被继承时可以加上访问修饰符__），如果一个类将另一个类或函数声明为`friend`，意味着允许后者访问该类的所有成员，包括`private`和`protected`成员
+- __当`friend`用于类__ 时，相关的两个或多个类本是作为 __一个整体来设计__ 的，可以理解为将一个类劈成了几半
+    - 将一类按某些功能划分成几部分，如有一个类 __部分代码是自动生成__ 的，单独放在一个文件中显然更好，C#不支持`friend`，却引用了`partial`，可以将一个类拆分到多个源文件中
+- __当`friend`用于修饰函数__ 时，更多是出于语法形式的考虑，常用于 __运算符重载__(operator overloading)
+- 一个类与其友类或友函数是 __联合关系而非主客关系__，它们之间的互访与普通类内部成员的互访没有本质不同，甚至由于`friend`是 __单向授权__ 的，反而是`private`的一种细化
+
+### 访问控制的边界
+
+<!--language: java-->
+
+    public class Unit {
+        private short ashort;
+        private char achar;
+
+        public boolean equals(Object o) {
+           if (!(o instanceof Unit))
+               return false;
+           Unit unit = (Unit) o;
+           return unit.ashort == ashort
+                  && unit.achar == achar;
+        }
+    }
+
+- 一个类的方法能访问除this之外的其它同类对象的private成员（如上面的`unit.ashort`），盖因访问控制是对 __静态代码__ 的控制，而不是动态对象（不是运行期间如java的security manager等管理的安全机制），__以代码而非对象为边界__
+
+- 从抽象的角度来看，访问控制划分了抽象的边界，
+    - 一方面从 __语义上__ 明确抽象的层次化：越公开的成员越接近抽象接口，越远离具体实现；
+    - 另一方从 __语法上__ 施行双向保护，既保护实现代码不受代码侵入，也保护客户代码不受实现代码变更的影响
+
+### 划分代码修改边界
+- 访问控制划分了代码修改的边界，以下以java为例：
+    - 修改涉及`private`，只检查该类的源代码即可
+    - 修改涉及`package`，检查该类所在package内所有类
+    - 修改涉及`protected`，不仅检查该类所在package内所有类，还须检查该类的子类，如果该类本身为`public`，涉及的类可以超出该package，已难以真正掌控
+    - 修改涉及`public`，就意味着任何类都可能调用该接口
+- 成熟程序员`public`和`protected`接口的设计一定是慎之以慎
+- Java和C#分别提供了`deprecated`,`obsolete`以将方法 ，甚至将整个类标记为过时，如果被废弃的类或方法有替代方案，在文档中还应特别注明
 
 ## 接口服务-讲诚信与守规矩
-提供的服务过多则不纯粹，过少则不完备
+作为服务的提供者，最重要的是讲诚信；作为服务的享受者，最重要的是守规矩
 
-讲究服务的一致性与关联性
+### 可靠性与稳定性
+
+- 作为服务的提供者，最重要的是讲诚信
+    - 服务要有 __可靠性__，不能阳奉阴违，从抽象角度看，保证了 __规范抽象__，规范只是语义的契约，没有语法上的约束，不在编译器监管范围之内，只能靠 __单元测试__ 了
+    - 服务要有 __稳定性__，不能朝令夕改，从抽象角度看，保证了 __数据抽象__，如果接口被废弃或其签名发生变化，固然会牵连客户，至少还可以通过编译器来发现和修改（动态类型语言可能不会被编译器检查）
+
+### 纯粹性与完备性
+- 高质量服务还要 __纯粹性__ 和 __完备性__，一个类只提供一套服务，但要完善。
+- 提供的服务过多则不纯粹，过少则不完备。其实关键不在于服务数量的多寡，而在于服务的 __一致性__ 和 __关联性__，如果一个类提供几种关联性不强的服务，可考虑将其划分为几个类；如果几个类分别提供互补的服务，可考虑将其合并为一个类
 
 继承机制
 ============
-
-## 继承关系
+P244
+## 继承关系-继承财富,更要继承责任
 继承强调的是语言机制，子类继承父类；泛化强调的是概念关系，强调设计，父类后于子类提炼共同特性而设计的，称为超类
 
 从子类到超类的泛化是概念抽象的过程，从超类到子类的特化是概念细化的过程，两种设计手法经常交替使用，属于上述五种基本抽象中的类型层级
@@ -1228,9 +1396,16 @@ OOP弱点，一个对象必须在获得另一个对象标识后方能向其发�
 
 
 
+单元测试：
+语义检查 断言，契约
+  动态语言更重要，因为减少了静态类型的编译检查，接口签名检查
+文档记录 debug的无法记录性
+  动态语言更重要，没在静态类型描述，少了文档
+设计上改良
+简化集成
+快速反馈
 
-
-
+测 状态与行为
 
 
 
