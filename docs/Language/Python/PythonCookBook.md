@@ -291,6 +291,18 @@ python中，字符就是长度为1的字符串，可以循环遍历一个字符�
 - __讨论__：
 
 
+<!--
+## Title
+- __任务__：
+
+- __解决方案__：
+
+<!-language: !python->
+
+- __讨论__：
+
+-->
+
 文件
 ======
 
@@ -346,13 +358,76 @@ python代码总可以依赖`\n`作为文本行结束标记
     finally:
         file_object.close( )
 
-- __讨论__：
+注意，不需要将`open`放到`try`子句中，如果在打开文件的时候就发生了错误，那就没有什么需要关闭
 
+最简单、最快，也最具Python风格的方法是逐物读取文本文件内容，并将读取的数据放置到一个字符串列表中：
 
+<!--language: !python-->
 
+    list_of_all_the_lines = file_object.readlines( )
 
+这样读出每行末尾带有`\n`符号，如果不想这样，有一些替代方法
 
-## Title
+<!--language: !python-->
+
+    list_of_all_the_lines = file_object.read( ).splitlines( )
+    list_of_all_the_lines = file_object.read( ).split('\n')
+    list_of_all_the_lines = [L.rstrip('\n') for L in file_object]
+
+- __讨论__：在不同操作系统平台上，换行的符号表示不一样，如果不确定某文本文件会用什么样的换行符，可将`open`第二个参数设定为`rU`，指定通用换行符转化，无论你的代码在什么平台上运行，各种换行符都被映射成`\n`
+
+## 写入文件
+- __任务__：写入文本或二进制数据到文件中
+
+- __解决方案__：下面是最方便的将一个长字符串写入文件的方法
+
+<!--language: !python-->
+
+    open('thefile.txt', 'w').write(all_the_text)  # text to a text file
+    open('abinfile', 'wb').write(all_the_data)    # data to a binary file
+
+许多时候想写入是一个字符串列表，应该使用`writelines`，这个方法并不局限于行写入，__二进制文件和文本行都适用__
+
+<!--language: !python-->
+
+    file_object.writelines(list_of_text_strings)
+    open('abinfile', 'wb').writelines(list_of_data_strings)
+
+当然也可以先把子串用`''.join`拼接成大字符串，再调用`write`写入，或在循环澡官入，但直接调用`writelines`比上面两种方式快得多
+
+- __讨论__：如果想把新数据添加在原有的数据之后，应该使用`a`或`ab`选项来打开文件
+
+## 搜索和替换文件中文本
+- __任务__：需要将文件中的某个字符串改变成另一个
+
+- __解决方案__：字符串对象的`replace`方法提供了字符串替换的最简单的方法。下面支持一个特定的文件（或标准输入）读取数据，然后写入一个指定的文件（或标准输出）：
+
+<!--language: !python-->
+
+    for s in input_file:
+        output_file.write(s.replace(stext, rtext))
+
+## 从文件中读取指定的行
+- __任务__：根据给出的行号，从文本文件中读取一行数据
+
+- __解决方案__：标准库`linecache`模块非常适合这个任务
+
+<!--language: !python-->
+
+    import linecache
+    theline = linecache.getline(thefilepath, desired_line_number)
+
+- __讨论__：如果文件非常大，而你只需要其中一行，`linecache`显得不是那么必要，下面可以获得上一些提升：
+
+<!--language: !python-->
+
+    def getline(thefilepath, desired_line_number):
+        if desired_line_number < 1: return ''
+        for current_line_number, line in enumerate(open(thefilepath, 'rU')):
+            if current_line_number == desired_line_number-1: return line
+        return ''
+
+## 计算文件的行数
 - __任务__：
 
 - __解决方案__：
@@ -360,3 +435,153 @@ python代码总可以依赖`\n`作为文本行结束标记
 <!--language: !python-->
 
 - __讨论__：
+
+
+
+<!--
+## Title
+- __任务__：
+
+- __解决方案__：
+
+<!-language: !python->
+
+- __讨论__：
+
+-->
+
+
+时间和财务计算
+===============
+- 时间模块常用的一个函数就是获取当前时间的函数`time.time`，在未初始化的情况下返回一个浮点数，代表了从某个特定时间点（纪元）开始所经历的秒数，一般是1970-1-1年夜。
+
+<!--language: !python-->
+
+    import time
+    print time.asctime(time.gmtime(0))
+
+`time.gmtime`将任何时间戳（从纪元开始所经历秒数）转化为一个元组，该元组代表了人类容易理解一种时间格式，在未进行任何时区转化（GMT代表格林威治标准时间，UTC世界标准时间的另一种说法），如果使用`time.localtime`，它会根据当前时区进行时间转化
+
+从返回元组中获得本地时间的方法
+
+<!--language: !python-->
+
+    import time
+    year,month,mday,hour,minute,second,wday,yday,isdst = time.localtime()
+    print time.localtime().tm_mon
+
+忽略了传递给`localtime`,`gmtime`,`asctime`时，默认使用当前时间
+
+- `strftime`根据返回的时间元组构建一个字符串，`strptime`与前者完全相反，返回一个时间元组
+
+- 标准库引入了`datetime`模块，提供了更好的对应于抽象的日期和时间和各种类型，如`time`,'date','datetime'类型
+
+<!--language: !python-->
+
+    import datetime
+    today = datetime.date.today( )
+    birthday = datetime.date(1977, 5, 4)      #May 4
+    currenttime = datetime.datetime.now( ).time( )
+    lunchtime = datetime.time(12, 00)
+    now = datetime.datetime.now( )
+    epoch = datetime.datetime(1970, 1, 1)
+    meeting = datetime.datetime(2005, 8, 3, 15, 30)
+
+更进一步，通过属性和方法，这些类型提供了很方便的获取和操作信息的方法
+
+<!--language: !python-->
+
+    import datetime
+    today = datetime.date.today( )
+    next_year = today.replace(year=today.year+1).strftime("%Y.%m.%d")
+    print next_year
+
+`datetime`模块通过`timedelta`类型为时间差提供了一些基本支持
+
+<!--language: !python-->
+
+    import datetime
+    NewYearsDay = datetime.date(2005, 01, 01)
+    NewYearsEve = datetime.date(2004, 12, 31)
+    oneday = NewYearsDay - NewYearsEve
+    print oneday
+
+- `decimal.Decimal`用于财务计算，比标准的二进制float提供更高级功能
+
+<!--language: !python-->
+
+    import decimal
+    print 1.1 == 1.1000000000000001
+    print 2.3 == 2.2999999999999998
+    print decimal.Decimal("1.1")==decimal.Decimal("1.1000000000000001")
+    print decimal.Decimal("2.3")==decimal.Decimal("2.2999999999999998")
+
+    print 0.1 + 0.1 + 0.1 - 0.3
+    d1 = decimal.Decimal("0.1")
+    d3 = decimal.Decimal("0.3")
+    print d1 + d1 + d1 - d3
+
+它的精度可由用户设置
+
+<!--language: !python-->
+
+    import decimal
+    decimal.getcontext( ).prec = 6   # set the precision to 6...
+    print decimal.Decimal(1) / decimal.Decimal(7)
+
+    decimal.getcontext( ).prec = 60  # ...and to 60 digits
+    print decimal.Decimal(1) / decimal.Decimal(7)
+
+为什么还用`float`主要是性能
+
+<!--language: !bash-->
+
+    python -mtimeit -s'from decimal import Decimal as D' 'D("1.2")+D("3.4")'
+    python -mtimeit -s'from decimal import Decimal as D' '1.2+3.4'
+
+
+## 计算昨天和明天的日期
+
+- __解决方案__：
+
+<!--language: !python-->
+
+    import datetime
+    today = datetime.date.today( )
+    yesterday = today - datetime.timedelta(days=1)
+    tomorrow = today + datetime.timedelta(days=1)
+    print yesterday, today, tomorrow
+
+- __讨论__：Python中的"in the face of ambiguity, refuse the temptation to guess."，拒绝猜测，`yesterday = today - 1`，中的`1`是1天还是1秒？
+
+如果想在日期和时间的计算上有点新花样，可使用第三方包`dateutil`和`mx.DateTime`
+
+<!--language: !python-->
+
+    from dateutil import relativedelta
+    nextweek = today + relativedelta.relativedelta(weeks=1)
+    print nextweek
+
+然而"always do the simplest thing that can possibly work." ，本节使用了datetime.timedelta`
+
+## 寻找上一个星期五
+- __任务__：
+
+- __解决方案__：
+
+<!--language: !python-->
+
+- __讨论__：
+
+<!--
+## Title
+- __任务__：
+
+- __解决方案__：
+
+<!-language: !python->
+
+- __讨论__：
+
+-->
+
