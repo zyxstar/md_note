@@ -827,7 +827,53 @@ C# lambda版本
 - __契约式设计__(Design by Contract，简称DbC)，解决说明性文档规范在自然语言描述不够精确，不能确保规范的实施的弱点。
     - 契约式设计语言Eiffel/D，明确保障包括先验条件，后验条件，类不变量，副作用等在内的契约
     - Java语言引入`assert`等断言，就是为了支持契约式编程
-    - 子类的 __先验条件可以弱化__(接受更泛的参数)，__后验条件可以强化__(返回更细的返回值)，但不能反之
+    - 子类的 __先验条件可以弱化__(接受更泛的参数)，__后验条件可以强化__(返回更细的返回值)，但不能反之，如下面，根据里 __里氏替换原则__(Liskov Substitution principle)，参照下面第10、20行的方法签名
+
+<!--language: !csharp-->
+
+    using System;
+
+    class Tree{}
+    class BananaTree:Tree{}
+
+    class Fruit{}
+    class Banana:Fruit{}
+
+    class Animal{
+        public virtual Fruit findFood(BananaTree tree){
+            return new Fruit();
+        }
+    }
+
+    class Monkey: Animal{
+        public override Fruit findFood(BananaTree tree){
+            return _findFood(tree);
+        }
+
+        private Banana _findFood(Tree tree){
+            System.Console.WriteLine(tree.GetType().ToString());
+            System.Console.WriteLine("Monkey");
+            return new Banana();
+        }
+    }
+
+    class App{
+        public Animal animal{get;set;}
+        public void Do(){
+            Fruit f = animal.findFood(new BananaTree());
+            System.Console.WriteLine(f.GetType().ToString());
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var app = new App();
+            app.animal = new Monkey();
+            app.Do();
+        }
+    }
 
 - __防御性编程__(defensive programming)vs__契约式设计__
     - 防御性编程缺陷：
@@ -1053,21 +1099,38 @@ C++头文件
         }
     }
 
-- 一个类的方法能访问除this之外的其它同类对象的private成员（如上面的`unit.ashort`），盖因访问控制是对 __静态代码__ 的控制，而不是动态对象，__以代码而非对象为边界__
+- 一个类的方法能访问除this之外的其它同类对象的private成员（如上面的`unit.ashort`），盖因访问控制是对 __静态代码__ 的控制，而不是动态对象（不是运行期间如java的security manager等管理的安全机制），__以代码而非对象为边界__
 
-P232
+- 从抽象的角度来看，访问控制划分了抽象的边界，
+    - 一方面从 __语义上__ 明确抽象的层次化：越公开的成员越接近抽象接口，越远离具体实现；
+    - 另一方从 __语法上__ 施行双向保护，既保护实现代码不受代码侵入，也保护客户代码不受实现代码变更的影响
 
-
+### 划分代码修改边界
+- 访问控制划分了代码修改的边界，以下以java为例：
+    - 修改涉及`private`，只检查该类的源代码即可
+    - 修改涉及`package`，检查该类所在package内所有类
+    - 修改涉及`protected`，不仅检查该类所在package内所有类，还须检查该类的子类，如果该类本身为`public`，涉及的类可以超出该package，已难以真正掌控
+    - 修改涉及`public`，就意味着任何类都可能调用该接口
+- 成熟程序员`public`和`protected`接口的设计一定是慎之以慎
+- Java和C#分别提供了`deprecated`,`obsolete`以将方法 ，甚至将整个类标记为过时，如果被废弃的类或方法有替代方案，在文档中还应特别注明
 
 ## 接口服务-讲诚信与守规矩
-提供的服务过多则不纯粹，过少则不完备
+作为服务的提供者，最重要的是讲诚信；作为服务的享受者，最重要的是守规矩
 
-讲究服务的一致性与关联性
+### 可靠性与稳定性
+
+- 作为服务的提供者，最重要的是讲诚信
+    - 服务要有 __可靠性__，不能阳奉阴违，从抽象角度看，保证了 __规范抽象__，规范只是语义的契约，没有语法上的约束，不在编译器监管范围之内，只能靠 __单元测试__ 了
+    - 服务要有 __稳定性__，不能朝令夕改，从抽象角度看，保证了 __数据抽象__，如果接口被废弃或其签名发生变化，固然会牵连客户，至少还可以通过编译器来发现和修改（动态类型语言可能不会被编译器检查）
+
+### 纯粹性与完备性
+- 高质量服务还要 __纯粹性__ 和 __完备性__，一个类只提供一套服务，但要完善。
+- 提供的服务过多则不纯粹，过少则不完备。其实关键不在于服务数量的多寡，而在于服务的 __一致性__ 和 __关联性__，如果一个类提供几种关联性不强的服务，可考虑将其划分为几个类；如果几个类分别提供互补的服务，可考虑将其合并为一个类
 
 继承机制
 ============
-
-## 继承关系
+P244
+## 继承关系-继承财富,更要继承责任
 继承强调的是语言机制，子类继承父类；泛化强调的是概念关系，强调设计，父类后于子类提炼共同特性而设计的，称为超类
 
 从子类到超类的泛化是概念抽象的过程，从超类到子类的特化是概念细化的过程，两种设计手法经常交替使用，属于上述五种基本抽象中的类型层级
@@ -1333,9 +1396,16 @@ OOP弱点，一个对象必须在获得另一个对象标识后方能向其发�
 
 
 
+单元测试：
+语义检查 断言，契约
+  动态语言更重要，因为减少了静态类型的编译检查，接口签名检查
+文档记录 debug的无法记录性
+  动态语言更重要，没在静态类型描述，少了文档
+设计上改良
+简化集成
+快速反馈
 
-
-
+测 状态与行为
 
 
 

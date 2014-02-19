@@ -8,7 +8,9 @@ import urllib
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
 
-FOLDERS_ORDER = dict(Analysis=10,Language=20,Framework=30,Skill=40,Knowledge=50,ProgrammingParadigm=10)
+ORDER_DIC = {"Analysis":10,"Language":20,"Framework":30,
+    "Skill":40,"Knowledge":50,"ProgrammingParadigm":10,
+    "RubyProgramming.md":10,"PythonCookBook.md":10}
 
 
 def build_one_file(folders, filename):
@@ -24,9 +26,9 @@ def yield_subfiles():
     def _find_subfiles(*folders):
         _folder_path = os.path.join(_docs_dir, '/'.join(folders))
         for _dirpath, _dirnames, _filenames in os.walk(_folder_path):
-            for _f in _filenames:
+            for _f in sorted(_filenames,key=lambda _file:ORDER_DIC.setdefault(_file,999)):
                 yield map(lambda _fo: _fo.decode(_sys_encoding), folders), _f.decode(_sys_encoding)
-            for _d in sorted(_dirnames,key=lambda _dir:FOLDERS_ORDER.setdefault(_dir,999)):
+            for _d in sorted(_dirnames,key=lambda _dir:ORDER_DIC.setdefault(_dir,999)):
                 _folders = list(folders)
                 _folders.append(_d)
                 for _a, _b in _find_subfiles(*_folders):
