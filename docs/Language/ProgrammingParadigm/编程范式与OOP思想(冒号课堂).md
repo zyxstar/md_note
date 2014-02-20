@@ -1,3 +1,5 @@
+> 2012-07-21
+
 概述
 ======
 
@@ -824,6 +826,7 @@ C# lambda版本
         1. 局部性，无论阅读还是改写某个抽象的实现代码，都不必参考其他抽象的实现代码
         1. 可变性，实现者要遵循规范的前提下可自由修改实现代码，不用担心影响客户代码。
 
+### 契约式设计
 - __契约式设计__(Design by Contract，简称DbC)，解决说明性文档规范在自然语言描述不够精确，不能确保规范的实施的弱点。
     - 契约式设计语言Eiffel/D，明确保障包括先验条件，后验条件，类不变量，副作用等在内的契约
     - Java语言引入`assert`等断言，就是为了支持契约式编程
@@ -1129,23 +1132,119 @@ C++头文件
 
 继承机制
 ============
-P244
+
 ## 继承关系-继承财富,更要继承责任
-继承强调的是语言机制，子类继承父类；泛化强调的是概念关系，强调设计，父类后于子类提炼共同特性而设计的，称为超类
 
-从子类到超类的泛化是概念抽象的过程，从超类到子类的特化是概念细化的过程，两种设计手法经常交替使用，属于上述五种基本抽象中的类型层级
+### 泛化vs继承
+- UML通过 __泛化__(generalization)来表达继承关系，从逻辑上说，比 __继承__(inheritance)或遗传更准确，更确切的说，泛化强调的是 __概念关系__，而继承强调的是 __语言机制__
+- 继承是子类继承父类，泛化却是父类泛化子类，__视角不同__，也可用特化(specialization)来表示从父类到子类的关系
+- UML侧重于 __设计__，人们常会从设计的一些类中提炼出共同的特征，一并放在新建的类中，此时 __父类是后于子类设计__ 的，或许叫 __超类__(superclass)更合适，即子类到超类的泛化，是一种 __概念抽象__(abstraction)过程，从超类到子类的特化，是一种 __概念细化__(refinement)过程，这两种过程在设计中往往是 __交替采用__ 的，属于前面[5类基本抽象](#TOC7.1.5)之一的 __类型层级__(type hierarchy)
 
-java和C#只能继承接口，或既继承接口或继承实现，不能只继承实现
 
-C++则可以做到，即private继承
+### 实现继承vs接口继承
 
-但java或C#中可通过组合的方式而非继承的方式来达到对实现的重用
+- Java和C#都无法做到 __只继承实现，而不继承接口__ 的，C++则可以，它的继承有3种修饰符`public,protected,private`，后两种则继承实现而不继承接口
 
-所以C++中的非公有继承可以看成匿名的非显性合成，只不过前者更具侵入性(可访问基类成员，重写方法)，后者更隐蔽与动态性(可被替换)
+<!--language: cpp-->
 
-接口继承的作用不是为了让继承者重用，而是为了在合适的场合被调用，即不是为了代码重用，而是为了代码 被 重用
+    class Engine{
+        public:
+            void start(){...} //发动引擎
+    };
 
-子类型不是子类(如int是long子类型，但不是它的子类)，子类也不一定是子类型(C++中private继承)，子类型关键是可代换性，即里氏代换(LSP)
+    class Car : private Engine{ //Car私有继承Engine
+    };
+
+    int main(){
+        Car().start(); //发动汽车
+        return 0;
+    }
+
+上面的代码无法通过编译，可将`private`继承改为`public`继承，虽然能通过编译，但不是好的设计，因为Car与Engine不是`is-a`的关系，而是`has-a`的关系，更好的方式是：
+
+<!--language: cpp-->
+
+    class Car : private Engine{
+        public:
+            void start(){Engine::start();} //手动增加自身start实现
+    };
+
+
+还有一种更简洁方法，即 __重新开放基类__ 的接口，但用法有些怪异，更像惯用法：
+
+<!--language: cpp-->
+
+    class Car : private Engine{
+        public:
+            using Engine::start;
+    };
+
+还有一种 __合成/组合/复合__(composition)来实现，更像一种模式：
+
+<!--language: cpp-->
+
+    class Car : private Engine{
+        private:
+            Engine engine;
+        public:
+            void start(){engine.start();}
+    };
+
+- 第2种方法与第4种方法很像，__非公有继承__ 与 __合成__ 是对 __实现的重用__ 而非接口的重用，不妨把非公有继承看作是一种匿名的非显性合成，它们主要区别在于：
+    - 前者更有 __侵入性__，可以访问基类的`protected`成员，也可以覆盖基类的方法
+    - 后者更有 __隐蔽性和动态性__，合成所依托的类的具体类型可以是隐性的，并可以动态改变
+    - 非公有继承用法较为复杂且容易误用，所以Java和C#都不再支持，但依然可以用合成的方式达到对实现的重用
+
+### 类继承vs接口继承
+- 类继承既继承了实现，又继承了接口，但人们往往简单称为 __实现继承__(implementation inheritance)，一来为了与接口继承相对，二来一般语言不支持纯粹的实现继承
+
+- 有一种特殊的接口－标记接口(marker interface/tagging interface)，比如`Cloneable,Serializable,EventListener`等，甚至连一个方法都没有，接口继承可以使一个类参与该接口所能参与的任何运算，如继承了`Comparable`，便能参与集合的排序运算，继承了`MouseListener`便能监听鼠标事件
+
+- __接口继承__ 的作用不是为了让继承者重用，而是为了在合适的场合被调用，即不是为了代码重用，而是为了代码 __被重用__
+
+- 实现继承__消费__ 可重用的旧代码，接口继承 __生产__ 可重用的新代码
+
+### 子类vs子类型
+- 继承也被称为 __子类化__(subclassing)，接口继承进而被称为 __子类型化__(subtyping)
+- 子类(subclass)不一定是子类型(subtype)，如C++中private继承产生的子类不是子类型，反过来，子类型也不一定不是子类，如int是long子类型，但不是它的子类发（甚至不是类），
+- 子类型关键是 __可代换性__(substitutability)，即 __里氏代换原则__(Liskov Substitution Principle，简称LSP)，类型A的子类型B应该满足以下条件：将程序中类型A的对象置换为类型B的对象，不会影响程序的合理性和正确性。
+
+<!--language: java-->
+
+    interface Bird{
+        public void fly();
+        public void lay();
+    }
+
+    class Penguin implements Bird{
+        public void fly(){
+            throw new UnsupportedOperationException("Cannot fly");
+        }
+        public void walk(){...}
+        public void lay(){...}
+    }
+
+    public void letGo(Bird bird){
+        if(bird instanceof Penguin)
+            ((Penguin)bird).walk();
+        else
+            bird.fly();
+    }
+
+客户代码得为这种特殊类型做特别处理，根源在于`Penguin`类违背了LSP原则
+
+
+
+
+
+
+
+概念抽象只是手段，规范抽象才是依据
+
+
+
+
+
 
 接口继承必须建立在LSP之上，接口重用达到规范重用
 
@@ -1160,6 +1259,7 @@ C++则可以做到，即private继承
 任何类型都应该保持或强化其超类型的规范，绝不能弱化规范
 
 子类型 要求更少(接受更泛参数)，承诺更多(返回更细类型,协变返回类型)
+[先验与后验条件](#TOC7.1.4)
 
 JDK败笔 Properties继承Hashtable，Stack继承Vector
 
@@ -1174,6 +1274,7 @@ OOP将现实中的概念抽象映射为程序中的类型，继承机制进一�
 继承是一种静态(编译时建立)、显性关系(公开的)
 
 描述了java与C#在对待重写时的区别
+
 
 
 多态机制

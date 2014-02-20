@@ -4,6 +4,7 @@ import os
 import os.path
 import codecs
 import urllib
+import re
 
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
@@ -14,10 +15,17 @@ ORDER_DIC = {"Analysis":10,"Language":20,"Framework":30,
 
 
 def build_one_file(folders, filename):
+    def get_file__author_date():
+        _path = ["./docs"] + folders + [filename]
+        with codecs.open(os.path.join(*_path), 'r', 'utf-8') as _f:
+            _m = re.search(r"> (\d{4}-\d{1,2}-\d{1,2})",_f.readline())
+            if _m:return _m.group(1)
+        return ""
+
     _note_path = "/".join(
         [urllib.quote_plus(_path.encode('utf-8')) for _path in folders + [filename]])
     _note_url = "%s/%s" % (GITHUB_BASE_URL, _note_path)
-    return "- [%s](%s%s)" % (filename, PARSE_URL, urllib.quote_plus(_note_url))
+    return "- [%s](%s%s) <span>%s</span>" % (filename, PARSE_URL, urllib.quote_plus(_note_url), get_file__author_date())
 
 
 def yield_subfiles():
@@ -58,7 +66,9 @@ def build_subfiles(iter_subfiles):
 
 def write_readme(line_list):
     with codecs.open('README.md', 'w', 'utf-8') as _f:
-        _f.writelines('\r\n'.join(line_list))
+        _f.write("""<style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>""")
+        _f.write('\r\n')
+        _f.write('\r\n'.join(line_list))
 
 
 if __name__ == '__main__':
