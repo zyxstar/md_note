@@ -1262,8 +1262,6 @@ C++头文件
     - 其实`add`与`set`这两个行为规范上出现分歧，貌似`is-a`，却不是`behaves-like-a`
     - 解决办法之一是退而求其次，让`SortedList`作为`List`的超类型`Collection`的子类型，`Collection`的`add`只承诺元素在集合中，对位置并没有要求。
 
-- JDK败笔：`Properties`继承`Hashtable`，`Stack`继承`Vector`
-
 - Duck类型也要求抽象规范一致，关心`behaves-like-a`，只是它是站在使用者角度，而静态类型的继承是提供者角度
 
 
@@ -1293,18 +1291,309 @@ C++头文件
 - OOP将现实中的 __概念抽象__ 映射为程序中的 __类型__，__继承机制__ 进一步将概念的 __分类体系__ 映射为类型的 __层级结构__
 
 ## 慎用继承-谨慎对待权力
-P260
 
-继承是一种静态(编译时建立)、显性关系(公开的)
+### 继承vs合成
+- JDK败笔：`java.util.Properties`继承`Hashtable`，虽然`Properties`也是处理键值对，但由于主要用于系统属性配置，多了两个要求：可持久化(persistent)和人工读写(human-readable/writable)，对于前者，只须增加一些诸如IO流相关的接口即可，但对于后者，则要求键值均为`String`类，意味着`Properties`类型的`put`方法 __先验条件比其超类型的更强__，从而违背了里氏代换原则。所以官方文档声明，反对使用`put`和`putAll`，建议使用`setProperty`。更好的方式是，`Properties`不继承任何类，内部使用`Hashtable<String,String>`来完成职责
+- 继承是一种 __静态、显性__ 的关系，静态指关系是在编译期间建立的，无法在运行期间改变；所谓显性，指关系是公开的，如果通过源代码来改变，将会影响客户代码
+- 合成关系是 __隐性__ 的，属于内部实现，并且是 __动态__ 的，实现者可以在运行期间设定依托的具体类型，比如在`Properties`内部的map在单线程时采用`HashMap`，在多线程时采用`Hashtable`，当数据达到一定阈值时，自动切换到更高效的`Map`类型
+    - 此例中合成也称 __聚合__(aggregation)，更准确的说，是一种 __委托__(delegation)或 __转发__(forwarding)
+    - 合成或聚合关注整体与部分关系，侧重静态结构；委托或转发关注表面受理者与实际执行者的分离，侧重动态功能。
+    - 一般情况下，两者经常是重合，但也是例外
+- 合成是不透明的 __黑盒重用__(black-box reuse)，而实现继承是透明的 __灰盒重用__(grey-box reuse)
 
-描述了java与C#在对待重写时的区别
+- JDK另一个设计，`java.util.Stack`继承`Vector`，比上面更不可思议，从抽象概念上看，`Stack`是后进先出(LIFO)的，而`Vector`是随机读取的列表，是完全不同的数据结构，不存在`is-a`的关系；从具体行为上看，栈的主要运算是压栈(push)、出栈(pop)等，不能像列表那样能读取、改写或增删任一元素，因此也不是`behaves-like-a`
 
+### Stack继承与合成
+
+<!--language: java-->
+
+    /* java.util.Stack的改进版1(multiPush依赖push) */
+    public class Stack<E>{
+        private Vector<E> data = new Vector<E>();
+
+        public void push(E item){
+            data.addElement(item);
+        }
+
+        public void multiPush(E... items){
+            for(E item : items)
+                push(item);
+        }
+    }
+
+与原始版本比，最大变化是将继承改为合成，增加了一个`multiPush`方法，实现了对多个元素同时压栈。这时我们需要一个特殊的栈，能记录先后压栈次数：
+
+<!--language: java-->
+
+    /* 记录压栈总次数栈(原始版) */
+    public class CountingStack<E> extends Stack<E>{
+        private int pushCount;
+
+        @Override public void push(E item){
+            ++pushCount;
+            super.push(item);
+        }
+
+        @Override public void multiPush(E... items){
+            pushCount += items.length;
+            super.multiPush(items);
+        }
+
+        pubic int getPushCount(){
+            return pushCount;
+        }
+    }
+
+你会发现存在BUG，`CountingStack`对象在调用`multiPush`先对计数增加，然后调用父类的同名方法，__后者却隐式的调用了`push`，而该方法却又被自己所覆盖__，造成二次计算
+
+解决办法之一是，__去掉子类的`multiPush`，直接沿用父类的方法__，但如果父类改成如下时，则又不能正确计数：
+
+<!--language: java-->
+
+    /* java.util.Stack的改进版2(multiPush与push互相独立) */
+    public class Stack<E>{
+
+        public void multiPush(E... items){
+            for(E item : items)
+                data.addElement(item);  //原来版本：push(item);
+        }
+    }
+
+现在父类中`multiPush`不再调用`push`，就不会被子类的`push`覆盖，根本没机会计算`pushCount`，接下来使用拷贝父类实现（假设Stack<E>还是版本1），试图解决该问题：
+
+<!--language: java-->
+
+    /* 记录压栈总次数栈(原始版) */
+    public class CountingStack<E> extends Stack<E>{
+        private int pushCount;
+
+        @Override public void push(E item){
+            ++pushCount;
+            super.push(item);
+        }
+
+        @Override public void multiPush(E... items){ //拷贝父类实现
+            for(E item : items)
+                push(item);
+        }
+    }
+
+但如果父类的`multiPush`的实现并不依赖`push`，而是反过来`push`实现依赖于`multiPush`时，则又出问题了
+
+<!--language: java-->
+
+    /* java.util.Stack的改进版3(push依赖multiPush) */
+    public class Stack<E>{
+        private Vector<E> data = new Vector<E>();
+
+        public void push(E item){
+            multiPush(item);
+        }
+
+        public void multiPush(E... items){
+            for(E item : items)
+                data.addElement(item);
+        }
+    }
+
+说白了，以上的继承是依赖于父类的实现的，当父类的实现有所改变时，子类将不能正常工作。所以要 __慎用实现继承__。可以尝试一下 __合成__，因为这样，只依赖合成对象的外部接口：
+
+<!--language: java-->
+
+    /* 记录压栈总次数栈(合成版) */
+    public class CountingStack<E> extends Stack<E>{
+        private Stack<E> stack = new Stack<E>();
+        private int pushCount;
+
+        public void push(E item){
+            ++pushCount;
+            stack.push(item);
+        }
+
+        public void multiPush(E... items){
+            pushCount += items.length;
+            stack.multiPush(items);
+        }
+
+        public E pop(return stack.pop();)//转发
+        ...
+    }
+
+采用合成以后，`CountingStack`从`Stack`类家族成员转成普通客户，不再插手内部事务，曾经问题迎刃而解。但有个问题就是需要将`Stack`类的其它方法一一转发，代码繁琐。
+
+### 继承设计防守要点
+子类与父类代码上是隔离的，多态机制又是隐性的，防守起来实为不易，如上例中子类调用父类方法，父类又可隐式调用子类多态方法。
+
+- 防守要点1：__子类应坚持父类的外在行为__，不能破坏父类制定的服务规范，覆盖了父类某一方法时注意遵循该方法的规范，同时还需要注意相关方法的规范，如覆盖了`add`，很可能需要修改`remove`，同时要顾及`addAll`、`removeAll`等方法是否受到牵连，如果覆盖了`equals`方法，多半需要覆盖`hashCode`方法。
+- 防守要点2：__子类应正视父类的内存逻辑__，既不能忽视或破坏父类规范之内的逻辑关联，又不能假设或依赖规范之外的逻辑关联
+
+### 慎用实现继承
+- 如上例代码，实现继承最大硬伤是在类与类之间建立了 __强耦合__ 关系，这种关系是永固的，一经建立无法解除，纵深的，不仅限于相邻父子类，更贯穿整个类族。
+- 该类不仅要了解其父类，还要了解一切祖先类；不仅了解`public`成员，还要了解`protected`成员
+- 如果想覆盖某一方法成员，还得了解祖先类成员之间的 __内在逻辑__ 关系；如果想增加一个方法成员，还得不与祖先将来的版本发生冲突。
+- `CountingStack`类就是著名的 __脆弱的基类__ 问题(Fragile Base Class Problem)的一个典型代表。
+- 其它问题如：构造方法中不宜直接或间接调用多态方法；在克隆或序列化时也需要特别谨慎。
+- __提倡接口继承__，以下是合成加接口继承版本：
+
+<!--language: java-->
+
+    public interface Stack<E>{
+        public void push(E item);
+        public void multiPush(E... items);
+        public E pop();
+        public E peek();
+    }
+
+    // java.util.Stack的改进版4(接口继承)
+    public class DefaultStack<E> implements Stack<E>{
+        // 代码同 改进版1
+    }
+
+    // 记录压栈总次数栈(合成加接口继承版)
+    public class CountingStack<E> implements Stack<E>{
+        private Stack<E> stack = new DefaultStack<E>();
+        private int pushCount;
+
+        public void push(E item){
+            ++pushCount;
+            stack.push(item);
+        }
+
+        public void multiPush(E... items){
+            pushCount += items.length;
+            stack.multiPush(items);
+        }
+
+        public E pop(return stack.pop();)//转发
+        ...
+    }
+
+### 为继承而设计(基类)
+
+- 实现继承的使用场景
+    - 采用合成是否会遇到 __无法克服__ 的困难
+    - 基础类是否 __专门为继承而设计__
+
+- 语言中终极类型与抽象类型
+    - Java与C#加了`final`和`sealed`，或者以`struct`,`enum`的值类型出现，表示不打算要后代的终极类型
+    - C++中没有冷言专门的类级别修饰符，但若一个类既没有一个虚函数(virtual function)，也没有一个`protected`成员，通常也是不准备被继承的
+    - 相反，有些类必须被继承，否则不能实例化，如Java和C#的抽象类(abstract class)，C++的纯虚函数(pure virtaul function)，或一个类只有一个`protected`的构造器且不能通过静态方法返回实例时。
+
+- 允许一个类被继承，意味着其服务对象除了普通客户之外，__又增加了特殊的客户－继承者__，谨防继承带来的封装的破坏性。保证`protected`方法成员的规范性和稳定性，防止覆盖的副作用。
+
+- 如果`Stack`类真正为后代着想，也不至于让子类无所适从，`push`与`multiPush`之间的依赖关系，__本属实现细节，但为子类计，应明确地规范化__，
+
+- 还可以在设计上下功夫，实现语义与语法双重防护，即借用C++中 __非虚接口__(Non-Virtual Interface，简称NVI)模式：将公有函数非虚化，将虚函数私有化
+    - C++中private虚函数可以被覆盖，但Java和C#中不能，后二者在此模式中采用protected虚函数
+    - 一个方法，如果是公有的就不要是多态的；如果是多态的，就不要是公有的
+
+- 在`Stack`类改进版1中，它的`push`方法实际有两个功用：一方面，它为外界提供服务，属于 __公开接口__；另一方面，它为自身提供服务－被`multiPush`调用，属于 __内部实现__，一人分饰二角，如果仅局限于`Stack`类本身，问题不大，问题在于`push`是多态的，有可能被子类替换，而 __子类的`push`却没有同时胜任两个角色的义务__。所以另一个解决方法是，将`push`内外职能分解：对内的部分多态而不公有，对外的部分公有而不多态(NVI模式)：
+
+<!--language: java-->
+
+    public interface Stack<E>{
+        public void push(E item);
+        public void multiPush(E... items);
+        public E pop();
+        public E peek();
+    }
+
+    // java.util.Stack的改进版5(NVI模式)
+    public class DefaultStack<E> implements Stack<E>{
+        protected void doPush(E item){ //子类覆盖点
+            data.addElement(item);
+        }
+
+        final public void push(E item){ //子类不可覆盖
+            doPush(item);
+        }
+
+        final public void multiPush(E... items){ //子类不可覆盖
+            for(E item : items)
+                data.addElement(item);  // 或 push(item)
+        }
+
+    }
+
+    // 记录压栈总次数栈(NVI模式)
+    public class CountingStack<E> implements DefaultStack<E>{
+        private int pushCount;
+
+        @Override public void doPush(E item){
+            ++pushCount;
+            super.doPush(items);
+        }
+
+        pubic int getPushCount(){
+            return pushCount;
+        }
+    }
+
+即使不看文档，也能从`doPush`的多态和非公有的特性看出它是压栈的唯一覆盖点，还能从`push`和`multiPush`的公有和非多态的特性推出它们必然最终依赖`doPush`，各自行使 __不同的职能__。
+
+- 所以，当类的一个公有方法直接或间接地调用了自身的另一个多态方法，应特别谨慎。如果不能杜绝这类自用，则必须将其规范化，以免被子类错误的覆盖。此外，应尽量采用 __非虚接口模式__ 来 __分离接口与挂钩__：让该公有方法不是多态的(接口)，让该多态方法不是公有的(挂钩)
+    - 挂钩即hook，低层父类调用了高层子类的方法
+
+
+- 为了保证基类算法(流程)稳定性时，也不失必要柔韧时，可采用 NVI + __模板方法__(template method)：
+
+<!--language: java-->
+
+    // java.util.Stack的改进版6(NVI模式+模板方法)
+    public class DefaultStack<E> implements Stack<E>{
+        protected void doPush(E item){ //子类覆盖点
+            data.addElement(item);
+        }
+
+        protected boolean beforePush(E item){return true;}//子类覆盖点
+
+        protected void afterPush(E item){}//子类覆盖点
+
+        final public void push(E item){ //主体流程，子类不可覆盖
+            if(beforePush(item))
+                doPush(item);
+            afterPush(item)
+        }
+
+        final public void multiPush(E... items){ //子类不可覆盖
+            for(E item : items)
+                push(item); // 不可采用data.addElement(item);
+        }
+    }
+
+模板方法可看作微型框架。
+
+### 推荐的方法修饰符
+
+通过上例，类的实例方法一般有4种用途，除内部挂钩外，其他最好非多态的：
+
+- 为外界提供服务的公开接口
+- 为子类提供扩展点的内部挂钩
+- 为子类或包提供服务的内部接口
+- 为自身提供服务的私有接口
+
+<!--language: table-->
+
+    |        |公开接口|内部挂钩              |内部接口   |自用|
+    |--------|--------|----------------------|-----------|----|
+    |访问控制|public  |protected/private(C++)|protected/package/internal|priave|
+    |是否多态|非      |是                    |非         |非  |
+
+
+### java与C#在对待重写时的区别
+- Java中的实例方法 __默认是可覆盖的__，用`final`表示不可覆盖，而C++和C#正相反，__默认是不可覆盖的__，用`virtaul`表示可覆盖
+
+- 可覆盖的方法有可扩展性，但也可能破坏封装，相反，不可覆盖的方法虽丧失部分灵活性，但同时也具备了稳定性和可靠性，还能节省时空上的开销，通过内联(inline)来带性能上的改善。
+
+- Java和C#中在命名虚方法时，一般加前缀`on/On`
 
 
 多态机制
 =========
 
-## 多态类型
+## 多态类型-静中之动
+P284
+
 GP中参数多态 OOP中子类型多态
 
 前者让相同的实现代码应用于不同场合，后者让不同的实现代码应用于相同的场合
@@ -1315,7 +1604,7 @@ GP中参数多态 OOP中子类型多态
 
 模板方法突出稳定坚固的骨架，策略模式突出是灵活多变的手腕
 
-## 抽象类型
+## 抽象类型-实中之虚
 抽象数据类型的核心是数据抽象，抽象类型的核心是多态抽象
 
 先以术养道，后以道御术
