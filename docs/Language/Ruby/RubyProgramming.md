@@ -2092,7 +2092,7 @@ for循环变量并不是该循环的局部变量，在对应的循环退出后�
 ## 迭代器和可枚举对象
 ruby中的迭代器(iterator)，指`times`,`each`,`map`,`upto`等方法，它们可以和紧跟其后的代码进行交互，`yield`语句是这些迭代器背后复杂的控制结构。
 
-![An iterator yielding to its invoking method](../../../../imgs/ruby_iterator_yield_to_invoke_method.png)
+![An iterator yielding to its invoking method](../../../imgs/ruby_iterator_yield_to_invoke_method.png)
 
 C#/python中`yield`使用主要就是为了迭代，__只能__ 供`foreach`(C#)/`for`(python)/`generator`(python)来使用
 

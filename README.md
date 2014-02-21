@@ -1,4 +1,3 @@
-<style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>
 # Manual
 - [Manual.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManual.md) <span>2014-01-08</span>
 
@@ -28,3 +27,4 @@
 - [Backbone_sample_MVC.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_sample_MVC.md) <span>2013-11-08</span>
 - [Backbone_simple_MV.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_simple_MV.md) <span>2013-11-08</span>
 - [Backbone_todo.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_todo.md) <span>2013-07-01</span>
+<style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>
