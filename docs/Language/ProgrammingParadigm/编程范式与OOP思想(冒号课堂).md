@@ -729,7 +729,7 @@ C# lambda版本
 它们常被混为一谈，但类型的动静与强弱完全是正交的两个概念
 
 - 静态类型语言中，有强类型的Java，也有弱类型的C
-- 动态类型语言中，有强类型的Smalltalk，也有弱类型的JavaCcript
+- 动态类型语言中，有强类型的Python,Smalltalk，也有弱类型的JavaCcript
 - 语言的动静以类型的 __绑定时间__ 来划分，而强弱以类型的 __约束强度__ 来划分
 - 弱类型语言(weakly-typed language)允许一种类型的值 __隐式转化__ 为另一种类型
     - `1+"2"`在vb中等于3，在js中等于"12"，在C中则为一个不定的整数(第2个字符串作为地址来运算)
@@ -1592,34 +1592,311 @@ C++头文件
 =========
 
 ## 多态类型-静中之动
-P284
 
-GP中参数多态 OOP中子类型多态
 
-前者让相同的实现代码应用于不同场合，后者让不同的实现代码应用于相同的场合
+### 多态vs继承
+- 继承的主要用途不是代码重用(合成才是)，而是代码被重用，这依赖于两个前提：
+    - __语义__ 上遵循里氏代换原则
+    - __语法__ 上支持 __多态__(polymorphism)机制
 
-前者看重算法的普适性，后者看重接口与实现的分离度
+- 相对于静态类型语言而说，__继承是多态的基础，多态是继承的目的__
+    - 鸭子类型是不依赖继承的多态
 
-都是在保证必要的类型安全的前提下，突破编译期间过于严苛的类型限制，保证代码灵活性、可维护性和可重用性
+- 多态是动静结合的产物，将静态类型的 __安全性__ 和动态类型的 __灵活性__ 融为一体
 
-模板方法突出稳定坚固的骨架，策略模式突出是灵活多变的手腕
+
+### 多态的类型
+- GP(泛型编程)中 __参数多态__(parametric polymorphism)
+- OOP中的 __包含多态__(inclusion polymorphism)或称 __子类型多态__(subtyping polymorphism)
+
+- 从 __实现机制__ 上看，二者不同之处在于何时将一个变量与其实际类型所定义的行为挂钩：
+    - 前者在 __编译期__，属于早绑定(early binding)或静态绑定(static binding)
+    - 后者在 __运行期__，属于迟绑定(late binding)或动态绑定(dynamic binding)
+
+- 从 __应用形式__ 上看：
+    - 前者是 __发散式__ 的，让 __相同实现代码__ 应用于 __不同场合__
+    - 后者是 __收敛式__ 的，让 __不同实现代码__ 应用于 __相同场合__
+
+- 从 __思维方式__ 上看：
+    - 前者是泛型式编程风格，看重 __算法的普适性__
+    - 后者是对象式编程风格，看重 __接口与实现的分离度__
+
+- 都是在保证必要的类型安全的前提下，突破编译期间过于严苛的类型限制，保证代码灵活性、可维护性和可重用性
+
+- 以上都是通用多态(universal polymorphism)，此外还有以下：
+    - 强制多态(coercion polymorphism)，即一种类型变量在作为参数传递时隐式转换成另一种类型，比如整形变量可以匹配浮点型变量的函数参数
+    - 重载多态(overloading polymorphism)，允许不同的函数或方法拥有相同的名字
+
+### 模板方法vs策略模式
+
+- __模板方法__ 突出稳定坚固的 __骨架__，__策略模式__ 突出是灵活多变的 __手腕__，授予客户自由选择算法的权力
+
+一个可验证用户名和密码的类，使用模板方法：
+
+<!--language: java-->
+
+    abstract class Authenticator{
+        final public void save(String user, String password){
+            if(password == null)
+                password = "";
+            store(user, encrypt(password))
+        }
+
+        final public boolean authenticate(String user, String password){
+            String storedPassword = retrieve(user);
+            if(storedPassword == null) return false;
+
+            if(password == null)
+                password = "";
+            return storedPassword.equals(encrypt(password));
+        }
+
+        protected abstract void store(String user, String encryptedPassword);
+        protected abstract String retrieve(String user);
+        protected String encrypt(String text){return text;}
+    }
+
+使用策略模式：
+
+<!--language: java-->
+
+    interface KeyValueKeeper{
+        public void store(String key, String value);
+        public String retrieve(String key);
+    }
+
+    interface Encrypter{
+        public String encrypt(String plainText);
+    }
+
+    class Authenticator{
+        private KeyValueKeeper keeper;
+        private Encrypter encrypter;
+
+        public Authenticator(KeyValueKeeper keeper, Encrypter encrypter){
+            this.keeper = keeper;
+            this.encrypter = encrypter;
+        }
+
+        public void save(String user, String password){
+            if(password == null)
+                password = "";
+            keeper.store(user, encrypter.encrypt(password))
+        }
+
+        public boolean authenticate(String user, String password){
+            String storedPassword = keeper.retrieve(user);
+            if(storedPassword == null) return false;
+
+            if(password == null)
+                password = "";
+            return storedPassword.equals(encrypter.encrypt(password));
+        }
+    }
+
+当存储与加密的方式各有多种，以第一种方式需要M*N个实现类，而后者只需要M+N个实现类，而且后者的实现类职责更单一，方便被重用
+
+P292 img
+
+
+接下来使用泛型，采用C++模板的方式：
+
+<!--language: cpp-->
+
+    #include <string>
+    #include <map>
+
+    using namespace std;
+
+    template<typename KeyValueKeeper, typename Encrypter>
+    class Authenticator{
+        private:
+            KeyValueKeeper keeper;
+            Encrypter encrypter;
+        public:
+            void save(const string& user, const string& password){
+                keeper.store(user, encrypter.encrypt(password));
+            }
+            bool authenticate(const string& user,
+                              const string& password) const{
+                string storedPassword;
+                if(!keeper.retrieve(user, storedPassword))
+                    return false;
+
+                return storedPassword == encrypter.encrypt(password);
+            }
+    };
+
+    class MemoryKeeper{
+        private:
+            map<string, string> keyValue;
+        public:
+            void store(const string& key, const string& value){
+                keyValue[key] = value;
+            }
+
+            bool retrieve(const string& key, string& value) const{
+                map<string, string>::const_iterator itr
+                  = keyValue.find(key);
+                if(iter == keyValue.end()) return false;
+
+                value = iter->second;
+                return true;
+            }
+    };
+
+    class PlainEncrypter{
+        public:
+            string encrypt(const string& plainText) const{
+                return plainText;
+            }
+    }
+
+    int main(){
+        Authenticator<MemoryKeeper, PlainEncrypter> authenticator
+          = Authenticator<MemoryKeeper, PlainEncrypter>();
+    }
+
+与策略模式代码很相似，主要区别是把接口变成了模板参数，由于在编译期间实例化，因此没有动态绑定的运行开销，缺点是不能动态改变策略
 
 ## 抽象类型-实中之虚
-抽象数据类型的核心是数据抽象，抽象类型的核心是多态抽象
 
-先以术养道，后以道御术
+### 抽象类型vs具体类型
+- 具体类型是创建对象的模板，抽象类型是创建类型的模块，一个是为对象服务的，一个是为类型服务的
 
-具体类型是创建对象的模板，抽象类型是创建类型的模块
+- 前面用户认证的例子，模板方法模式中的`Authenticator`类是抽象的，是为了创建子类型；策略模式中的`Authenticator`是具体的，是为了创建对象，但它合成的两个接口又是为了创建算法类型服务的
 
-一个是为对象服务的，一个是为类型服务的(它的抽象性正源于其服务的抽象性)
+### 抽象类型vs抽象数据类型
+- 抽象数据类型(ADT)的核心是数据抽象，抽象类型的核心是多态抽象
 
-接口继承不是为了重用，而是为了被重用
+### 抽象类型的种类
+- 在Java和C#中只有 __接口__ 和 __抽象类__ 两种
+- C++中这两种类型没有显式区别
+- 动态的OOP语言，如Ruby，Samlltalk还支持 __mixin__ 和trait中的一种类型，它们的出现为了弥补接口与抽象类的一些不足，更好的实现 __代码重用__：
+    - 接口的主要目的是创建多态类型，本身不含任何实现，子类型通过接口继承只能让代码 __被重用__，却无法重用超类型的实现代码。抽象类可以重用代码，可又有多重继承问题
+    - 为什么不用合成？合成用法不简便；合成不能产生子类型，而有时这正是所需的；合成无法覆盖基础类的方法；合成的基础类只能是具体类型，不能是抽象类型（最大缺点，用它作抽象类型，就担任了两个职责）
+
+### mixin
+- 一种可重用的模块，既不像具体类型那样面面俱到，又次像接口那样有名无实，也没有抽象类多重继承之弊
+- Ruby中的Comparable,Enumerable
+- 主要特点：
+    - 抽象性和依赖性：本身没有独立存在的意义，必须融入主体类型才能发挥作用
+    - 实用性和可重用性：不仅提供接口，还提供部分实现
+    - 专一性和细粒度性：提供的接口职责明确而单一
+- 可选性和边缘性：为主体类型提供非核心的辅助功能
+- Java和C#可借助AOP来实现mixin，C#的扩展方法也算对mixin的支持
+- C++借助模板CRTP(Curiously Reurring Template pattern)惯用法实现mixin
+
+一个C++防止被复制的类，不适用于Java和C#：
+
+<!--language: !cpp-->
+
+    class NonCopyable{
+        protected:
+            // 非公有构造函数 防止创建对象
+            NonCopyable(){}
+            // 非公有虚析构函数 建议子类非公有继承
+            ~NonCopyable(){}
+        private:
+            // 私有复制构造函数 防止直接的显式复制和通过参数传递的隐式复制
+            NonCopyable(const NonCopyable&);
+            // 私有赋值运算符 防止通过赋值来复制
+            const NonCopyable& operator=(const NonCopyable&);
+    };
+
+    // 私有继承
+    class SingleCopy : private NonCopyable{};
+
+    int main(){
+        SingleCopy singleCopy1;
+        SingleCopy copy(singleCopy1); //编译器报错
+        SingleCopy singleCopy2;
+        singleCopy2 = singleCopy1; //编译器报错
+        return 0;
+    }
+
+有些对象不希望被复制，如网络连接、数据库连接的资源对象，它们的复制要么意义不大，要么实现困难。C++编译器为每个类提供了默认的复制构造函数(copy constructor)和赋值运算符(assignment operator)，想阻止对象的复制，通常是将两个函数私有化。虽然`NonCopyable`从语法上说不是抽象类，但本质上是一种类似minin功能的抽象类型
+
+为什么Java中没有类似的对象复制？参考后面
+
+### 接口与抽象类区别
+
+- 在语法区别，以下适用于Java和C#
+
+<!--language: table-->
+
+    |                      |抽象类|接口                              |
+    |----------------------|------|----------------------------------|
+    |提供实现代码          |能    |否                                |
+    |多重继承              |否    |能                                |
+    |拥有非public成员      |能    |否                                |
+    |拥有域成员            |能    |否(Java中的static final域成员除外)|
+    |拥有static成员        |能    |否(Java中的static final域成员除外)|
+    |拥有非abstract方法成员|能    |否                                |
+    |方法成员的默认修饰符  |-|public abstract(Java可选，C#不能含任何修饰符)|
+    |域成员的默认修饰符    |-     |Java:public staic final。C#:不允许域成员|
+
+
+- 抽象类的意义在于：父类推迟决定，让子类选择实现方法。推迟，即提供动态节点，如果是具体类型，节点已固定。反过来，要节点动态化，一般通过多态来实现，所以，抽象类型常与多态机制形影不离
+- 接口类型对应是接口规范，接口继承不是为了重用，而是为了被重用
+- 抽象类的出现，让具体类描述对象，重在实现，抽象类描述规范，重在接口，降低了用户与实现者之间耦合度，减少代码维护成本及编译时间
+- 具体类、抽象类和接口分别对应于模具、模具半成品和模具规格
+- Java既规范了Collection,Set,List,Map等接口，又为这些接口提供了抽象类和具体类，方便程度递增而灵活度递减
+
+- “接口是为了克服Java或C#中抽象类不能多重继承的缺点”，这句话很有误导性，接口甚至连单重实现继承都做不到
+
+- 在语义区别
+
+<!--language: table-->
+
+    |     |抽象类  |接口    |
+    |-----|--------|--------|
+    |关系 |is-a    |can-do  |
+    |共性 |相同种类|相同功能|
+    |特征 |核心特征|边缘特征|
+    |联系 |纵向联系|横向联系|
+    |重用 |代码重用|规范重用|
+    |实现 |多级实现|多种实现|
+    |重点 |可扩展性|可置换性|
+    |演变 |新增成员|新增类型|
+
+- 相同的接口代表相同的功能，多表示'can-do'关系，常用后缀'-able'的形容词命名，如`Comparable`,`Runnable`,`Cloneable`；接口一般描述的是对象的边缘特征，或说是一个对象在某一方面的特征，因此能在本质不同的类之间建立起横向联系。
+
+- 接口一旦被采用，它的任何改动－包括增减接口、修改接口的签名或规范，将涉及整个系统，必须慎之又慎；而抽象类演变则没那么困难，可随时新增域成员或有默认实现的方法成员（前提是不与子类型的方法名发生冲突），所有子类将自动得以扩充
+
+- 接口虽然自身难以演化，但很容易让其他类型演化为该接口的子类型，JDK5.0之前，`StringBuffer`,`CahrBuffer`,`Writer`,`PrintStream`本是互不相关的，在引进了接口`Applenable`并让其上类实现该接口，它们便有了横向联系，均可作为格式化输出类`Formatter`的输出目标。
+
+### 标记接口
+标记接口，一个方法也没有，也谈不上规范，也无法利用多态机制，继承这类接口的意义何在？
+
+- 一个类型的规范不限于单个的方法，类型整体上也有规范，比如主要目的、适用场合、限定条件、类不变量等
+
+- 接口是一种类型，有严格的语法保障和明确的语义提示，让一个具体类型继承特定接口中，凸现了设计得用意，比如`java.util.EventListener`接口为所有的事件监听提供了统一的类型
+
+- 有时需要对某些类型提出特殊要求、提供特殊服务或进行特殊处理，而这些并不能通过公有方法来办到，也没有其他有效的语言支持时，标记接口可担此任，成为 __类型元数据__(metadata)的载体，比如给一个类贴上`java.io.Serializable`，它的对象便能序列化，具体工作由JVM来完成。
+    - 当标记接口仅用于元数据时，更好的办法是采用属性导向式编程，Java中的annotation，C#中的attribute
+
+
+### OOP的规范抽象
+
+- __个人身份__ 对应的规范抽象借助 __封装__，以数据抽象的形式出现，让每个类成为独立的模块，有显著的外在行为和隐藏的内在特性
+- __家庭身份__ 对应的规范抽象借助 __继承__，以类型层级的形式出现，使一个类成为其他类的子类或父类，确立了对象在类型家族中的身份
+- __社会身份__ 对应的规范抽象借助 __多态__，以多态抽象的形式出现，更关心的是职责和角色，不以具体类型出现，而是在不同场合下以不同抽象类型的身份出现。一般具体类型在公共场合是不为人知的，只有少数核心库里的核心类是例外，社会身份则不然，远比个人身份更容易被接受，它有如下特点：
+    - 独立而稳定：先于个体而存在，且不随个体的变化而变化
+    - 公开而权威：为人所知、为人所信
+    - 规范而开放：制定的协议标准明确，且允许个体在遵守协议的前提下百花齐放
+    - 相同身份的个体可相互替换、新型个体可随时加入，而且不会影响整体框架和流程，保证了系统的灵活性和扩展性；
+    - 整体不因某一个体的变故而受冲击，保证了系统的稳定性和可靠性；
+    - 个体角色清晰、分工明确，保证了系统的规范性和可读性
+
 
 
 值与引用
 =========
 
-## 语法类型
+P318
+
+## 语法类型-体用之分
 C++没用引用类型，但有&引用和*指针，具有引用功能，属于 引用端 的引用，而C#/java中引用类型是指 被引用端 的
 
 语言中内存分配机制(按灵活递增)静态分配、栈分配、堆分配:
@@ -1723,6 +2000,9 @@ C++中string是值类型的，但不是不可变的，但可以使用const来保
 UML建模中，值对象多用于属性，引用对象多用于关联，值对象是附属的，被动的，引用对象是独立的，能动的
 
 合成是基于值语义的包含，聚合是基于引用语义的包含
+
+
+## 语义类型-阴阳之道
 
 
 设计原则
