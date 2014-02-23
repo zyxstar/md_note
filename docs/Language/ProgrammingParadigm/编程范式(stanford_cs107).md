@@ -1306,14 +1306,18 @@ Lecture 10
 
         why = (short *)(snink + 2);            R1 = SP + 6
                                                M[SP] = R1
+
         *why = 50;                             R1 = M[SP]
                                                M[R1] = .2 50
-    }                                          SP = SP + 8
+
+                                               SP = SP + 8
                                                RET
+    }
 
     int main(int argc, char **argv){
         int i = 4;               SP = SP - 4
                                  M[SP] = 4
+
         foo(i,&i);               SP = SP - 8
                                  R1 = M[SP+8]  //load i值
                                  R2 = SP + 8   //得到 i地址
@@ -1321,7 +1325,9 @@ Lecture 10
                                  M[SP+4] = R2
                                  CALL <foo>
                                  SP = SP + 8   //在foo RET之后执行
+
         return 0;                RV = 0
+                                 RET
     }
 
 
@@ -1380,7 +1386,7 @@ Lecture 10
 
 - `foo`中的汇编，`SP = SP - 8`是为局部变量申请空间，后两句的翻译见上面代码，得到的效果如上图中50的部分
 
-- `foo`中为了申请空间，做了`SP = SP - 8`，现在函数结束了，需要恢复原先状态，需要收回那些空间（像栈的malloc），需要执行`SP = SP + 8`，这样会让SP，指向图中第二个SavedPC，即返回地址，__通过`RET`，将savedPC值放到`PC`中，并且将SP加上4bytes，实现了函数返回__。此时`SP`指向如上图SP3
+- `foo`中为了申请空间，做了`SP = SP - 8`，现在函数结束了，需要恢复原先状态，需要收回那些空间（像栈的malloc），需要执行`SP = SP + 8`，这样会让SP，指向图中第二个SavedPC，即返回地址，__通过`RET`，将savedPC值放到`PC`中，并且将SP加上4bytes，实现了函数返回__。（它指向调用者的某一个代码指令，savedPC其实也只是一个向上的偏移量），此时`SP`指向如上图SP3
 
 - `main`中
 ，`SP = SP + 8`在`foo`的`RET`之后执行，它实际上是回收它为`foo`分配的两个参数的空间，`RV=0`,`RV`也是特殊寄存器，专门为传递返回值，调用函数会在被调用者返回后，检查该值
@@ -1394,8 +1400,10 @@ Lecture 10
     int fact(int n){
         if(n==0)                 <fact>:  R1 = M[SP + 4]
                                           BNE R1,0 PC+?
+
             return 1;                     RV = 1
                                           RET
+
         return n * fact(n-1);             R1 = M[SP+4] //load n
                                           R1 = R1 - 1  //alu n-1
                                           SP = SP - 4  //assign space
@@ -1413,7 +1421,156 @@ Lecture 10
 
 [演示过程](../../../data/factorial-trace.pdf)
 
-
-
 Lecture 11
 ==========
+
+## C++地址引用类型的汇编
+
+先编写C指针的版本
+
+<!--language: c-->
+
+    void swap(int *ap, int *bp){
+        int temp = *ap;          <swap>:  SP = SP - 4
+                                          R1 = M[SP+8]  //load ap
+                                          R2 = M[R1]    //load *ap
+                                          M[SP] = R2    //store
+
+        *ap = *bp;                        R1 = M[SP+12] //load bp
+                                          R2 = M[R1]    //load *bp
+                                          R3 = M[SP+8]  //load ap again
+                                          M[R3] = R2    //store
+
+        *bp = temp;                       R1 = M[SP]    //load temp
+                                          R2 = M[SP+8]  //load bp
+                                          M[R2] = R1    //store
+                                          SP = SP + 4
+                                          RET
+    }
+
+    void foo(){
+        int x;                         SP = SP - 8
+        int y;
+        x = 11;                        M[SP+4] = 11
+        y = 17;                        M[SP] = 17
+
+        swap(&x, &y);                  R1 = SP     //&y
+                                       R2 = SP + 4 //&x
+                                       SP = SP - 8
+                                       M[SP] = R2   //pass para &x
+                                       M[SP+4] = R1 //pass para &y
+                                       CALL <swap>
+                                       SP = SP + 8
+
+                                       SP = SP + 8
+                                       RET
+    }
+
+
+- 更好的编程习惯是，每逢有栈空间的分配，如`SP = SP - 8`，就需要回收它，提前写好`SP = SP + 8`，中间留出位置填写其他代码
+- 汇编中，先求右值，再给左值赋上
+- `swap`中`int temp = *ap;`得到`R1`存储着`ap`，但在`*ap = *bp;`时，会再次重新计算，此时`R1`已被覆盖，更为了上下文无关
+
+接下来是C++版本：
+
+<!--language: cpp-->
+
+    void swap(int& a, int& b){
+        int temp = a;
+        a = b;
+        b = temp;
+    }
+
+    void foo(){
+        int x;
+        int y;
+        x = 11;
+        y = 17;
+        swap(x, y);
+    }
+
+- `a`和`b`看起来像整数，但是在内部实现上它们并不是真正的整数，引用的工作方式是，对指针进行自动解引用，即查找的是`a`存储的地址 所对应的数据
+- 编译器根据`swap`原型，知道在`foo`中编写`swap(x, y);`赋的参数 __不是真正的值__，而是它们的引用（别名），__传递的还是地址__，而在`swap`中，再对指针 __自动解引用__（两头都做更改）
+- 最终汇编代码将与C指针版本的一样（当然有时也不尽相同，C++语言级别的引用和引用还有不同意义，只是比较相似而已），可以理解为编译器的语法糖，只要函数声明时指定引用，而在编写函数和调用函数时，均不需要去使用`&`和`*`，认为它只是别名，直接操作
+
+<!--language: cpp-->
+
+    void foo(){
+        int x = 11;
+        int& y = x;
+        //int *y = &x;
+    }
+
+- 后两句的产生的汇编是一样的，在使用时，上面一行的`y`不需要解引用，而后者需要解引用
+- 一旦赋值就不能将引用重新绑定给新的左值，也就`int& y = x;`的y的 __指向不能被更改，而指针则灵活得多__，比如引用没办法构造链表
+
+## C++类的汇编
+
+<!--language: cpp-->
+
+    class binky{
+        public:
+            int dunky(int x, int y);
+            char * minky(int *z){
+                int w = *z;
+                return slinky + dunky(winky, winky);
+            }
+
+        private:
+            int winky;
+            char *blinky;
+            char slinky[8];
+    };
+
+    int main(){
+        int n = 17;
+        binky b;
+        b.minky(&n); //equals binky::minky(&b, &n);
+    }
+
+- 当声明`binky b`时，`b`的内存块构造与C的结构体类似：
+
+<!--language: plain-->
+
+           ┌─┬─┬─┬─┐
+           │ │ │ │ │
+           ├─┼─┼─┼─┤ slinky[0..7]
+           │ │ │ │ │
+           ├─┴─┴─┴─┤
+           │       │ *blinky
+           ├───────┤
+           │       │ winky
+    &b   ->└───────┘
+
+- 为什么在内联函数`minky`中能访问到`slinky`和`winky`，因为它总能得到当前对象的基地址，`this`指针总是作为第0个参数隐式传入的，即`b.minky(&n)`对于编译器而言，传入的并不是一个参数，而是两个，对应的形式是`binky::minky(&b, &n);`，所以对应的活动记录就是这样
+
+<!--language: plain-->
+
+           ┌───────┐
+           │       │ *z
+           ├───────┤
+           │       │ *this  指向  &b
+           ├───────┤
+           │SavedPC│
+           ├───────┤
+           │       │ w
+           └───────┘
+
+- 而`static`修饰的函数，会被认为 __只是普通函数__，恰好命名空间在class下面，不需要this的隐式传递，同样 __不能被继承__
+
+## 预处理器
+- C中定义全局常量，最常用的是`#define`
+- 当预处理时，它会依次读取传入的.c文件的内容，当发现`#define key value`时，将会对文件中出现`key`替换/匹配成`value`，其他的原样输出，输出的还是文本
+
+- 宏可认为是元编程（代码生成）的一部分
+
+Lecture 12
+==========
+
+
+
+
+
+
+
+
