@@ -1696,7 +1696,9 @@ C++头文件
 
 当存储与加密的方式各有多种，以第一种方式需要M*N个实现类，而后者只需要M+N个实现类，而且后者的实现类职责更单一，方便被重用
 
-P292 img
+![prog_paradigm_template](../../../imgs/prog_paradigm_template.png)
+
+![prog_paradigm_strategy](../../../imgs/prog_paradigm_strategy.png)
 
 
 接下来使用泛型，采用C++模板的方式：
@@ -1817,7 +1819,7 @@ P292 img
 
 有些对象不希望被复制，如网络连接、数据库连接的资源对象，它们的复制要么意义不大，要么实现困难。C++编译器为每个类提供了默认的复制构造函数(copy constructor)和赋值运算符(assignment operator)，想阻止对象的复制，通常是将两个函数私有化。虽然`NonCopyable`从语法上说不是抽象类，但本质上是一种类似minin功能的抽象类型
 
-为什么Java中没有类似的对象复制？参考后面的[值与引用](#TOC???)
+为什么Java中没有类似的对象复制？参考后面的[按值传递与按引用传递](#TOC11.1.3)
 
 ### 接口与抽象类区别
 
@@ -1953,8 +1955,7 @@ P292 img
     someType a;         //将a分配在栈上
     a = new someType(); //在堆上分配了一个对象并将其引用赋值给a
 
-
-P322 img
+![prog_paradigm_ref](../../../imgs/prog_paradigm_ref.png)
 
 - Java中除了基本类型是值类型外，其他的应该都是引用类型，C++则无法自定义引用类型，却可以创建引用，C#则既可以自定义引用类型，也可以自定义值类型（如上代码，someType是struct的话，则不在堆中，直接在栈上分配一个对象）
 
