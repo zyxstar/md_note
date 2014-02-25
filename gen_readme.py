@@ -6,12 +6,19 @@ import codecs
 import urllib
 import re
 
+SYS_ENCODING = sys.getfilesystemencoding()
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
 
-ORDER_DIC = {"Analysis&Design":10,"Language":20,"Framework":30,
-    "ProgrammingParadigm":10,"RubyProgramming.md":10,"PythonCookBook.md":10,
-    u"需求分析训练营(徐锋).md".encode("gbk"):10}
+ORDER_DIC = {"Analysis&Design":10,
+             "Language":20,
+             "Framework":30,
+             "ProgrammingParadigm":10,
+             "RubyProgramming.md":10,
+             "PythonCookBook.md":10,
+             u"需求分析训练营(徐锋).md".encode(SYS_ENCODING):10,
+             u"系统分析UML实务(MDA).md".encode(SYS_ENCODING):20
+            }
 
 
 def build_one_file(folders, filename):
@@ -30,12 +37,11 @@ def build_one_file(folders, filename):
 
 def yield_subfiles():
     _docs_dir = os.path.join(os.path.dirname(__file__), './docs/')
-    _sys_encoding = sys.getfilesystemencoding()
     def _find_subfiles(*folders):
         _folder_path = os.path.join(_docs_dir, '/'.join(folders))
         for _dirpath, _dirnames, _filenames in os.walk(_folder_path):
             for _f in sorted(_filenames,key=lambda _file:ORDER_DIC.setdefault(_file,999)):
-                yield map(lambda _fo: _fo.decode(_sys_encoding), folders), _f.decode(_sys_encoding)
+                yield map(lambda _fo: _fo.decode(SYS_ENCODING), folders), _f.decode(SYS_ENCODING)
             for _d in sorted(_dirnames,key=lambda _dir:ORDER_DIC.setdefault(_dir,999)):
                 _folders = list(folders)
                 _folders.append(_d)
