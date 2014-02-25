@@ -2063,12 +2063,13 @@ java按值传递对象的引用，并不支持按引用传递，因为所有对�
     ValueType& v2 = v1;  // 方法1: 通过引用让v2成为v1的别名
     ValueType* v3 = &v1; // 方法2: 通过指针让v3指向v1
 
-    //让引用类型具有值语义
-    ReferenceType r1=someObject;
-    ReferenceType r2=(ReferenceType)r1.clone();
+    //让引用类型的ReferenceType具有值语义(假定它是Java中的Cloneable类)
+    ReferenceType r1 = someObject;
+    ReferenceType r2 = (ReferenceType)r1.clone();
 
 
 值语义对象的改变是一种 __新旧更替__，引用语义对象的改变是一种 __自我更新__
+
 
 传输对象的焦点在于“有什么”，值对象的焦点在于“是什么”，而引用对象的焦点在于“是哪个”
 合成是基于值语义的包含，聚合是基于引用语义的包含
