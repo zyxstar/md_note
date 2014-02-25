@@ -33,7 +33,7 @@ def trans_note_urlpara(file_path, port):
                          for _path in file_paths])
 
     p_src = urllib.quote_plus(urlparse.urljoin(note_srv, url_paths))
-    p_title =urllib.quote_plus(os.path.basename(file_path).split('.')[0].decode(sys_encoding).encode('utf-8'))
+    p_title =urllib.quote_plus(os.path.basename(file_path).rsplit('.',1)[0].decode(sys_encoding).encode('utf-8'))
     return "src=%s&title=%s" % (p_src,p_title)
 
 

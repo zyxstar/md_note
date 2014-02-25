@@ -12,7 +12,8 @@ GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
 
 ORDER_DIC = {"Analysis&Design":10,
              "Language":20,
-             "Framework":30,
+             "Skill":30,
+             "Framework":40,
              "ProgrammingParadigm":10,
              "RubyProgramming.md":10,
              "PythonCookBook.md":10,

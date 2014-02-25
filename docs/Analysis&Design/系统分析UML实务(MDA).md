@@ -250,7 +250,11 @@ PIM
 
 - 聚合与组合
 
+聚合：有Whole-Part关系
+
 ![mda_class_diagram3](../../imgs/mda_class_diagram3.png)
+
+组合：容器消亡，Part一起消亡
 
 ![mda_class_diagram4](../../imgs/mda_class_diagram4.png)
 
@@ -278,7 +282,15 @@ Item-TransactionLineItem，如基金-单期交易
 
 ![mda_trans_pattern2](../../imgs/mda_trans_pattern2.png)
 
-> ps. 更详细的描述见Peter Coad的《Object Models: Strategies, Patterns, and Applications》。其实Peter Coad在其后的《Java Modeling in Color with UML》对如何建立领域模型形成了方法论
+> ps. 更详细的描述见Peter Coad的《Object Models: Strategies, Patterns, and Applications》。其实Peter Coad在其后的《Java Modeling in Color with UML》（亦称四色建模）对如何建立领域模型形成了方法论
+
+### 属性的来源
+- 某物会记录什么数据
+- 某物会提供我们哪些数据
+- 通过某物，可以让我们查到哪些数据吗
+- 某物可以做什么用呢
+- 有某物之后，我们可以拿它来做什么
+- 属性范围，初始，如何得到:键入、查询、计算、编码
 
 ## PIM-4:定义操作及方法(序列图)
 根据状态图中所有动作，考虑为操作，状态图中使用到的数据，考虑为属性。再通过序列图，找到更多的操作。
@@ -311,6 +323,13 @@ Item-TransactionLineItem，如基金-单期交易
 
 ![mda_seq_diagram5](../../imgs/mda_seq_diagram5.png)
 
+### 操作的来源
+
+- 通常怎么执行某操作呢，主要步骤
+- 执行步骤会用到什么数据及生成什么数据
+- 会用到的计算公式
+- 执行某操作的约束
+
 ### 注意点
 
 - 主要流程与其他流程分置于不同的序列图中，千万别在一张序列图里表达多条流程，避免图面过于复杂
@@ -328,6 +347,7 @@ Item-TransactionLineItem，如基金-单期交易
 ![mda_seq_diagram7](../../imgs/mda_seq_diagram7.png)
 
 - 传送对象，而非属性，维持对象封装性
+
 
 PSM
 =====
