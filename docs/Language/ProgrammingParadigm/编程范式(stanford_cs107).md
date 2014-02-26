@@ -1622,35 +1622,54 @@ Lecture 12
 ### 预处理命令
 - `gcc -E  test.c -o test.i`,只进行预编译处理，不再进行后续过程，能查看到`#define`的替换与展开，及`#include`的头文件引入
 
-## 编译器
 
-<!--language: c-->
+Lecture 13
+==========
+
+## 编译与链接
+
+<!--language: !c-->
 
     /* main.c */
-    #include <stdio.h> /* printf */
     #include <stdlib.h> /* malloc, free */
+    #include <stdio.h> /* printf */
     #include <assert.h>
 
     int main(int argc, char *argv[]){
-        void *memory = malloc(400);
-        assert(memory != NULL);
+        void *mem = malloc(400);
+        assert(mem != NULL);
         printf("Yay!\n");
-        free(memory);
+        free(mem);
         return 0;
     }
 
-- 编译阶段，输入的是中间文件`*.i`，编译后生成汇编语言文件`*.s`
+<!-- - 编译阶段，输入的是中间文件`*.i`，编译后生成汇编语言文件`*.s`
     - `gcc -S test.i -o test.s`
-    - `gcc -S test.c -o test.s`
+    - `gcc -S test.c -o test.s` -->
 
 - 上面的汇编代码中将看到`CALL malloc,CALL printf,CALL free,RV=0`等，但不会看到`CALL assert`而只有`assert`宏展开后的一些汇编指令
 
+- 编译产生`.o`文件，然后将所有`.o`文件及其他所有来自编译器标准库的`.o`代码进行链接，链接器ld会将一个个`.o`文件拼接，生成一个更大的可执行文件，并且去掉没有用到的部分
 
-## 链接器
+- 如果把`#include <stdio.h>`注释掉，有些编译器将会产生编译错误，因为没有定义`printf`，
+    - __但gcc不会报错__(报warning)，它会在编译时刻分析源程序，看看哪部分看函数调用，然后 __根据这个调用来推测函数原型__，这里的函数调用是一个参数，gcc将把`printf`原型定义为只有一个参数，将返回值推测为`int`（和真正原型一致），当后面还有`printf`时，它们只能有一个参数（经测试可以有多个参数）。
+    - 生成的`.o`文件没有变化，因为`.h`文件是不会产生汇编代码的，只是告诉编译器一些规则，可以知道哪些语法是正确的
+    - 在链接阶段，链接器会根据编译过程中出现的警告，查找标准库中`printf`对应的代码，是存在的，就会被加进来
+
+- 如果把`#include <stdlib.h>`注释掉，gcc看到`malloc`将推测成`int malloc(int)`，将多得到一条警告，是类型不兼容（返回值是int，而赋值的类型是`void*`）
+- 如果把`#include <assert.h>`注释掉，gcc将报错，它会认为`assert`也是函数调用，推测它原型，生成的`.o`文件中也会有`CALL assert`的存在，到链接时再查找标准库，但始终未定义，出现链接错误
+
+- 函数原型的存在意义就在于，在编译器产生汇编时，让调用者和被调用者关于savedPC上面的活动记录的布局达成一致（函数调用参数符合调用参数类型规定），原型其实只涉及参数在活动记录中（位于savedPC之上）正确布局
+
+
+
+1944
 
 
 
 
+Lecture 14
+==========
 
 
 
