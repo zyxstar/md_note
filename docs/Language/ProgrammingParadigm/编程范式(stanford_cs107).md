@@ -1617,14 +1617,34 @@ Lecture 12
        ... /* vector.h content */
     #endif
 
-以上是早期解决循环导入的问题，现在的预处理器应能自动解决循环导入的问题
+以上是早期解决循环导入的问题，现在的预处理器应能自动解决循环导入的问题(当然你不能假设它已为你处理好)
 
 ### 预处理命令
 - `gcc -E  test.c -o test.i`,只进行预编译处理，不再进行后续过程，能查看到`#define`的替换与展开，及`#include`的头文件引入
 
-36
-
 ## 编译器
+
+<!--language: c-->
+
+    /* main.c */
+    #include <stdio.h> /* printf */
+    #include <stdlib.h> /* malloc, free */
+    #include <assert.h>
+
+    int main(int argc, char *argv[]){
+        void *memory = malloc(400);
+        assert(memory != NULL);
+        printf("Yay!\n");
+        free(memory);
+        return 0;
+    }
+
+- 编译阶段，输入的是中间文件`*.i`，编译后生成汇编语言文件`*.s`
+    - `gcc -S test.i -o test.s`
+    - `gcc -S test.c -o test.s`
+
+- 上面的汇编代码中将看到`CALL malloc,CALL printf,CALL free,RV=0`等，但不会看到`CALL assert`而只有`assert`宏展开后的一些汇编指令
+
 
 ## 链接器
 
