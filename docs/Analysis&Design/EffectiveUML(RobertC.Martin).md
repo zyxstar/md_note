@@ -1,77 +1,18 @@
 > 2009-09-06
 
-UML概观
-========
-UML可以用来绘制关于问题领域、候选软件设计以及完成了的软件实现的图示，即 __概念级、规格说明和实现级__。本文关注后两个级别。
-
-规格说明级和实现级的图示与源代码间有很强的关联，事实上，规格说明级图示的目的就是为了能够转换成源代码。同样，实现级图示是为了描绘已呢的源代码。这两上级别的图示必须 __遵循某些规则和语义__。
-
-概念级的图示和源代码没有很强的关联，更多地是和人的语言相关，用于描绘存在于问题领域的概念和抽象的一种速记方法，因此可 __不必遵循__ 强的语义规则，其含义可以是模糊，而 __通过解释__ 来确定。而直接通过概念级图示去说明源代码是程序员和分析师之间产生误解的根源：__描述问题解决方案的规范说明 *不必* 与描述问题本身的概念图有什么相像之处__。
-
-
-## 类图
-
-![effective_uml_14](../../imgs/effective_uml_14.png)
-
-- 矩形表示类，箭头表示关系
-- 本图中，所有关系都是关联(association)关系，关联是简单的数据关系，其中一个对象或者持有对另外一个对象的引用，或者调用了其方法
-- 一般来说，和箭头相邻的数字表示该关系所包含的实例个数。如果数字比1大，意味着某种容器。
-- 类图标中可以分成多个格间，最上面存放类的名字，其他描述属性与方法
-- `<<interface>>`符号用来说明`IComparable`是一个接口
-- 这里显示的大部分符号都是可选的
-- 请注意 __关联关系是如何与实例变量对应__ 起来的，如从`TreeMap`到`TreeMapNode`的关联称为`topNode`，其对应于`TreeMap`中的`topNode`变量
-
-<!-- ## 对象图
-展示了在系统执行的某处特定时候的一组对象和关系，看作是一个 __内存的快照__
-
-![effective_uml_15](../../imgs/effective_uml_15.png)
-
-- 矩形表示对象，通过它们名字下面的下划线辨别出来，冒号后在是对象所属的类名字
-- 每个对象的下层格间显示了该对象`key`变量的值
-- 对象之间的关系称为 __链__，是通过关联导出的，针对`nodes`数组中的两个数组单元命名的
- -->
-
-## 顺序图
-
-![effective_uml_16](../../imgs/effective_uml_16.png)
-
-- 描绘了`TreeMap`的`Add`方法是如何实现的
-- 人形线条图表示了一个未知调用者，调用了`TreeMap`对象的`Add`方法。如果`topNode`变量为`null`，`TreeMap`就创建一个新的`TreeMapNode`对象并把它赋给`topNode`，否则，`TreeMap`就向`topNode`发送`Add`消息
-- 方括号中的布尔表达式称为 __监护条件__(guard)，它们指示出应该选择哪条路径。
-- 终结点在`TreeMapNode`图标上的消息箭头表示 __对象构造__。
-- 带有小圆圈的箭头称为 __数据标记__(data token)，本例中，描述了对象构造的参数
-- `TreeMap`下面的窄矩形条称为 __激活__(activation)，表示`add`方法执行了多少时间
-
-## 协作图
-
-![effective_uml_17](../../imgs/effective_uml_17.png)
-
-- 描绘了`TreeMap.Add`中`topNode`不会`null`的情况
-- 协作图包含了顺序图中所包含的同样的信息
-- 顺序图是为了清楚的表达出 __消息的顺序__，而协作图为了清楚地表达出 __对象之间的关系__
-- 对象被称为链(link)的关系连接起来。只要一个对象可以向另外一个对象发送消息，就存在链关系，在链之上传递的正是消息本身，表示为一些小箭头。
-- 消息上标记有消息名称、消息顺序号以及任何使用的监护条件
-- 带点的顺序号表示 __调用的层次结构__。`TreeMap.Add`（消息1）调用了`TreeMapNode.Add`（消息1.1），因此，消息1.1 是 消息1 所调用的第一条消息
-
-<!-- ## 状态图
-
-![effective_uml_18](../../imgs/effective_uml_18.png)
-
-UML可以非常全面的表示有限状态机，上图是一个地铁旋转门的状态机，它有两个状态：`Locked`和`Unlocked`，可以向这个机器发送两个事件：`coin`事件表示用户向旋转门中投入一枚硬币，`pass`事件表示用户已经通过了旋转门。
-
-- 图中箭头称为 __迁移__(transition)，其上标记有触发迁移的事件以及该迁移执行的动作，当一个迁移被触发时，会导致系统的状态发生改变
-    - 如果在`Locked`状态收到`coin`事件，就迁移到`Unlocked`状态并调用`Unlock`函数
-    - 如果在`Unlocked`状态收到`pass`事件，就迁移到`Locked`状态并调用`Lock`函数
-    - 如果在`Unlocked`状态收到`coin`事件，就迁移到`Unlocked`状态并调用`Refund`函数
-    - 如果在`Locked`状态收到`pass`事件，就迁移到`Locked`状态并调用`Alarm`函数
-- 状态图是非常有用的，通过状态时，可以研究系统在 __未预料到__ 的情形下该如何动作，如：当用户没有正当理由的情况下投入一枚硬币后，接着又投入了另一枚硬币
- -->
-
 为什么建模
 ==========
 - 构建模型就是为了弄清楚某些东西是否可行
 - 当模型比要构建的真实实体便宜得多时，我们就会使用模型来研究设计
 - 当有一些确定的东西需要测试，并且使用UML要比使用代码测试起来代价更低一些时，就使用UML
+
+## UML概观
+
+UML可以用来绘制关于问题领域、候选软件设计以及完成了的软件实现的图示，即 __概念级、规格说明和实现级__。本文关注后两个级别。
+
+规格说明级和实现级的图示与源代码间有很强的关联，事实上，规格说明级图示的目的就是为了能够转换成源代码。同样，实现级图示是为了描绘已呢的源代码。这两上级别的图示必须 __遵循某些规则和语义__。
+
+概念级的图示和源代码没有很强的关联，更多地是和人的语言相关，用于描绘存在于问题领域的概念和抽象的一种速记方法，因此可 __不必遵循__ 强的语义规则，其含义可以是模糊，而 __通过解释__ 来确定。而直接通过概念级图示去说明源代码是程序员和分析师之间产生误解的根源：__描述问题解决方案的规范说明 *不必* 与描述问题本身的概念图有什么相像之处__。
 
 ## 有效使用UML
 图的详细程度应该只是达成目标所必需的，请保持图示简单、干净，不应该当作声明所有方法、变量和关系的地方
@@ -211,7 +152,7 @@ UML图必须经过仔细考虑，__不需要数千页的顺序图__，要的是�
 ### 文档呢
 文档必须编写，对于什么不需要文档化和什么需要文档的选择一样重要。复杂的通信协议需要文档化，复杂的关系模型需要文档化，复杂的可重用的框架需要文档化，但不需要数百页的UML，应该简明扼要
 
-文档包括了重要模块高层结构的UML图、关系模型ER图、一两页系统构建说明、测试指导、源码控制指导等。并放到wiki之类的协作式写作工具中，团队每个人都可以在屏幕上浏览，并在需要时进行搜索和更改
+文档包括了重要模块高层结构的UML图、关系模型ER图、一两页系统构建说明、测试指导、源码控制指导等。并放到wiki之类的 __协作式写作工具__ 中，团队每个人都可以在屏幕上浏览，并在需要时进行搜索和更改
 
 状态图
 ========
@@ -270,10 +211,11 @@ UML图必须经过仔细考虑，__不需要数千页的顺序图__，要的是�
 基于此，可以使用状态模式来编写代码，甚至可以使用[SMC](http://www.objectmentor.com/resources/downloads.html)来生成相应代码，显然比维护图示容易得多
 
 
-
 对象图
 =======
-当需要展示系统在某个特定时刻或者某个特定状态下的内部结构时，对象图很有用的，描绘了某些类和关系将要被使用的方式，有助于展示系统是如何随着各种输入而变化的。当系统的结构是 __动态构建__ 起来而不是静态的类结构决定时，但大多数情况下，都可以从相应的类图中直接推导出来，因此没有多少用途
+## 即时快照
+展示了在系统执行的某处特定时候的一组对象和关系，看作是一个 __内存的快照__。
+当需要展示系统在某个特定时刻或者某个特定状态下的内部结构时，对象图很有用的，描绘了某些类和关系将要被使用的方式，有助于展示系统是如何随着各种输入而变化的。当系统的结构是 __动态构建__ 起来而不是静态的类结构决定时，__但大多数情况下，都可以从相应的类图中直接推导出来，因此没有多少用途__
 
 ## 主动对象
 在 __多线程__ 系统中，对象图也非常有用，比如下面的代码，允许去编写`socket`服务器，而无需关心那些和`socket`相关的讨厌的线程和同步问题：
@@ -286,96 +228,396 @@ UML图必须经过仔细考虑，__不需要数千页的顺序图__，要的是�
     using System.Threading;
 
     namespace SocketServer {
-      public interface SocketService {
-        void Serve(Socket s);
-      }
-
-      public class SocketServer {
-        private TcpListener serverSocket = null;
-        private Thread serverThread = null;
-        private bool running = false;
-        private SocketService itsService = null;
-        private ArrayList threads = new ArrayList();
-
-        public SocketServer(int port, SocketService service) {
-          itsService = service;
-          IPAddress addr = IPAddress.Parse("127.0.0.1");
-          serverSocket = new TcpListener(addr, port);
-          serverSocket.Start();
-          serverThread = new Thread(new ThreadStart(Server));
-          serverThread.Start();
+        public interface SocketService {
+            void Serve(Socket s);
         }
 
-        public void Close() {
-          running = false;
-          serverThread.Interrupt();
-          serverSocket.Stop();
-          serverThread.Join();
-          WaitForServiceThreads();
-        }
+        public class SocketServer {
+            private TcpListener serverSocket = null;
+            private Thread serverThread = null;
+            private bool running = false;
+            private SocketService itsService = null;
+            private ArrayList threads = new ArrayList();
 
-        private void Server() {
-          running = true;
-          while (running) {
-            Socket s = serverSocket.AcceptSocket();
-            StartServiceThread(s);
-          }
-        }
-
-        private void StartServiceThread(Socket s) {
-          Thread serviceThread =
-            new Thread(new ServiceRunner(s, this).ThreadStart());
-          lock (threads) {
-            threads.Add(serviceThread);
-          }
-          serviceThread.Start();
-        }
-
-        private void WaitForServiceThreads() {
-          while (threads.Count > 0) {
-            Thread t;
-            lock (threads) {
-              t = (Thread) threads[0];
+            public SocketServer(int port, SocketService service) {
+                itsService = service;
+                IPAddress addr = IPAddress.Parse("127.0.0.1");
+                serverSocket = new TcpListener(addr, port);
+                serverSocket.Start();
+                serverThread = new Thread(new ThreadStart(Server));
+                serverThread.Start();
             }
 
-            t.Join();
-          }
-        }
-
-        internal class ServiceRunner {
-          private Socket itsSocket;
-          private SocketServer itsServer;
-
-          public ServiceRunner(Socket s, SocketServer server) {
-            itsSocket = s;
-            itsServer = server;
-          }
-
-          public void Run() {
-            itsServer.itsService.Serve(itsSocket);
-            lock (itsServer.threads) {
-              itsServer.threads.Remove(Thread.CurrentThread);
+            public void Close() {
+                running = false;
+                serverThread.Interrupt();
+                serverSocket.Stop();
+                serverThread.Join();
+                WaitForServiceThreads();
             }
-            itsSocket.Close();
-          }
 
-          public ThreadStart ThreadStart() {
-            return new ThreadStart(Run);
+            private void Server() {
+                running = true;
+                while (running) {
+                    Socket s = serverSocket.AcceptSocket();
+                    StartServiceThread(s);
+                }
+            }
+
+            private void StartServiceThread(Socket s) {
+                Thread serviceThread =
+                    new Thread(new ServiceRunner(s, this).ThreadStart());
+                lock (threads) {
+                    threads.Add(serviceThread);
+                }
+                serviceThread.Start();
+            }
+
+            private void WaitForServiceThreads() {
+                while (threads.Count > 0) {
+                    Thread t;
+                    lock (threads) {
+                        t = (Thread) threads[0];
+                    }
+                    t.Join();
+                }
+            }
+
+          internal class ServiceRunner {
+              private Socket itsSocket;
+              private SocketServer itsServer;
+
+              public ServiceRunner(Socket s, SocketServer server) {
+                  itsSocket = s;
+                  itsServer = server;
+              }
+
+              public void Run() {
+                  itsServer.itsService.Serve(itsSocket);
+                  lock (itsServer.threads) {
+                      itsServer.threads.Remove(Thread.CurrentThread);
+                  }
+                  itsSocket.Close();
+              }
+
+              public ThreadStart ThreadStart() {
+                  return new ThreadStart(Run);
+              }
           }
         }
-      }
     }
 
+它的类图如下，但很难看出这段代码的意图：
+
+![effective_uml_25](../../imgs/effective_uml_25.png)
+
+但再看下面的对象图，该图对结构的表达要比类图好得多
+
+![effective_uml_26](../../imgs/effective_uml_26.png)
+
+`SocketServer`持有`serverThread`，并且`serverThread`运行在一个名为`Server()`的代理中，还展示出`serverThread`负责创建所有的`ServiceRunner`实例
+
+- 围绕着`Thread`实例的粗体边框，代表 __主动对象__(active object)，主动对象 __管理着一个控制线程__。它们具有用来控制线程的方法，如`Start`,`Abort`,`Sleep`等，这幅图中所有主动对象都是`Thread`的实例，所有的处理都是在代理中完成的，`Thread`的实例持有对这些代理的引用。
+
+
+用例
+=========
+用例是一种非常好的思想，但有时更多的关注形式而非内容，在前置条件、后置条件、主参与者、辅助参与者等一堆根本不重要的事情上争论不休
+
+- __保持用例简单，不用担心用例的格式，不要尝试记录所有用例，那是不可能完成的任务__
+- 关于用例，有一点要牢记，就是“明天，它们将会变化”，那么就不必今天就记录下它的细节，要做的是把细节记录推迟到最后一刻。
+
+## 编写用例
+- 用例 __不是图示__，是从一个特定视角进行编写关于 __行为需求__ 的 __文本描述__
+    - 用例图是图示，但根本没有包含任何关于行为需求的信息
+- 用例是对系统行为的描述，描述从让系统完成一些特定工作的 __用户的视角__ 编写的，记录了系统响应 __单个用户__ 刺激所经历的 __可视事件序列__
+    - 它属于操作层人员关心的，属于具体需求
+    - 可视事件指用户能够看得到的事件。用例根本不用描述看不见的行为，也不描述那些看不到的系统机制，只描述用户能够看得到的东西。
+
+### 基本流程
+一个销售终端系统的一个典型用例
+
+- 卖出商品
+    1. 收银员在扫描器上划过商品，扫描器读取UPC码
+    1. 商品的价格、描述以及当前价格总数出现在朝向顾客的显示器上。价格和描述也出现在收银员的屏幕上
+    1. 价格和描述打印在收条上
+    1. 系统发出可以听到的"确认"声音以通知收银员UPC码正确读取
+
+- 这是一个用例的基本流程，不需要任何更复杂的东西，
+- 事实上，如果用例不是一会儿就要实现，那么即使是上面几个简单的步骤可能也过于详细了，__如果用例不需要在几天或者一周内就要实现，不要去记录这些细节__
+- 如果没有记录用例的细节，那记录什么？用例的名字即可，在电子表格中保持用例名字的清单，当接近实现时填入细节
+
+### 备选流程
+
+- 无法读取UPC码
+    1. 如果扫描器无法读取UPC码，系统应该发出"重新扫描"声音，以通知收银员再试一次。如果重试三次仍然失败，那么收银员应该手工输入UPC码
+
+- 没有UPC码
+    1. 如果商品上没有UPC码，那么收银员应该手工输入价格
+
+### 其他东西
+前置条件、后置条件、主参与者、辅助参与者是怎么回事？不必担心这些东西，__大多数系统而言，都不必知道这些内容__
+
+## 用例图
+除了表达系统边界外，几乎没什么用，而用例的关系，如`<<extends>>`,`<<generalization>>`反而容易成为争论的焦点
+
+顺序图
+========
+不要给每个类的每个方法去创建顺序图，这是极大的浪费时间。__只有当你需要立即向某个人解释一组对象的协作方式或者自己想要把这种协作关系可视化时，才使用顺序图__。
+
+## 基本知识
+
+### 对象,生命线,消息等
+
+![effective_uml_27](../../imgs/effective_uml_27.png)
+
+- 顶部显示了协作中涉及的对象和类，__对象的名字下面有下划线，而类没有__
+- 左边的人形线条（参与者）表示一个 __匿名对象__，它是协作中消息的源和接收者，不是所有顺序图都有一个匿名参与者
+- 从对象和参与者垂下来的虚线称为 __生命线__(life line)
+- 从一个对象发送到另一个对象的 __消息__ 显示为两条生命线之间的箭头线，每个消息都标记有消息的名字，参数要么出现在消息名后面的括号中，要么和 __数据标记__(data token) 相邻（尾端带有圆圈的小箭头线）
+- __时间轴__ 是垂直方向的，消息出现的位置越低，就越晚发送
+- `Page`对象生命线上的窄条小矩形称为 __激活__(activation)，它是可选的，大部分的图不需要它，它表示了一个函数的执行时间。本例中显示了`Login`函数的运行时长
+- 那条没有标注的虚箭头表示`Login`函数返回到参与者并传回返回值
+- `GetEmployee`消息中的`e`变量，它代表`GetEmployee`的返回值，同样请注意`Employee`对象的名字也是`e`，它们是同一个对象，`GetEmployee`的返回值就是指向`Employee`对象的引用
+- `EmployeeDB`是一个类，名字下面没有下划线，意味着`GetEmployee`是一个静态方法
+
+### 创建和析构
+
+- 以表示一个对象的创建
+
+![effective_uml_28](../../imgs/effective_uml_28.png)
+
+对应的代码是：
+
+<!--language: csharp-->
+
+    public class ShapeFactory {
+        public Shape MakeSquare() {
+            return new Square();
+        }
+    }
+
+- 下面是销毁对象，有垃圾回收机制的语言无需显示指定，但C++则需要显式析构
+
+![effective_uml_29](../../imgs/effective_uml_29.png)
+
+<!--language: csharp-->
+
+    public class TreeMap {
+        private TreeNode topNode;
+        public void Clear() {
+            topNode = null;
+        }
+    }
+
+### 简单循环
+![effective_uml_30](../../imgs/effective_uml_30.png)
+
+但是试图在顺序图中表示算法是不明智的，顺序图是用来提示对象之间的连接，而不是一个算法的详细细节
+
+### 时机和场合
+不要绘制大量对象和消息的顺序图，没有人能够理解，也没有人愿意看，__对于UML图来说，共同点要比差异重要得多，使用图形来展示 *公共的主题和实践* __。当代码可以清楚的表达自己时，图示就是多余的
+
+下面就是多余的过度复杂的顺序图
+
+![effective_uml_31](../../imgs/effective_uml_31.png)
+
+其实它的代码反而更容易理解
+
+<!--language: csharp-->
+
+    public class Payroll {
+        private PayrollDB itsPayrollDB;
+        private PaymentDisposition itsDisposition;
+        public void DoPayroll() {
+            ArrayList employeeList = itsPayrollDB.GetEmployeeList();
+            foreach (Employee e in employeeList) {
+                if (e.IsPayDay()) {
+                    double pay = e.CalculatePay();
+                    double deductions = e.CalculateDeductions();
+                    itsDisposition.SendPayment(pay - deductions);
+                }
+            }
+        }
+    }
+
+- 首先致力于编写具有表达力的代码
+- 如果顺序图是必须的，能否把它分成一小组场景，将上面的大顺序图分解成几个小一些的、更加易读的顺序图
+
+![effective_uml_32](../../imgs/effective_uml_32.png)
+
+- 考虑下，我们需要上面这样的低层操作细节吗，还是要系统全局流程的 __高层视图__，后者可能更有用些
+
+![effective_uml_33](../../imgs/effective_uml_33.png)
+
+## 高级概念
+### 循环和条件
+
+![effective_uml_34](../../imgs/effective_uml_34.png)
+
+- `payEmployee`消息前面有一个循环表达式`*[foreach id in idList]`，星号表示这是一个迭代；消息会被重复发直到中括号中的__监护__(guard)表达式为`false`
+- `payEmployee`消息终止在一个激活矩形上，该矩形和第一个矩形有所偏移，表示现在有同一个对象的两个函数在执行，因为`payEmployee`消息是循环的，因此第二次激活也是循环的。
+
+- 靠近`[payday]`监护条件的激活矩形，表示一个`if`语句，仅当条件为真时，第二个激活才获取控制
+
+- 其实还是上面的代码是更好的表达算法的方式
+
+### 耗费时间的消息
+有些时候，发消息是要花时间的
+
+正常的电话呼叫
+
+![effective_uml_35](../../imgs/effective_uml_35.png)
+
+失败的电话呼叫
+
+![effective_uml_36](../../imgs/effective_uml_36.png)
+
+上面两个箭头线的交叉点称为竞争条件，当两个异步实体可以同时调用不相容的方法时，就会出现竞争条件，telco调用了`ring`操作，而callee却摘了机，在这一刻，所有实体所理解的系统状态是不同的：caller正在等待 "Hello"，而telco认为它的工作已经完成，而callee则在等待拨号音
+
+### 异步消息
+在分布式或多线程系统中，发送消息的对象可以立即要回控制权，而接收消息的对象则在另外一个控制线程中执行，称为异步消息，以开放箭头表示
+
+![effective_uml_37](../../imgs/effective_uml_37.png)
+![effective_uml_38](../../imgs/effective_uml_38.png)
+
+### 多线程
+异步消息隐含着多个控制线程，通过在每个消息名上标记上线程标识符来在UML图中展示多个同的控制线程，线程标识符不必对应于代码中的名字。
+
+![effective_uml_39](../../imgs/effective_uml_39.png)
+
+### 主动对象
+表示具有独立内部线程的对象，它显示为粗体边框
+
+![effective_uml_40](../../imgs/effective_uml_40.png)
+
+### 向接口发送消息
+
+- 向接口发送消息
+
+![effective_uml_41](../../imgs/effective_uml_41.png)
+
+- 通过接口向其派生类型发送消息
+
+![effective_uml_42](../../imgs/effective_uml_42.png)
+
+
+## 顺序图vs协作图
+
+
+![effective_uml_16](../../imgs/effective_uml_16.png)
+
+- 描绘了`TreeMap`的`Add`方法是如何实现的
+- 人形线条图表示了一个未知调用者，调用了`TreeMap`对象的`Add`方法。如果`topNode`变量为`null`，`TreeMap`就创建一个新的`TreeMapNode`对象并把它赋给`topNode`，否则，`TreeMap`就向`topNode`发送`Add`消息
+- 方括号中的布尔表达式称为 __监护条件__(guard)，它们指示出应该选择哪条路径。
+- 终结点在`TreeMapNode`图标上的消息箭头表示 __对象构造__。
+- 带有小圆圈的箭头称为 __数据标记__(data token)，本例中，描述了对象构造的参数
+- `TreeMap`下面的窄矩形条称为 __激活__(activation)，表示`add`方法执行了多少时间
+
+
+![effective_uml_17](../../imgs/effective_uml_17.png)
+
+- 描绘了`TreeMap.Add`中`topNode`不会`null`的情况
+- 协作图包含了顺序图中所包含的 __同样的信息__
+- 顺序图是为了清楚的表达出 __消息的顺序__，而协作图为了清楚地表达出 __对象之间的关系__
+- 对象被称为链(link)的关系连接起来。只要一个对象可以向另外一个对象发送消息，就存在链关系，在链之上传递的正是消息本身，表示为一些小箭头。
+- 消息上标记有消息名称、消息顺序号以及任何使用的监护条件
+- 带点的顺序号表示 __调用的层次结构__。`TreeMap.Add`（消息1）调用了`TreeMapNode.Add`（消息1.1），因此，消息1.1 是 消息1 所调用的第一条消息
 
 
 
 
+类图
+========
+评估系统的 __依赖结构__ 方面：
 
+- 使用图示要比源代码容易得多，图形可视地显现出某些依赖关系
+- 可以看到依赖关系环，可以决定如何以最好的方法把它们解除掉
+- 可以看到何时抽象类依赖于具体类的情况，可以决定重新调整这种依赖的策略
 
+## 基础知识
 
+![effective_uml_14](../../imgs/effective_uml_14.png)
 
+- 矩形表示类，箭头表示关系
+- 本图中，所有关系都是关联(association)关系，关联是简单的数据关系，其中一个对象或者持有对另外一个对象的引用，或者调用了其方法
+- 一般来说，和箭头相邻的数字表示该关系所包含的实例个数。如果数字比1大，意味着某种容器。
+- 类图标中可以分成多个格间，最上面存放类的名字，其他描述属性与方法
+- `<<interface>>`符号用来说明`IComparable`是一个接口
+- 这里显示的大部分符号都是可选的
+- 请注意 __关联关系是如何与实例变量对应__ 起来的，如从`TreeMap`到`TreeMapNode`的关联称为`topNode`，其对应于`TreeMap`中的`topNode`变量
 
+### 关联
+![effective_uml_43](../../imgs/effective_uml_43.png)
 
+![effective_uml_44](../../imgs/effective_uml_44.png)
+
+### 继承
+- 继承关系
+
+![effective_uml_45](../../imgs/effective_uml_45.png)
+
+- 实现关系
+
+![effective_uml_46](../../imgs/effective_uml_46.png)
+
+- 棒棒糖状接口表示
+
+![effective_uml_47](../../imgs/effective_uml_47.png)
+
+### 示例
+![effective_uml_48](../../imgs/effective_uml_48.png)
+
+- 从图中可以看出`WithdrawalTransaction`使用了`CashDispenser`接口，很清楚，系统中有些类实现它，但在这幅图中，我们 __不关心哪个类__
+
+- 没有十分详细的描绘各个UI接口的中的方法，`WithdrawalUI`所需的方法要比图中多，但全部放上去就会使图变得混乱。只在图中提供一些代表性的方法，向读者传递设计思路，这才是真正必要的。
+- __横向关联和纵向关联的约定__，事务及其动作在图的左侧，各种UI接口都在右侧，UI的实现在底部；一方面三个关联关系都有一致的指向，另一方面三个继承关系，都合并到一条线上。
+
+## 细节
+UML类图可以加入许多细节和修饰，大多数情况下不应该加入的
+
+### 类衍型
+
+- 接口
+
+![effective_uml_49](../../imgs/effective_uml_49.png)
+
+- 静态工具类
+
+![effective_uml_50](../../imgs/effective_uml_50.png)
+
+如果想的话，可以自己创建，如`<<struct>>`,`<<C-API>>`,`<<function>>`,`<<presistent>>`等衍型，只要确保阅读你图示的人理解含义就行
+
+### 聚合与组合
+对于C++程序员会比较关注，因为组合的所有者负责所有物的生存期，所有者析构，其所有物必须一起析构，如果所有者被复制了，其所有物必须随它一起复制
+
+而有垃圾回收机制的语言，两者区分不大。
+
+### 多重性
+对象可以含有其他对象的数组或集合，也可以在不同的实例变量中持有许多其他同类对象
+
+![effective_uml_51](../../imgs/effective_uml_51.png)
+
+### 关联衍型
+
+![effective_uml_52](../../imgs/effective_uml_52.png)
+
+`<<delegate>>`代表源类把一个成员函数调用转交给目标，许多设计模式使用了：PROXY、DECORATOR、COMPOSITE
+
+### 内嵌类
+
+![effective_uml_53](../../imgs/effective_uml_53.png)
+
+### 关联类
+虽然多重性关联告诉我们源和许多目标实际相连，但从图中无法看到使用了哪种容器类，可通过使用关联类描绘这一点
+
+![effective_uml_54](../../imgs/effective_uml_54.png)
+
+### 关联修饰符
+
+![effective_uml_55](../../imgs/effective_uml_55.png)
+
+通过`empid`成员变量，持有关于`Employee`的数据库键值
 
 
 
