@@ -1729,10 +1729,85 @@ Lecture 13
 - 我们定义的`memcmp`原型认为它只能访问到SavedPC上面的4bytes，但实际上它`int memcmp(void *v1, void *v2, size)`能访问到m与n的空间，v1指向n的地址，v2的内容是m，但m还未初始化为一个随机数，有可能是不合法的一个指针，size是17
 - 能编译通过，但可能运行崩溃
 
-- C++有函数重载，而C中没有，C++会根据参数类型及函数名，重新
+- C++有函数重载，而C中没有，C++会根据函数名及参数列表中的参数类型，重新构造一个更复杂的函数符号
+    - 针对`int memcmp(void*)`，C中生成`CALL <memcmp>`，而C++则生成`CALL <memcmp_void_p>`
+    - 针对`int memcmp(void*,void*,int)`，C中还是生成`CALL <memcmp>`，而C++则生成`CALL <memcmp_void_p_void_p_int>`
+    - 所以C++更类型安全些
 
+## 为什么程序会崩溃
+
+- seg fault: 通常出现在对一个错误的指针解引用时出现，如尝试对NULL进行解引用，内存分数据段、栈段、堆段、程序段，NULL的地址在内存0~3对应的4bytes，操作系统知道该地址不在任何段中
+- bus errors: 当你尝试对属于某个段中的地址进行解引用时，或给某个未对齐的地址写入数据时发生。为了支持操作系统或硬件某些限制，所有数据对应的地址，int的数据的地址都应该是4的倍数，而short数据类型地址是偶数，char不受限制，但为了为了简洁，编译器假设，除了short与char，__首地址都是4对齐的__
+
+- 死循环示例1
+
+<!--language: !c-->
+
+    int main(){
+        int i;
+        int array[4];
+        for(i=0;i<=4;i++)
+            array[i]=0;
+        return 0;
+    }
+
+<!--language: plain-->
+
+      ┌───────┐
+      │SavedPC│
+      ├───────┤
+      │       │ i, array[4]
+      ├───────┤
+      │       │ array[3]
+      ├───────┤
+      │       │ array[2]
+      ├───────┤
+      │       │ array[1]
+      ├───────┤
+      │       │ array[0]
+      └───────┘
+
+- 当每次执行`array[4]=0;`的时候，就修改了`i`，导致`i<=4`条件永远成立，形成死循环或缓冲区溢出
+
+- 死循环示例2
+
+<!--language: !c-->
+
+    void foo(){
+        int array[4];
+        int i;
+        for(i=0;i<=4;i++)
+            array[i]-=4;
+    }
+
+    int main(){
+        foo();
+        return 0;
+    }
+
+<!--language: plain-->
+
+      ┌───────┐
+      │SavedPC│ array[4]
+      ├───────┤
+      │       │ array[3]
+      ├───────┤
+      │       │ array[2]
+      ├───────┤
+      │       │ array[1]
+      ├───────┤
+      │       │ array[0]
+      ├───────┤
+      │       │ i
+      └───────┘
+
+- 当每次执行`array[4]-=4;`的时候SavedPC的内容原本指向`CALL <foo>`这条语句的后面一条汇编指令，但减4以后，指向`CALL <foo>`指令，当foo返回后，跳到SavedPC指向的地址，则再次执行foo的调用
 
 Lecture 14
+==========
+
+
+Lecture 15
 ==========
 
 
