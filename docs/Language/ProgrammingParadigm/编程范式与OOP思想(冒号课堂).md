@@ -2427,19 +2427,290 @@ MVC其实与三层架构是有区别的：
 设计模式
 =============
 ## 创建模式
-工厂方法，使用模板方法，子类重写各部件的创建，逻辑存在基类中
 
-抽象工厂，如果把创建组件当成一种策略，接口中包括一系列多个产品的创建，可视为策略模式的应用，
+### 构造器的弊端
+- __它的名字必须与类名一致，缺乏足够的表现力__
 
-APP使用接口，常使用依赖注入来获取工厂对象，逻辑存在APP中
+如`Point`类来代表平面坐标系的点，构造器有两个参数，分别为横坐标和纵坐标，但有时还希望用极坐标来构造一个点
 
-创建者模式分离了对象的创建与对象的结构表示(无须一个抽象类型来表示产品)，故能做到工厂模式难以做到的事
+<!--language: java-->
 
-接口中包含创建步骤，均返回void(导致用户无须知道各部件类型)，最后一步产品创建成功
+    Point(double x, double y) 　　// 直角坐标
+    Point(double r, double theta) // 极坐标
 
-工厂保护变化是产品制作的来源，创建者保护的变化是产品的制作细节
+它们签名一样，无法共存，用 __静态工厂方法__(static factory method)（C++中称命名构造器）可解此困局：
 
-## 结构模式
+<!--language: java-->
+
+    class Point{
+        private double x;
+        private double y;
+
+        public static Point cartesian(double x, double y){
+            return new Point(x, y);
+        }
+
+        public static Point polar(double r, double theta){
+            return new Point(r * Math.cos(theta), r * Math.sin(theta));
+        }
+
+        private Point(double x, double y){
+            this.x = x; this.y = y;
+        }
+    }
+
+- __构造器每次调用都伴随着新对象的创建，但这并不总是合适__。不公开构造器，而借助静态方法来提供对象，可控制对象实例的个数，如 __单例模式__ 便于一个应用，另一方面出于性能方面原因，可利用对象池来减少对象的创建：
+
+<!--language: java-->
+
+    public static Boolean valueOf(boolean b){
+        return (b ? TRUE : FALSE);
+    }
+
+`valueOf`不会创建新对象，它总返回`Boolean.TRUE`和`Boolean.FALSE`中的一个，由于`Boolean`类是不可变的，共享对象不会产生任何问题
+
+- __构造器第三个弊端是，它无法被继承，也就无法多态__。很多时候，客户只关心创建的对象是否能提供某种服务，某个抽象的超类型，而不具体类型，可直接new来创建对象，就必须知道具体类型，违背了 __针对接口编程__ 原则。
+
+此时静态工厂方法，可以返回一个具有指定接口的对象，对象的具体类型则不用透露给客户，这些具体类型甚至是非公开的，还可以运行期间决定，或动态加载。
+
+- __或因设计上缺陷，或因对象本身的复杂性，不少构造器并没有完成全部的初始化__，给客户带来额外负担，也可能破坏对象的一致性
+
+### 工厂模式
+以上的弊端，最好的办法是把这种变化隔离起来，单独封装在一个模块中，这个模块可以是一个方法－工厂方法，也可以是一个类－工厂类
+
+<!--language: java-->
+
+    // 一个能创建登录窗口的类(原始版)
+    class LoginForm{
+        public Frame createLoginWindow(){
+            Frame window = new Frame("登录");
+
+            TextFiled userInput = new TextField();
+            window.add(userInput);
+
+            Button submitButton = new Button("提交");
+            window.add(submitButton);
+
+            return window;
+        }
+    }
+
+#### 静态工厂
+如果不想让各个组件过早的定型，可考虑用更一般的`Component`类来代替，但这是一个抽象类，无法直接new，但可通过引入工厂类来克服
+
+<!--language: java-->
+
+    // 一个能创建登录窗口的类(静态工厂版)
+    class WidgetFactory{
+        public enum Type{AWT, SWING};
+
+        public static Container makeFrame(Type type, String title){
+            switch(type){
+                case AWT:    return new Frame(title);
+                case SWING:  return new JFrame(title);
+                default:     return null;
+            }
+        }
+
+        public static Container makeInput(Type type, String text){
+            switch(type){
+                case AWT:    return new TextField(text);
+                case SWING:  return new JTextField(text);
+                default:     return null;
+            }
+        }
+
+        public static Container makeButton(Type type, String text){
+            switch(type){
+                case AWT:    return new Button(text);
+                case SWING:  return new JButton(text);
+                default:     return null;
+            }
+        }
+    }
+
+    class LoginForm{
+        public Frame createLoginWindow(){
+            final WidgetFactory.Type type = WidgetFactory.Type.AWT;
+            Container window = WidgetFactory.makeFrame(type, "登录");
+
+            Container userInput = WidgetFactory.makeInput(type, "");
+            window.add(userInput);
+
+            Container submitButton = WidgetFactory.makeButton(type, "提交");
+            window.add(submitButton);
+
+            return window;
+        }
+    }
+
+静态工厂模式让我们用一个具体类`WidgetFactory`，代替了多个具体类，但是还有`WidgetFactory.Type.AWT`这样的细节，可考虑使用参数传递或配置文件方式来规避。
+
+#### 工厂方法
+但另一个不足之处在于`WidgetFactory`中每增加一种组件库类型，将不得不修改`switch`语句，需要利用多态机制来克服，__静态工厂方法就进化为多态的工厂方法__(factory method)：
+
+<!--language: java-->
+
+    // 一个能创建登录窗口的类(工厂方法版)
+    abstract class LoginForm{
+        // 工厂方法
+        public abstract Container makeFrame(String title);
+        public abstract Container makeInput(String text);
+        public abstract Container makeButton(String text);
+
+        // 模板方法
+        public Frame createLoginWindow(){
+            Container window = makeFrame("登录");
+            Container userInput = makeInput("");
+            window.add(userInput);
+            Container submitButton = makeButton("提交");
+            window.add(submitButton);
+            return window;
+        }
+    }
+
+    class AwtLoginForm extends LoginForm{
+        public Container makeFrame(String title){
+            return new Frame(title);
+        }
+        public Container makeInput(String text){
+            return new TextField(text);
+        }
+        public Container makeButton(String text){
+            return new Button(text);
+        }
+    }
+
+#### 抽象工厂
+工厂方法弥补了构造器无法多态的缺憾，因此又被称为 __虚构造器模式__(virtual constructor pattern)。工厂方法与静态工厂模式区别挺大，一个多态、一个静态；一个是一系列方法、一个却是单独的类。所以真正与静态工厂模式相对应的是 __抽象工厂模式__
+
+<!--language: java-->
+
+    // 一个能创建可视化组件的接口(抽象工厂)
+    interface WidgetFactory{
+        Container makeFrame(String title);
+        Container makeInput(String text);
+        Container makeButton(String text);
+    }
+
+    // 一个能创建AWT组件的类(抽象工厂的实现类)
+    class AwtWidgetFactory implements WidgetFactory{
+        public Container makeFrame(String title){
+            return new Frame(title);
+        }
+        public Container makeInput(String text){
+            return new TextField(text);
+        }
+        public Container makeButton(String text){
+            return new Button(text);
+        }
+    }
+
+    // 一个能创建登录窗口的类(抽象工厂版)
+    class LoginForm{
+        private WidgetFactory factory;
+        // 依赖注射
+        public LoginForm(WidgetFactory factory){
+            this.factory = factory;
+        }
+        public Frame createLoginWindow(){
+            Container window = factory.makeFrame("登录");
+            Container userInput = factory.makeInput("");
+            window.add(userInput);
+            Container submitButton = factory.makeButton("提交");
+            window.add(submitButton);
+            return window;
+        }
+    }
+
+#### 工厂方法vs抽象工厂
+
+- 抽象工厂，如果把创建组件当成一种策略，接口中包括一系列多个产品的创建，可视为 __策略模式__ 的应用，除了 __依赖注射__，还可以使用 __依赖查找__（但如果查找的上下文来自某容器或框架，就是侵入性(intrusive)，不利于重用与测试）
+
+- 工厂方法，常使用 __模板方法__，子类重写各部件的创建，逻辑存在基类中，一种特殊的控制反转
+
+- 工厂模式的主要目的是为了遵循 __依赖反转__ 原则
+
+- 抽象工厂明显是静态工厂的升级版，但同样也是工厂方法的升级版，把后者主体类中的 __一系列抽象的工厂方法__ 提炼成 __ 一个接口 __，用 __对象合成__ 取代了 __类继承__
+
+![prog_paradigm_factory](../../../imgs/prog_paradigm_factory.png)
+
+> ps. 抽象工厂的类图上未体现接口的使用者
+
+- 工厂方法创建的对象之间 __不必有内在关联__，但抽象工厂不然，它要创建的是 __一组具有共同主题(theme)的对象__，它有助于保证一组产品的一致性，在 __产品系列__ 之间进行切换
+
+### 建造者模式
+
+<!--language: java-->
+
+    // 一个能创建可视化组件的接口(建造者)
+    interface LoginWindowBuilder{
+        void buildFrame(String title);
+        void buildUserInput(String text); // 针对业务而不是产品
+        void buildCommand(String submitText);
+    }
+
+    // 一个能创建AWT组件的类(建造者的实现类)
+    class AwtLoginWindowBuilder implements LoginWindowBuilder{
+        private Container window;
+        public void buildFrame(String title){
+            window = new Frame(title);
+        }
+        public void buildUserInput(String text){ // 粒度也大
+            Component userLabel =new Label(text)
+            window.add(userLabel);
+            Component userInput = new TextField();
+            window.add(userInput);
+        }
+        public void buildCommand(String submitText){
+            Component submitButton = new Button(submitText);
+            window.add(submitButton);
+        }
+        public Container getWindow(){
+            return window;
+        }
+    }
+
+    // 一个能创建登录窗口的类(建造者版)
+    class LoginForm{
+        private LoginWindowBuilder builder;
+        // 依赖注射
+        public LoginForm(LoginWindowBuilder builder){
+            this.builder = builder;
+        }
+        public Frame createLoginWindow(){
+            builder.buildFrame("登录");
+            builder.buildUserInput("用户");
+            builder.buildCommand("提交");
+        }
+    }
+
+- 抽象工厂特点是一系列方法来创建对象，建造者模式特点是 __一系列步骤__ 来创建对象。
+- 接口中包含创建步骤，均返回void(导致用户无须知道各部件类型)，最后一步产品创建成功
+- 工厂一步到位的提供产品，而建造者直到最后一步才完成产品，前者保护的 __变化是产品制作来源__，后者保护的 __变化是产品的制作细节__，哪种变化程度大或概率大，就采用哪种模式
+- 相比工厂模式，它对客户的知识要求极低，符合最少知识原则
+
+- 为什么`LoginWindowBuilder`接口不提供`getWindow`方法，却让其实现类提供？为了让`LoginForm`不依赖该方法的返回类型`Container`。并且如果另一个可视化组件的类型层及完全不兼容，就没办法返回`Container`
+
+![prog_paradigm_builder](../../../imgs/prog_paradigm_builder.png)
+
+- 创建者模式分离了对象的创建与对象的结构表示(无须一个抽象类型来表示产品)，故能做到工厂模式难以做到的事
+- 创建者模式还能解决构造器参数过长的问题
+
+### 其它创建模式
+- 原型模式，不像工厂借助子类来产生新类型，而是直接对原型对象进行拷贝
+- 对象池模式或资源池模式，可重复利用已创建的对象，尤其是极耗资源或数量受限的对象，如数据库连接、套接字连接、线程等
+- 单例模式，极少不直接依赖继承和多态机制的模式
+
+### 对象创建的选择方案
+
+![prog_paradigm_way_of_creation](../../../imgs/prog_paradigm_way_of_creation.png)
+
+- 与其说创建对象，不如说 __请求对象__，因为有时并未真正地创建对象，如重用的对象、虚拟的对象。
+
+## 结构模式-建筑的技巧
+409
+
 抽象是前提，分解是方式，模块化是结果
 
 层是按抽象层次进行的水平划分

@@ -1905,11 +1905,106 @@ Lecture 15
 
 - 同一个函数的两个线程，有不同的栈段（天生线程安全），共享该进程的堆段，拥有同一代码段（只读）
 
+## 简单示例
 
+<!--language: c-->
+
+    #include <stdio.h>
+    #include "thead_107.h"
+
+    void SellTickets(int agentId, int numTicketsToSell){
+        while(numTicketsToSell > 0){
+            printf("Agent %d sells a ticket\n", agentId);
+            numTicketsToSell--;
+            if(RandomChance(0.1))
+                TheadSleep(1000);
+        }
+        printf("Agent %d is done\n", agentId);
+    }
+
+    int main(){
+        int numAgents = 10;
+        int numTickets = 150;
+
+        InitThreadPackage(false);
+        for(int agent = 1; agent <= numAgents; agent++){
+            char name[32];
+            sprintf(name, "Agent %d thread", agent);
+            ThreadNew(name, SellTickets, 2, agent, (numTickets / numAgents));
+        }
+        RunAllThreads();
+    　　return 0;
+    }
+
+
+> [有关thead_107.h](http://stackoverflow.com/questions/11925352/cs107-assignment-file-couldnt-compile-missing-expat-h-and-thread-107-h-files)
+
+- `InitThreadPackage(false);` false表示不要打印调试信息
+- `ThreadNew(name, SellTickets, 2, agent, (numTickets / numAgents));`，第二个参数是函数名，第三个是该函数所需的参数个数，以后参数会传递给该函数
+- `RunAllThreads();`运行所有定义的线程，它是阻塞的，会等所有线程运行完再结束
+- `TheadSleep(1000);`当前线程暂停占用处理器至少1000毫秒，甚至从ReadyQ中删除，放到BlockQ中，一直到规定的时间过去
+- `RandomChance(0.1)`表示10%的情况下返回真
+- 目前的线程是没有优先级的
+
+## 线程间共享数据
+让可销售的票共享
+
+<!--language: c-->
+
+    #include <stdio.h>
+    #include "thead_107.h"
+
+    void SellTickets(int agentId, int *numTicketsp, Semaphore lock){
+        /* while(*numTicketsp > 0){
+            (*numTicketsp)--;
+        */
+        while(true){
+            SemaphoreWait(lock);
+            if(*numTicketsp == 0) break;
+            (*numTicketsp)--;
+            printf("Agent %d sells a ticket\n", agentId);
+            SemaphoreSignal(lock);
+
+            if(RandomChance(0.1))
+                TheadSleep(1000);
+        }
+        SemaphoreSignal(lock); //if break
+        printf("Agent %d is done\n", agentId);
+    }
+
+    int main(){
+        int numAgents = 10;
+        int numTickets = 150;
+        Semaphore lock = SemaphoreNew(-,1);
+        InitThreadPackage(false);
+        for(int agent = 1; agent <= numAgents; agent++){
+            char name[32];
+            sprintf(name, "Agent %d thread", agent);
+            ThreadNew(name, SellTickets, 3, agent, &numTickets, lock);
+        }
+        RunAllThreads();
+    　　return 0;
+    }
+
+- 共享的数据，`while(*numTicketsp > 0)(*numTicketsp)--;`并非原子操作，容易造成数据不一致，该段代码称为 __临界区__
+- 为了保让临界区只有一个线程在执行，需要引入锁机制，信号量Semaphore是实现它的一种方式
+- Semaphore是作为非负整数发挥作用，支持加1和减1 __原子操作__ 功能的变量类型
+- `SemaphoreWait(lock)`执行减1动作，在需要获得资源的时候先执行，要么获得资源，要么需要等待（即Semaphore为0时会被阻塞，等待其他线程的Signal）；`SemaphoreSignal(lock)`执行加1动作，当不需要资源时，释放锁
+- Semaphore类型其实是一个指向不完全类型的指针，所以传参时，并不是拷贝，而是共享某种结构体
+- `SemaphoreNew(-,1);`如果第2个参数改成0，则一开始就等待某线程发出Signal，改成>1，则表示有多个资源可供使用，但如果用来限制临界区访问的，通常是代码中的模式
 
 
 Lecture 16
 ==========
 
+
+
+
+
+
+
+
+Lecture 17
+==========
 
 
