@@ -2824,6 +2824,7 @@ MVC其实与三层架构是有区别的：
 
 ### 职责链模式
 - GoF的设计模式中，比较接近管线模式的是职责链模式(chain of responsibility pattern)
+
 ![prog_paradigm_chain](../../../imgs/prog_paradigm_chain.png)
 
 - 每一个`Hanlder`相当于一个过滤器，在处理完请求后传给职责链的下一环，但消息发送者仍然须要知道接收者的数据类型（只不过是抽象类型），而管道对接收者无此要求
@@ -3010,6 +3011,7 @@ MVC其实与三层架构是有区别的：
 
 ### 迭代器模式
 ![prog_paradigm_iterator](../../../imgs/prog_paradigm_iterator.png)
+
 - 赋予了用户自定义循环的能力，实现了迭代抽象(iteration abstraction)，用户可以对聚合体或容器以某种次序遍历(traverse)容器中的元素，至于容器的内部结构、遍历的起止、推进等细节，均毫不知情，也不关心
 - 迭代器作为容器与算法之间的中介，__促使算法摆脱了对数据结构的依赖__，从而更具普适性和重用性，一旦算法被抽象出来，__泛型范式__ 便可大展神威
 - 泛型范式与迭代器相得益彰，充分体现在C++的STL、Java和C#的Collections中
