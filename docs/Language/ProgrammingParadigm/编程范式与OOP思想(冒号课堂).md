@@ -868,10 +868,8 @@ C# lambda版本
         }
     }
 
-    class Program
-    {
-        static void Main(string[] args)
-        {
+    class Program {
+        static void Main(string[] args) {
             var app = new App();
             app.animal = new Monkey();
             app.Do();
@@ -2426,7 +2424,16 @@ MVC其实与三层架构是有区别的：
 
 设计模式
 =============
-## 创建模式
+- 许多设计模式为了克服编程语言的一些缺陷或局限而设计的
+    1. 为了克服new运算符和构造器的局限，有工厂模式
+    1. 为了克服内存分配的局限，有享元模式
+    1. 为了克服函数不是头等公民的局限，有命令模式
+    1. 为了克服无法动态继承的局限，有状态模式
+    1. 为了克服过程式语言、静态类型语言、静态语言的语法限制而造成对象通信上的局限，有职责链、观察者、中介者模式等
+    1. 为了克服OOP语言的单分派(single dispatch)的局限，有访问者模式
+
+
+## 创建模式-不要问我从哪里来
 
 ### 构造器的弊端
 - __它的名字必须与类名一致，缺乏足够的表现力__
@@ -2709,63 +2716,303 @@ MVC其实与三层架构是有区别的：
 - 与其说创建对象，不如说 __请求对象__，因为有时并未真正地创建对象，如重用的对象、虚拟的对象。
 
 ## 结构模式-建筑的技巧
-409
+- 一个系统设计是否合理，很大程度上取决于层次的设计
+- 结构模式关注的是如何把类和对象组合成更大的结构，实质上就是利用 __继承层级__ 的类结构和 __聚合层级__ 的对象结构来构建更高层抽象的过程
 
-抽象是前提，分解是方式，模块化是结果
+### 架构设计中分层与分区
+- 划分标准不同，层是按 __抽象层次__(abstraction level)进行的水平划分，比如N层架构；区是在同一抽象层次中按 __功能领域__ 进行的垂直划分，比如按业务类别分区
+- 模块关系不同，不同层的子系统是单向依赖的等级关系，即高层建立于低层之上；相同层不同区的子系统是双向合作平等关系
 
-层是按抽象层次进行的水平划分
+- 抽象是前提，分解是方式，模块化是结果，除了抽象与分解，还有一个对付复杂性的工具：__层级__(hierarchy)
+    - 层级用于模块架构，就是N层架构
+    - 层级用于类结构，便是类型层级
+    - 层级用于对象结构，便是聚合层级
 
-不提倡向下转型，盖因把高抽象的类型转化为低抽象的类型，破坏了抽象层次的一致性
+- 自底向上设计，即低层模块经过合作(collaboration)而产生高层模块，自顶向下设计，即高层模块经过细化(refinement)而产生底层模块。
 
-桥接模式的重点是分解，让本来结合紧密的接口与实现分离开，适配器模式重点是结合，让本来无关的类能合作共事
+- 所以，不提倡向下转型，盖因把高抽象的类型转化为低抽象的类型，破坏了抽象层次的一致性
 
-装饰者模式具有类型层级和聚合层级有交合的地方
+### 桥梁模式
+- AWT中就运用了桥梁模式，每个`Component`对象都聚合了一个类型为`ComponentPeer`对象，从而在组件的接口与实现之间搭建起了一座桥梁
 
-适配器改变对象的接口而保持对象的职责，装饰者改变对象的职责而保持对象的接口
+![prog_paradigm_bridge_awt](../../../imgs/prog_paradigm_bridge_awt.png)
 
-代理模式
+- 有3个 __层级__：桥梁的一头是以`Component`类为根的类型层级，另一头是以`ComponentPeer`接口为根的类型层级，两个根类型之间又形成了聚合层级
 
-C++中智能指针对java/C#意义：保证互拆(同步代理)、引用计数(计数代理)、写时拷贝或迟拷贝、延迟加载
+- 除了层级之外，__间接原则__ 也至关重要，通过引入一个间接对象`peer`，解除了抽象（各类组件）与其实现之间的耦合，使得两边可以各自独立的变化。
 
-值语义的对象适合享元模式
+- 还可理解为 __保变原则__：把容易变化的实现包装于一个接口之中，并让该接口承担调用当地图形资源的职责
 
-## 行为模式
-OOP弱点，一个对象必须在获得另一个对象标识后方能向其发送消息
-而Prolog或声明式编程无须如此，如shell中管道 `cat<file1|sort|uniq|comm -12 - file2>common`
+### 适配器模式
+- 适配器是一个接口转换器，可以解决服务提供者与服务享受者之间接口不兼容的问题
 
-职责链关心是职责的分解，更侧重行为
+![prog_paradigm_adapter](../../../imgs/prog_paradigm_adapter.png)
 
-装饰者关心是职责的结合，更侧重结构
+- 桥接模式的重点是 __分解__，让本来结合紧密的接口与实现分离开，适配器模式重点是 __结合__，让本来无关的类能合作共事
 
-命令模式，请求的发送者与接收者在空间和时间上解耦
+- 桥接模式通常是事先的有意设计（或重构得到），更多出自可维护性考量；而适配器通常是事后补救，更多出自可重用性考量（重用第三方或遗留代码）
 
+### 装饰器模式
+![prog_paradigm_decorator](../../../imgs/prog_paradigm_decorator.png)
 
+- 一个可视化组件类，希望它的某个对象增加边框、滚动条、可拖动、可缩放，这4种特征各种组合有十几种，采用继承显然不合适
 
+- 引入中间类`WidgetDecorator`，并赋取其装饰组件的职责
 
+如要产生一个有边框、有滚动条又可拖动的组件，只需：
 
+<!--language: java-->
 
+    new DragDecorator(new ScrollDecotator(new BorderDecorator(someWidget)));
 
+- 装饰者模式具有 __类型层级和聚合层级__ 有交合的地方，`WidgetDecorator`与`Widget`双重关系：聚合与继承，类型层级是在编译期决定的，聚合层级是动态生成的，如果没有继承关系，上述嵌套代码便无法成立，因各类装饰者构造器接受是`Widget`类型
 
+- 能动态的增加，同样可以动态的取消职责
 
+- 装饰者增加的职责，应当是辅助性或边缘性职责，类似`mixin`特点，不会影响模块内聚度
 
+- 如果想改变对象的内心，就采用策略模式
 
+- 适配器改变对象的接口而保持对象的职责，装饰者改变对象的职责而保持对象的接口
 
+### 代理模式
+- 与装饰器模式一样也保持对象的接口，但装饰器通常增强接口的服务，而代理模式却可能限制接口的服务
 
+![prog_paradigm_proxy](../../../imgs/prog_paradigm_proxy.png)
 
+- 如果某个对象的初始化十分耗费时间或资源，却又未必立即投入使用，可利用代理来推迟创建(lazy initialization)
 
+- C++中 __智能指针__ 是一种抽象化的指针，通过重载指针运算符`operator*`和`opetator->`来实现自动垃圾回收或边界检查，以弥补原始指针(raw pointer)的不足。属于更广义的一种代理：智能引用(smart reference)，对Java和C#仍然具有价值
+    - 保证互拆(mutual exclusion)(同步代理)、引用计数(reference counting)(计数代理)、写时拷贝(copy-on-write,COW)或迟拷贝(lazy copy)、延迟加载持久化对象等
 
+- 保护代理(protected proxy)，可控制对原有对象的访问，以保障敏感数据的安全
 
+### 复合模式
+- 也是利用类型层级和聚合层级来构造更大的复合结构
 
-单元测试：
-语义检查 断言，契约
-  动态语言更重要，因为减少了静态类型的编译检查，接口签名检查
-文档记录 debug的无法记录性
-  动态语言更重要，没在静态类型描述，少了文档
-设计上改良
-简化集成
-快速反馈
+![prog_paradigm_composite1](../../../imgs/prog_paradigm_composite1.png)
 
-测 状态与行为
+![prog_paradigm_composite2](../../../imgs/prog_paradigm_composite2.png)
+
+- 前图的`Component`与`Left`和`Composite`接口都是一致的，后图`Component`只与`Left`接口一致，一般提到复合模式，多半指前者
+
+### 享元模式
+- 唯一一个主要针对软件 __运行质量__ 而非设计质量的模式是享元模式(flyweight pattern)，被译为享元，通常是因为是共享的，但叫做"轻量模式"可能更合适
+
+- 对一类颗粒度小、数量众多、相似度高、种类有限、具有 __值语义__ 的对象，通过共享机制来减少对象的创建，以提供时空性能上的改善
+
+- 既然打算共享，当然不能由客户亲自创建对象，而要利用工厂模式，更确切说是抽象工厂，因为要创建的是一系列产品
+
+- 享元模式的关键抽象出一类对象内在的、不因环境而异(context-insensitive)的状态，封装后作为共享单元
+
+![prog_paradigm_flyweight](../../../imgs/prog_paradigm_flyweight.png)
+
+## 行为模式-君子之交淡如水
+### OOP大弱点
+- OOP中消息发送者与接收者之间的耦合不仅限于类型级别的耦合，还有对象级别的耦合，一个对象必须在获得另一个对象标识(identity)后方能向其发送消息
+- 声明式编程的目标是显性的，而算法是隐性的，模块间的许多直接通信可以免去，由解释器代为完成
+    - 而Prolog或声明式编程无须如此，简单的陈述一些事实和规则，不必借助模块之间相互引用便能推出结论
+    - 再如UNIX下的管道(pipe)
+
+<!--language: bash-->
+
+    # 将文件file1排序并去掉重复相邻行后，再与文件file2进行比较，
+    # 并指导相同的部分输出到文件common中
+    cat < file1 | sort | uniq | comm -12 - file2 > common
+
+- 管道看似平凡，却能把简单的UNIX程序组合成具有强大功能的应用，这种模式本身即 __管线模式__(pipeline pattern)，或 __管道-过滤器模式__(pipes and filters pattern)，不仅可作为设计模式，更可作为架构模式
+
+### 职责链模式
+- GoF的设计模式中，比较接近管线模式的是职责链模式(chain of responsibility pattern)
+![prog_paradigm_chain](../../../imgs/prog_paradigm_chain.png)
+
+- 每一个`Hanlder`相当于一个过滤器，在处理完请求后传给职责链的下一环，但消息发送者仍然须要知道接收者的数据类型（只不过是抽象类型），而管道对接收者无此要求
+
+- 通常情况下，消息发送者与接收者之间与处理者是等价的概念，但在职责链中，消息接收者有可能并不直接处理请求，而是转给后继者。换言之，消息发送者虽然知道哪一类对象是接收者，却不知道哪一个对象实际参与了请求的处理
+
+- DOM事件模型中，从外到内的事件捕捉(event capturing)，还是从内到外的事件冒泡(event bubbing)，都可在可视化元素的层级之间进行事件的链式处理
+
+- 职责链关心是职责的分解，更侧重行为；装饰者关心是职责的结合，更侧重结构
+
+- Java Servlet中的`Filter`也是一例，程序员可把Servlet过滤器写在配置文件中，不需要硬编码
+
+#### 异常处理
+- 异常处理机制，可称为语言级别的职责链，代码在捕捉到异常并进行处理后，可选择重新抛出异常，以便让上一级代码继续处理
+
+- 许多人经常在何时该抛出异常，抛出何种异常，处理完异常后该不该继续上抛等问题上不决
+    1. 没有职责链意识，有些事情是需要分模块分时间分批次来完成的
+    1. 没有抽象层次的意识，不同抽象层次的对象处理不同层次的异常，必要时通过包装提升异常的抽象层次，交由上级处理
+
+- 假如一个方法捕捉到一个异常：
+    1. 不在该方法的规范的职责之内，该方法应直接将异常连同必要的信息以更抽象的形式包装来，然后抛给更高层
+    1. 部分由该方法负责，对异常进行一些处理，然后重复情形1的行为
+    1. 完全由该方法负责，则在方法内进行相应的处理，不再为此抛出异常
+
+### 命令模式
+- 命令模式也是发送者与接收者之间的解耦，基本思想是：把请求或命令封装成一个对象，交由请求的发送者或命令的调用者控制
+    1. 命令对象包含了执行命令的全部信息：请求的接收者、方法和方法参数，只等一声令下
+    1. 命令对象还以统一接口形式出现，下令者不必知道命令的具体类型，更不必知道实际的执行者以及执行方式，只需把握下令的时机
+
+- 命令的下达者与执行者没有必然关联的，也就是说请求的发送者与接收者在 __空间上__ 被解耦了
+- 下令者获得命令对象的时间与下令的时间不必一致，因此它们在 __时间上__ 也被解耦，也正是异步回调（OO化的回调）
+
+![prog_paradigm_command](../../../imgs/prog_paradigm_command.png)
+
+- 一个具体的命令与C++中的函子(functor)或函数对象(function object)很相似，只是前者执行方法是`execute`，后者是函数调用运算符。不过函子通常只是函数的包装，不一定有`receiver`对象
+
+- 回调函数的本质是把代码当数据使用，命令对象也如此，由于命令的数据化封装，可以保存、排除、记入日志、异步执行、异地执行、动态选择或修改、还原(undo)操作
+
+### 观察者模式
+- 一个消息发送者可以把消息同时发给多个接收者
+
+![prog_paradigm_observer](../../../imgs/prog_paradigm_observer.png)
+
+- 它是控制反转的应用，MVC模型中，Subject代表低层的模型，Observer代表高层的视图
+
+### 中介者模式
+- 构造一个信息交换中心，为众多平等的对象提供了交流的平台，这样`Colleague`对象之间不须要彼此相知，只须知道`Mediator`对象便可彼此通信
+
+![prog_paradigm_mediator](../../../imgs/prog_paradigm_mediator.png)
+
+- 它与观察者不同之处，在通信与同步的职责分配上，前者是集中式的(centralized)，`Mediator`对象管理所有通信和同步协议，后者是分布式的(distributed)，`Subject`对象和`Observer`对象必须要通过合作方能保证同步约束，但也会结合使用：
+    - `Mediator`对象可利用观察者模式与`Colleague`对象进行交流
+    - 当`Subject`对象与`Observer`对象之间的同步逻辑比较复杂时也可能会引入`Mediator`对象
+
+### 状态模式
+![prog_paradigm_state](../../../imgs/prog_paradigm_state.png)
+
+- 一个对象的自身行为如何随着自身状态的改变而改变
+- 利用合成，或委托来解决，引入间接对象`State`来封装状态的变化，把不同的状态对应的不同行为包装到不同的模块之中
+
+### 备忘录模式
+![prog_paradigm_memento](../../../imgs/prog_paradigm_memento.png)
+
+- 如果说状态模式关注的是对象状态的演进，备忘录则关注的是对象状态的回归，如命令模式用来支持还原的操作，就需要相关对象状态的历史记录，备忘录模式便能助力
+
+- `Originator`对象是备忘的主体和制造者，它的状态为`Memento`对象所封装，后者由`Caretaker`对象负责保存和管理，由于`Originator`类具有回滚(rollback)和快照(snapshot)的接口，不仅能支持单步还原，还能支持批量还原
+
+- `Memento`接口中的方法的修饰符是包级的，除`Originator`对象外，其他对象都无权查看或修改其状态，C++可在`Memento`类中声明`Originator`类为友类(friend class)
+
+### 访问者模式
+- 克服OOP语言的单分派的局限
+- 分派是为一个调用点(call site)确定相应调用方法的过程。如果函数或方法名是唯一的，过程十分简单，如果不唯一，不同的语言有不同的算法，通常根据参数的类型或个数来决定：
+    1. 若分派能在编译期决定，则是静态分派，如重载多态(overloading polymorphism)和参数多态(parametric polymorphism)
+    1. 若分派在运行期间决定，则是动态分派(dynamic dispatch)，如子类型多态(subtyping polymorphism)
+
+- C++,Java和C#采用同样的动态分派机制：在运行期间根据一个方法的接收者－即方法所属的对象的实际类型来决定到底该调哪种方法。这类分派仅取决于一个类型，即方法的接收对象的类型，故称单分派
+
+- 如果分派取决于两个参数的类型，则称双分派
+
+<!--language: !csharp-->
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
+    abstract class File {
+        public string Name {get; set;}
+    }
+
+    class PlainFile : File{
+    }
+
+    class Directory : File{
+    }
+
+    interface FileVistor{
+        void Visit(PlainFile file);
+        void Visit(Directory file);
+        void Visit(File file);
+    }
+
+    class FilePrinter : FileVistor{
+        public void Visit(PlainFile file){
+            Console.WriteLine("plain file: " + file.Name);
+        }
+        public void Visit(Directory file){
+            Console.WriteLine("directory: " + file.Name);
+        }
+        public void Visit(File file){
+            Console.WriteLine("abstract file: " + file.Name);
+        }
+    }
+
+    class Program {
+        static void Main(string[] args) {
+            File dir = new Directory{Name = "directory_name"};
+            File file = new PlainFile{Name = "file_name"};
+            FileVistor visitor = new FilePrinter();
+
+            visitor.Visit(dir);
+            visitor.Visit((Directory)dir);
+            visitor.Visit(file);
+            visitor.Visit((PlainFile)file);
+        }
+    }
+
+- `dir`,`file`变量必须进行类型判断和向下转型才能被正确的Visit，否则认为是超类型的。
+- 通过给文件类各添加一个`accept`方法
+
+<!--language: !csharp-->
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
+    abstract class File {
+        public string Name {get; set;}
+        abstract public void Accept(FileVistor visitor);
+    }
+
+    class PlainFile : File{
+        override public void Accept(FileVistor visitor){visitor.Visit(this);}
+    }
+
+    class Directory : File{
+        override public void Accept(FileVistor visitor){visitor.Visit(this);}
+    }
+
+    interface FileVistor{
+        void Visit(PlainFile file);
+        void Visit(Directory file);
+        // void Visit(File file);
+    }
+
+    class FilePrinter : FileVistor{
+        public void Visit(PlainFile file){
+            Console.WriteLine("plain file: " + file.Name);
+        }
+        public void Visit(Directory file){
+            Console.WriteLine("directory: " + file.Name);
+        }
+        public void Visit(File file){
+            Console.WriteLine("abstract file: " + file.Name);
+        }
+    }
+
+    class Program {
+        static void Main(string[] args) {
+            File dir = new Directory{Name = "directory_name"};
+            File file = new PlainFile{Name = "file_name"};
+            FileVistor visitor = new FilePrinter();
+
+            dir.Accept(visitor); // equals: visitor.Visit((Directory)dir);
+            file.Accept(visitor);// equals: visitor.Visit((PlainFile)file);
+        }
+    }
+
+- `void Visit(File file);`也没必要存在了
+- 在语句`file.accept(visitor)`中，通过本身的单分派找到实际的`accept`方法，实现了`file`的多态（类型多态）；接着在相应的`visitor.Visit(this)`中，再利用单分派找到实际的`Visit`方法，实现了`Visitor`的多态（参数多态）
+
+![prog_paradigm_visitor](../../../imgs/prog_paradigm_visitor.png)
+
+- 缺陷是`Visitor`需要了解`File`的类型层级，可参考ACYCLIC VISITOR模式
+
+### 迭代器模式
+![prog_paradigm_iterator](../../../imgs/prog_paradigm_iterator.png)
+- 赋予了用户自定义循环的能力，实现了迭代抽象(iteration abstraction)，用户可以对聚合体或容器以某种次序遍历(traverse)容器中的元素，至于容器的内部结构、遍历的起止、推进等细节，均毫不知情，也不关心
+- 迭代器作为容器与算法之间的中介，__促使算法摆脱了对数据结构的依赖__，从而更具普适性和重用性，一旦算法被抽象出来，__泛型范式__ 便可大展神威
+- 泛型范式与迭代器相得益彰，充分体现在C++的STL、Java和C#的Collections中
 
 
 
