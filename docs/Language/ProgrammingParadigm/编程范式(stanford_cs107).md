@@ -1947,7 +1947,7 @@ Lecture 15
 - 目前的线程是没有优先级的
 
 ## 线程间共享数据
-让可销售的票共享
+让可销售的票共享，使用`Semaphore`来模拟锁的功能
 
 <!--language: c-->
 
@@ -1962,9 +1962,9 @@ Lecture 15
             SemaphoreWait(lock);
             if(*numTicketsp == 0) break;
             (*numTicketsp)--;
-            printf("Agent %d sells a ticket\n", agentId);
             SemaphoreSignal(lock);
 
+            printf("Agent %d sells a ticket\n", agentId);
             if(RandomChance(0.1))
                 TheadSleep(1000);
         }
@@ -1988,19 +1988,103 @@ Lecture 15
 
 - 共享的数据，`while(*numTicketsp > 0)(*numTicketsp)--;`并非原子操作，容易造成数据不一致，该段代码称为 __临界区__
 - 为了保让临界区只有一个线程在执行，需要引入锁机制，信号量Semaphore是实现它的一种方式
-- Semaphore是作为非负整数发挥作用，支持加1和减1 __原子操作__ 功能的变量类型
+- Semaphore是作为非负整数(sync counter var >=0)发挥作用，支持加1和减1 __原子操作__ 功能的变量类型
 - `SemaphoreWait(lock)`执行减1动作，在需要获得资源的时候先执行，要么获得资源，要么需要等待（即Semaphore为0时会被阻塞，等待其他线程的Signal）；`SemaphoreSignal(lock)`执行加1动作，当不需要资源时，释放锁
 - Semaphore类型其实是一个指向不完全类型的指针，所以传参时，并不是拷贝，而是共享某种结构体
 - `SemaphoreNew(-,1);`如果第2个参数改成0，则一开始就等待某线程发出Signal，改成>1，则表示有多个资源可供使用，但如果用来限制临界区访问的，通常是代码中的模式
+- 尽可能让"临界区"小，否则会影响并发性
 
 
 Lecture 16
 ==========
 
+## 生产者与消费者
 
+- 模拟互联网服务器与浏览器，推送40字节
 
+<!--language: c-->
 
+    #include <stdio.h>
+    #include "thead_107.h"
 
+    char buffer[8];
+    Semaphore emptyBuffers = SemaphoreNew(-,8);
+    Semaphore fullBuffers = SemaphoreNew(-,0);
+
+    void Writer(){
+        for(int i=0; i<40; i++){
+            char c = PrepareRandomChar();
+            SemaphoreWait(emptyBuffers);
+            buffer[i%8] = c;
+            SemaphoreSignal(fullBuffers);
+        }
+    }
+
+    void Reader(){
+        for(int i=0; i<40; i++){
+            SemaphoreWait(fullBuffers);
+            char c = buffer[i%8];
+            SemaphoreSignal(emptyBuffers);
+            ProcessChar(c);
+        }
+    }
+
+    int main(){
+        InitThreadPackage(false);
+        ThreadNew("Writer", Writer, 0);
+        ThreadNew("Reader", Reader, 0);
+        RunAllThreads();
+    　　return 0;
+    }
+
+- `Writer`不能写太快，否则`Reader`还未读取，`buffer`中内容就被覆盖了，同样，`Reader`也不能读太快，否则读到`Writer`上次写的东西
+- `SemaphoreWait(emptyBuffers);`确保能写，写完后`SemaphoreSignal(fullBuffers);`通知可以读了，`SemaphoreWait(fullBuffers);`确保能读，读完后`SemaphoreSignal(emptyBuffers);`通知可以写了，之间读写速度不大于8字节
+- 上例是使用`Semaphore`来模拟锁，而本例则使用它来进行线程间通信
+- 可以把`emptyBuffers`的设为4，不会影响代码的正确性，也不会死锁，只是影响了并发性；设为1，则相当于同步调用；设为0则会死锁；设为超过8，则会覆盖未被读的数据
+- 把`fullBuffers`的设为大于0，则会读到未写的数据
+
+## 五个哲学家就餐
+
+<!--language: c-->
+
+    #include <stdio.h>
+    #include "thead_107.h"
+
+    Semaphore forks[] = {1,1,1,1,1};
+    Semaphore numAllocToEat = 4;
+
+    void Philosopher(int id){
+        for(int i=0; i<3; i++){ // i没有意义，只是为了循环
+            Think();
+
+            SemaphoreWait(numAllocToEat);
+
+            SemaphoreWait(forks[id]);
+            SemaphoreWait(forks[(id+1)%5]);
+            Eat();
+            SemaphoreSignal(forks[id]);
+            SemaphoreSignal(forks[(id+1)%5]);
+
+            SemaphoreSignal(numAllocToEat);
+        }
+    }
+
+    int main(){
+        InitThreadPackage(false);
+        for(int id=0; id<5; id++){
+            char name[32];
+            sprintf(name, "Philosopher %d thread", id);
+            ThreadNew(name, Philosopher, 1, id);
+        }
+        RunAllThreads();
+    　　return 0;
+    }
+
+- 如果五个哲学家同时拿起左侧的叉子，而等待右侧的时候，进入死锁
+- 避免死锁的办法有：
+    - 可以将`Eat()`上下各两行作为临界区进行加锁，即最多只能一个人吃饭，但这会影响并发性
+    - 启发法1：可以只允许 __最多同时两个人__ 吃饭，因为三个人需要6个叉子，资源不够
+    - 启发法2(本例所采用)：也可以阻一位哲学家获得叉子，那么剩下的 __四个人尝试__ 获得叉子，至少有一个能得到两个叉子
 
 
 
@@ -2008,3 +2092,7 @@ Lecture 17
 ==========
 
 
+
+
+Lecture 18
+==========
