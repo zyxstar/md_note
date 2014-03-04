@@ -16,7 +16,7 @@
 本文档也是用该工具展示的，在Github的[地址](https://raw2.github.com/zyxstar/md_note/master/docs/Manual.md)
 
 - 读书时的整理
-    - [编程范式与OOP思想(冒号课堂).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E5%2586%2592%25E5%258F%25B7%25E8%25AF%25BE%25E5%25A0%2582%2529.md)
+    - [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md)
     - [JavaScript语言精髓与编程实践.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%25E4%25B8%258E%25E7%25BC%2596%25E7%25A8%258B%25E5%25AE%259E%25E8%25B7%25B5.md)
     - [RubyPlatform.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw2.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyPlatform.md)
 
@@ -48,6 +48,13 @@
 
 > 不知道什么是urlencode? [看这里](http://tool.chinaz.com/Tools/URLEncode.aspx)；还需要更详细的参数说明，请[移步这里](http://chinapub.duapp.com/usage)
 
+## 测试一下
+
+<form  method='get' action='http://chinapub.duapp.com/gen_md' target='_blank'>
+<label for='txt_src'>填入一个网络地址，比如Python-Markdown在Github上的说明</label><br/>
+<input type='text' name='src' id='txt_src' style="width:80%" value='https://github.com/trentm/python-markdown2/raw/master/README.md'/>
+<input type='submit' value="生成"/>
+</form>
 
 看看它有什么特性
 ================
@@ -337,6 +344,7 @@
 未完待续
 ========
 
+- Github上的markdown语法支持
 - chrome插件
 - blog插件
 - 自定义样式

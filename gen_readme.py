@@ -75,6 +75,7 @@ def write_readme(line_list):
     with codecs.open('README.md', 'w', 'utf-8') as _f:
         _f.write('\r\n'.join(line_list))
         _f.write('\r\n')
+        _f.write('\r\n')
         _f.write("""<style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>""")
 
 
