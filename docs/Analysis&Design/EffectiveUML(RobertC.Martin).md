@@ -208,7 +208,193 @@ UML图必须经过仔细考虑，__不需要数千页的顺序图__，要的是�
     |Unlocked      |coin  |Unlocked   |Refund |
     |Unlocked      |pass  |Locked     |Lock   |
 
-基于此，可以使用状态模式来编写代码，甚至可以使用[SMC](http://www.objectmentor.com/resources/downloads.html)来生成相应代码，显然比维护图示容易得多
+基于此，可以使用状态模式来编写代码，甚至可以使用[SMC](http://www.objectmentor.com/resources/downloads.html)来生成相应代码（[本地下载](../../data/smcJava.zip)），显然比维护图示容易得多
+
+## 代码实现
+### 解析迁移表
+
+<!--language: java-->
+
+    import java.util.Vector;
+    public class TurnStile{
+        // States
+        public static final int LOCKED = 0;
+        public static final int UNLOCKED = 1;
+
+        // Events
+        public static final int COIN = 0;
+        public static final int PASS = 1;
+
+        int state = LOCKED;
+        private TurnstileController turnstileController;
+        private Vector transitions = new Vector();
+
+        private interface Action{ void execute(); }
+
+        private class Transition{
+            int curState, event, newState; Action action;
+            public Transition(int curState, int event, int newState, Action action){
+                this.curState = curState;
+                this.event = event;
+                this.newState = newState;
+                this.action = action;
+            }
+
+            public Turnstile(TurnstileController action){
+                turnstileController = action;
+                addTransition(LOCKED, COIN, UNLOCKED, unlock());
+                addTransition(LOCKED, PASS, LOCKED, alarm());
+                addTransition(UNLOCKED, COIN, UNLOCKED, fefund());
+                addTransition(UNLOCKED, PASS, LOCKED, lock());
+            }
+
+            private void addTransition(int curState, int event, int newState, Action action){
+                transitions.add(new Transition(curState, event, newState, action));
+            }
+
+            private Action unlock(){return new Action(){public void execute(){doUnlock();}};}
+            private Action alarm(){return new Action(){public void execute(){doAlarm();}};}
+            private Action fefund(){return new Action(){public void execute(){doRefund();}};}
+            private Action lock(){return new Action(){public void execute(){doLock();}};}
+
+            private void doUnlock(){turnstileController.unlock();}
+            private void doAlarm(){turnstileController.alarm();}
+            private void doRefund(){turnstileController.fefund();}
+            private void doLock(){turnstileController.lock();}
+
+            public void event(int event){
+                for(int = 0; i < transitions.size(); i++){
+                    Transition transition = (Transition)transitions.elementAt(i);
+                    if(state == transition.curState && event == transition.event)
+                        state = transition.newState;
+                        transition.action.execute();
+                }
+            }
+        }
+    }
+
+书中提及的优点是维护方便，缺点是：第一对于大型状态机而言，迁移表的遍历时间影响性能；第二，存在数量从多的小函数。其实对于缺点一，完全可使用哈希表；缺点二主要是因为语言的限制，java早期版本不支持lambda，所以对函数指针的引用，只能通过"接口+匿名类+转发"的方式曲线完成。以下以python为例，看一下代码的改进：
+
+<!--language: !python-->
+
+    class Turnstile:
+        def __init__(self, ctrl):
+            self.state = "LOCKED"
+            self.trans = {}
+            self.ctrl = ctrl
+            self._key_format = "%s_%s"
+            self._loadTrans()
+
+        def _loadTrans(self):
+            self._addTrans("LOCKED","COIN","UNLOCKED",self.ctrl.unlock)
+            self._addTrans("LOCKED","PASS","LOCKED",self.ctrl.alarm)
+            self._addTrans("UNLOCKED","COIN","UNLOCKED",self.ctrl.refund)
+            self._addTrans("UNLOCKED","PASS","LOCKED",self.ctrl.lock)
+
+        def _addTrans(self,curState,event,newState,action):
+            _key = self._key_format % (curState,event)
+            self.trans[_key] = (curState,event,newState,action)
+
+        def event(self, event):
+            _key = self._key_format % (self.state,event)
+            if not self.trans.has_key(_key): raise Exception("...")
+            _,__,self.state, _action = self.trans[_key]
+            _action();
+
+    class Ctrl:
+        def unlock(self): print "unlock"
+        def alarm(self): print "alarm"
+        def refund(self): print "refund"
+        def lock(self): print "lock"
+
+    t = Turnstile(Ctrl())
+    t.event("COIN"); print t.state
+    t.event("PASS"); print t.state
+    t.event("PASS"); print t.state
+
+
+### 状态模式
+
+![effective_uml_56](../../imgs/effective_uml_56.png)
+
+<!--language: csharp-->
+
+    public interface TurnstileState{
+        void Coin(Turnstile t);
+        void Pass(Turnstile t);
+    }
+
+    internal class LockedTurnstileState : TurnstileState{
+        public void Coin(Turnstile t) {
+            t.SetUnlocked();
+            t.Unlock();
+        }
+        public void Pass(Turnstile t) {
+            t.Alarm();
+        }
+    }
+
+    internal class UnlockedTurnstileState : TurnstileState{
+        public void Coin(Turnstile t) {
+            t.Thankyou();
+        }
+
+        public void Pass(Turnstile t) {
+            t.SetLocked();
+            t.Lock();
+        }
+    }
+
+    public class Turnstile{
+        internal static TurnstileState lockedState =
+          new LockedTurnstileState();
+
+        internal static TurnstileState unlockedState =
+          new UnlockedTurnstileState();
+
+        private TurnstileController turnstileController;
+        internal TurnstileState state = unlockedState;
+
+        public Turnstile(TurnstileController action){
+            turnstileController = action;
+        }
+
+        public void Coin(){
+            state.Coin(this);
+        }
+        public void Pass(){
+            state.Pass(this);
+        }
+
+        public void SetLocked(){
+            state = lockedState;
+        }
+        public void SetUnlocked(){
+            state = unlockedState;
+        }
+
+        public bool IsLocked(){
+            return state == lockedState;
+        }
+        public bool IsUnlocked(){
+            return state == unlockedState;
+        }
+
+        internal void Thankyou(){
+            turnstileController.Thankyou();
+        }
+        internal void Alarm(){
+            turnstileController.Alarm();
+        }
+        internal void Lock(){
+            turnstileController.Lock();
+        }
+        internal void Unlock(){
+            turnstileController.Unlock();
+        }
+    }
+
+
 
 
 对象图

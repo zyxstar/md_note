@@ -8,7 +8,7 @@ import re
 
 SYS_ENCODING = sys.getfilesystemencoding()
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
-GITHUB_BASE_URL = "https://raw2.github.com/zyxstar/md_note/master/docs"
+GITHUB_BASE_URL = "https://raw.github.com/zyxstar/md_note/master/docs"
 
 ORDER_DIC = {"Analysis&Design":10,
              "Language":20,
@@ -74,6 +74,7 @@ def build_subfiles(iter_subfiles):
 def write_readme(line_list):
     with codecs.open('README.md', 'w', 'utf-8') as _f:
         _f.write('\r\n'.join(line_list))
+        _f.write('\r\n')
         _f.write('\r\n')
         _f.write("""<style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>""")
 
