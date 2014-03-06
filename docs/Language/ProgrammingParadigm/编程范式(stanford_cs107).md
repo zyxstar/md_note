@@ -2140,13 +2140,15 @@ Lecture 17
 - `ThreadNew`的函数指针指向的函数的返回值只能是void，所以需要`DownloadHelper`来封装，第二层原因在于`DownloadSingleFile`应该只是功能函数，它的职责应该单一，不能为了满足线程的签名而定义
 - 千万不要把`SemaphoreWait(lock);`移到`int bytesDownloaded = DownloadSingleFile(server,path);`前面，这会导致下载和单线程没什么区别
 - `DownloadAllFiles`需要所有的线程都下载完成后，才返回，还需要设置一个信号量`childrenDone`，`for(int i=0; i<n; i++) SemaphoreWait(childrenDone);`确保所有的线程都返回了，否则就阻塞等待信号，而每个线程中的`SemaphoreSignal(parentToSignal);`就是通知主线程。现代许多库中不需要写循环来等待信号，直接`WaitAll(WaitHandle[])`即可
-
-
-
-
-
-
+- 可以不需要共享一个`totalBytes`的指针，而使用一个长度为n的数组，让每个线程完成后填充数据，再在主线程中等所有线程返回后，对数组进行累加。
+- 信号量才是真正的异步机制，不需要循环侦听，不需要回调，等待到信号就往下执行
 
 
 Lecture 18
+==========
+
+
+
+
+Lecture 19
 ==========
