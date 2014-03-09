@@ -2631,9 +2631,17 @@ Lecture 21
         (+ x delta))
       (map shift-by points))
 
+- 定义`sum`两种方式，第一种符合编程习惯，而第二种是将函数名与函数体更清楚的关联起来，其实Scheme中函数都表现为一个函数符号与一个lambda的关联。即关于 符号、符号评估、函数评估 到它们在内存中的储存方式
 
+<!--language: scheme-->
 
+    (define (sum x y)
+      (+ x y))
 
+    (define sum
+      (lambda (x y) (+ x y)))
+
+- 所以`(define PI 3.14)`与上面第二种的表达的一样，将`PI`这个名与`3.14`对象关联起来
 
 
 Lecture 22
