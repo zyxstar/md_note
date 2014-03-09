@@ -2147,8 +2147,500 @@ Lecture 17
 Lecture 18
 ==========
 
+## 冰激凌商店模拟
+
+- 10个Customers, 每个Customer限制购买1~4个IceCreamCones
+- 1个Cashier，每个Customer都向他付钱
+- 1个Manager，他检查批准是否售出IceCreamCones
+- 10~40个Clerk，因为每个Customer有可能需要1~4个IceCreamCones，就需要相应的Clerk去制作
+- Customer看不到Manger，只能同Clerk下单
+- 每个Clerk需要带着做好的IceCreamCones向Manger送检，后者决定是否售出，如果不同意，还需要重新制作再送检
+- Customer得到做好的IceCreamCones后，按FIFO的顺序排队向Cashier付款
+
+<!--language: plain-->
+
+    1 Manager
+        |
+        |竞争
+        |
+    10~40 Clerks
+        |
+        |并发
+        |
+    10 Customers  [1~4]IceCreamCones
+        |
+        |排队
+        |
+    1 Cashier
+
+示意代码：
+
+<!--language: c-->
+
+    #include "thead_107.h"
+
+    struct inspection{  //Manager检查的结构体
+        bool passed = false;
+        Semaphore requested = 0; //Clerk送检事件
+        Semaphore finished = 0; //Manager检查完毕事件
+        Semaphore lock = 1; //确保当前结构体只是一个Clerk在使用
+    }inspection;
+
+    struct line{
+        int number=0;
+        Semaphore requested = 0; //Customer付款事件
+        Semaphore customers[10];
+        Semaphore lock = 1; //对number的保护
+    }line;
+
+    void Manager(int totalConesNeeded){
+        int numApproved = 0;
+        int numInspected = 0;
+        while(numApproved < totalConesNeeded){//确保Customer需要的都是检查过的
+            SW(inspection.requested);
+            numInspected++;
+            inspection.passed=RandomChance(0,1);
+            if(inspection.passed)
+                numApproved++;
+            SS(inspection.finished);
+        }
+    }
+
+    void Clerk(Semaphore semaToSignal){
+        bool passed = false;
+        while(!passed){
+            TakeCone();
+            SW(inspection.lock);
+            SS(inspection.requested);
+            SW(inspection.finished);
+            passed = inspection.passed;
+            SS(inspection.lock);
+        }
+        SS(semaToSignal);
+    }
+
+    void Cashier(){
+        for(int i=0;i<10;i++){
+            SW(line.requested);
+            Chkeckout(i);
+            SS(line.customers[i]); //通知排队的customer完成了账单
+        }
+    }
+
+    void WalkToCahier(){
+        SW(line.number);
+        line.number++;
+        line.customers[line.number]
+    }
+
+    void Customer(int numCones){
+        BrowX();
+        Semaphore clerksDone = 0;
+        for(int i=0;i<numCones;i++)
+            ThreadNew("", Clerk, 1, clerksDone);
+        for(i=0;i<numCones;i++) SW(clerksDone);
+
+        SemaphoreFree(clerksDone);
+        WalkToCahier();
+
+        SW(line.lock);
+        int place = line.number++;
+        SS(line.lock);
+
+        SS(line.requested);
+        SW(line.customers[place]); // 等待账单完成才可以离开
+    }
+
+    int main(){
+        int totalCones=0;
+        InitThreadPackage(false);
+
+        SetupSemaphores();
+        for(int i=0;i<10;i++){
+            int numCones = RandomInteger(1,4);
+            ThreadNew("", Customer, 1, numCones);
+            totalCones+=numCones;
+        }
+
+        ThreadNew("", Cashier, 0);
+        ThreadNew("", Manager, 1, totalCones);
+
+        RunAllThreads();
+        FreeSemaphores();
+
+        return 0;
+    }
 
 
 
 Lecture 19
 ==========
+
+## 面向对象
+
+<!--language: plain-->
+
+    imperative/procedural  object-oriented
+    C                      C++
+    Vector v;              Vector<int> v;
+    VectorNew(&v,...);     v.pushback(4);
+    VectorInsert(&v,...);  v.erase(v.begin());
+    VectorSort(&v,...);
+
+- 左侧的以动词开始，面向过程的；右侧的是一个对象，主谓结构
+
+## 函数式语言Scheme
+
+- scheme试图强调的是一个数据集给到主函数，这个主函数应该为你做一切，它适时将任何需要来合成结果，而那个答案将通过返回值返回
+
+<!--language: plain-->
+
+    假设：
+    f(x,y) = x^3 + y^2 +7
+    g(x) = f(x, x+1) + 8
+    h(x,y,z) = f(x,z) * g(x+y)
+    则：
+    h(x,y,z)
+             = (x^3 + z^2 +7) * (f(x+y, x+y+1) + 8)
+
+
+- `f`与`g`函数将自己作为函数返回值，这些返回值有助于组成更大的结果
+
+<!--language: scheme-->
+
+    (define (celsius->fahrenheit temp)
+      (+ 32 (* 1.8 temp)))
+
+    > (celsius->fahrenheit 100)
+    212
+
+    > (+ 1 2 3)
+    6
+
+    > (* (+ 4 4)
+         (* 5 5))
+    80
+
+- `->`是可以放入命名中的
+- `+`,`*`之类的看起来像操作符，类似buildin的函数，而且参数不定
+- 单个数值或字符串之类的原子类型(atom)也是表达式
+- 嵌套的列表应该是递归计算
+- 函数调用的思维转化为求值过程
+
+<!--language: scheme-->
+
+    > (> 4 2)
+    #t
+
+    > (and (> 4 2)
+           (< 10 5))
+    #f
+
+- 第二个求值过程甚至会"短路求值"
+- 称为Lisp的原因是，所有东西，包括函数调用，都输入列表形式，除了原子的数据类型，我们将所有数据结构认为是包装成一个列表
+
+<!--language: scheme-->
+
+    > (car '(1 2 3 4 5))
+    1
+
+    > (car '())
+    car: expects argument of type <pair>; given empty
+
+    > (cdr '(1 2 3 4 5))
+    (list 2 3 4 5)
+
+    > (car(cdr(cdr '(1 2 3 4 5))))
+    3
+
+    > (cdr '(4))
+    empty
+
+    > (cdr '())
+    cdr: expects argument of type <pair>; given empty
+
+- `car`和`cdr`是基本的列表分析器，有些版本允许使用`first`和`rest`来指代
+- `car`与第一个节点的数据相关联，它总是占据一个列表里的0槽中的值
+- `cdr`返回余下的列表
+- 如果把列表前面`'`去掉，它将认为有一个函数叫`1`，但是找不到，就报错，加入`'`是抵制求值，当成原始数据，而不是一个递归求值。这是一个简记法，对应的函数是`quote`，`'(1 3 (4(5)))`等价于`(quote(1 3 (4(5))))`
+
+<!--language: scheme-->
+
+    > (cons 1 '(2 3 4 5))
+    (list 1 2 3 4 5)
+
+    > (cons '(1 2 3) '(4 5))
+    (list (list 1 2 3) 4 5)
+
+    > (append '(1 2 3) '(4 5))
+    (list 1 2 3 4 5)
+
+    > (append '(1 2 3) '(4 5) '(6 7))
+    (list 1 2 3 4 5 6 7)
+
+    > (append '(1 2 3) (list 5) '(6 7))
+    (list 1 2 3 5 6 7)
+
+
+- `cons`是construct的缩写，它是`car`的反义操作
+- 而`append`才是列表的合并，并且可以接受任意个列表参数
+
+
+<!--language: scheme-->
+
+    (define (add x y)
+       (+ x y))
+
+    > (add 10 7)
+    7
+
+    (define (sum-of numlist)
+        (if (null? numlist) 0
+            (+ (car numlist)
+               (sum-of (cdr numlist)))))
+
+    > (sum-of '(1 2 3 4))
+    10
+
+- `sum-of`的实现是以递归的思维实现的，以尾递归实现迭代
+- `(sum-of '("hello" 1 2 3 4 5))`会报错，除非对`+`进行了重载，但报错的时间是在递归计算到`(+ "hello"` 15)`的时候发生，类型判断是在运行时发生的
+
+
+Lecture 20
+==========
+
+## fib
+
+<!--language: scheme-->
+
+    (define (fib n)
+       (if (zero? n) 0
+           (if (= n 1) 1
+               (+ (fib (- n 1))
+                  (fib (- n 2))))))
+
+
+    (define (fib n)
+       (if (or (= n 0)
+               (= n 1)) n
+           (+ (fib (- n 1))
+              (fib (- n 2)))))
+
+
+- 菲波那契序列的两种表达
+
+<!--language: scheme-->
+
+    > (if (zero? 0) 4
+          (+ "hello" 5))
+    4
+
+- 运行时语言，即使后面数据类型错误，也不会求值，更不会报错
+
+## flatten
+
+<!--language: scheme-->
+
+    (define (flatten sequence)
+       (cond (((null? sequence) '())
+              ((list? (car sequence))
+                     (append (flatten (car sequence))
+                             (flatten (cdr sequence))))
+              (else (cons (car sequence)
+                          (flatten (cdr sequence)))))))
+
+    > (flatten '(1 2 3 4))
+    (list 1 2 3 4)
+
+    > (flatten '(1 (2 "3") 4 ("5")))
+    (list 1 2 "3" 4 "5")
+
+- 假设不会转入`'()`空列表
+
+
+## sorted?
+
+<!--language: scheme-->
+
+    (define (sorted? num-list)
+       (or (< (length num-list) 2)
+           (and (<= (car num-list)
+                    (cadr num-list))
+                (sorted? (cdr num-list)))))
+
+    > (sorted? '(1 2 2 4 7))
+    true
+
+    > (sorted? '(1 0 4 7 10))
+    false
+
+
+- `cadr`嵌套的表达，相当于先`cdr`再`car`，即取第二的元素，以此类推可以有`cadadr`,`cdddr`……
+- 其实Scheme中的`<`和`<=`本身支持多个参数，可以表示是否已是有序序列
+
+<!--language: scheme-->
+
+    > (< 1 2 3 4)
+    true
+
+    > (<= 1 2 3 4 4)
+    true
+
+
+## sorted? with compare
+
+<!--language: scheme-->
+
+    (define (sorted? num-list cmp)
+       (or (< (length num-list) 2)
+           (and (cmp (car num-list) (cadr num-list))
+                (sorted? (cdr num-list) cmp))))
+
+    > (sorted? '(1 2 2 4 7) <=)
+    true
+
+- `cmp`是函数对象
+
+Lecture 21
+==========
+
+## map
+
+<!--language: scheme-->
+
+    (define (double-all num-list)
+       (if (null? num-list) '()
+           (cons (* 2 (car num-list))
+                 (double-all (cdr num-list)))))
+
+
+    > (double-all '(1 2 5 69))
+    (list 2 4 10 138)
+
+- 上面的迭代可使用`map`来统一处理，只需定义`double`即可，这样，即让`map`通用化，也让`double`职责单一化
+
+<!--language: scheme-->
+
+    (define (double x)(* x 2))
+
+    > (map double '(1 2 5 69))
+    (list 2 4 10 138)
+
+- `map`第一个参数接受函数对象，后面的序列作为要迭代处理的，甚至可以是多个序列，此时函数对象应为多元计算，以最小序列结束为结束
+
+<!--language: scheme-->
+
+    > (map cons '(1 2 8) '((4) () (2 5)))
+    (list (list 1 4) (list 2) (list 8 2 5))
+
+
+- 下面定义自己的`mymap`，目前只接受一个序列
+
+<!--language: scheme-->
+
+    (define (mymap fn seq)
+        (if (null? seq) '()
+            (cons (fn (car seq))
+                  (mymap fn (cdr seq)))))
+
+    (define (double x)(* x 2))
+
+    > (mymap double '(1 2 5 69))
+    (list 2 4 10 138)
+
+## apply
+
+- 几个内置函数`eval`,`apply`
+
+<!--language: scheme-->
+
+    > (eval '(+ 1 2 3))
+    6
+
+    > (apply + '(1 2 3))
+    6
+
+    (define (average num-list)
+      (/ (apply + num-list)
+         (length num-list)))
+
+    > (average '(1 2 3 4 5))
+    3
+
+- 计算序列的和时，使用了`(apply + num-list)`，即将`+`的运算应用在后面的序列中，相当于将`+`所需的不固定参数通过一个序列来表达（同js中apply中对参数的处理效果一致）
+
+- `map`和`apply`对序列处理是平等的，以集合处理的思维进行思考，（即使内部也是使用递归），而不像`car`,`cdr`这样有明显迭代处理方式
+
+- `eval`一般很少用到，除非一些元编程中
+
+<!--language: scheme-->
+
+    (define (flatten seq)
+      (if (not (list? seq)) (list seq)
+        (apply append
+          (map flatten seq))))
+
+    > (flatten '((1 2) ((3) ((4) 5)) 10))
+    (1 2 3 4 5 10)
+
+- 尝试使用`map`思维来处理`flatten`
+
+<!--language: plain-->
+
+    ((1 2) ((3) ((4) 5)) 10)
+     | map flatten n times
+     v
+    ((1 2)  (3 4 5)     (10))
+     | apply append
+     v
+    (1 2 3 4 5 10)
+
+
+## lambda
+
+- 实现一个函数，完成以下功能
+
+<!--language: scheme-->
+
+    > (translate '(2 5 8 11 25) 100)
+    (102 105 108 111 125)
+
+- 函数的定义如下
+
+<!--language: scheme-->
+
+    (define (translate points delta)
+      (map (?)
+           points))
+
+- 问题在于`map`中的函数对象`?`怎么定义，它表达的意思应为`increment_by_delta`，但这个函数需要二个参数，而不是一个，我们需要把`delta`封装到`lambda`中，通过闭包来保持它
+
+<!--language: scheme-->
+
+    (define (translate points delta)
+      (map (lambda (x)
+             (+ x delta))
+           points))
+
+- `lambda`定义的是匿名函数对象，它只存活于`map`运行期间。当然也可以定义具名函数：
+
+<!--language: scheme-->
+
+    (define (translate points delta)
+      (define (shift-by x)
+        (+ x delta))
+      (map shift-by points))
+
+
+
+
+
+
+Lecture 22
+==========
+
+
+Lecture 23
+==========
+
+
