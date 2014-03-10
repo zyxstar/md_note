@@ -284,22 +284,17 @@
 
     using System;
 
-    class Program
-    {
-        static void Main(string[] args)
-        {
+    class Program {
+        static void Main(string[] args) {
             Console.Write(new MyClass("csharp").say());
         }
 
-        public class MyClass
-        {
+        public class MyClass {
             private string name;
-            public MyClass(string name)
-            {
+            public MyClass(string name) {
                 this.name = name;
             }
-            public string say()
-            {
+            public string say() {
                 return string.Format("hello, {0}", name);
             }
         }

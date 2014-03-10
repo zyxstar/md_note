@@ -7,6 +7,7 @@
 ## 原型
 每个对象都连接到一个原型对象，并且它可以从中继承属性，所有通过对象字面量创建的对象都连接到`Object.prototype`这个标准对象
 
+### 创建新对象
 当你创建一个新对象时，可以选择某个对象作为它的原型，Js提供的实现机制杂乱而复杂，但其实可以被简化。我们将给`Object`增加一个`beget`方法，这个`beget`方法创建一个使用原对象作为其原型的新对象：
 
 <!--language: !js-->
@@ -79,7 +80,7 @@
     console.log(f.prototype.constructor === f);
 
 
-函数可以被定义在其他函数中，一个内部函数也能方便地访问它被嵌套在其中的那个函数的参数与变量，通过函数字面量创建的函数对象包含一个连接到外部上下文的连接，称为 __闭包__，它是js强大表现力的根基。
+函数可以被定义在其他函数中，一个内部函数也能方便地访问它被嵌套在其中的那个函数的 __参数__ 与 __变量__，但不能访问`this`和`arguments`，通过函数字面量创建的函数对象包含一个连接到外部上下文的连接，称为 __闭包__，它是js强大表现力的根基。
 
 
 ## 调用
@@ -139,7 +140,27 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
 
 结合`new`前缀调用的函数称为构造器函数，以前字母大写格式命名，如果调用构造器函数时没加`new`，则可能发生问题
 
-`new`前缀也会改变`return`语句的行为。下面是`underscore.js`中一段代码
+#### new的过程
+
+可以把`var p = new Person();`的过程拆分成以下三步：
+
+1. `var p = {};` 初始化一个对象`p`
+1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正好巧接在构造器的`prototype`上，通过此找到原型
+1. `Person.call(p);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
+
+#### new中包含return
+`new`也会改变`return`语句的行为
+
+<!--language: !js-->
+
+    function Cat(){this.name='cat';}
+    function Animal(){ return new Cat;}
+
+    var a =new Animal;
+    alert(a.constructor); // function Cat(){this.name='cat';}
+    alert(a.__proto__); // Cat {}
+
+下面是`underscore.js`中一段代码
 
 <!--language: !js-->
 
@@ -149,11 +170,10 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
         this._wrapped = obj;
     };
 
-
 ### apply调用模式
 因为Js是一门函数式的面向对象编程语言，所以 __函数也可以拥有方法__
 
-`apply`方法让我们构建一个参数数组并用其去调用函数，也允许我们选择`this`的值：
+`apply`方法让我们构建一个参数数组并用其去调用函数，也允许我们 __选择`this`__ 的值：
 
 <!--language: !js-->
 
@@ -175,7 +195,151 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
 
     func(1,2,"a","b");
 
-一个优先使用`apply`而不是`call`的例子，`underscore.js`存在一个方法`without`，用于过滤集合中
+#### `apply` 与 `call`
+
+当关心`this`的指向时，两者没有区别；但如果涉及对`arguments`相关操作时，优先使用`apply`：
+
+- 示例1
+
+`underscore.js`存在一个方法`without`，用于过滤集合中不需要的元素
+
+<!--language: !js-->
+
+    //import underscore.1.4.3
+    var seq = _([1,3,4,5,7]);
+    var result = seq.without(3,5,7,8);
+    result.forEach(function(arg){console.log(arg);});
+
+由于`without`接受的是不定的参数，当不需要的元素已经存在于一个数组中时：
+
+<!--language: !js-->
+
+    //import underscore.1.4.3
+    var seq = _([1,3,4,5,7]);
+    var notNeed = [3,5,7,8];
+    var result = seq.without.apply(seq,notNeed);
+    result.forEach(function(arg){console.log(arg);});
+
+通过`apply`将 __数组参数展开传递__。
+
+- 示例2
+
+假如存在一个对不固定参数求和的函数`sum`
+
+<!--language: !js-->
+
+    function sum(){
+        return [].slice.call(arguments).reduce(function(acc,x){return acc+x;},0);
+    }
+
+    var arr = [1,2,3,4,5];
+    alert(sum.apply(null, arr));
+
+所以当存在对不固定参数求值的函数时，`apply`可以理解为，将此 __函数作用于一个数组__ 上。原理同上例一样，即将数组参数展开传递。
+
+- 示例3
+
+利于保证`arguments`的传递
+
+<!--language: !js-->
+
+    function fn1() {
+        function _delegate(arg){
+            alert(arg);
+        }
+        return function () {
+            _delegate.apply(null,arguments);
+        };
+    }
+
+    fn1()(1);
+
+
+## 给类型增加方法
+
+js允许给语言的基本类型增加方法，通过给`Object.prototype`添加方法来使得该方法对所有对象可用。
+
+通过给`Function.prototype`增加方法来使得该方法对所有函数可用：
+
+<!--language: !js-->
+
+    Function.prototype.method = function(name, func){
+        if(!this.prototype[name]){
+            this.prototype[name] = func;
+            return this;
+        }
+    }
+
+    Number.method('integer', function(){
+       return Math[this < 0 ? 'ceil' : 'floor'](this);
+    });
+    alert((10/3.0).integer());
+    alert((-10/3.0).integer());
+
+    String.method('trim', function(){
+        return this.replace(/^\s+|\s+$/g, '');
+    });
+    alert("   neat   ".trim());
+
+## 递归
+一些语言提供了 __尾递归__(tail recursion/trai-end recursion) 优化，即如果一个函数的最后执行递归调用语句的特殊形式的递归，那么调用的过程会被替换为一个循环，可以提高速度。但js __并没有提供__ 该优化。
+
+## 作用域
+作用域控制着变量与参数的可见性及生命周期，但js中 __没有块级作用域__。它会导致在闭包中行为与有块级作用域的语言中表现不同：
+
+<!--language: !js-->
+
+    function fn() {
+        var fnarr = [];
+        for (var i = 0; i < 3; i++) {
+            fnarr.push(function(){alert(i);});
+        }
+        return fnarr;
+    }
+
+    fn().forEach(function(_f){_f();});
+
+在其它有块级作用域语言中，可以加入一个中间变量`j`，来解决这个问题：
+
+<!--language: !csharp-->
+
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+
+    class Program {
+        static List<Action> Fn() {
+            var fnarr = new List<Action>();
+            for (int i = 0; i < 3; i++) {
+                int j = i;
+                fnarr.Add(new Action(() => Console.WriteLine(j)));
+            }
+            return fnarr;
+        }
+
+        static void Main(string[] args) {
+            Fn().ForEach((action) => action());
+        }
+    }
+
+但在js中，需要利用其它方案来解决，一种方式是利用函数再构造一个作用域出来
+
+<!--language: !js-->
+
+    function fn() {
+        var fnarr = [];
+        for (var i = 0; i < 3; i++) {
+            fnarr.push(
+                (function(j){
+                    return function(){alert(j);}
+                })(i));
+        }
+        return fnarr;
+    }
+
+    fn().forEach(function(_f){_f();});
+
+
 
 
 
