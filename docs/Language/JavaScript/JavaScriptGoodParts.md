@@ -22,15 +22,15 @@
 
     var obj1 = new (function(){this.name='obj1';});
     var obj2 = Object.beget(obj1);
-    console.log(obj2.name);
-    console.log(obj2.constructor);
+    alert(obj2.name);
+    alert(obj2.constructor);
 
     var obj3 = Object.create(obj1);
-    console.log(obj3.name);
-    console.log(obj3.constructor);
+    alert(obj3.name);
+    alert(obj3.constructor);
 
     obj1.age = 10;
-    console.log(obj2.age);
+    alert(obj2.age);
 
 > 类似ES5中的`Object.create`，缺点是新对象的`constructor`指向原型对象的构造器
 
@@ -49,12 +49,12 @@
 
     flight = new Flight;
 
-    console.log(typeof flight.number);
-    console.log(typeof flight.status);
-    console.log(typeof flight.arrival);
-    console.log(typeof flight.mainfest);
-    console.log(typeof flight.toString);
-    console.log(typeof flight.constructor);
+    alert(typeof flight.number);
+    alert(typeof flight.status);
+    alert(typeof flight.arrival);
+    alert(typeof flight.mainfest);
+    alert(typeof flight.toString);
+    alert(typeof flight.constructor);
 
 有两个方法去处理这些不需要的属性。
 
@@ -68,16 +68,16 @@
 <!--language: !js-->
 
     function f(){}
-    console.log(f.constructor === Function);
-    console.log(f.__proto__ === Function.prototype);
+    alert(f.constructor === Function);
+    alert(f.__proto__ === Function.prototype);
 
 每个函数对象在创建时也随带一个`prototype`属性，它是值是一个拥有`constructor`属性且值即为该函数的对象
 
 <!--language: !js-->
 
     function f(){}
-    console.log(f.prototype); // like {constructor: f}
-    console.log(f.prototype.constructor === f);
+    alert(f.prototype); // like {constructor: f}
+    alert(f.prototype.constructor === f);
 
 
 函数可以被定义在其他函数中，一个内部函数也能方便地访问它被嵌套在其中的那个函数的 __参数__ 与 __变量__，但不能访问`this`和`arguments`，通过函数字面量创建的函数对象包含一个连接到外部上下文的连接，称为 __闭包__，它是js强大表现力的根基。
@@ -98,10 +98,10 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
         }
     };
     myObject.increment();
-    console.log(myObject.value); // 1
+    alert(myObject.value); // 1
 
     myObject.increment(2);
-    console.log(myObject.value); // 3
+    alert(myObject.value); // 3
 
 方法可以使用`this`去访问对象，所以它能从对象中取值或修改该对象，`this`到对象的 __绑定发生在调用__ 的时候，这个“超级”迟绑定(very late binding)使得函数可以对`this`高度复用。通过`this`可以取得它们所属对象的上下文的方法称为公共方法
 
@@ -120,7 +120,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     };
 
     myObject.double();
-    console.log(myObject.value); // 6
+    alert(myObject.value); // 6
 
 ### 构造器调用模式
 如果在一个函数前面带上`new`来调用，那么将创建一个隐藏连接到该函数的`prototype`成员的新对象，同时`this`将会被绑定到那个新对象上
@@ -136,20 +136,12 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     };
 
     var myQuo = new Quo("confused");
-    console.log(myQuo.get_status());
+    alert(myQuo.get_status());
 
 结合`new`前缀调用的函数称为构造器函数，以前字母大写格式命名，如果调用构造器函数时没加`new`，则可能发生问题
 
-#### new的过程
-
-可以把`var p = new Person();`的过程拆分成以下三步：
-
-1. `var p = {};` 初始化一个对象`p`
-1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正好巧接在构造器的`prototype`上，通过此找到原型
-1. `Person.call(p);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
-
-#### new中包含return
-`new`也会改变`return`语句的行为
+#### 构造器中包含return
+`new`构造器时，含`return`语句时的行为
 
 <!--language: !js-->
 
@@ -182,7 +174,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     function getStatus(name){
         return this.name + ' A-OK';
     }
-    console.log(getStatus.apply(obj));
+    alert(getStatus.apply(obj));
 
 一个常用的技巧，把`arguments`改造成数组，它只是array-like，现在把它变成真正数组，方便做一些集合的处理
 
@@ -190,7 +182,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
 
     function func(){
         var args = Array.prototype.slice.apply(arguments);
-        args.forEach(function(arg){console.log(arg);});
+        args.forEach(function(arg){alert(arg);});
     }
 
     func(1,2,"a","b");
@@ -208,7 +200,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     //import underscore.1.4.3
     var seq = _([1,3,4,5,7]);
     var result = seq.without(3,5,7,8);
-    result.forEach(function(arg){console.log(arg);});
+    result.forEach(function(arg){alert(arg);});
 
 由于`without`接受的是不定的参数，当不需要的元素已经存在于一个数组中时：
 
@@ -218,7 +210,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     var seq = _([1,3,4,5,7]);
     var notNeed = [3,5,7,8];
     var result = seq.without.apply(seq,notNeed);
-    result.forEach(function(arg){console.log(arg);});
+    result.forEach(function(arg){alert(arg);});
 
 通过`apply`将 __数组参数展开传递__。
 
@@ -339,6 +331,106 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
     fn().forEach(function(_f){_f();});
 
+## 链式代码
+一些设置或修改对象的某个状态却不返回任何值的方法，但如果我们让这些方法返回`this`，而不是`undefined`，就可以启用级联。
+
+## 柯里化
+函数也是值，柯里化`Curry`允许我们将函数与传递它的参数相结合去产生一个新的函数
+
+<!--language: !js-->
+
+    Function.prototype.method = function(name, func){
+        if(!this.prototype[name]){
+            this.prototype[name] = func;
+            return this;
+        }
+    }
+
+    Function.method('curry', function () {
+        var slice = Array.prototype.slice,
+            args = slice.apply(arguments),
+            that = this;
+        return function () {
+            return that.apply(null, args.concat(slice.apply(arguments)));
+        };
+    });
+
+    function add2(x,y){return x+y;}
+    var add2_x = add2.curry(1);
+    alert(add2_x(6));
+
+    function add3(x,y,z){return x+y+z;}
+    var add3_x = add3.curry(1);
+    var add3_x_y = add3_x.curry(2);
+    alert(add3_x_y(6));
+
+## 缓存
+用对象去记住先前操作的结果，从而避免无谓的运算。
+
+<!--language: !js-->
+
+    var memoizer = function (memo, formula) {
+        var recur = function (n) {
+            var result = memo[n];
+            if (typeof result !== 'number') {
+                result = formula(recur, n);
+                memo[n] = result;
+            }
+            return result;
+        };
+        return recur;
+    };
+
+    var fibonacci = memoizer([0, 1], function (recur, n) {
+        return recur(n - 1) + recur(n - 2);
+    });
+    alert(fibonacci(10));
+
+    var factorial = memoizer([1, 1], function (recur, n) {
+        return n * recur(n - 1);
+    });
+    alert(factorial(5));
+
+
+继承
+===========
+
+## new的过程
+
+如果`new`不是运算符，而只是一个方法（类似ruby中的new），它可能是这样执行的
+
+<!--language: !js-->
+
+    Function.prototype.method = function(name, func){
+        if(!this.prototype[name]){
+            this.prototype[name] = func;
+            return this;
+        }
+    }
+
+    Function.method('new', function () {
+        // 创建一个新对象，它继承自构造器的原型对象
+        var that = Object.create(this.prototype);
+
+        // 调用构造器，绑定this到新对象上
+        var other = this.apply(that, arguments);
+
+        // 如果它的返回值不是一个对象，就返回该新对象
+        return (typeof other === 'object' && other) || that;
+    });
+
+    function Person(name){
+        this.name =name;
+    }
+    var p = Person.new("zyx");
+    debugger;
+
+
+或者可以把`var p = new Person();`的过程拆分成以下三步：
+
+1. `var p = {};` 初始化一个对象`p`
+1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型
+1. `Person.apply(p, arguments);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
 
 
 
@@ -352,5 +444,13 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
 
 
+<script>
+
+(function fix_toc(){
+    if(typeof expand_toc !== 'function') setTimeout(fix_toc,500);
+    else expand_toc('md_toc',6);
+})();
+
+</script>
 
 

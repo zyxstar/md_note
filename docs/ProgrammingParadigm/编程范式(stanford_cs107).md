@@ -2409,7 +2409,7 @@ Lecture 19
 Lecture 20
 ==========
 
-## fib
+## fibonacci
 
 <!--language: scheme-->
 
