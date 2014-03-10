@@ -2641,7 +2641,7 @@ Lecture 21
     (define sum
       (lambda (x y) (+ x y)))
 
-- 所以`(define PI 3.14)`与上面第二种的表达的一样，将`PI`这个名与`3.14`对象关联起来
+- 所以`(define PI 3.14)`与上面第二种的表达的一样，将`PI`这个名与`3.14`对象关联起 来
 
 
 Lecture 22
