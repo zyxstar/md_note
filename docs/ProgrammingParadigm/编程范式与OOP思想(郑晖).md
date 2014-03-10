@@ -407,7 +407,7 @@ OOP只能沿着继承树的纵向方向重用，而AOP则弥补了该不足，�
 
 - 函数指针是C和C++用来实现callback的一种方式，此外抽象类、接口、C++中的泛型函子(generic functor)和C#中的委托(delegate)都可以实现callback
 
-![prog_paradigm_callback](../../../imgs/prog_paradigm_callback.png)
+![prog_paradigm_callback](../../imgs/prog_paradigm_callback.png)
 
 - 在软件模块分层中，低层模块为高层模块提供服务，并且不能依赖高层模块，以保证其可重用性；另一方面，通常被调用者(callee)为调用者(caller)提供服务，调用者依赖被调者，两者结合，决定了低层模块多为被调用者，高层模块为调用者，但并不总合适，低层模块为了追求更强的 __普适性和可扩展性__，有时也有调用高层模块的需求
 
@@ -426,7 +426,7 @@ OOP只能沿着继承树的纵向方向重用，而AOP则弥补了该不足，�
 - 字符串数组排序中，callback作为参数传入低层的函数后，很快就在该函数体中被调用；而窗口程序中，callback则先被储存起来，至于何时被调用是未定之数。前者称为同步(synchronous)回调，后者称为异步(asynchronous)回调
 - 都使用调用者，不再依赖调用者，将二者从 __代码上解耦__，异步调用更将二者从 __时间上解耦__
 
-![prog_paradigm_asyn_callback](../../../imgs/prog_paradigm_asyn_callback.png)
+![prog_paradigm_asyn_callback](../../imgs/prog_paradigm_asyn_callback.png)
 
 - 图中处于低层的软件平台是在win32 API基础上的改增，主循环沉淀下来，而且将存储callback的过程封装在一个注册函数中，整个流程的 __控制权__ 已从应用程序的主程序 __转移到底层平台__ 的主循环中，符合好莱坞原则(Don't call us, we'll call you)
 
@@ -437,7 +437,7 @@ OOP只能沿着继承树的纵向方向重用，而AOP则弥补了该不足，�
 - 框架则将IoC机制用到 __全局__，程序员牺牲了对应用程序流程的主导权，换来的是更简洁的代码和更高的生产效率。
 - 框架的可扩展性，通过 __插件__(plugin)体系达到
 
-![prog_paradigm_ioc](../../../imgs/prog_paradigm_ioc.png)
+![prog_paradigm_ioc](../../imgs/prog_paradigm_ioc.png)
 
 ### 依赖反转与依赖注射
 - __依赖反转__ 原则(Dependency-Inversion Principle，简称DIP)更加具体
@@ -471,7 +471,7 @@ OOP只能沿着继承树的纵向方向重用，而AOP则弥补了该不足，�
     > 自行设计事件系统时，需要决定采用事件驱动是否合适？如果合适，__如何设计事件机制__？包括事件定义、事件触发、事件侦查、事件转化、事件合并、事件调度、事件传播、事件处理、事件连带(event cascade 即处理过程中又产生新事件)等一系列问题
 
 
-![prog_paradigm_event_driven](../../../imgs/prog_paradigm_event_driven.png)
+![prog_paradigm_event_driven](../../imgs/prog_paradigm_event_driven.png)
 
 - 典型模型
     - 事件处理器事先在关注的事件源上注册，后者不定期的发表事件对象，经过事件管理器的转化(translate)、合并(coalesce)、排队(enqueue)、分派(dispatch)等集中处理后，事件处理器接收到事件并对其进行相应处理
@@ -629,13 +629,13 @@ C# lambda版本
 
 ### 常见的编程范式
 
-![prog_paradigm_lang1](../../../imgs/prog_paradigm_lang1.png)
+![prog_paradigm_lang1](../../imgs/prog_paradigm_lang1.png)
 
-![prog_paradigm_lang2](../../../imgs/prog_paradigm_lang2.png)
+![prog_paradigm_lang2](../../imgs/prog_paradigm_lang2.png)
 
-![prog_paradigm_lang3](../../../imgs/prog_paradigm_lang3.png)
+![prog_paradigm_lang3](../../imgs/prog_paradigm_lang3.png)
 
-![prog_paradigm_lang4](../../../imgs/prog_paradigm_lang4.png)
+![prog_paradigm_lang4](../../imgs/prog_paradigm_lang4.png)
 
 - 一种编程范式之所以能独树一帜，__关键__ 在于它 __突破__ 了原有的编程方式的某些限制，带来革命性的新思维和新方法，进一步解放了程序员的劳动力，这便是范式的核心价值所在
 
@@ -1281,7 +1281,7 @@ C++头文件
 
 一个作为抽象数据类型(ADT)的类，通过 __数据抽象和封装机制__ 被划分为 __接口__ 与 __实现__ 两部分，此时的接口称为 __API__，是类向外界提供服务的窗口。另一方面，一个类又可以通过 __多态抽象和继承机制__ 而拥有多种抽象类型（主要指interface所代表的类型），相对这些抽象类型而言，类又是具体的。
 
-![prog_paradigm_interface.png](../../../imgs/prog_paradigm_interface.png)
+![prog_paradigm_interface.png](../../imgs/prog_paradigm_interface.png)
 
 - 第1种分离方式：在语义上通过数据抽象得到API接口，在语法上通过 __封装机制__ 隐藏了`private`实现
 - 第2种方式：在语义上通过多态抽象得到`interface`接口，在语法上通过 __继承机制__ 隐藏了`class`实现
@@ -1694,9 +1694,9 @@ C++头文件
 
 当存储与加密的方式各有多种，以第一种方式需要M*N个实现类，而后者只需要M+N个实现类，而且后者的实现类职责更单一，方便被重用
 
-![prog_paradigm_template](../../../imgs/prog_paradigm_template.png)
+![prog_paradigm_template](../../imgs/prog_paradigm_template.png)
 
-![prog_paradigm_strategy](../../../imgs/prog_paradigm_strategy.png)
+![prog_paradigm_strategy](../../imgs/prog_paradigm_strategy.png)
 
 
 接下来使用泛型，采用C++模板的方式：
@@ -1953,7 +1953,7 @@ C++头文件
     someType a;         //将a分配在栈上
     a = new someType(); //在堆上分配了一个对象并将其引用赋值给a
 
-![prog_paradigm_ref](../../../imgs/prog_paradigm_ref.png)
+![prog_paradigm_ref](../../imgs/prog_paradigm_ref.png)
 
 - Java中除了基本类型是值类型外，其他的应该都是引用类型，C++则无法自定义引用类型，却可以创建引用，C#则既可以自定义引用类型，也可以自定义值类型（如上代码，someType是struct的话，则不在堆中，直接在栈上分配一个对象）
 
@@ -2176,11 +2176,11 @@ java按值传递对象的引用，并不支持按引用传递，因为所有对�
 ### MVC与三层架构
 MVC其实与三层架构是有区别的：
 
-![prog_paradigm_mvc_cui](../../../imgs/prog_paradigm_mvc_cui.png)
+![prog_paradigm_mvc_cui](../../imgs/prog_paradigm_mvc_cui.png)
 
 - 实线是直接依赖，在MVC中，视图只是在初始化时，注册到模型中，然后模型的变化自然视图会得到响应，下面是它的序列图，可看出控制器为中间层：
 
-![prog_paradigm_mvc_cui_seq](../../../imgs/prog_paradigm_mvc_cui_seq.png)
+![prog_paradigm_mvc_cui_seq](../../imgs/prog_paradigm_mvc_cui_seq.png)
 
 - MVC作为架构主要用于交互式系统，如GUI或web的前台(front-end)应用，而三层架构通常是最高层的架构设计，多出现在企业级应用中
 
@@ -2190,7 +2190,7 @@ MVC其实与三层架构是有区别的：
 
 - 三层架构与MVC并不是对立的，后者常嵌入前者的表现层：
 
-![prog_paradigm_mvc_3layer](../../../imgs/prog_paradigm_mvc_3layer.png)
+![prog_paradigm_mvc_3layer](../../imgs/prog_paradigm_mvc_3layer.png)
 
 
 ## 依赖原则-有求皆苦,无欲则刚
@@ -2199,7 +2199,7 @@ MVC其实与三层架构是有区别的：
 
 间接原则有一个直接的推论，就是依赖反转原则(DIP)
 
-![prog_paradigm_dip](../../../imgs/prog_paradigm_dip.png)
+![prog_paradigm_dip](../../imgs/prog_paradigm_dip.png)
 
 - 接口一方面作为一种抽象类型，描述了一类对象所应遵循的行为规范；另一方面作为间接层，把两个耦合的具体类进行了分离
 
@@ -2210,7 +2210,7 @@ MVC其实与三层架构是有区别的：
 ### 稳定依赖原则
 - 依赖反转原则依赖于抽象层，因为抽象层更稳定，因此DIP __可重述__ 为 __稳定依赖原则__(Stable Dependencies Principle, SDP)，模块应 __朝着稳定__ 的方向依赖
 
-![prog_paradigm_dip_jdbc](../../../imgs/prog_paradigm_dip_jdbc.png)
+![prog_paradigm_dip_jdbc](../../imgs/prog_paradigm_dip_jdbc.png)
 
 - 原本是高层围绕低层，现在高层制定一套规范，反过来要求低层去遵守，DIP与 __针对接口编程__ 原则一脉相承
 
@@ -2276,7 +2276,7 @@ MVC其实与三层架构是有区别的：
 
 上面就是运用了DIP原则，更具体的说是DI模式
 
-![prog_paradigm_di](../../../imgs/prog_paradigm_di.png)
+![prog_paradigm_di](../../imgs/prog_paradigm_di.png)
 
 - 非采用DI模式时，Window负责创建它所依赖的Rect对象，如果用C++编程，还须负责销毁该象。而采用DI模式时，Window类所依赖的Shape对象是从外部注入的，放弃了对生者生杀大权，但复杂度更低，专注度更高，依赖性更弱，灵活性更强
 
@@ -2319,7 +2319,7 @@ MVC其实与三层架构是有区别的：
 
 - 耦合(couping)反映模块之间的关联程度，内聚(cohesion)反映模块内部的关联强度
 
-![prog_paradigm_couping_cohesion](../../../imgs/prog_paradigm_couping_cohesion.png)
+![prog_paradigm_couping_cohesion](../../imgs/prog_paradigm_couping_cohesion.png)
 
 - 耦合不可完全被消除，我们要避免的是非本质的，不恰当的耦合，如内容耦合同，应通过信息隐藏来防止，公共耦合通过引入接口，但如果发现两个模块过于紧密，很可能应该合为一体
 
@@ -2344,7 +2344,7 @@ MVC其实与三层架构是有区别的：
 
 - 模块的每一种 __职责__ 既是一个 __关注的焦点__，也是一个潜在的 __变化点__，因而，职责、关注点与变化点是 __三位一体__ 的。如果一个模块包含所有元素（包括指令、数据的定义、其他模块的调用等）都在为完成同一个任务而工作，这种内聚称为 __功能内聚__(functional cohesion)，最理想的一种内聚
 
-![prog_paradigm_srp](../../../imgs/prog_paradigm_srp.png)
+![prog_paradigm_srp](../../imgs/prog_paradigm_srp.png)
 
 - 但有时违背SRP是情有可原的，毕竟类的 __职责难以__ 被清晰的界定，关键还是看它们 __对变化的反应__
     - 涉及表现形式的职责与涉及逻辑的职责不好混为一体，因为它们变化方向总是正交的
@@ -2356,7 +2356,7 @@ MVC其实与三层架构是有区别的：
 
 - 如果某一些违背了SRP，却因某种原因暂时不便修改，还可用ISP－__接口隔离原则__(Interface Segregation Principle, ISP)来弥补
 
-![prog_paradigm_isp](../../../imgs/prog_paradigm_isp.png)
+![prog_paradigm_isp](../../imgs/prog_paradigm_isp.png)
 
 - 重构后（考虑过渡期的重构）不会影响老客户，但以后的新客户不再直接依赖`ShoppingService`转而依赖3个新的接口
 
@@ -2386,11 +2386,11 @@ MVC其实与三层架构是有区别的：
     - 该方法内部创建的对象
     - 该对象的直接组成对象，包括其属性及集合属性中的元素
 
-![prog_paradigm_lod](../../../imgs/prog_paradigm_lod.png)
+![prog_paradigm_lod](../../imgs/prog_paradigm_lod.png)
 
 - `Person`类与`Company`类并无直接的依赖关系，而是通过它的角色-`Employee`类产生了间接的联系，因此它们之间的 __耦合关系不是本质的__，最好能避免，否则`Company`类的`getCity`方法发生改变，`Person`类也受牵连
 
-![prog_paradigm_lod2](../../../imgs/prog_paradigm_lod2.png)
+![prog_paradigm_lod2](../../imgs/prog_paradigm_lod2.png)
 
 - 重构后，`Person`类的`getWorkCity`方法完全是委托`Emplyee`类来实现的，这是一种职责转移，也是一种设计模式：__委托__(delegation)模式，同时还体现了间接原则
 
@@ -2399,7 +2399,7 @@ MVC其实与三层架构是有区别的：
 ### 通用职责分配原则
 - GRASP(General Responsibility Assignment Software Patterns/Principle)，即 __通用职责分配原则__，
 
-![prog_paradigm_grasp](../../../imgs/prog_paradigm_grasp.png)
+![prog_paradigm_grasp](../../imgs/prog_paradigm_grasp.png)
 
 - 其中低耦合、高内聚、多态、间接、保变都已介绍过，信息专家原则和纯虚构原则是关键，创建者原则和控制器原则可看作是它们的应用
 
@@ -2413,11 +2413,11 @@ MVC其实与三层架构是有区别的：
 
 ### 类级设计原则
 
-![prog_paradigm_solid](../../../imgs/prog_paradigm_solid.png)
+![prog_paradigm_solid](../../imgs/prog_paradigm_solid.png)
 
 ### 包级设计原则
 
-![prog_paradigm_package_design](../../../imgs/prog_paradigm_package_design.png)
+![prog_paradigm_package_design](../../imgs/prog_paradigm_package_design.png)
 
 - 前三个是关于包内聚原则，以解决 __颗粒度__(granularity)问题，后三个是关于包的耦合原则，以解决 __稳定性__(stability)问题
 
@@ -2640,7 +2640,7 @@ MVC其实与三层架构是有区别的：
 
 - 抽象工厂明显是静态工厂的升级版，但同样也是工厂方法的升级版，把后者主体类中的 __一系列抽象的工厂方法__ 提炼成 __ 一个接口 __，用 __对象合成__ 取代了 __类继承__
 
-![prog_paradigm_factory](../../../imgs/prog_paradigm_factory.png)
+![prog_paradigm_factory](../../imgs/prog_paradigm_factory.png)
 
 > p.s. 抽象工厂的类图上未体现接口的使用者
 
@@ -2699,7 +2699,7 @@ MVC其实与三层架构是有区别的：
 
 - 为什么`LoginWindowBuilder`接口不提供`getWindow`方法，却让其实现类提供？为了让`LoginForm`不依赖该方法的返回类型`Container`。并且如果另一个可视化组件的类型层及完全不兼容，就没办法返回`Container`
 
-![prog_paradigm_builder](../../../imgs/prog_paradigm_builder.png)
+![prog_paradigm_builder](../../imgs/prog_paradigm_builder.png)
 
 - 创建者模式分离了对象的创建与对象的结构表示(无须一个抽象类型来表示产品)，故能做到工厂模式难以做到的事
 - 创建者模式还能解决构造器参数过长的问题
@@ -2711,7 +2711,7 @@ MVC其实与三层架构是有区别的：
 
 ### 对象创建的选择方案
 
-![prog_paradigm_way_of_creation](../../../imgs/prog_paradigm_way_of_creation.png)
+![prog_paradigm_way_of_creation](../../imgs/prog_paradigm_way_of_creation.png)
 
 - 与其说创建对象，不如说 __请求对象__，因为有时并未真正地创建对象，如重用的对象、虚拟的对象。
 
@@ -2735,7 +2735,7 @@ MVC其实与三层架构是有区别的：
 ### 桥梁模式
 - AWT中就运用了桥梁模式，每个`Component`对象都聚合了一个类型为`ComponentPeer`对象，从而在组件的接口与实现之间搭建起了一座桥梁
 
-![prog_paradigm_bridge_awt](../../../imgs/prog_paradigm_bridge_awt.png)
+![prog_paradigm_bridge_awt](../../imgs/prog_paradigm_bridge_awt.png)
 
 - 有3个 __层级__：桥梁的一头是以`Component`类为根的类型层级，另一头是以`ComponentPeer`接口为根的类型层级，两个根类型之间又形成了聚合层级
 
@@ -2746,14 +2746,14 @@ MVC其实与三层架构是有区别的：
 ### 适配器模式
 - 适配器是一个接口转换器，可以解决服务提供者与服务享受者之间接口不兼容的问题
 
-![prog_paradigm_adapter](../../../imgs/prog_paradigm_adapter.png)
+![prog_paradigm_adapter](../../imgs/prog_paradigm_adapter.png)
 
 - 桥接模式的重点是 __分解__，让本来结合紧密的接口与实现分离开，适配器模式重点是 __结合__，让本来无关的类能合作共事
 
 - 桥接模式通常是事先的有意设计（或重构得到），更多出自可维护性考量；而适配器通常是事后补救，更多出自可重用性考量（重用第三方或遗留代码）
 
 ### 装饰器模式
-![prog_paradigm_decorator](../../../imgs/prog_paradigm_decorator.png)
+![prog_paradigm_decorator](../../imgs/prog_paradigm_decorator.png)
 
 - 一个可视化组件类，希望它的某个对象增加边框、滚动条、可拖动、可缩放，这4种特征各种组合有十几种，采用继承显然不合适
 
@@ -2778,7 +2778,7 @@ MVC其实与三层架构是有区别的：
 ### 代理模式
 - 与装饰器模式一样也保持对象的接口，但装饰器通常增强接口的服务，而代理模式却可能限制接口的服务
 
-![prog_paradigm_proxy](../../../imgs/prog_paradigm_proxy.png)
+![prog_paradigm_proxy](../../imgs/prog_paradigm_proxy.png)
 
 - 如果某个对象的初始化十分耗费时间或资源，却又未必立即投入使用，可利用代理来推迟创建(lazy initialization)
 
@@ -2790,9 +2790,9 @@ MVC其实与三层架构是有区别的：
 ### 复合模式
 - 也是利用类型层级和聚合层级来构造更大的复合结构
 
-![prog_paradigm_composite1](../../../imgs/prog_paradigm_composite1.png)
+![prog_paradigm_composite1](../../imgs/prog_paradigm_composite1.png)
 
-![prog_paradigm_composite2](../../../imgs/prog_paradigm_composite2.png)
+![prog_paradigm_composite2](../../imgs/prog_paradigm_composite2.png)
 
 - 前图的`Component`与`Left`和`Composite`接口都是一致的，后图`Component`只与`Left`接口一致，一般提到复合模式，多半指前者
 
@@ -2805,7 +2805,7 @@ MVC其实与三层架构是有区别的：
 
 - 享元模式的关键抽象出一类对象内在的、不因环境而异(context-insensitive)的状态，封装后作为共享单元
 
-![prog_paradigm_flyweight](../../../imgs/prog_paradigm_flyweight.png)
+![prog_paradigm_flyweight](../../imgs/prog_paradigm_flyweight.png)
 
 ## 行为模式-君子之交淡如水
 ### OOP大弱点
@@ -2825,7 +2825,7 @@ MVC其实与三层架构是有区别的：
 ### 职责链模式
 - GoF的设计模式中，比较接近管线模式的是职责链模式(chain of responsibility pattern)
 
-![prog_paradigm_chain](../../../imgs/prog_paradigm_chain.png)
+![prog_paradigm_chain](../../imgs/prog_paradigm_chain.png)
 
 - 每一个`Hanlder`相当于一个过滤器，在处理完请求后传给职责链的下一环，但消息发送者仍然须要知道接收者的数据类型（只不过是抽象类型），而管道对接收者无此要求
 
@@ -2857,7 +2857,7 @@ MVC其实与三层架构是有区别的：
 - 命令的下达者与执行者没有必然关联的，也就是说请求的发送者与接收者在 __空间上__ 被解耦了
 - 下令者获得命令对象的时间与下令的时间不必一致，因此它们在 __时间上__ 也被解耦，也正是异步回调（OO化的回调）
 
-![prog_paradigm_command](../../../imgs/prog_paradigm_command.png)
+![prog_paradigm_command](../../imgs/prog_paradigm_command.png)
 
 - 一个具体的命令与C++中的函子(functor)或函数对象(function object)很相似，只是前者执行方法是`execute`，后者是函数调用运算符。不过函子通常只是函数的包装，不一定有`receiver`对象
 
@@ -2866,27 +2866,27 @@ MVC其实与三层架构是有区别的：
 ### 观察者模式
 - 一个消息发送者可以把消息同时发给多个接收者
 
-![prog_paradigm_observer](../../../imgs/prog_paradigm_observer.png)
+![prog_paradigm_observer](../../imgs/prog_paradigm_observer.png)
 
 - 它是控制反转的应用，MVC模型中，Subject代表低层的模型，Observer代表高层的视图
 
 ### 中介者模式
 - 构造一个信息交换中心，为众多平等的对象提供了交流的平台，这样`Colleague`对象之间不须要彼此相知，只须知道`Mediator`对象便可彼此通信
 
-![prog_paradigm_mediator](../../../imgs/prog_paradigm_mediator.png)
+![prog_paradigm_mediator](../../imgs/prog_paradigm_mediator.png)
 
 - 它与观察者不同之处，在通信与同步的职责分配上，前者是集中式的(centralized)，`Mediator`对象管理所有通信和同步协议，后者是分布式的(distributed)，`Subject`对象和`Observer`对象必须要通过合作方能保证同步约束，但也会结合使用：
     - `Mediator`对象可利用观察者模式与`Colleague`对象进行交流
     - 当`Subject`对象与`Observer`对象之间的同步逻辑比较复杂时也可能会引入`Mediator`对象
 
 ### 状态模式
-![prog_paradigm_state](../../../imgs/prog_paradigm_state.png)
+![prog_paradigm_state](../../imgs/prog_paradigm_state.png)
 
 - 一个对象的自身行为如何随着自身状态的改变而改变
 - 利用合成，或委托来解决，引入间接对象`State`来封装状态的变化，把不同的状态对应的不同行为包装到不同的模块之中
 
 ### 备忘录模式
-![prog_paradigm_memento](../../../imgs/prog_paradigm_memento.png)
+![prog_paradigm_memento](../../imgs/prog_paradigm_memento.png)
 
 - 如果说状态模式关注的是对象状态的演进，备忘录则关注的是对象状态的回归，如命令模式用来支持还原的操作，就需要相关对象状态的历史记录，备忘录模式便能助力
 
@@ -3005,12 +3005,12 @@ MVC其实与三层架构是有区别的：
 - `void Visit(File file);`也没必要存在了
 - 在语句`file.accept(visitor)`中，通过本身的单分派找到实际的`accept`方法，实现了`file`的多态（类型多态）；接着在相应的`visitor.Visit(this)`中，再利用单分派找到实际的`Visit`方法，实现了`Visitor`的多态（参数多态）
 
-![prog_paradigm_visitor](../../../imgs/prog_paradigm_visitor.png)
+![prog_paradigm_visitor](../../imgs/prog_paradigm_visitor.png)
 
 - 缺陷是`Visitor`需要了解`File`的类型层级，可参考ACYCLIC VISITOR模式
 
 ### 迭代器模式
-![prog_paradigm_iterator](../../../imgs/prog_paradigm_iterator.png)
+![prog_paradigm_iterator](../../imgs/prog_paradigm_iterator.png)
 
 - 赋予了用户自定义循环的能力，实现了迭代抽象(iteration abstraction)，用户可以对聚合体或容器以某种次序遍历(traverse)容器中的元素，至于容器的内部结构、遍历的起止、推进等细节，均毫不知情，也不关心
 - 迭代器作为容器与算法之间的中介，__促使算法摆脱了对数据结构的依赖__，从而更具普适性和重用性，一旦算法被抽象出来，__泛型范式__ 便可大展神威

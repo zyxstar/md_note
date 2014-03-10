@@ -11,10 +11,10 @@ PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw.github.com/zyxstar/md_note/master/docs"
 
 ORDER_DIC = {"Analysis&Design":10,
-             "Language":20,
-             "Skill":30,
-             "Framework":40,
-             "ProgrammingParadigm":10,
+             "ProgrammingParadigm":20,
+             "Language":30,
+             "Skill":40,
+             "Framework":50,
              "RubyProgramming.md":10,
              "PythonCookBook.md":10,
              u"需求分析训练营(徐锋).md".encode(SYS_ENCODING):10,
