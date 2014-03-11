@@ -2589,6 +2589,8 @@ Lecture 21
 
 - `eval`一般很少用到，除非一些元编程中
 
+## flatten with apply
+
 - `flatten`的另一种实现，尝试使用`apply`+`map`来处理
 
 <!--language: !scheme-->
@@ -2671,6 +2673,8 @@ Lecture 21
 Lecture 22
 ==========
 
+## power-set
+
 - power-set，列举集合中的所有子集
 
 <!--language: scheme-->
@@ -2686,7 +2690,7 @@ Lecture 22
 
 - 下例中，第一次迭代中，我们需要产生两次`() (3) (2) (2 3)`，但第二次需要`cons 1`操作
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (power-set set)
        (if (null? set) '(())
@@ -2695,14 +2699,141 @@ Lecture 22
                           (cons (car set) subset))
                         (power-set (cdr set))))))
 
+    (display (power-set '(1 2 3)))
+    ;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
+
 
 - `append`除第一个元素外后所有子集（所以是一个递归调用，需要信念认为`power-set`已经能正常工作了），和`map`子句
 - `map`子句表达为，在每一个合法的子集前面`cons`集合的第一个元素
 
+## power-set with let
 
-10
+- 存在两个递归过程`(power-set (cdr set))`，对性能存在影响，需要对其进行优化，使用`let`绑定（它可以绑定多个标识，每对以`()`区分）
+
+<!--language: !scheme-->
+
+    (define (power-set set)
+       (if (null? set) '(())
+           (let ((ps-set (power-set (cdr set))))
+             (append ps-set
+                     (map (lambda (subset)
+                            (cons (car set) subset))
+                        ps-set)))))
+
+    (display (power-set '(1 2 3)))
+    ;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
+
+- `let`的绑定
+
+<!--language: scheme-->
+
+    (let ((x expr1)
+          (y expr2))
+      (expr x y))
+
+- 如果`expr2`中出现`x`是可能出错的，因为`x,y,z`的求值的顺序是不可靠的，应当做是并行评估的
+- 确实需要按顺序执行时，使用`let*`，但这种情况并不多见
+
+- 上面的`let`绑定其实相当于下面的`lambda`，是无法强制`expr1,expr2`求值的顺序的，也不希望它们之间是相互影响的
+
+<!--language: scheme-->
+
+    ((lambda (x y)
+       (expr x y)) expr1 expr2)
+
+
+## permute
+
+- 实现`permute`，认为输入的是有序的一个集合，不存在重复元素，要求输出所有组合
+
+<!--language: scheme-->
+
+    > (permute '(1 2 3))
+    ((1 2 3) (1 3 2)
+     (2 1 3) (2 3 1)
+     (3 1 2) (3 2 1))
+
+- 分析一下规律：第一行都以1开头，第二行以2开头，第三行以3开头
+- 而每一行除了第一个外，其它的是剩下的元素的全组合
+- 数量为`n!`
+- 可分解步骤为：
+
+<!--language: plain-->
+
+    首先表达为以下各组合的连接
+    ((1-perms) (2-perms) (3-perms))
+    而每个组合又可细分，如
+    (1-perms)==1 cons 所有(items remove 1)后的组合
+
+
+- 刚开始程序的框架是这样的，使用`apply append`和`map`连接各个已排好的组合：
+
+<!--language: scheme-->
+
+    (define (permute items)
+
+      (apply append
+             (map ??
+                  items)))
+
+- 要`cons 所有(items remove elem)后的组合`还需要一个`map`，进化成如下：
+
+<!--language: scheme-->
+
+    (define (permute items)
+
+      (apply append
+             (map (lambda (elem)
+                    (map (lambda(permutation)
+                           (cons elem permutation))
+                         (permute(remove items elem))))
+                  items)))
+
+- 需要给递归加上退出的条件，并将`remove`给实现了，最终代码如下：
+
+<!--language: !scheme-->
+
+    (define (remove items elem)
+      (apply append
+             (map (lambda (el)
+                    (if (= el elem) '()
+                        (list el)))
+                    items)))
+
+
+    (define (permute items)
+      (if (null? items) '(())
+          (apply append
+                 (map (lambda (elem)
+                        (map (lambda(permutation)
+                               (cons elem permutation))
+                             (permute(remove items elem))))
+                      items))))
+
+    (display (permute '(1 2 3)))
+    ;((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1))
+
+## 内存
+
+44
+
 
 Lecture 23
 ==========
+
+
+
+
+
+
+
+
+Lecture 24
+==========
+
+
+
+
+
 
 
