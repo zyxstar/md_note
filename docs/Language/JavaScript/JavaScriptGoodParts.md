@@ -212,7 +212,19 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     var result = seq.without.apply(seq,notNeed);
     result.forEach(function(arg){alert(arg);});
 
-通过`apply`将 __数组参数展开传递__。
+通过`apply`将 __数组参数展开传递__。另一个例子：
+
+<!--language: !js-->
+
+    var arr=[1,[2,3],[[4]],[[5,[6]]]];
+
+    function flatten(seq){
+        if(!(seq instanceof Array)) return [seq];
+        return Array.prototype.concat.apply([],seq.map(flatten))
+    }
+
+    alert(flatten(arr));
+
 
 - 示例2
 
