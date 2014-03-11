@@ -406,8 +406,83 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
 继承
 ===========
+基于类的语言（如java）中，继承提供了 __代码重用__，与 __类型多态__，以及规范
 
-## new的过程
+1. 对于代码重用，js是基于原型的，意味着对象直接从其他对象继承；
+1. 对于类型多态，js是弱类型语言，不需要类型转换，能做什么比它是什么更重要(duck typing)
+
+## 伪类
+__不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他对象继承，反而插入了一个多余的间接层，使构造器产生对象
+
+每个一函数被创建时，`Function`构造器产生的函数对象会运行类似这样的代码`this.prototype = {constructor: this};`，该`prototype`对象是存放继承特征的地方。
+
+因为js没提供哪些函数是用来作构造器，所以每一个函数都会得到一个`prototype`对象，而且`constructor`属性几乎没什么用
+
+<!--language: !js-->
+
+    var Mammal = function (name) {
+        this.name = name;
+    };
+    Mammal.prototype.get_name = function () {
+        return this.name;
+    };
+    Mammal.prototype.says = function () {
+        return this.saying || '';
+    };
+
+    var Cat = function (name) {
+        this.name = name;
+        this.saying = 'meow';
+    };
+
+    // Replace Cat.prototype with a new instance of Mammal
+    Cat.prototype = new Mammal();
+
+    Cat.prototype.get_name = function () {
+        return this.says() + ' ' + this.name + ' ' + this.says();
+    };
+    var myCat = new Cat('Henrietta');
+    alert(myCat.says()); // 'meow'
+    alert(myCat.get_name()); // 'meow Henrietta meow'
+
+伪类模式本意是向面向对象靠拢，但看起来格格不入，无法访问super类的方法。伪类给不熟悉js的程序员提供便利，但也隐藏了语言的本质。可能误导去编写过于深入与复杂的层次结构（__许多复杂的类层次结构产生的原因是因为静态类型检查的，而js完全没有类型约束__）
+
+### 伪类某方案
+
+<!--language: !js-->
+
+    function extend(subClass, superClass) {
+        var F = function() {};
+        F.prototype = superClass.prototype;
+        subClass.prototype = new F();
+        subClass.prototype.constructor = subClass;
+
+        subClass.superclass = superClass.prototype;
+        if(superClass.prototype.constructor == Object.prototype.constructor) {
+            superClass.prototype.constructor = superClass;
+      }
+    }
+
+    function BasePiece(name) {
+        this.name = name;
+    }
+
+    BasePiece.prototype = {
+        say: function () {
+            return this.name;
+        }
+    };
+
+    extend(SubPiece, BasePiece);
+
+    function SubPiece(camp, pos) {
+        SubPiece.superclass.constructor.call(this, "sub");
+    }
+
+    alert((new SubPiece).say());
+
+
+### new的过程
 
 如果`new`不是运算符，而只是一个方法（类似ruby中的new），它可能是这样执行的
 
@@ -444,9 +519,128 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型
 1. `Person.apply(p, arguments);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
 
+## 原型
+在一个纯粹的原型模式中，摒弃类，转而专注于对象。基于原型的继承相比基于类的继承在概念上更为简单：一个新对象可以继承一个旧对象的属性。
 
+__通过构造一个有用的对象开始，接着可以构造（`Object.create`）更多的和那个对象类似的对象，完全避免把一个应用拆解成一系统嵌套抽象类的分类过程__
 
+<!--language: !js-->
 
+    var myMammal = {
+        name : 'Herb the Mammal',
+        get_name : function () {
+            return this.name;
+        },
+        says : function () {
+            return this.saying || '';
+        }
+    };
+
+    var myCat = Object.create(myMammal);
+
+    myCat.name = 'Henrietta';
+    myCat.saying = 'meow';
+    myCat.get_name = function () {
+        return this.says() + ' ' + this.name + ' ' + this.says();
+    };
+
+    alert(myCat.get_name()); // 'meow Henrietta meow'
+
+这是一种 __差异化继承__，通过定制一个新的对象，指名了它与所基于的基本对象的区别。
+
+## 函数化
+上面的继承模式没法 __保护隐私__，可选择方式的有 __模块化__ 和 __闭包__
+
+通过以下的模式来保护`spec`
+
+<!--language: js-->
+
+    var constructor = function (spec, my) {
+        var that, other private instance variables;
+        my = my || {};
+        Add shared variables and functions to my
+        that =a new object;
+        Add privileged methods to that
+        return that;
+    };
+
+示例：
+
+<!--language: !js-->
+
+    var mammal = function (spec) {
+        var that = {};
+        that.get_name = function () {
+            return spec.name;
+        };
+        return that;
+    };
+    var myMammal = mammal({name: 'Herb'});
+    alert(myMammal.get_name());
+
+保护了`mammal`的`name`
+
+<!--language: !js-->
+
+    var mammal = function (spec) {
+        var that = {};
+        that.get_name = function () {
+            return spec.name;
+        };
+        that.says = function () {
+            return spec.saying || '';
+        };
+        return that;
+    };
+
+    var cat = function (spec) {
+        spec.saying = spec.saying || 'meow';
+        var that = mammal(spec);  // 继承
+        that.get_name = function () {
+            return that.says() + ' ' + spec.name + ' ' + that.says();
+        };
+        return that;
+    };
+    var myCat = cat({name: 'Henrietta'});
+    alert(myCat.get_name());
+
+这种模式还提供了一个处理父类方法的方法
+
+<!--language: !js-->
+
+    Function.prototype.method = function(name, func){
+        if(!this.prototype[name]){
+            this.prototype[name] = func;
+            return this;
+        }
+    }
+
+    Object.method('superior', function (name) {
+        var that = this,
+            method = that[name];
+        return function () {
+            return method.apply(that, arguments);
+        };
+    });
+
+    var mammal = function (spec) {
+        var that = {};
+        that.get_name = function () {
+            return spec.name;
+        };
+        return that;
+    };
+
+    var coolcat = function (spec) {
+        var that = mammal(spec),
+            super_get_name = that.superior('get_name');
+        that.get_name = function (n) {
+            return 'like ' + super_get_name() + ' baby';
+        };
+        return that;
+    };
+    var myCoolCat = coolcat({name: 'Bix'});
+    alert(myCoolCat.get_name());
 
 
 
