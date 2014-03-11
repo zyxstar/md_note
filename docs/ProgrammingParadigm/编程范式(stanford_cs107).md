@@ -2306,13 +2306,15 @@ Lecture 19
 
 - `f`与`g`函数将自己作为函数返回值，这些返回值有助于组成更大的结果
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (celsius->fahrenheit temp)
-      (+ 32 (* 1.8 temp)))
+        (+ 32 (* 1.8 temp)))
 
-    > (celsius->fahrenheit 100)
-    212
+    (display (celsius->fahrenheit 100))
+    ;212
+
+<!--language: scheme-->
 
     > (+ 1 2 3)
     6
@@ -2348,13 +2350,13 @@ Lecture 19
     car: expects argument of type <pair>; given empty
 
     > (cdr '(1 2 3 4 5))
-    (list 2 3 4 5)
+    (2 3 4 5)
 
     > (car(cdr(cdr '(1 2 3 4 5))))
     3
 
     > (cdr '(4))
-    empty
+    ()
 
     > (cdr '())
     cdr: expects argument of type <pair>; given empty
@@ -2367,19 +2369,19 @@ Lecture 19
 <!--language: scheme-->
 
     > (cons 1 '(2 3 4 5))
-    (list 1 2 3 4 5)
+    (1 2 3 4 5)
 
     > (cons '(1 2 3) '(4 5))
-    (list (list 1 2 3) 4 5)
+    ((1 2 3) 4 5)
 
     > (append '(1 2 3) '(4 5))
-    (list 1 2 3 4 5)
+    (1 2 3 4 5)
 
     > (append '(1 2 3) '(4 5) '(6 7))
-    (list 1 2 3 4 5 6 7)
+    (1 2 3 4 5 6 7)
 
     > (append '(1 2 3) (list 5) '(6 7))
-    (list 1 2 3 5 6 7)
+    (1 2 3 5 6 7)
 
 
 - `cons`是construct的缩写，它是`car`的反义操作
@@ -2394,13 +2396,16 @@ Lecture 19
     > (add 10 7)
     7
 
+<!--language: !scheme-->
+
     (define (sum-of numlist)
         (if (null? numlist) 0
             (+ (car numlist)
                (sum-of (cdr numlist)))))
 
-    > (sum-of '(1 2 3 4))
-    10
+    (display (sum-of '(1 2 3 4)))
+    ;10
+
 
 - `sum-of`的实现是以递归的思维实现的，以尾递归实现迭代
 - `(sum-of '("hello" 1 2 3 4 5))`会报错，除非对`+`进行了重载，但报错的时间是在递归计算到`(+ "hello"` 15)`的时候发生，类型判断是在运行时发生的
@@ -2411,7 +2416,9 @@ Lecture 20
 
 ## fibonacci
 
-<!--language: scheme-->
+- 菲波那契序列的两种表达
+
+<!--language: !scheme-->
 
     (define (fib n)
        (if (zero? n) 0
@@ -2419,6 +2426,10 @@ Lecture 20
                (+ (fib (- n 1))
                   (fib (- n 2))))))
 
+    (display (fib 10))
+    ;55
+
+<!--language: !scheme-->
 
     (define (fib n)
        (if (or (= n 0)
@@ -2426,8 +2437,11 @@ Lecture 20
            (+ (fib (- n 1))
               (fib (- n 2)))))
 
+    (display (fib 10))
+    ;55
 
-- 菲波那契序列的两种表达
+
+- 运行时语言，即使后面数据类型错误，也不会求值，更不会报错
 
 <!--language: scheme-->
 
@@ -2435,11 +2449,10 @@ Lecture 20
           (+ "hello" 5))
     4
 
-- 运行时语言，即使后面数据类型错误，也不会求值，更不会报错
 
 ## flatten
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (flatten sequence)
        (cond (((null? sequence) '())
@@ -2449,18 +2462,17 @@ Lecture 20
               (else (cons (car sequence)
                           (flatten (cdr sequence)))))))
 
-    > (flatten '(1 2 3 4))
-    (list 1 2 3 4)
+    (display (flatten '(1 2 3 4)))
+    ;(1 2 3 4)
 
-    > (flatten '(1 (2 "3") 4 ("5")))
-    (list 1 2 "3" 4 "5")
+    (display (flatten '(1 (2 "3") 4 ("5"))))
+    ;(1 2 "3" 4 "5")
 
 - 假设不会转入`'()`空列表
 
-
 ## sorted?
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (sorted? num-list)
        (or (< (length num-list) 2)
@@ -2468,11 +2480,11 @@ Lecture 20
                     (cadr num-list))
                 (sorted? (cdr num-list)))))
 
-    > (sorted? '(1 2 2 4 7))
-    true
+    (display (sorted? '(1 2 2 4 7)))
+    ;#t
 
-    > (sorted? '(1 0 4 7 10))
-    false
+    (display (sorted? '(1 0 4 7 10)))
+    ;#f
 
 
 - `cadr`嵌套的表达，相当于先`cdr`再`car`，即取第二的元素，以此类推可以有`cadadr`,`cdddr`……
@@ -2481,62 +2493,62 @@ Lecture 20
 <!--language: scheme-->
 
     > (< 1 2 3 4)
-    true
+    #t
 
     > (<= 1 2 3 4 4)
-    true
-
+    #t
 
 ## sorted? with compare
 
-<!--language: scheme-->
+- `cmp`是函数对象
+
+<!--language: !scheme-->
 
     (define (sorted? num-list cmp)
        (or (< (length num-list) 2)
            (and (cmp (car num-list) (cadr num-list))
                 (sorted? (cdr num-list) cmp))))
 
-    > (sorted? '(1 2 2 4 7) <=)
-    true
+    (display (sorted? '(1 2 2 4 7) <=))
+    ;#t
 
-- `cmp`是函数对象
+
 
 Lecture 21
 ==========
 
 ## map
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (double-all num-list)
        (if (null? num-list) '()
            (cons (* 2 (car num-list))
                  (double-all (cdr num-list)))))
 
-
-    > (double-all '(1 2 5 69))
-    (list 2 4 10 138)
+    (display (double-all '(1 2 5 69)))
+    ;(2 4 10 138)
 
 - 上面的迭代可使用`map`来统一处理，只需定义`double`即可，这样，即让`map`通用化，也让`double`职责单一化
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (double x)(* x 2))
 
-    > (map double '(1 2 5 69))
-    (list 2 4 10 138)
+    (display (map double '(1 2 5 69)))
+    ;(2 4 10 138)
 
 - `map`第一个参数接受函数对象，后面的序列作为要迭代处理的，甚至可以是多个序列，此时函数对象应为多元计算，以最小序列结束为结束
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
-    > (map cons '(1 2 8) '((4) () (2 5)))
-    (list (list 1 4) (list 2) (list 8 2 5))
+    (display (map cons '(1 2 8) '((4) () (2 5))))
+    ;((1 4) (2) (8 2 5))
 
 
 - 下面定义自己的`mymap`，目前只接受一个序列
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (mymap fn seq)
         (if (null? seq) '()
@@ -2545,8 +2557,8 @@ Lecture 21
 
     (define (double x)(* x 2))
 
-    > (mymap double '(1 2 5 69))
-    (list 2 4 10 138)
+    (display (mymap double '(1 2 5 69)))
+    ;(2 4 10 138)
 
 ## apply
 
@@ -2560,12 +2572,16 @@ Lecture 21
     > (apply + '(1 2 3))
     6
 
+- 求平均值
+
+<!--language: !scheme-->
+
     (define (average num-list)
       (/ (apply + num-list)
          (length num-list)))
 
-    > (average '(1 2 3 4 5))
-    3
+    (display (average '(1 2 3 4 5)))
+    ;3
 
 - 计算序列的和时，使用了`(apply + num-list)`，即将`+`的运算应用在后面的序列中，相当于将`+`所需的不固定参数通过一个序列来表达（同js中apply中对参数的处理效果一致）
 
@@ -2573,17 +2589,19 @@ Lecture 21
 
 - `eval`一般很少用到，除非一些元编程中
 
-<!--language: scheme-->
+- `flatten`的另一种实现，尝试使用`apply`+`map`来处理
+
+<!--language: !scheme-->
 
     (define (flatten seq)
       (if (not (list? seq)) (list seq)
         (apply append
           (map flatten seq))))
 
-    > (flatten '((1 2) ((3) ((4) 5)) 10))
-    (1 2 3 4 5 10)
+    (display (flatten '((1 2) ((3) ((4) 5)) 10)))
+    ;(1 2 3 4 5 10)
 
-- 尝试使用`map`思维来处理`flatten`
+思路如下：
 
 <!--language: plain-->
 
@@ -2615,21 +2633,27 @@ Lecture 21
 
 - 问题在于`map`中的函数对象`?`怎么定义，它表达的意思应为`increment_by_delta`，但这个函数需要二个参数，而不是一个，我们需要把`delta`封装到`lambda`中，通过闭包来保持它
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (translate points delta)
       (map (lambda (x)
              (+ x delta))
            points))
 
+    (display (translate '(2 5 8 11 25) 100))
+    ;(102 105 108 111 125)
+
 - `lambda`定义的是匿名函数对象，它只存活于`map`运行期间。当然也可以定义具名函数：
 
-<!--language: scheme-->
+<!--language: !scheme-->
 
     (define (translate points delta)
       (define (shift-by x)
         (+ x delta))
       (map shift-by points))
+
+    (display (translate '(2 5 8 11 25) 100))
+    ;(102 105 108 111 125)
 
 - 定义`sum`两种方式，第一种符合编程习惯，而第二种是将函数名与函数体更清楚的关联起来，其实Scheme中函数都表现为一个函数符号与一个lambda的关联。即关于 符号、符号评估、函数评估 到它们在内存中的储存方式
 
