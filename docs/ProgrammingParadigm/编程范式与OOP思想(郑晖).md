@@ -68,13 +68,13 @@ C(命令式)
         return f;
     }
 
-Lisp(函数式)
+Lisp/Scheme(函数式)
 
-<!--language: lisp-->
+<!--language: scheme-->
 
-    (defun factorial(n)
+    (define (factorial n)
           (if (= n 0) 1
-          (* n (factorial(- n 1)))))
+              (* n (factorial(- n 1)))))
 
 
 Prolog(逻辑式)

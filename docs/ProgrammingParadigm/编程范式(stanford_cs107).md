@@ -2312,7 +2312,7 @@ Lecture 19
         (+ 32 (* 1.8 temp)))
 
     (display (celsius->fahrenheit 100))
-    ;212
+    ;;;212
 
 <!--language: scheme-->
 
@@ -2404,7 +2404,7 @@ Lecture 19
                (sum-of (cdr numlist)))))
 
     (display (sum-of '(1 2 3 4)))
-    ;10
+    ;;;10
 
 
 - `sum-of`的实现是以递归的思维实现的，以尾递归实现迭代
@@ -2427,7 +2427,7 @@ Lecture 20
                   (fib (- n 2))))))
 
     (display (fib 10))
-    ;55
+    ;;;55
 
 <!--language: !scheme-->
 
@@ -2438,7 +2438,7 @@ Lecture 20
               (fib (- n 2)))))
 
     (display (fib 10))
-    ;55
+    ;;;55
 
 
 - 运行时语言，即使后面数据类型错误，也不会求值，更不会报错
@@ -2463,10 +2463,10 @@ Lecture 20
                           (flatten (cdr sequence)))))))
 
     (display (flatten '(1 2 3 4)))
-    ;(1 2 3 4)
+    ;;;(1 2 3 4)
 
     (display (flatten '(1 (2 "3") 4 ("5"))))
-    ;(1 2 "3" 4 "5")
+    ;;;(1 2 "3" 4 "5")
 
 - 假设不会转入`'()`空列表
 
@@ -2474,17 +2474,17 @@ Lecture 20
 
 <!--language: !scheme-->
 
-    (define (sorted? num-list)
-       (or (< (length num-list) 2)
-           (and (<= (car num-list)
-                    (cadr num-list))
-                (sorted? (cdr num-list)))))
+    (define (sorted? numlist)
+       (or (< (length numlist) 2)
+           (and (<= (car numlist)
+                    (cadr numlist))
+                (sorted? (cdr numlist)))))
 
     (display (sorted? '(1 2 2 4 7)))
-    ;#t
+    ;;;#t
 
     (display (sorted? '(1 0 4 7 10)))
-    ;#f
+    ;;;#f
 
 
 - `cadr`嵌套的表达，相当于先`cdr`再`car`，即取第二的元素，以此类推可以有`cadadr`,`cdddr`……
@@ -2504,13 +2504,13 @@ Lecture 20
 
 <!--language: !scheme-->
 
-    (define (sorted? num-list cmp)
-       (or (< (length num-list) 2)
-           (and (cmp (car num-list) (cadr num-list))
-                (sorted? (cdr num-list) cmp))))
+    (define (sorted? numlist cmp)
+       (or (< (length numlist) 2)
+           (and (cmp (car numlist) (cadr numlist))
+                (sorted? (cdr numlist) cmp))))
 
     (display (sorted? '(1 2 2 4 7) <=))
-    ;#t
+    ;;;#t
 
 
 
@@ -2521,13 +2521,13 @@ Lecture 21
 
 <!--language: !scheme-->
 
-    (define (double-all num-list)
-       (if (null? num-list) '()
-           (cons (* 2 (car num-list))
-                 (double-all (cdr num-list)))))
+    (define (double-all numlist)
+       (if (null? numlist) '()
+           (cons (* 2 (car numlist))
+                 (double-all (cdr numlist)))))
 
     (display (double-all '(1 2 5 69)))
-    ;(2 4 10 138)
+    ;;;(2 4 10 138)
 
 - 上面的迭代可使用`map`来统一处理，只需定义`double`即可，这样，即让`map`通用化，也让`double`职责单一化
 
@@ -2536,14 +2536,14 @@ Lecture 21
     (define (double x)(* x 2))
 
     (display (map double '(1 2 5 69)))
-    ;(2 4 10 138)
+    ;;;(2 4 10 138)
 
 - `map`第一个参数接受函数对象，后面的序列作为要迭代处理的，甚至可以是多个序列，此时函数对象应为多元计算，以最小序列结束为结束
 
 <!--language: !scheme-->
 
     (display (map cons '(1 2 8) '((4) () (2 5))))
-    ;((1 4) (2) (8 2 5))
+    ;;;((1 4) (2) (8 2 5))
 
 
 - 下面定义自己的`mymap`，目前只接受一个序列
@@ -2558,7 +2558,7 @@ Lecture 21
     (define (double x)(* x 2))
 
     (display (mymap double '(1 2 5 69)))
-    ;(2 4 10 138)
+    ;;;(2 4 10 138)
 
 ## apply
 
@@ -2576,14 +2576,14 @@ Lecture 21
 
 <!--language: !scheme-->
 
-    (define (average num-list)
-      (/ (apply + num-list)
-         (length num-list)))
+    (define (average numlist)
+      (/ (apply + numlist)
+         (length numlist)))
 
     (display (average '(1 2 3 4 5)))
-    ;3
+    ;;;3
 
-- 计算序列的和时，使用了`(apply + num-list)`，即将`+`的运算应用在后面的序列中，相当于将`+`所需的不固定参数通过一个序列来表达（同js中apply中对参数的处理效果一致）
+- 计算序列的和时，使用了`(apply + numlist)`，即将`+`的运算应用在后面的序列中，相当于将`+`所需的不固定参数通过一个序列来表达（同js中apply中对参数的处理效果一致）
 
 - `map`和`apply`对序列处理是平等的，以集合处理的思维进行思考，（即使内部也是使用递归），而不像`car`,`cdr`这样有明显迭代处理方式
 
@@ -2601,7 +2601,7 @@ Lecture 21
           (map flatten seq))))
 
     (display (flatten '((1 2) ((3) ((4) 5)) 10)))
-    ;(1 2 3 4 5 10)
+    ;;;(1 2 3 4 5 10)
 
 思路如下：
 
@@ -2643,7 +2643,7 @@ Lecture 21
            points))
 
     (display (translate '(2 5 8 11 25) 100))
-    ;(102 105 108 111 125)
+    ;;;(102 105 108 111 125)
 
 - `lambda`定义的是匿名函数对象，它只存活于`map`运行期间。当然也可以定义具名函数：
 
@@ -2655,7 +2655,7 @@ Lecture 21
       (map shift-by points))
 
     (display (translate '(2 5 8 11 25) 100))
-    ;(102 105 108 111 125)
+    ;;;(102 105 108 111 125)
 
 - 定义`sum`两种方式，第一种符合编程习惯，而第二种是将函数名与函数体更清楚的关联起来，其实Scheme中函数都表现为一个函数符号与一个lambda的关联。即关于 符号、符号评估、函数评估 到它们在内存中的储存方式
 
@@ -2700,7 +2700,7 @@ Lecture 22
                         (power-set (cdr set))))))
 
     (display (power-set '(1 2 3)))
-    ;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
+    ;;;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
 
 
 - `append`除第一个元素外后所有子集（所以是一个递归调用，需要信念认为`power-set`已经能正常工作了），和`map`子句
@@ -2721,7 +2721,7 @@ Lecture 22
                         ps-set)))))
 
     (display (power-set '(1 2 3)))
-    ;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
+    ;;;(() (3) (2) (2 3) (1) (1 3) (1 2) (1 2 3))
 
 - `let`的绑定
 
@@ -2762,8 +2762,9 @@ Lecture 22
 
     首先表达为以下各组合的连接
     ((1-perms) (2-perms) (3-perms))
-    而每个组合又可细分，如
-    (1-perms)==1 cons 所有(items remove 1)后的组合
+
+    而每个组合又可细分，如(1-perms)等价于
+    1 cons 所有permute(items remove 1)后的集合
 
 
 - 刚开始程序的框架是这样的，使用`apply append`和`map`连接各个已排好的组合：
@@ -2811,7 +2812,7 @@ Lecture 22
                       items))))
 
     (display (permute '(1 2 3)))
-    ;((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1))
+    ;;;((1 2 3) (1 3 2) (2 1 3) (2 3 1) (3 1 2) (3 2 1))
 
 ## 内存
 
