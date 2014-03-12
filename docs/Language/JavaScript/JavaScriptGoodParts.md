@@ -281,8 +281,17 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
     });
     alert("   neat   ".trim());
 
-## 递归
+## 递归/reduce
 一些语言提供了 __尾递归__(tail recursion/trai-end recursion) 优化，即如果一个函数的最后执行递归调用语句的特殊形式的递归，那么调用的过程会被替换为一个循环，可以提高速度。但js __并没有提供__ 该优化。
+
+有关`reduce`或`flod` [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#关键字_fold) 对集合递归一种模式固定
+
+> ES5中的`Array.prototype.reduce`已有支持
+
+<!--language: !js-->
+
+    alert([1, 2, 3].reduce(function(memo, num){ return memo + num; }, 0));
+
 
 ## 作用域
 作用域控制着变量与参数的可见性及生命周期，但js中 __没有块级作用域__。它会导致在闭包中行为与有块级作用域的语言中表现不同：
@@ -345,6 +354,8 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 ## 柯里化
 函数也是值，柯里化`Curry`允许我们将函数与传递它的参数相结合去产生一个新的函数
 
+[参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Curried_functions)
+
 > 相当于ES5中的`Function.prototype.bind`
 
 <!--language: !js-->
@@ -373,6 +384,50 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
     var add3_x = add3.curry(1);
     var add3_x_y = add3_x.curry(2);
     alert(add3_x_y(6));
+
+## 函数组合
+摘自underscore.js，In math terms, composing the functions f(), g(), and h() produces f(g(h()))，利于减少括号的使用，减少传递参数的代码
+
+[参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Function_composition)
+
+<!--language: !js-->
+
+    function compose() {
+        var funcs = arguments;
+        return function() {
+            var args = arguments;
+            for (var i = funcs.length - 1; i >= 0; i--) {
+                args = [funcs[i].apply(this, args)];
+            }
+            return args[0];
+        };
+    }
+
+    var greet    = function(name){ return "hi: " + name; };
+    var exclaim  = function(statement){ return statement.toUpperCase() + "!"; };
+    var welcome = compose(greet, exclaim);
+    alert(welcome('moe'));
+
+## 装饰器
+摘自underscore.js
+
+<!--language: !js-->
+
+    function wrap(func, wrapper) {
+        return function() {
+            var args = [func];
+            Array.prototype.push.apply(args, arguments);
+            return wrapper.apply(this, args);
+        };
+    }
+
+    var hello = function(name) { return "hello: " + name; };
+    hello = wrap(hello, function(func) {
+        return "before, " + func("moe") + ", after";
+    });
+    alert(hello());
+
+
 
 ## 缓存
 用对象去记住先前操作的结果，从而避免无谓的运算。
