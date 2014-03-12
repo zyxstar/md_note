@@ -228,18 +228,14 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
 
 - 示例2
 
-假如存在一个对不固定参数求和的函数`sum`
+对不固定参数求最大值的函数`Math.max`
 
 <!--language: !js-->
 
-    function sum(){
-        return [].slice.call(arguments).reduce(function(acc,x){return acc+x;},0);
-    }
+    var arr = [1,2,7,4,5];
+    alert(Math.max.apply(Math, arr));
 
-    var arr = [1,2,3,4,5];
-    alert(sum.apply(null, arr));
-
-所以当存在对不固定参数求值的函数时，`apply`可以理解为，将此 __函数作用于一个数组__ 上。原理同上例一样，即将数组参数展开传递。
+`apply`可以理解为，将此 __函数作用于一个数组__ 上。原理同上例一样，即将数组参数展开传递。
 
 - 示例3
 
@@ -348,6 +344,8 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
 ## 柯里化
 函数也是值，柯里化`Curry`允许我们将函数与传递它的参数相结合去产生一个新的函数
+
+> 相当于ES5中的`Function.prototype.bind`
 
 <!--language: !js-->
 
