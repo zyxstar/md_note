@@ -638,7 +638,6 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
     alert([1, 2, 3].reduce(function(memo, num){ return memo + num; }, 0));
 
 
-
 ## 柯里化
 函数也是值，柯里化`Curry`允许我们将函数与传递它的参数相结合去产生一个新的函数 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Curried_functions)
 
@@ -670,6 +669,40 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
     var add3_x = add3.curry(1);
     var add3_x_y = add3_x.curry(2);
     alert(add3_x_y(6));
+
+
+js中，经常需要在方法调用时传入回调函数，但回调函数有时因为是"实例方法"，可使用`bind`使其变成"静态方法"
+
+<!--language: !js-->
+
+    var arr = [" a "," b "," c "];
+
+    //传统方法
+    var result1 = arr.map(function(item){return item.trim();});
+    alert(result1);
+
+    //使用bind
+    var result2 = arr.map(Function.prototype.call.bind(String.prototype.trim));
+    alert(result2);
+
+上面有关作用域与闭包中的例子，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
+
+<!--language: !js-->
+
+    function fn() {
+        var fnarr = [];
+        for (var i = 0; i < 3; i++) {
+            fnarr.push(
+                (function(j){
+                    return function(){alert(j);}
+                })(i));
+        }
+        return fnarr;
+    }
+
+    fn().forEach(Function.prototype.call.bind(Function.prototype.call));
+
+<!-- http://www.planabc.net/2008/06/17/the_problem_with_innerhtml/ -->
 
 ## 函数组合
 组合函数三个函数`f()`, `g()`与`h()`，执行效果与`f(g(h()))`等价，能减少括号的使用，减少参数赋值，能对函数对象组合后再调用，增加流程的灵活性 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Function_composition)，函数组合是右结合的
