@@ -14,8 +14,8 @@
 # Language
 
 ## JavaScript
-- [JavaScriptGoodParts.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScriptGoodParts.md) <span>2013-06-18</span>
-- [JavaScript语言精髓与编程实践.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%25E4%25B8%258E%25E7%25BC%2596%25E7%25A8%258B%25E5%25AE%259E%25E8%25B7%25B5.md) <span>2009-11-16</span>
+- [JavaScriptCollected.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScriptCollected.md) <span>2013-06-18</span>
+- [JavaScript语言精髓(周爱民).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%2528%25E5%2591%25A8%25E7%2588%25B1%25E6%25B0%2591%2529.md) <span>2009-11-16</span>
 
 ## Python
 - [PythonCookBook.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FPython%2FPythonCookBook.md) <span>2011-03-22</span>
