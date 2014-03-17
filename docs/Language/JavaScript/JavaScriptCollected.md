@@ -474,6 +474,75 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     fn1()(1);
 
 
+## bind调用模式
+
+### 绑定this
+`Function.prototype.bind(thisArg [, arg1 [, arg2, …]])` __返回一个新的函数对象__，该函数 __对象的this__ 绑定到了thisArg参数上。
+
+它的代码（摘自underscore.js）类似：
+
+<!--language: js-->
+
+    function bind(func, context) {
+        if (!context) return func;
+        var args = _.toArray(arguments).slice(2);
+        return function() {
+            var a = args.concat(_.toArray(arguments));
+            return func.apply(context, a);
+        };
+    }
+
+示例：
+
+<!--language: !js-->
+
+    function locate(){
+        alert(this.location);
+    }
+
+    function Maru(location){
+        this.location = location;
+    }
+
+    var kitty = new Maru("cardboard box");
+    var locateMaru = locate.bind(kitty);
+
+    locateMaru();
+
+js中，经常需要在方法调用时传入回调函数，但回调函数有时是"实例方法"，可使用`bind`使其变成"静态方法"
+
+<!--language: !js-->
+
+    var arr = [" a "," b "," c "];
+
+    //传统方法
+    var result1 = arr.map(function(item){return item.trim();});
+    alert(result1);
+
+    //使用bind
+    var result2 = arr.map(Function.prototype.call.bind(String.prototype.trim));
+    alert(result2);
+
+下面有关[作用域与闭包中的例子](#TOC3.2)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
+
+<!--language: !js-->
+
+    function fn() {
+        var fnarr = [];
+        for (var i = 0; i < 3; i++) {
+            fnarr.push(
+                (function(j){
+                    return function(){alert(j);}
+                })(i));
+        }
+        return fnarr;
+    }
+
+    fn().forEach(Function.prototype.call.bind(Function.prototype.call));
+
+
+### curry参数
+参见[柯里化](#TOC3.4)
 
 
 ## 给类型增加方法
@@ -663,44 +732,17 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 
     function add2(x,y){return x+y;}
     var add2_x = add2.curry(1);
+    // var add2_x = add2.bind(null,1);
     alert(add2_x(6));
 
     function add3(x,y,z){return x+y+z;}
     var add3_x = add3.curry(1);
     var add3_x_y = add3_x.curry(2);
+    // var add3_x = add3.bind(null,1);
+    // var add3_x_y = add3_x.curry(null,2);
     alert(add3_x_y(6));
 
 
-js中，经常需要在方法调用时传入回调函数，但回调函数有时因为是"实例方法"，可使用`bind`使其变成"静态方法"
-
-<!--language: !js-->
-
-    var arr = [" a "," b "," c "];
-
-    //传统方法
-    var result1 = arr.map(function(item){return item.trim();});
-    alert(result1);
-
-    //使用bind
-    var result2 = arr.map(Function.prototype.call.bind(String.prototype.trim));
-    alert(result2);
-
-上面有关作用域与闭包中的例子，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
-
-<!--language: !js-->
-
-    function fn() {
-        var fnarr = [];
-        for (var i = 0; i < 3; i++) {
-            fnarr.push(
-                (function(j){
-                    return function(){alert(j);}
-                })(i));
-        }
-        return fnarr;
-    }
-
-    fn().forEach(Function.prototype.call.bind(Function.prototype.call));
 
 <!-- http://www.planabc.net/2008/06/17/the_problem_with_innerhtml/ -->
 
