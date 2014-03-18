@@ -381,7 +381,7 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
         this._wrapped = obj;
     };
 
-### apply调用模式
+### apply/call调用模式
 因为Js是一门函数式的面向对象编程语言，所以 __函数也可以拥有方法__
 
 `apply`方法让我们构建一个参数数组并用其去调用函数，也允许我们 __选择`this`__ 的值：
@@ -474,9 +474,8 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
     fn1()(1);
 
 
-## bind调用模式
+### bind调用模式
 
-### 绑定this
 `Function.prototype.bind(thisArg [, arg1 [, arg2, …]])` __返回一个新的函数对象__，该函数 __对象的this__ 绑定到了thisArg参数上。
 
 它的代码（摘自underscore.js）类似：
@@ -496,24 +495,34 @@ js中共有四种调用模式：方法调用模式、函数调用模式、构造
 
 <!--language: !js-->
 
-    function locate(){
-        alert(this.location);
+    // Define the original function.
+    var checkNumericRange = function (value) {
+        if (typeof value !== 'number')
+            return false;
+        else
+            return value >= this.minimum && value <= this.maximum;
     }
 
-    function Maru(location){
-        this.location = location;
-    }
+    // The range object will become the this value in the callback function.
+    var range = { minimum: 10, maximum: 20 };
 
-    var kitty = new Maru("cardboard box");
-    var locateMaru = locate.bind(kitty);
+    // Bind the checkNumericRange function.
+    var boundCheckNumericRange = checkNumericRange.bind(range);
 
-    locateMaru();
+    // Use the new function to check whether 12 is in the numeric range.
+    var result = boundCheckNumericRange (12);
+    alert(result);
 
-js中，经常需要在方法调用时传入回调函数，但回调函数有时是"实例方法"，可使用`bind`使其变成"静态方法"
+    // Output: true
+
+
+#### Function.prototype.call.bind
+
+js中，经常需要在方法调用时传入"静态方法"的回调函数，有时存在的是"实例方法"（如下面的`String.prototype.trim`），可使用`bind`使其变成"静态方法"
 
 <!--language: !js-->
 
-    var arr = [" a "," b "," c "];
+    var arr = [" a ","  b  "," c "];
 
     //传统方法
     var result1 = arr.map(function(item){return item.trim();});
@@ -522,6 +531,16 @@ js中，经常需要在方法调用时传入回调函数，但回调函数有时
     //使用bind
     var result2 = arr.map(Function.prototype.call.bind(String.prototype.trim));
     alert(result2);
+
+    //上面的bind类似于下面的call/apply
+    var result3 = arr.map((function(){
+            return function(){
+                return String.prototype.trim.call(arguments[0]);
+            }
+        })()
+    );
+    alert(result3);
+
 
 下面有关[作用域与闭包中的例子](#TOC3.2)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
 
@@ -541,11 +560,12 @@ js中，经常需要在方法调用时传入回调函数，但回调函数有时
     fn().forEach(Function.prototype.call.bind(Function.prototype.call));
 
 
-### curry参数
+#### curry参数
 参见[柯里化](#TOC3.4)
 
+## 扩展性
 
-## 给类型增加方法
+### 给类型增加方法
 
 js允许给语言的基本类型增加方法，通过给`Object.prototype`添加方法来使得该方法对所有对象可用。
 
@@ -571,9 +591,101 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
     });
     alert("   neat   ".trim());
 
+### 从源对象拷贝属性
+它的原型是`_.extend(destination, *sources) `，摘自underscore.js
+
+<!--language: !js-->
+
+    function extend(obj) {
+        Array.prototype.slice.call(arguments, 1).forEach(function(source) {
+            if (source)
+                for (var prop in source)
+                    obj[prop] = source[prop];
+        });
+        return obj;
+    }
+
+    var ret = extend({name : 'moe'}, {age : 50}, {name : 'moe2', gender : 'F'});
+    console.log(ret); //{name: "moe2", age: 50, gender: "F"}
+
+
+### 装饰器
+摘自underscore.js
+
+<!--language: !js-->
+
+    function wrap(func, wrapper) {
+        return function() {
+            var args = [func];
+            Array.prototype.push.apply(args, arguments);
+            return wrapper.apply(this, args);
+        };
+    }
+
+    var hello = function(name) { return "hello: " + name; };
+    hello = wrap(hello, function(func) {
+        return "before, " + func("moe") + ", after";
+    });
+    alert(hello());
+
+
+
 ## 链式代码
 一些设置或修改对象的某个状态却不返回任何值的方法，但如果我们让这些方法返回`this`，而不是`undefined`，就可以启用级联。
 
+示例，underscore.js中原本应用于集合的函数，变成面向对象式+链式的风格：
+
+<!--language: !js-->
+
+    //import underscore.1.4.3
+    var stooges = [
+        {name: 'curly', age: 25},
+        {name: 'moe', age: 21},
+        {name: 'larry', age: 23}
+    ];
+    var youngest = _.chain(stooges)
+        .sortBy(function(stooge){ return stooge.age; })
+        .map(function(stooge){ return stooge.name + ' is ' + stooge.age; })
+        .first()
+        .value();
+
+    alert(youngest);
+
+实现的方式如下：
+
+<!--language: js-->
+
+      // Return a sorted list of the function names available on the object.
+      // Aliased as `methods`
+      _.functions = _.methods = function(obj) {
+          var names = [];
+          for (var key in obj) {
+              if (_.isFunction(obj[key])) names.push(key);
+          }
+          return names.sort();
+      };
+
+    // Add your own custom functions to the Underscore object.
+    _.mixin = function(obj) {
+      each(_.functions(obj), function(name){
+        var func = _[name] = obj[name];
+        _.prototype[name] = function() {
+          var args = [this._wrapped];
+          push.apply(args, arguments);
+          return result.call(this, func.apply(_, args));
+        };
+      });
+    };
+
+    var result = function(obj) {
+        return this._chain ? _(obj).chain() : obj;
+    };
+
+    // Add all of the Underscore functions to the wrapper object.
+    _.mixin(_);
+
+
+另，jquery的链式风格编程已十分流行。为了防止异步callback嵌套过多，也有通过链式代码进行进改的，如jquery.deferred。
 
 ## 缓存
 用对象去记住先前操作的结果，从而避免无谓的运算。
@@ -602,25 +714,19 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
     });
     alert(factorial(5));
 
+以下摘自underscore.js
 
-## 装饰器
-摘自underscore.js
+<!--language: js-->
 
-<!--language: !js-->
-
-    function wrap(func, wrapper) {
+    _.memoize = function(func, hasher) {
+        var memo = {};
+        hasher || (hasher = _.identity);
         return function() {
-            var args = [func];
-            Array.prototype.push.apply(args, arguments);
-            return wrapper.apply(this, args);
+            var key = hasher.apply(this, arguments);
+            return _.has(memo, key) ? memo[key] : (memo[key] = func.apply(this, arguments));
         };
-    }
+    };
 
-    var hello = function(name) { return "hello: " + name; };
-    hello = wrap(hello, function(func) {
-        return "before, " + func("moe") + ", after";
-    });
-    alert(hello());
 
 
 
@@ -638,6 +744,9 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 
 
 不支持lambda，但借助一些库（如[lambda.js](http://www.javascriptoo.com/lambda-js)）可实现相关功能，或直接使用[CoffeScript](http://coffeescript.org/)
+
+## 模式匹配
+原生的js不支持，但基于js的[LiveScript](http://livescript.net/)是支持的
 
 
 ## 作用域与闭包
@@ -743,9 +852,6 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
     alert(add3_x_y(6));
 
 
-
-<!-- http://www.planabc.net/2008/06/17/the_problem_with_innerhtml/ -->
-
 ## 函数组合
 组合函数三个函数`f()`, `g()`与`h()`，执行效果与`f(g(h()))`等价，能减少括号的使用，减少参数赋值，能对函数对象组合后再调用，增加流程的灵活性 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Function_composition)，函数组合是右结合的
 
@@ -797,21 +903,200 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 
 异步编程
 =========
+## 延迟执行
+
+### delay
+`delay(function, wait, [*arguments])`
+
+类似setTimeout，等待wait毫秒后调用function。如果传递可选的参数arguments，当函数function执行时， arguments 会作为参数传入。
+
+<!--language: !js-->
+
+    function delay(func, wait) {
+        var args = Array.prototype.slice.call(arguments, 2);
+        return setTimeout(function(){ return func.apply(null, args); }, wait);
+    }
+
+    delay(alert, 1000, 'logged later');
+
+### defer
+`defer(function, *arguments)`
+
+延迟调用function直到当前调用栈清空为止，类似使用延时为0的setTimeout方法。对于执行开销大的计算和无阻塞UI线程的HTML渲染时候非常有用。 如果传递arguments参数，当函数function执行时， arguments 会作为参数传入。
+
+<!--language: !js-->
+
+    var slice = Array.prototype.slice;
+    function delay(func, wait) {
+        var args = slice.call(arguments, 2);
+        return setTimeout(function(){ return func.apply(null, args); }, wait);
+    }
+
+    function defer(func) {
+        return delay.apply(null, [func, 1].concat(slice.call(arguments, 1)));
+    }
+
+    for(var i=0;i<5;i++)
+        defer(function(i){console.log(i);}, i);
+
+### throttle
+`throttle(function, wait)`
+
+创建并返回一个像节流阀一样的函数，当重复调用函数的时候，__最多每隔 wait毫秒调用一次该函数__。 对于想控制一些触发频率较高的事件有帮助。再说的通俗一点就是函数调用的频度控制器，是连续执行时间间隔控制。主要应用的场景比如：
+
+> 1. 鼠标移动，mousemove 事件
+> 1. DOM 元素动态定位，window对象的resize和scroll 事件
+
+默认情况下，throttle将在你调用的第一时间尽快执行这个function
+
+以下摘自underscore.js 1.2，最新版本有变化：
+
+<!--language: !js-->
+
+    function throttle(func, wait) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var throttler = function() {
+                timeout = null;
+                func.apply(context, args);
+            };
+            if (!timeout) timeout = setTimeout(throttler, wait);
+        };
+    }
+
+    // test
+    var calltimes = 0;
+    var fn = throttle(function(){console.log("real run " + new Date());}, 2000);
+
+    (function(){
+        if(calltimes<5){
+            calltimes++;
+            console.log("call times " + calltimes +" " +new Date());
+            fn();
+            setTimeout(arguments.callee,1000);
+        }
+    })();
+
+
+### debounce
+`debounce(function, wait)`
+
+debounce和throttle很像，debounce是空闲时间必须大于或等于 一定值的时候，才会执行调用方法。`debounce`返回 function 函数的防反跳版本, 将延迟函数的执行(真正的执行)在 __函数最后一次调用时刻的 `wait` 毫秒之后__。
+
+对于必须在一些输入（多是一些用户操作）停止到达之后执行的行为有帮助。
+
+> 1. 渲染一个Markdown格式的评论预览, 当窗口停止改变大小之后重新计算布局
+> 1. 在类似不小心点了提交按钮两下而提交了两次的情况下很有用。
+> 1. 比如我们做autocomplete，这时需要我们很好的控制输入文字时调用方法时间间隔。一般时第一个输入的字符马上开始调用，根据一定的时间间隔重复调用执行的方法。对于变态的输入，比如按住某一个建不放的时候特别有用
+
+underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和debounce的插件：jQuery throttle / debounce
+
+以下摘自underscore.js 1.2，最新版本有变化：
+
+<!--language: !js-->
+
+    function debounce(func, wait) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var throttler = function() {
+                timeout = null;
+                func.apply(context, args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(throttler, wait);
+        };
+    }
+
+    // test
+    var calltimes = 0;
+    var fn = debounce(function(){console.log("real run " + new Date());}, 2000);
+
+    (function(){
+        if(calltimes<5){
+            calltimes++;
+            console.log("call times " + calltimes +" " +new Date());
+            fn();
+            setTimeout(arguments.callee,1000);
+        }
+    })();
+
+### once
+`once(function)`
+
+创建一个只能调用一次的函数。重复调用改进的方法也没有效果，只会返回第一次执行时的结果。作为初始化函数使用时非常有用, 不用再设一个boolean值来检查是否已经初始化完成。
+
+<!--language: !js-->
+
+    function once(func) {
+        var ran = false, memo;
+        return function() {
+            if (ran) return memo;
+            ran = true;
+            memo = func.apply(this, arguments);
+            func = null;
+            return memo;
+        };
+    }
+
+    var times = 0;
+    var createApplication = function(){
+        times++;
+        alert("create " + times);
+    }
+    var initialize = once(createApplication);
+    initialize();
+    initialize();
+
+### after
+`after(count, function)`
+
+创建一个函数, 只有在运行了`count`次之后才有效果。在处理同组异步请求返回结果时, 如果你要确保同组里所有异步请求完成之后才执行这个函数, 这将非常有用。
+
+<!--language: !js-->
+
+    function after(times, func) {
+        return function() {
+            if (--times < 1) {
+                return func.apply(this, arguments);
+            }
+        };
+    }
+
+    var notes = [1,2,3,4,5];
+    var render = function(){
+        alert(notes);
+    }
+    var renderNotes = after(notes.length, render);
+    notes.forEach(function(note) {
+        //note.asyncSave({success: renderNotes});
+        setTimeout(renderNotes, 500);
+    });
+    // renderNotes is run once, after all notes have saved.
+
 
 ## jquery.deferred
 
 
 ## 反应型编程(FRP)
 
+<!-- 权威指南 bigpipe throttle  -->
+
+模块管理
+==========
+
+## require.js
 
 
+## sea.js
 
 
 <script>
 
 (function fix_toc(){
     if(typeof expand_toc !== 'function') setTimeout(fix_toc,500);
-    else expand_toc('md_toc',6);
+    else expand_toc('md_toc',3);
 })();
 
 </script>
