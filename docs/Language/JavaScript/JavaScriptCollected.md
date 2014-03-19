@@ -987,7 +987,7 @@ debounce和throttle很像，debounce是空闲时间必须大于或等于 一定�
 对于必须在一些输入（多是一些用户操作）停止到达之后执行的行为有帮助。
 
 > 1. 渲染一个Markdown格式的评论预览, 当窗口停止改变大小之后重新计算布局
-> 1. 在类似不小心点了提交按钮两下而提交了两次的情况下很有用。
+> 1. 在类似不小心点了提交按钮两下而提交了两次的情况下很有用，或防止Ajax在很短时间内的多次请求。
 > 1. 比如我们做autocomplete，这时需要我们很好的控制输入文字时调用方法时间间隔。一般时第一个输入的字符马上开始调用，根据一定的时间间隔重复调用执行的方法。对于变态的输入，比如按住某一个建不放的时候特别有用
 
 underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和debounce的插件：jQuery throttle / debounce
@@ -1052,7 +1052,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 ### after
 `after(count, function)`
 
-创建一个函数, 只有在运行了`count`次之后才有效果。在处理同组异步请求返回结果时, 如果你要确保同组里所有异步请求完成之后才执行这个函数, 这将非常有用。
+创建一个函数, 只有在运行了`count`次之后才有效果。在处理同组异步请求返回结果时, 如果你要确保同组里所有异步请求完成之后才执行这个函数, 这将非常有用。有点像多线程中信号量的`WaitAll`
 
 <!--language: !js-->
 
@@ -1100,5 +1100,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 })();
 
 </script>
+
+
 
 
