@@ -1000,12 +1000,12 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
         var timeout;
         return function() {
             var context = this, args = arguments;
-            var throttler = function() {
+            var later = function() {
                 timeout = null;
                 func.apply(context, args);
             };
             clearTimeout(timeout);
-            timeout = setTimeout(throttler, wait);
+            timeout = setTimeout(later, wait);
         };
     }
 
@@ -1025,7 +1025,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 ### once
 `once(function)`
 
-创建一个只能调用一次的函数。重复调用改进的方法也没有效果，只会返回第一次执行时的结果。作为初始化函数使用时非常有用, 不用再设一个boolean值来检查是否已经初始化完成。
+创建一个只能调用一次的函数。重复调用改进的方法也没有效果，只会返回第一次执行时的结果。作为初始化函数使用时非常有用, 不用再设一个boolean值来检查是否已经初始化完成（高阶+闭包真是好东西）。
 
 <!--language: !js-->
 
@@ -1081,7 +1081,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 ## 反应型编程(FRP)
 
-<!-- 权威指南 bigpipe throttle  -->
+<!-- 权威指南 bigpipe  -->
 
 模块管理
 ==========
