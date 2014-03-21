@@ -2,7 +2,7 @@
 
 Lecture 1
 ========
-本文是网易公开课斯坦福大学的编程范式的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：泛型式（C中实现）、并发式（多线程）、面向对象式（少量）、函数式等
+本文是网易公开课斯坦福大学的编程范式的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：过程式、泛型式（C中实现）、并发式（多线程）、面向对象式（少量）、函数式（scheme）、动态脚本语言（python，支持多种范式的语言）等
 
 Lecture 2
 ========
@@ -3055,11 +3055,16 @@ Lecture 23
 Lecture 24
 ==========
 
+<!--language: !python-->
 
+    def gatherDivisors(number):
+        divisors = []
+        for div in range(1, number/2 + 1):
+            if not number%div:
+                divisors.append(div)
+        return divisors
 
-
-
-
+    print gatherDivisors(24)
 
 
 Lecture 25
@@ -3067,5 +3072,16 @@ Lecture 25
 
 
 
+
+
+
+Lecture 26
+==========
+
+
+
+
+Lecture 27
+==========
 
 
