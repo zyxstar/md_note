@@ -118,7 +118,7 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
 或者可以把`var p = new Person();`的过程拆分成以下三步：
 
 1. `var p = {};` 初始化一个对象`p`
-1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型
+1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型（ES6中即`Object.setPrototypeOf(p, Person.prototype)`）
 1. `Person.apply(p, arguments);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
 
 ## 原型
@@ -276,7 +276,136 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
     alert(myCoolCat.get_name());
 
 
+## 类型判断
 
+### typeof运算符
+
+js是弱类型的，具有6种基本数据类型，任何一个变量或值的类型都可以使用 __`typeof`__ 运算符来得到，以字符串形式返回此6种类型值之一：
+
+> - undefined
+> - number
+> - string
+> - boolean
+> - function 具有多种含义：函数、方法、构造器、类、函数对象等
+> - object 基于原型继承的面向对象
+
+通过typeof运算考察变量时，要么是对象(`object`)，要么是非对象(`number`,`undefined`,`string`等)
+
+其中`function`,`object`为引用类型，其它均为值类型，包括`undefined`，但`string`在赋值运算中会按引用类型方式来处理
+
+以下是特殊几个值的`typeof`的结果
+
+<!--language: !js-->
+
+    [null, undefined, NaN, String(""), Number(0),
+     Boolean(false), function(){}, new Function()].forEach(function(item){
+        console.log(typeof item);
+        //object,undefined,number,string,number,boolean,function
+    });
+
+### instanceof运算符
+对象是不是另一个类的实例，使用`instanceof`运算符，会检测类的继承关系，因此一个子类的实例，在对祖先类做`instanceof`运算时，仍然得到`true`
+
+以下是特殊几个值的`instanceof`的结果
+
+<!--language: !js-->
+
+    // all false
+    [null, undefined, "", String(""),
+     0, Number(0), false, Boolean(false)].forEach(function(item){
+        console.log(item instanceof Object);
+    });
+
+    console.log("----");
+
+    console.log(NaN instanceof Number); //false
+    console.log(new String instanceof String); //true
+    console.log([] instanceof Array); //true
+
+    console.log("----");
+
+    // all true
+    [new String, new Number, new Boolean,
+     [], new Array, /\s/i, new RegExp].forEach(function(item){
+        console.log(item instanceof Object);
+    });
+
+### is[Type]的判断
+摘自underscore.js
+
+<!--language: js-->
+
+    // Is a given array, string, or object empty?
+    // An "empty" object has no enumerable own-properties.
+    _.isEmpty = function(obj) {
+      if (obj == null) return true;
+      if (_.isArray(obj) || _.isString(obj)) return obj.length === 0;
+      for (var key in obj) if (_.has(obj, key)) return false;
+      return true;
+    };
+
+    // Is a given value a DOM element?
+    _.isElement = function(obj) {
+      return !!(obj && obj.nodeType === 1);
+    };
+
+    // Is a given value an array?
+    // Delegates to ECMA5 s native Array.isArray
+    _.isArray = nativeIsArray || function(obj) {
+      return toString.call(obj) == '[object Array]';
+    };
+
+    // Is a given variable an object?
+    _.isObject = function(obj) {
+      return obj === Object(obj);
+    };
+
+    // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp.
+    each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(name) {
+      _['is' + name] = function(obj) {
+        return toString.call(obj) == '[object ' + name + ']';
+      };
+    });
+
+    // Define a fallback version of the method in browsers (ahem, IE), where
+    // there isn t any inspectable "Arguments" type.
+    if (!_.isArguments(arguments)) {
+      _.isArguments = function(obj) {
+        return !!(obj && _.has(obj, 'callee'));
+      };
+    }
+
+    // Optimize `isFunction` if appropriate.
+    if (typeof (/./) !== 'function') {
+      _.isFunction = function(obj) {
+        return typeof obj === 'function';
+      };
+    }
+
+    // Is a given object a finite number?
+    _.isFinite = function(obj) {
+      return isFinite(obj) && !isNaN(parseFloat(obj));
+    };
+
+    // Is the given value `NaN`? (NaN is the only number which does not equal itself).
+    _.isNaN = function(obj) {
+      return _.isNumber(obj) && obj != +obj;
+    };
+
+    // Is a given value a boolean?
+    _.isBoolean = function(obj) {
+      return obj === true || obj === false || toString.call(obj) == '[object Boolean]';
+    };
+
+    // Is a given value equal to null?
+    _.isNull = function(obj) {
+      return obj === null;
+    };
+
+    // Is a given variable undefined?
+    _.isUndefined = function(obj) {
+      return obj === void 0;
+    };
 
 
 动态性
@@ -743,7 +872,7 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
     alert([1, 2, 3].map(function(num){ return num*2; }));
 
 
-不支持lambda，但借助一些库（如[lambda.js](http://www.javascriptoo.com/lambda-js)）可实现相关功能，或直接使用[CoffeScript](http://coffeescript.org/)
+不支持lambda，但借助一些库（如[Functional Javascript](http://osteele.com/sources/javascript/functional/)，[lambda.js](http://www.javascriptoo.com/lambda-js)）可实现相关功能，或直接使用[CoffeScript](http://coffeescript.org/)
 
 ## 模式匹配
 原生的js不支持，但基于js的[LiveScript](http://livescript.net/)是支持的
@@ -987,7 +1116,7 @@ debounce和throttle很像，debounce是空闲时间必须大于或等于 一定�
 对于必须在一些输入（多是一些用户操作）停止到达之后执行的行为有帮助。
 
 > 1. 渲染一个Markdown格式的评论预览, 当窗口停止改变大小之后重新计算布局
-> 1. 在类似不小心点了提交按钮两下而提交了两次的情况下很有用。
+> 1. 在类似不小心点了提交按钮两下而提交了两次的情况下很有用，或防止Ajax在很短时间内的多次请求。
 > 1. 比如我们做autocomplete，这时需要我们很好的控制输入文字时调用方法时间间隔。一般时第一个输入的字符马上开始调用，根据一定的时间间隔重复调用执行的方法。对于变态的输入，比如按住某一个建不放的时候特别有用
 
 underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和debounce的插件：jQuery throttle / debounce
@@ -1000,12 +1129,12 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
         var timeout;
         return function() {
             var context = this, args = arguments;
-            var throttler = function() {
+            var later = function() {
                 timeout = null;
                 func.apply(context, args);
             };
             clearTimeout(timeout);
-            timeout = setTimeout(throttler, wait);
+            timeout = setTimeout(later, wait);
         };
     }
 
@@ -1025,7 +1154,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 ### once
 `once(function)`
 
-创建一个只能调用一次的函数。重复调用改进的方法也没有效果，只会返回第一次执行时的结果。作为初始化函数使用时非常有用, 不用再设一个boolean值来检查是否已经初始化完成。
+创建一个只能调用一次的函数。重复调用改进的方法也没有效果，只会返回第一次执行时的结果。作为初始化函数使用时非常有用, 不用再设一个boolean值来检查是否已经初始化完成（高阶+闭包真是好东西）。
 
 <!--language: !js-->
 
@@ -1052,7 +1181,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 ### after
 `after(count, function)`
 
-创建一个函数, 只有在运行了`count`次之后才有效果。在处理同组异步请求返回结果时, 如果你要确保同组里所有异步请求完成之后才执行这个函数, 这将非常有用。
+创建一个函数, 只有在运行了`count`次之后才有效果。在处理同组异步请求返回结果时, 如果你要确保同组里所有异步请求完成之后才执行这个函数, 这将非常有用。有点像多线程中信号量的`WaitAll`
 
 <!--language: !js-->
 
@@ -1081,7 +1210,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 ## 反应型编程(FRP)
 
-<!-- 权威指南 bigpipe throttle  -->
+<!-- 权威指南 bigpipe template -->
 
 模块管理
 ==========
@@ -1092,13 +1221,25 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 ## sea.js
 
 
+项目构建
+========
+
+build: mini + map
+
+test: qunit jslint JSLitmus
+
+package.json
+
+
 <script>
 
 (function fix_toc(){
     if(typeof expand_toc !== 'function') setTimeout(fix_toc,500);
-    else expand_toc('md_toc',3);
+    else expand_toc('md_toc',2);
 })();
 
 </script>
+
+
 
 
