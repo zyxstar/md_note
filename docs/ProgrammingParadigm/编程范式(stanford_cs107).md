@@ -3244,13 +3244,13 @@ Lecture 27
 
 <!--language: haskell-->
 
-   prefix :: List Char -> List Char -> Bool
+    prefix :: List Char -> List Char -> Bool
 
-   prefix (a:as) (b:bs) = if a == b
-                          then prefix as bs
-                          else False
-   prefix [] (b:bs) = True
-   prefix (a:as) [] = False
+    prefix (a:as) (b:bs) = if a == b
+                           then prefix as bs
+                           else False
+    prefix [] (b:bs) = True
+    prefix (a:as) [] = False
 
 
 
