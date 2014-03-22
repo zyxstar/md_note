@@ -3204,6 +3204,56 @@ Lecture 27
 
 - 类型可以被推演出来，从而加快速度，`fib = 1 : 1 : zipWith (+) fib (tail fib)`可被推演出`fib`是`List<int>`类型的
 
+- 合并两个已排序的序列
+
+<!--language: haskell-->
+
+    listMerge :: List Int -> List Int -> List Int
+
+    listMerge [] [] = []
+    listMerge a []  = a
+    listMerge [] b  = b
+    listMerge (a:as) (b:bs) = if a < b
+                              then a : listMerge as (b:bs)
+                              else b : listMerge (a:as) bs
+
+- `atoi`将ascii字符表示的整形转换成真正的整形
+
+<!--language: haskell-->
+
+    atoi :: List Char -> Int
+
+    dtoi = ord c - ord '0'
+    atoi str = atoi' str 0
+    atoi' [] acc = acc
+    atoi' (c:cs) acc = atoi' cs (10 * acc + dtoi c)
+
+等同于以下python代码（体现了函数式中对python及js的借鉴之处，以递归代替循环，但要考虑栈溢出）
+
+<!--language: python-->
+
+    def atoi(astr):
+        def _dtoi(c):
+            return ord(c) - ord('0')
+        def _atoi(astr, acc):
+            if not len(astr): return acc
+            return _atoi(astr[1:],10 * acc + _dtoi(astr[0]))
+        return _atoi(astr,0)
+
+- 判断某字符串是否是另一个字符串的前缀
+
+<!--language: haskell-->
+
+   prefix :: List Char -> List Char -> Bool
+
+   prefix (a:as) (b:bs) = if a == b
+                          then prefix as bs
+                          else False
+   prefix [] (b:bs) = True
+   prefix (a:as) [] = False
+
+
+
 
 
 
