@@ -1,11 +1,11 @@
 > 2013-08-15
 
 Lecture 1
-========
-本文是斯坦福大学公开课编程范式的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：过程式、泛型式（C中实现）、代码生成（宏/元编程）、并发式（多线程）、面向对象式（少量）、函数式（scheme/haskell）、动态脚本语言（python，支持多种范式的语言）等
+=========
+本文是编程范式（斯坦福大学公开课）的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：过程式、泛型式（C中实现）、代码生成（宏/元编程）、并发式（多线程）、面向对象式（少量）、函数式（scheme/haskell）、动态脚本语言（python，支持多种范式的语言）等
 
 Lecture 2
-========
+=========
 ## 数据的底层表示
 C/C++关于int，float等数据的底层表示
 
@@ -230,7 +230,7 @@ C/C++关于int，float等数据的底层表示
 
 
 Lecture 3
-========
+=========
 ## 结构体内存访问
 
 <!--language: !c-->
@@ -380,7 +380,7 @@ Lecture 3
 - `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中a，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
 
 Lecture 4
-========
+=========
 
 ## swap int版本
 首先实现一个基于int的版本，两个整型，__无论是包括在数组中，或结构体中__，都能被正确的交换
@@ -3176,6 +3176,39 @@ Lecture 27
 ==========
 
 ## haskell
+
+- 具有编译时间，会检查类型安全
+- 列表中元素是同构的
+- 列表解析，python也是从它借鉴过去的
+
+- fibonacci在haskell中实现
+
+<!--language: haskell-->
+
+    fib = 1 : 1 : zipWith (+) fib (tail fib)
+
+
+- 它是lazy的，__不是必须做的它就不会做__，`take 5 fib`相当于取下面前5个，后面的丢弃
+
+<!--language: haskell-->
+
+    fib = 1 : 1 : 2 : 3 : 5 : zipWith (+) fib (tail fib)
+
+- 利用lazy可以生成无穷序列，也可让参数延后被评估
+
+<!--language: haskell-->
+
+    infinite = 1..
+    infinitePlusOne = map(+ 1)(1..)
+    infinitePlusOneMinus6 = filter(>6)(map(+ 1)(1..))
+
+- 类型可以被推演出来，从而加快速度，`fib = 1 : 1 : zipWith (+) fib (tail fib)`可被推演出`fib`是`List<int>`类型的
+
+
+
+
+
+
 
 
 
