@@ -1210,7 +1210,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 ## 反应型编程(FRP)
 
-<!-- 权威指南 bigpipe template -->
+<!-- 权威指南 bigpipe template qunit-->
 
 模块管理
 ==========
@@ -1233,6 +1233,8 @@ bower.json
 component.json
 
 DocumentCloud
+
+默认值规范
 
 <script>
 
