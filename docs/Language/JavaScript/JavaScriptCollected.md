@@ -14,7 +14,7 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
 
 每个一函数被创建时，`Function`构造器产生的函数对象会运行类似这样的代码`this.prototype = {constructor: this};`，该`prototype`对象是存放继承特征的地方。
 
-因为js没提供哪些函数是用来作构造器，所以每一个函数都会得到一个`prototype`对象，而且`constructor`属性几乎没什么用
+因为js没提供（标识/关键字）哪些函数是用来作构造器，所以每一个函数都会得到一个`prototype`对象，而且`constructor`属性几乎没什么用
 
 以下代码摘自《JavaScript Good Parts》
 

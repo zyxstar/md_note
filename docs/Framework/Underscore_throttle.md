@@ -41,7 +41,7 @@ underscore.1.2.0
         setTimeout(throttledIncr, 140);
         setTimeout(throttledIncr, 220);
         setTimeout(throttledIncr, 240);
-        _.delay(function(){ equal(counter, 3, "incr was throttled");}, 400);
+        _.delay(function(){ equal(counter, 3, 'incr was throttled');}, 400);
     }
     test();
 
@@ -441,8 +441,8 @@ underscore.1.4.4
         var throttledIncr = _.throttle(incr, 32);
         throttledIncr(); throttledIncr();
 
-        equal(counter, 1, "incr was called immediately");
-        _.delay(function(){ equal(counter, 2, "incr was throttled"); }, 64);
+        equal(counter, 1, 'incr was called immediately');
+        _.delay(function(){ equal(counter, 2, 'incr was throttled'); }, 64);
     }
     test();
 
@@ -452,8 +452,8 @@ underscore.1.4.4
         var throttledUpdate = _.throttle(update, 32);
         throttledUpdate(1); throttledUpdate(2);
         _.delay(function(){ throttledUpdate(3); }, 64);
-        equal(value, 1, "updated to latest value");
-        _.delay(function(){ equal(value, 3, "updated to latest value"); }, 96);
+        equal(value, 1, 'updated to latest value');
+        _.delay(function(){ equal(value, 3, 'updated to latest value'); }, 96);
     }
     test_arguments();
 
@@ -463,8 +463,8 @@ underscore.1.4.4
         var throttledIncr = _.throttle(incr, 32);
         var result = throttledIncr();
         _.delay(function(){
-            equal(result, 1, "throttled functions return their value");
-            equal(counter, 1, "incr was called once");
+            equal(result, 1, 'throttled functions return their value');
+            equal(counter, 1, 'incr was called once');
         }, 64);
     }
     test_once();
@@ -474,7 +474,7 @@ underscore.1.4.4
         var incr = function(){ counter++; };
         var throttledIncr = _.throttle(incr, 32);
         throttledIncr(); throttledIncr();
-        _.delay(function(){ equal(counter, 2, "incr was called twice"); }, 64);
+        _.delay(function(){ equal(counter, 2, 'incr was called twice'); }, 64);
     }
     test_twice();
 
@@ -490,12 +490,12 @@ underscore.1.4.4
         _.delay(saveResult, 96);
         _.delay(saveResult, 144);
         _.delay(function() {
-            equal(results[0], 1, "incr was called once");
-            equal(results[1], 1, "incr was throttled");
-            equal(results[2], 1, "incr was throttled");
-            equal(results[3], 2, "incr was called twice");
-            equal(results[4], 2, "incr was throttled");
-            equal(results[5], 3, "incr was called trailing");
+            equal(results[0], 1, 'incr was called once');
+            equal(results[1], 1, 'incr was throttled');
+            equal(results[2], 1, 'incr was throttled');
+            equal(results[3], 2, 'incr was called twice');
+            equal(results[4], 2, 'incr was throttled');
+            equal(results[5], 3, 'incr was called trailing');
         }, 192);
     }
     test_repeatedly_results();
@@ -601,6 +601,102 @@ underscore.1.5.0
     test_trailing_false();
 
 
+underscore.1.5.1
+=================
+修复的bug [1186](https://github.com/jashkenas/underscore/issues/1186)
+
+## code
+
+<!--language: js-->
+
+    _.throttle = function(func, wait, options) {
+      var context, args, result;
+      var timeout = null;
+      var previous = 0;
+      options || (options = {});
+      var later = function() {
+        previous = options.leading === false ? 0 : new Date;
+        timeout = null;
+        result = func.apply(context, args);
+      };
+      return function() {
+        var now = new Date;
+        if (!previous && options.leading === false) previous = now;
+        var remaining = wait - (now - previous);
+        context = this;
+        args = arguments;
+        if (remaining <= 0) {
+          clearTimeout(timeout);
+          timeout = null;
+          previous = now;
+          result = func.apply(context, args);
+        } else if (!timeout && options.trailing !== false) {
+          timeout = setTimeout(later, remaining);
+        }
+        return result;
+      };
+    };
+
+
+## test case
+
+<!--language: !js-->
+
+    //#import underscore.1.5.0
+    //import underscore.1.5.1
+    //import json2
+    //import simpletest
+    function test_more_throttle() {
+        var counter = 0;
+        var incr = function(){ counter++; };
+        var throttledIncr = _.throttle(incr, 30);
+        throttledIncr(); throttledIncr();
+        ok(counter == 1);
+        _.delay(function(){
+            ok(counter == 2);
+            throttledIncr();
+            ok(counter == 3);
+        }, 85);
+    }
+    test_more_throttle();
+
+    function test_more_throttle_with_leading_false() {
+        var counter = 0;
+        var incr = function(){ counter++; };
+        var throttledIncr = _.throttle(incr, 100, {leading: false});
+
+        throttledIncr();
+        _.delay(throttledIncr, 50);
+        _.delay(throttledIncr, 60);
+        _.delay(throttledIncr, 200);
+        ok(counter === 0);
+
+        _.delay(function() {
+            ok(counter == 1);
+        }, 250);
+
+        _.delay(function() {
+            ok(counter == 2);
+        }, 350);
+    }
+    test_more_throttle_with_leading_false();
+
+    function test_one_more_throttle_with_leading_false() {
+        var counter = 0;
+        var incr = function(){ counter++; };
+        var throttledIncr = _.throttle(incr, 100, {leading: false});
+
+        var time = new Date;
+        while (new Date - time < 350) throttledIncr();
+        ok(counter <= 3, {counter: counter});
+
+        _.delay(function() {
+            ok(counter <= 4, {counter: counter});
+        }, 200);
+    }
+    test_one_more_throttle_with_leading_false();
+
+
 underscore.1.6.0
 =================
 修复了throttle arguments的内存泄漏
@@ -639,65 +735,6 @@ underscore.1.6.0
       };
     };
 
-
-## test case
-新增了测试用例（与修复内存泄漏无关）
-
-<!--language: !js-->
-
-    //import underscore.1.6.0
-    //import json2
-    //import simpletest
-
-    function test_more_throttle() {
-        var counter = 0;
-        var incr = function(){ counter++; };
-        var throttledIncr = _.throttle(incr, 30);
-        throttledIncr(); throttledIncr();
-        ok(counter == 1);
-        _.delay(function(){
-          ok(counter == 2);
-          throttledIncr();
-          ok(counter == 3);
-        }, 85);
-    }
-    test_more_throttle();
-
-    function test_more_throttle_with_leading_false() {
-        var counter = 0;
-        var incr = function(){ counter++; };
-        var throttledIncr = _.throttle(incr, 100, {leading: false});
-
-        throttledIncr();
-        _.delay(throttledIncr, 50);
-        _.delay(throttledIncr, 60);
-        _.delay(throttledIncr, 200);
-        ok(counter === 0);
-
-        _.delay(function() {
-          ok(counter == 1);
-        }, 250);
-
-        _.delay(function() {
-          ok(counter == 2);
-        }, 350);
-    }
-    test_more_throttle_with_leading_false();
-
-    function test_one_more_throttle_with_leading_false() {
-        var counter = 0;
-        var incr = function(){ counter++; };
-        var throttledIncr = _.throttle(incr, 100, {leading: false});
-
-        var time = new Date;
-        while (new Date - time < 350) throttledIncr();
-        ok(counter <= 3, {counter: counter});
-
-        _.delay(function() {
-          ok(counter <= 4, {counter: counter});
-        }, 200);
-    }
-    test_one_more_throttle_with_leading_false();
 
 
 
