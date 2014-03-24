@@ -1229,7 +1229,10 @@ build: mini + map
 test: qunit jslint JSLitmus
 
 package.json
+bower.json
+component.json
 
+DocumentCloud
 
 <script>
 
