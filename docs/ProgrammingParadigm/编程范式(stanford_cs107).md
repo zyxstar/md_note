@@ -1,11 +1,11 @@
 > 2013-08-15
 
 Lecture 1
-========
-本文是网易公开课斯坦福大学的编程范式的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：泛型式（C中实现）、并发式（多线程）、面向对象式（少量）、函数式等
+=========
+本文是编程范式（斯坦福大学公开课）的笔记，该课程主要介绍了C、Scheme、Python这三种语言，涵盖的编程范式有：过程式、泛型式（C中实现）、代码生成（宏/元编程）、并发式（多线程）、面向对象式（少量）、函数式（scheme/haskell）、动态脚本语言（python，支持多种范式的语言）等
 
 Lecture 2
-========
+=========
 ## 数据的底层表示
 C/C++关于int，float等数据的底层表示
 
@@ -230,7 +230,7 @@ C/C++关于int，float等数据的底层表示
 
 
 Lecture 3
-========
+=========
 ## 结构体内存访问
 
 <!--language: !c-->
@@ -380,7 +380,7 @@ Lecture 3
 - `strcpy(pupils[3].name, "123456");`pupils[3].name引用的地址是图中a，写入字符串，将对pupils[0].numUnits空间造成破坏，甚至影响到pupils[1]的数据。
 
 Lecture 4
-========
+=========
 
 ## swap int版本
 首先实现一个基于int的版本，两个整型，__无论是包括在数组中，或结构体中__，都能被正确的交换
@@ -3055,15 +3055,211 @@ Lecture 23
 Lecture 24
 ==========
 
+## python
 
+<!--language: !python-->
 
+    def gatherDivisors(number):
+        divisors = []
+        for div in range(1, number/2 + 1):
+            if not number%div:
+                divisors.append(div)
+        return divisors
 
-
-
+    print gatherDivisors(24)
 
 
 Lecture 25
 ==========
+
+## python中dict
+
+- python中dict是异构的，甚至key也是
+
+- Python中RSG（Random Sentence Generator）
+
+<!--language: !python-->
+
+    import sys
+    from random import choice,seed
+
+    grammer = {'<start>': [['this ','<object>',' is here']],
+               '<object>': [['computer'],
+                            ['car'],
+                            ['assignment']]}
+
+    def expend(symbol):
+        if symbol.startswith('<'):
+            definitions = grammer[symbol]
+            expansion = choice(definitions)
+            map(expend, expansion)
+        else:
+            sys.stdout.write(symbol)
+
+    seed()
+    expend('<start>')
+
+- 深拷贝，对象内部结构也被很好保存下来，如下例中n中的两个m指向同一列表，深拷贝后的p[0],p[1]也应指向同一列表
+
+<!--language: !python-->
+
+    from copy import deepcopy
+
+    m = [1,2,3]
+    n = [m, m]
+    p = deepcopy(n)
+    print p is n
+    p[0].append(4)
+    print p
+
+- python的面向对象是基于dict的
+
+<!--language: !python-->
+
+    class Cls(object): pass
+    o = Cls()
+    print o.__dict__
+    o.name = "Bob"
+    o.age = 27
+    print o.__dict__
+    o.__dict__['gender'] = 'M'
+    print o.gender
+
+
+
+Lecture 26
+==========
+
+## python中处理xml
+
+- 处理XML有两种式：DOM（Document Object Model）将XML数据在内存中解析成一个树，通过对树的操作来操作XML；SAX（Simple API for XML）采用事件驱动模型，通过在解析XML的过程中触发一个个的事件并调用用户定义的回调函数来处理XML文件，流式读取XML文件，比较快，占用内存少
+
+- 通过`xml.sax`来处理RSS feed
+
+<!--language: !python-->
+
+    from urllib2 import urlopen
+    from xml.sax import make_parser, ContentHandler
+    import sys
+
+    def listFeedTitles(url):
+        infile = urlopen(url)
+        parser = make_parser()
+        parser.setContentHandler(RSSHandler())
+        parser.parse(infile)
+
+    class RSSHandler(ContentHandler):
+        def __init__(self):
+            ContentHandler.__init__(self)
+            self.__inItem = False
+            self.__inTitle = False
+
+        def characters(self, data):
+            if self.__inTitle:
+                sys.stdout.write(data)
+
+        def startElement(self, tag, attrs):
+            if tag == 'item': self.__inItem = True
+            if tag == 'title' and self.__inItem:
+                self.__inTitle = True
+
+        def endElement(self, tag):
+            if tag == 'title' and self.__inTitle:
+                sys.stdout.write("\n")
+                self.__inTitle = False
+            if tag == 'item': self.__inItem = False
+
+    listFeedTitles("http://news.google.com/news?pz=1&cf=all&ned=us&hl=en-US&output=rss")
+
+
+Lecture 27
+==========
+
+## haskell
+
+- 具有编译时间，会检查类型安全
+- 列表中元素是同构的
+- 列表解析，python也是从它借鉴过去的
+
+- fibonacci在haskell中实现
+
+<!--language: haskell-->
+
+    fib = 1 : 1 : zipWith (+) fib (tail fib)
+
+
+- 它是lazy的，__不是必须做的它就不会做__，`take 5 fib`相当于取下面前5个，后面的丢弃
+
+<!--language: haskell-->
+
+    fib = 1 : 1 : 2 : 3 : 5 : zipWith (+) fib (tail fib)
+
+- 利用lazy可以生成无穷序列，也可让参数延后被评估
+
+<!--language: haskell-->
+
+    infinite = 1..
+    infinitePlusOne = map(+ 1)(1..)
+    infinitePlusOneMinus6 = filter(>6)(map(+ 1)(1..))
+
+- 类型可以被推演出来，从而加快速度，`fib = 1 : 1 : zipWith (+) fib (tail fib)`可被推演出`fib`是`List<int>`类型的
+
+- 合并两个已排序的序列
+
+<!--language: haskell-->
+
+    listMerge :: List Int -> List Int -> List Int
+
+    listMerge [] [] = []
+    listMerge a []  = a
+    listMerge [] b  = b
+    listMerge (a:as) (b:bs) = if a < b
+                              then a : listMerge as (b:bs)
+                              else b : listMerge (a:as) bs
+
+- `atoi`将ascii字符表示的整形转换成真正的整形
+
+<!--language: haskell-->
+
+    atoi :: List Char -> Int
+
+    dtoi = ord c - ord '0'
+    atoi str = atoi' str 0
+    atoi' [] acc = acc
+    atoi' (c:cs) acc = atoi' cs (10 * acc + dtoi c)
+
+等同于以下python代码（体现了函数式中对python及js的借鉴之处，以递归代替循环，但要考虑栈溢出）
+
+<!--language: python-->
+
+    def atoi(astr):
+        def _dtoi(c):
+            return ord(c) - ord('0')
+        def _atoi(astr, acc):
+            if not len(astr): return acc
+            return _atoi(astr[1:],10 * acc + _dtoi(astr[0]))
+        return _atoi(astr,0)
+
+- 判断某字符串是否是另一个字符串的前缀
+
+<!--language: haskell-->
+
+    prefix :: List Char -> List Char -> Bool
+
+    prefix (a:as) (b:bs) = if a == b
+                           then prefix as bs
+                           else False
+    prefix [] (b:bs) = True
+    prefix (a:as) [] = False
+
+
+
+
+
+
+
+
+
 
 
 
