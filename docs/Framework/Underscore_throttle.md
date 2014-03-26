@@ -699,7 +699,7 @@ underscore.1.5.1
 
 underscore.1.6.0
 =================
-修复了throttle arguments的内存泄漏
+修复了`context`,`arguments`的内存泄漏，类似延迟后，不一定被执行，并且有因闭包而延长了变量的生命周期的情况下，均有可能产生内存泄漏
 
 ## code
 

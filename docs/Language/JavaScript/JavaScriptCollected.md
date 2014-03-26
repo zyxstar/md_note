@@ -246,7 +246,7 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
             this.prototype[name] = func;
             return this;
         }
-    }
+    };
 
     Object.method('superior', function (name) {
         var that = this,
@@ -363,6 +363,7 @@ js是弱类型的，具有6种基本数据类型，任何一个变量或值的�
     // Add some isType methods: isArguments, isFunction, isString, isNumber, isDate, isRegExp.
     each(['Arguments', 'Function', 'String', 'Number', 'Date', 'RegExp'], function(name) {
       _['is' + name] = function(obj) {
+        //避免对象重新定义toString情况下命名冲突，仍然使用原始的定义
         return toString.call(obj) == '[object ' + name + ']';
       };
     });
@@ -817,7 +818,7 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 另，jquery的链式风格编程已十分流行。为了防止异步callback嵌套过多，也有通过链式代码进行进改的，如jquery.deferred。
 
 ## 缓存
-用对象去记住先前操作的结果，从而避免无谓的运算。
+用对象去记住先前操作的结果，从而避免无谓的运算。适用于前效相关性，且前效相关顺序确定的情境。
 
 <!--language: !js-->
 
@@ -1121,7 +1122,7 @@ debounce和throttle很像，debounce是空闲时间必须大于或等于 一定�
 
 underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和debounce的插件：jQuery throttle / debounce
 
-以下摘自underscore.js 1.2，最新版本有变化：
+以下摘自underscore.js 1.2，最新版本有变化，[underscore.js更详细的演进](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FUnderscore_throttle.md)：
 
 <!--language: !js-->
 
@@ -1226,7 +1227,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 build: mini + map
 
-test: qunit jslint JSLitmus
+test: qunit jslint jshint JSLitmus
 
 package.json
 bower.json
