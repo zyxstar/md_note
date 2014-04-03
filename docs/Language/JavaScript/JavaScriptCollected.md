@@ -1,5 +1,633 @@
 > 2013-06-18
 
+语言核心
+=========
+
+## 执行上下文堆栈
+每次当控制器转到ECMAScript可执行代码的时候，即会进入到一个执行上下文。执行上下文(简称-EC)是ECMA-262标准里的一个抽象概念，用于同可执行代码(executable code)概念进行区分。
+
+我们可以定义执行上下文堆栈是一个数组：
+
+<!--language: js-->
+
+    ECStack = [];
+
+每次进入function (即使function被递归调用或作为构造函数) 的时候或者内置的eval函数工作的时候，这个堆栈都会被压入。
+
+### 全局代码
+这种类型的代码是在"程序"级处理的：例如加载外部的js文件或者本地`<script></script>`标签内的代码。全局代码不包括任何function体内的代码。
+
+在初始化（程序启动）阶段，ECStack是这样的：
+
+<!--language: js-->
+
+    ECStack = [
+      globalContext
+    ];
+
+### 函数代码
+当进入funtion函数代码(所有类型的funtions)的时候，ECStack被压入新元素。需要注意的是，具体的函数代码不包括内部函数(inner functions)代码。如下所示，我们使函数自己调自己的方式递归一次：
+
+<!--language: js-->
+
+    (function  foo(bar) {
+      if (bar) {
+        return;
+      }
+      foo(true);
+    })();
+
+那么，ECStack以如下方式被改变：
+
+<!--language: js-->
+
+    // 第一次foo的激活调用
+    ECStack = [
+      <foo> functionContext
+      globalContext
+    ];
+
+    // foo的递归激活调用
+    ECStack = [
+      <foo> functionContext – recursively
+      <foo> functionContext
+      globalContext
+    ];
+
+每次return的时候，都会退出当前执行上下文的，相应地ECStack就会弹出，栈指针会自动移动位置，这是一个典型的堆栈实现方式。一个抛出的异常如果没被截获的话也有可能从一个或多个执行上下文退出。相关代码执行完以后，ECStack只会包含全局上下文(global context)，一直到整个应用程序结束。
+
+### Eval代码
+eval 代码有点儿意思。它有一个概念：__调用上下文__(calling context),例如，eval函数调用的时候产生的上下文。eval(变量或函数声明)活动 __会影响__ 调用上下文。
+
+<!--language: !js-->
+
+    eval('var x = 10');
+
+    (function foo() {
+      eval('var y = 20');
+    })();
+
+    alert(x); // 10
+    alert(y); // "y" 提示没有声明
+
+ECStack的变化过程：
+
+<!--language: js-->
+
+    ECStack = [
+      globalContext
+    ];
+
+    // eval('var x = 10');
+    ECStack.push(
+      evalContext,
+      callingContext: globalContext
+    );
+
+    // eval exited context
+    ECStack.pop();
+
+    // foo funciton call
+    ECStack.push(<foo> functionContext);
+
+    // eval('var y = 20');
+    ECStack.push(
+      evalContext,
+      callingContext: <foo> functionContext
+    );
+
+    // return from eval
+    ECStack.pop();
+
+    // return from foo
+    ECStack.pop();
+
+
+## 变量对象VO
+声明函数和变量，以成功构建我们的系统，解释器是如何并且在什么地方去查找这些函数和变量呢？任何function在执行的时候都会创建一个 __执行上下文__，因为为function声明的变量和function有可能只在该function内部，这个上下文，在调用function的时候，提供了一种简单的方式来创建自由变量或私有子function。
+
+__变量对象__（variable object）是一个与执行上下文相关的特殊对象，它存储着上下文中声明的以下内容：
+
+> - 变量(VariableDeclaration, var);
+> - 函数声明(Function Declaration, FD)
+> - 函数的形参(Function arguments)
+
+<!--language: js-->
+
+    var a = 10;
+
+    function test(x) {
+      var b = 20;
+    };
+
+    test(30);
+
+则对应的变量对象是：
+
+<!--language: js-->
+
+    // 全局上下文的变量对象
+    VO(globalContext) = {
+      a: 10,
+      test: <reference to function>
+    };
+
+    // test函数上下文的变量对象
+    VO(test functionContext) = {
+      x: 30,
+      b: 20
+    };
+
+### 全局上下文中的变量对象
+全局对象是进入任何执行上下文之前就已经创建了的对象，这个对象只存在一份，它的属性在程序中任何地方都可以访问，全局对象的生命周期终止于程序退出那一刻。
+
+全局对象初始创建阶段将Math、String、Date、parseInt作为自身属性，等属性初始化，同样也可以有额外创建的其它对象作为属性（其可以指向到全局对象自身）。例如，在DOM中，全局对象的window属性就可以引用全局对象自身
+
+<!--language: js-->
+
+    global = {
+      Math: <...>,
+      String: <...>
+      ...
+      ...
+      window: global //引用自身
+    };
+
+全局上下文中的变量对象就是全局对象自己，即`VO(globalContext) === global`
+
+### 函数上下文中的变量对象
+在函数执行上下文中，变量对象VO是不能直接访问的，此时由 __活动对象__(activation object, AO)来扮演VO角色，即`VO(functionContext) === AO`
+
+活动对象是进入函数上下文时刻被创建的，通过函数的`arguments`属性初始化，arguments属性的值是Arguments对象：
+
+<!--language: js-->
+
+    AO = {
+      arguments: <ArgO>
+    };
+
+
+Arguments对象是活动对象的一个属性，它包括如下属性：
+
+> - callee: 指向当前函数的引用
+> - length: 真正传递的参数个数
+> - properties-indexes: (字符串类型的整数) 属性的值就是函数的参数值(按参数列表从左到右排列)。 properties-indexes内部元素的个数等于arguments.length. properties-indexes 的值和实际传递进来的参数之间是共享的。
+
+## 处理代码两阶段
+### 进入执行上下文
+当进入执行上下文(代码执行之前)时，__VO里已经包含了下列属性__：
+
+- 函数的所有形参(如果我们是在函数执行上下文中)
+    - 由名称和对应值组成的一个变量对象的属性被创建；__没有传递__ 对应参数的话，那么由名称和undefined值组成的一种变量对象的属性也将 __被创建__。
+
+- 所有函数声明(FunctionDeclaration, FD)
+    - 由名称和对应值（函数对象(function-object)）组成一个变量对象的属性被创建；如果变量对象 __已经存在__ 相同名称的属性，则完全 __替换__ 这个属性。
+
+- 所有变量声明(var, VariableDeclaration)
+    - 由名称和对应值（undefined）组成一个变量对象的属性被创建；如果变量名称跟已经声明的形式参数或函数相同，则变量声明 __不会干扰__ 已经存在的这类属性。
+
+<!--language: js-->
+
+    function test(a, b) {
+      var c = 10;
+      function d() {}
+      var e = function _e() {};
+      (function x() {});
+    }
+
+    test(10); // call
+
+当进入带有参数10的test函数上下文时，AO表现为如下：
+
+<!--language: js-->
+
+    AO(test) = {
+      a: 10,
+      b: undefined,
+      c: undefined,
+      d: <reference to FunctionDeclaration "d">
+      e: undefined
+    };
+
+AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(FunctionExpression, 缩写为 FE) 而不是函数声明，函数表达式不会影响VO。 不管怎样，函数“_e” 同样也是函数表达式，但是就像我们下面将看到的那样，因为它分配给了变量 “e”，所以它可以通过名称“e”来访问。
+
+### 执行代码
+这个周期内，AO/VO已经拥有了属性(不过，并不是所有的属性都有值，大部分属性的值还是系统默认的初始值undefined )。
+
+还是前面那个例子, __AO/VO在代码解释期间被修改__ 如下：
+
+<!--language: js-->
+
+    AO['c'] = 10;
+    AO['e'] = <reference to FunctionExpression "_e">;
+
+再次注意，因为FunctionExpression“_e”保存到了已声明的变量“e”上，所以它仍然存在于内存中。而FunctionExpression “x”却不存在于AO/VO中，也就是说如果我们想尝试调用“x”函数，不管在函数定义之前还是之后，都会出现一个错误“x is not defined”，未保存的函数表达式只有在它自己的定义或递归中才能被调用。
+
+另一个经典例子：
+
+<!--language: !js-->
+
+    console.log(x); // function
+
+    var x = 10;
+    console.log(x); // 10
+
+    x = 20;
+
+    function x() {};
+
+    console.log(x); // 20
+
+为什么第一个alert “x” 的返回值是function，而且它还是在“x” 声明之前访问的“x” 的？为什么不是10或20呢？因为，根据规范函数声明是在当 __进入上下文__ 时填入的； 同一周期，在进入上下文的时候还有一个变量声明“x”，那么正如我们在上一个阶段所说，变量声明在顺序上跟在函数声明和形式参数声明之后，而且在这个 __进入上下文阶段，变量声明不会干扰VO中已经存在的同名函数声明或形式参数声明__，因此，在进入上下文时，VO的结构如下：
+
+<!--language: js-->
+
+    VO = {};
+
+    VO['x'] = <reference to FunctionDeclaration "x">
+
+    // 找到var x = 10;
+    // 如果function "x"没有已经声明的话
+    // 这时候"x"的值应该是undefined
+    // 但是这个case里变量声明没有影响同名的function的值
+
+    VO['x'] = <the value is not disturbed, still function>
+
+紧接着，在执行代码阶段，VO做如下修改：
+
+<!--language: js-->
+
+    VO['x'] = 10;
+    VO['x'] = 20;
+
+我们可以在第二、三个console.log中看到这个效果。
+
+在下面的例子里我们可以再次看到，变量是在进入上下文阶段放入VO中的。(因为，虽然else部分代码永远不会执行，但是不管怎样，变量“b”仍然存在于VO中。)
+
+<!--language: !js-->
+
+    if (true) {
+      var a = 1;
+    } else {
+      var b = 2;
+    }
+
+    alert(a); // 1
+    alert(b); // undefined,不是b没有声明，而是b的值是undefined
+
+## this关键字
+this是执行上下文中的一个属性：
+
+<!--language: js-->
+
+    activeExecutionContext = {
+      VO: {...},
+      this: thisValue
+    };
+
+这里VO是我们前一章讨论的变量对象。
+
+this与上下文中可执行代码的类型有直接关系，this值在进入上下文时确定，并且在上下文运行期间永久不变。
+
+### 全局代码中this
+在这里一切都简单。在全局代码中，this始终是全局对象本身，这样就有可能间接的引用到它了。
+
+### 函数代码中this
+它不是静态的绑定到一个函数，this是 __进入上下文时确定__，在一个函数代码中，这个值在每一次完全不同。不管怎样，在代码运行时的this值是不变的，也就是说，因为它不是一个变量，就不可能为其分配一个新值（相反，在Python编程语言中，它明确的定义为对象本身，在运行期间可以不断改变）。
+
+<!--language: !js-->
+
+    var foo = {x: 10};
+
+    var bar = {
+      x: 20,
+      test: function () {
+        alert(this === bar);
+        alert(this.x);
+
+        //this = foo; // 错误，任何时候不能改变this的值
+      }
+     };
+
+    // 在进入上下文的时候
+    // this被当成bar对象
+    bar.test(); // true, 20
+
+    foo.test = bar.test;
+
+    // 不过，这里this不会是foo
+    // 尽管调用的是相同的function
+    foo.test(); // false, 10
+
+影响了函数代码中this值的变化有几个因素：
+
+首先，在通常的函数调用中，__this是由激活上下文代码的调用者来提供的__，即调用函数的父上下文(parent context )。this取决于调用函数的方式。为了在任何情况下准确无误的确定this值，有必要理解和记住这重要的一点。正是调用函数的方式影响了调用的上下文中的this值，没有别的什么
+
+即使是正常的全局函数也会被调用方式的不同形式激活，这些不同的调用方式导致了不同的this值。
+
+<!--language: !js-->
+
+    function foo() {
+      alert(this);
+    }
+
+    foo(); // global
+
+    alert(foo === foo.prototype.constructor); // true
+
+    // 但是同一个function的不同的调用表达式，this是不同的
+    foo.prototype.constructor(); // foo.prototype
+
+有可能作为一些对象定义的方法来调用函数，但是this将不会设置为这个对象。
+
+<!--language: !js-->
+
+    var foo = {
+      bar: function () {
+        alert(this);
+        alert(this === foo);
+      }
+    };
+
+    foo.bar(); // foo, true
+
+    var exampleFunc = foo.bar;
+    alert(exampleFunc === foo.bar); // true
+
+    // 再一次，同一个function的不同的调用表达式，this是不同的
+    exampleFunc(); // global, false
+
+那么，调用函数的方式如何影响this值？为了充分理解this值的确定，需要详细分析其内部类型之一—— __引用类型__（Reference type）。
+
+### 引用类型
+使用伪代码我们可以将引用类型的值可以表示为拥有两个属性的对象——base（即拥有属性的那个对象），和base中的propertyName 。
+
+<!--language: js-->
+
+    var valueOfReferenceType = {
+      base: <base object>,
+      propertyName: <property name>
+    };
+
+引用类型的值只有两种情况：
+
+> - 当我们处理一个标示符时
+> - 或一个属性访问器
+
+#### 标识符
+
+标识符是变量名，函数名，函数参数名和全局对象中未识别的属性名。例如，下面标识符的值：
+
+<!--language: js-->
+
+    var foo = 10;
+    function bar() {}
+
+在操作的中间结果中，引用类型对应的值如下：
+
+<!--language: js-->
+
+    var fooReference = {
+      base: global,
+      propertyName: 'foo'
+    };
+
+    var barReference = {
+      base: global,
+      propertyName: 'bar'
+    };
+
+为了从引用类型中得到一个对象真正的值，伪代码中的GetValue方法可以做如下描述：
+
+<!--language: js-->
+
+    function GetValue(value) {
+      if (Type(value) != Reference) {
+        return value;
+      }
+
+      var base = GetBase(value);
+
+      if (base === null) {
+        throw new ReferenceError;
+      }
+
+      return base.[[Get]](GetPropertyName(value));
+    }
+
+内部的[[Get]]方法返回对象属性真正的值，包括对原型链中继承的属性分析。
+
+<!--language: js-->
+
+    GetValue(fooReference); // 10
+    GetValue(barReference); // function object "bar"
+
+#### 属性访问器
+它有两种变体：点（.）语法（此时属性名是正确的标示符，且事先知道），或括号语法（[]）。
+
+<!--language: js-->
+
+    foo.bar();
+    foo['bar']();
+
+在中间计算的返回值中，我们有了引用类型的值。
+
+<!--language: js-->
+
+    var fooBarReference = {
+      base: foo,
+      propertyName: 'bar'
+    };
+
+    GetValue(fooBarReference); // function object "bar"
+
+### 决定this的值
+
+在一个函数上下文中，this由调用者提供，由调用函数的方式来决定。如果调用括号()的左边是引用类型的值，this将设为引用类型值的base对象（base object），在其他情况下（与引用类型不同的任何其它属性），这个值为null。不过，实际不存在this的值为null的情况，因为当this的值为null的时候，其值会被隐式转换为全局对象。注：第5版的ECMAScript中，已经不强迫转换成全局变量了，而是赋值为undefined。
+
+<!--language: !js-->
+
+    function foo() {
+      return this;
+    }
+
+    foo(); // global
+
+我们看到在调用括号的左边是一个引用类型值（因为foo是一个 __标示符__）。
+
+<!--language: js-->
+
+    var fooReference = {
+      base: global,
+      propertyName: 'foo'
+    };
+
+相应地，this也设置为引用类型的base对象。即全局对象。
+
+同样，使用 __属性访问器__：
+
+<!--language: !js-->
+
+    var foo = {
+      bar: function () {
+        return this;
+      }
+    };
+
+    foo.bar(); // foo
+
+我们再次拥有一个引用类型，其base是foo对象，在函数bar激活时用作this。
+
+<!--language: js-->
+
+    var fooBarReference = {
+      base: foo,
+      propertyName: 'bar'
+    };
+
+但是，用另外一种形式激活相同的函数，我们得到其它的this值。
+
+<!--language: !js-->
+
+    var test = foo.bar;
+    test(); // global
+
+因为test作为 __标示符__，__生成了引用类型的其他值__，其base（全局对象）用作this 值。
+
+<!--language: js-->
+
+    var testReference = {
+      base: global,
+      propertyName: 'test'
+    };
+
+为什么用表达式的不同形式激活同一个函数会不同的this值，__答案在于引用类型（type Reference）不同的中间值__。
+
+<!--language: js-->
+
+    function foo() {
+      alert(this);
+    }
+
+    foo(); // global, because
+
+    var fooReference = {
+      base: global,
+      propertyName: 'foo'
+    };
+
+    alert(foo === foo.prototype.constructor); // true
+
+    // 另外一种形式的调用表达式
+
+    foo.prototype.constructor(); // foo.prototype, because
+
+    var fooPrototypeConstructorReference = {
+      base: foo.prototype,
+      propertyName: 'constructor'
+    };
+
+### 函数调用和非引用类型
+因此，正如我们已经指出，当调用括号的左边不是引用类型而是其它类型，这个值自动设置为null，结果为全局对象。让我们再思考这种表达式：
+
+<!--language: !js-->
+
+    (function () {
+      alert(this); // null => global
+    })();
+
+在这个例子中，我们有一个函数对象但不是引用类型的对象（它 __不是标示符，也不是属性访问器__），相应地，this值最终设为全局对象。
+
+更多复杂的例子：
+
+<!--language: !js-->
+
+    var foo = {
+      bar: function () {
+        alert(this);
+      }
+    };
+
+    foo.bar(); // Reference, OK => foo
+    (foo.bar)(); // Reference, OK => foo
+
+    (foo.bar = foo.bar)(); // global?
+    (false || foo.bar)(); // global?
+    (foo.bar, foo.bar)(); // global?
+
+- 第一个例子很明显——明显的引用类型，结果是，this为base对象，即foo。
+- 在第二个例子中，组运算符并不适用，想想上面提到的，从引用类型中获得一个对象真正的值的方法，如GetValue。相应的，在组运算的返回中——我们得到仍是一个引用类型。这就是this值为什么再次设为base对象，即foo。
+- 第三个例子中，与组运算符不同，赋值运算符调用了GetValue方法。返回的结果是函数对象（但不是引用类型），这意味着this设为null，结果是global对象。
+- 第四个和第五个也是一样——逗号运算符和逻辑运算符（OR）调用了GetValue 方法，相应地，我们失去了引用而得到了函数。并再次设为global。
+
+### 引用类型和this为null
+当调用表达式限定了call括号左边的引用类型的值，尽管this被设定为null，但结果被隐式转化成global。当引用类型值的base对象是被 __活动对象__ 时，这种情况就会出现。
+
+下面的实例中，内部函数被父函数调用，此时我们就能够看到上面说的那种特殊情况，局部变量、内部函数、形式参数储存在给定函数的激活对象中。
+
+<!--language: !js-->
+
+    function foo() {
+      function bar() {
+        alert(this); // global
+      }
+      bar(); // the same as AO.bar()
+    }
+
+活动对象总是作为this返回，值为null——（即伪代码的 __AO.bar()相当于null.bar()__）。这里我们再次回到上面描述的例子，this设置为全局对象。
+
+有一种情况除外：如果with对象包含一个函数名属性，在with语句的内部块中调用函数。With语句添加到该对象作用域的最前端，即在活动对象的前面。相应地，也就有了引用类型（通过标示符或属性访问器）， 其base对象不再是活动对象，__而是with语句的对象__。顺便提一句，它不仅与内部函数相关，也与全局函数相关，因为with对象比作用域链里的 __最前端的对象__ (全局对象或一个活动对象)还要靠前。
+
+<!--language: !js-->
+
+    var x = 10;
+
+    with ({
+      foo: function () {
+        alert(this.x);
+      },
+      x: 20
+    }) {
+      foo(); // 20
+    }
+
+对应的结构如下：
+
+<!--language: js-->
+
+    var  fooReference = {
+      base: __withObject,
+      propertyName: 'foo'
+    };
+
+同样的情况出现在catch语句的实际参数中函数调用：在这种情况下，catch对象添加到作用域的最前端，即在活动对象或全局对象的前面。但是，这个特定的行为被确认为ECMA-262-3的一个bug，这个在新版的ECMA-262-5中修复了。这样，在特定的活动对象中，this指向全局对象。而不是catch对象
+
+### 构造器调用的函数中this
+
+<!--language: !js-->
+
+    function A() {
+      alert(this); // "a"对象下创建一个新属性
+      this.x = 10;
+    }
+
+    var a = new A();
+    alert(a.x); // 10
+
+在这个例子中，new运算符调用“A”函数的内部的[[Construct]] 方法，接着，在对象创建后，调用内部的[[Call]] 方法。 函数“A”将this的值设置为新创建的对象。
+
+### 函数调用中手动设置this
+它们是.apply和.call方法
+
+## 作用域链
+
+<!-- http://www.cnblogs.com/TomXu/archive/2012/01/18/2312463.html -->
+
+
+
+
+## 执行上下文
+
 
 基于对象
 ===========
@@ -181,7 +809,7 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
 
 这是一种 __差异化继承__，通过定制一个新的对象，指名了它与所基于的基本对象的区别。
 
-## 封装
+## 信息隐藏
 上面的继承模式没法 __保护隐私__，可选择方式的有 __模块化__ 和 __闭包__
 
 以下通过把`constructor`返回对象的私有属性/方法，封装到单独模块`spec`中
@@ -433,7 +1061,7 @@ js是弱类型的，具有6种基本数据类型，任何一个变量或值的�
 
 
 ## 函数调用方式
-js中共有四种调用模式：方法调用模式、函数调用模式、构造器调用模式、`apply`调用模式，这些模式在如何初始化关键参数`this`上存在差异
+js中共有多种调用模式：方法调用模式、函数调用模式、构造器调用模式、`apply`调用模式，这些模式在如何初始化关键参数`this`上存在差异
 
 ### 方法调用模式
 当一个函数被保存为对象的一个属性时，我们称为它为一个 __方法__，当一个方法被调用时，`this`被绑定到该对象。如果一个调用表达式包含一个属性存取表达式(即`.`或`[]`)，那么它被当作一个方法来调用。
@@ -672,7 +1300,7 @@ js中，经常需要在方法调用时传入"静态方法"的回调函数，有�
     alert(result3);
 
 
-下面有关[作用域与闭包中的例子](#TOC3.2)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
+下面有关[闭包中作用域的例子](#TOC3.2.4)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
 
 <!--language: !js-->
 
@@ -879,8 +1507,36 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 原生的js不支持，但基于js的[LiveScript](http://livescript.net/)是支持的
 
 
-## 作用域与闭包
-作用域控制着变量与参数的 __可见性__ 及 __生命周期__，但js中 __没有块级作用域__。它会导致在闭包中行为与有块级作用域的语言中表现不同：
+## 闭包
+闭包是代码块和创建该代码块的上下文中数据的结合。
+
+### 闭包与高阶函数
+
+
+### 生命周期与内存泄漏
+
+
+### 信息隐藏与保持状态
+函数内部的局部变量可以被修改，而且当再次进入到函数内部的时候，上次被修改的状态仍然持续，此为 __信息隐藏/封装对象状态__ 的惯用法。
+
+<!--language: !js-->
+
+    function makeCounter() {
+        var i = 0;
+        return function () {
+            return ++i;
+        };
+    }
+
+    var counter = makeCounter();
+    alert(counter()); //  1
+    alert(counter()); //  2
+
+    alert(typeof i); // undefined（存在于makeCounter内部，外部不可见）
+
+### 作用域与变量共享
+
+作用域控制着变量的可见性及生命周期，js中 __没有块级作用域__（如for/if并不能创建一个局部的上下文，仅有函数能够创建新的作用域）。它会导致在闭包中行为与有块级作用域的语言中表现不同：
 
 <!--language: !js-->
 
@@ -1236,6 +1892,8 @@ component.json
 DocumentCloud
 
 默认值规范
+
+<!-- http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html -->
 
 <script>
 
