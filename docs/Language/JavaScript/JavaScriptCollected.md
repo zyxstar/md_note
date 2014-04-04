@@ -2,6 +2,7 @@
 
 语言核心
 =========
+本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
 
 ## 执行上下文堆栈
 每次当控制器转到ECMAScript可执行代码的时候，即会进入到一个执行上下文。执行上下文(简称-EC)是ECMA-262标准里的一个抽象概念，用于同可执行代码(executable code)概念进行区分。
@@ -620,10 +621,677 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 它们是.apply和.call方法
 
 ## 作用域链
+作用域链大多数与内部函数相关，ECMAScript 允许创建内部函数，我们甚至能从父函数中返回这些函数。
 
-<!-- http://www.cnblogs.com/TomXu/archive/2012/01/18/2312463.html -->
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      var y = 20;
+      function bar() {
+        alert(x + y);
+      }
+      return bar;
+    }
+
+    foo()(); // 30
+
+很明显每个上下文拥有自己的变量对象：对于全局上下文，它是全局对象自身；对于函数，它是活动对象。__作用域链__ 正是内部上下文 __所有变量对象（包括父变量对象）的列表__。此链用来变量查询。即在上面的例子中，“bar”上下文的作用域链包括AO(bar)、AO(foo)和VO(global)。
+
+作用域链与一个执行上下文相关，变量对象的链用于在标识符解析中变量查找。
+
+函数上下文的作用域链在函数调用时创建的，包含活动对象和这个函数内部的[[scope]]属性。下面我们将更详细的讨论一个函数的[[scope]]属性。在上下文中示意如下：
+
+<!--language: js-->
+
+    activeExecutionContext = {
+        VO: {...}, // or AO
+        this: thisValue,
+        Scope: [ // Scope chain
+          // 所有变量对象的列表
+          // for identifiers lookup
+        ]
+    };
 
 
+其scope定义为`Scope = AO + [[Scope]]`，这种联合和标识符解析过程，我们将在下面讨论，这与 __函数的生命周期__ 相关。
+
+### 函数的生命周期
+函数的的生命周期分为 __创建阶段__ 和 __激活阶段__（调用时）
+
+#### 函数创建
+在进入上下文时函数声明放到 __变量/活动（VO/AO）对象__ 中
+
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      var y = 20;
+      alert(x + y);
+    }
+
+    foo(); // 30
+
+变量“y”在函数“foo”中定义（意味着它在foo上下文的AO中），但是变量“x”并未在“foo”上下文中定义，相应地，它也不会添加到“foo”的AO中。乍一看，变量“x”相对于函数“foo”根本就不存在
+
+<!--language: js-->
+
+    fooContext.AO = {
+      y: undefined // undefined – 进入上下文的时候是20 – at activation
+    };
+
+函数“foo”如何访问到变量“x”？理论上函数应该能访问一个更高一层上下文的变量对象。实际上它正是这样，这种机制是通过函数内部的[[scope]]属性来实现的。
+
+[[scope]]是所有父变量对象的层级链，处于当前函数上下文之上，在函数创建时存于其中。[[scope]]在函数创建时被存储－－静态（不变的），直至函数销毁。
+
+与作用域链对比，[[scope]]是函数的一个属性而不是上下文。考虑到上面的例子，函数“foo”的[[scope]]如下：
+
+<!--language: js-->
+
+    foo.[[Scope]] = [
+      globalContext.VO // === Global
+    ];
+
+#### 函数激活
+函数调用时进入上下文，这时候活动对象被创建，this和作用域（作用域链）被确定。进入上下文创建AO/VO之后，上下文的Scope属性（变量查找的一个作用域链）作如下定义：
+
+<!--language: js-->
+
+    Scope = AO|VO + [[Scope]]
+
+上面代码的意思是：活动对象是作用域数组的第一个对象，即添加到作用域的 __前端__。
+
+<!--language: js-->
+
+    Scope = [AO].concat([[Scope]]);
+
+这个特点对于标示符解析的处理来说很重要。
+
+标示符解析是一个处理过程，用来确定一个变量（或函数声明）属于哪个变量对象。
+
+这个算法的返回值中，我们总有一个引用类型，它的base组件是相应的变量对象（或若未找到则为null），属性名组件是向上查找的标示符的名称。引用类型的详细信息在this中已讨论。
+
+标识符解析过程包含与变量名对应属性的查找，即作用域中变量对象的连续查找，从最深的上下文开始，绕过作用域链直到最上层。
+
+这样一来，在向上查找中，一个上下文中的局部变量较之于父作用域的变量拥有较高的优先级。万一两个变量有相同的名称但来自不同的作用域，那么第一个被发现的是在 __最深作用域__ 中。
+
+我们用一个稍微复杂的例子描述上面讲到的这些。
+
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      var y = 20;
+
+      function bar() {
+        var z = 30;
+        alert(x +  y + z);
+      }
+
+      bar();
+    }
+
+    foo(); // 60
+
+对此，我们有如下的变量/活动对象，函数的的[[scope]]属性以及上下文的作用域链：
+
+- 全局上下文的变量对象是：
+
+<!--language: js-->
+
+    globalContext.VO === Global = {
+      x: 10
+      foo: <reference to function>
+    };
+
+- 在“foo”创建时，“foo”的[[scope]]属性是：
+
+<!--language: js-->
+
+    foo.[[Scope]] = [
+      globalContext.VO
+    ];
+
+- 在“foo”激活时（进入上下文），“foo”上下文的活动对象是：
+
+<!--language: js-->
+
+    fooContext.AO = {
+      y: 20,
+      bar: <reference to function>
+    };
+
+- “foo”上下文的作用域链为：
+
+<!--language: js-->
+
+    fooContext.Scope = fooContext.AO + foo.[[Scope]]
+
+    fooContext.Scope = [
+      fooContext.AO,
+      globalContext.VO
+    ];
+
+- 内部函数“bar”创建时，其[[scope]]为：
+
+<!--language: js-->
+
+    bar.[[Scope]] = [
+      fooContext.AO,
+      globalContext.VO
+    ];
+
+- 在“bar”激活时，“bar”上下文的活动对象为：
+
+<!--language: js-->
+
+    barContext.AO = {
+      z: 30
+    };
+
+- “bar”上下文的作用域链为：
+
+<!--language: js-->
+
+    barContext.Scope = barContext.AO + bar.[[Scope]]
+
+    barContext.Scope = [
+      barContext.AO,
+      fooContext.AO,
+      globalContext.VO
+    ];
+
+- 对“x”、“y”、“z”的标识符解析如下：
+
+<!--language: js-->
+
+    - "x"
+    -- barContext.AO // not found
+    -- fooContext.AO // not found
+    -- globalContext.VO // found - 10
+
+    - "y"
+    -- barContext.AO // not found
+    -- fooContext.AO // found - 20
+
+    - "z"
+    -- barContext.AO // found - 30
+
+### 作用域特征
+
+#### 闭包
+在ECMAScript中，闭包与函数的[[scope]]直接相关，正如我们提到的那样，[[scope]]在函数创建时被存储，与函数共存亡。实际上，闭包是函数代码和其[[scope]]的结合。因此，作为其对象之一，[[Scope]]包括在函数内创建的词法作用域（父变量对象）。当函数进一步激活时，在变量对象的这个词法链（静态的存储于创建时）中，来自较高作用域的变量将被搜寻。
+
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      alert(x);
+    }
+
+    (function () {
+      var x = 20;
+      foo(); // 10, but not 20
+    })();
+
+在标识符解析过程中，使用函数创建时定义的 __词法作用域__－－变量解析为10，而不是30。此外，这个例子也清晰的表明，一个函数（这个例子中为从函数“foo”返回的匿名函数）的[[scope]] __持续存在__，即使是 __在函数创建的作用域已经完成__ 之后。
+
+
+#### Function创建的函数
+在函数创建时获得函数的[[scope]]属性，通过该属性访问到所有父上下文的变量。但是，这个规则有一个重要的例外，它涉及到通过函数构造函数Function创建的函数。
+
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      var y = 20;
+
+      function barFD() { // 函数声明
+        alert(x);
+        alert(y);
+      }
+
+      var barFE = function () { // 函数表达式
+        alert(x);
+        alert(y);
+      };
+
+      var barFn = Function('alert(x); alert(y);');
+
+      barFD(); // 10, 20
+      barFE(); // 10, 20
+      barFn(); // 10, "y" is not defined
+    }
+
+    foo();
+
+通过函数构造函数（Function constructor）创建的函数“bar”，是不能访问变量“y”的。但这并不意味着函数“barFn”没有[[scope]]属性（否则它不能访问到变量“x”）。问题在于通过函构造函数创建的函数的[[scope]]属性总是唯一的全局对象。考虑到这一点，如通过这种函数创建除全局之外的最上层的上下文闭包是不可能的。
+
+#### 二维作用域链查找
+在作用域链中查找最重要的一点是变量对象的属性（如果有的话）须考虑其中－－源于ECMAScript 的 __原型__ 特性。如果一个属性在对象中没有直接找到，查询将在原型链中继续。即常说的二维链查找：
+
+> 1. 作用域链环节；
+> 1. 每个作用域链－－深入到原型链环节。如果在Object.prototype 中定义了属性，我们能看到这种效果。
+
+<!--language: !js-->
+
+    function foo() {
+      alert(x);
+    }
+
+    Object.prototype.x = 10;
+
+    foo(); // 10
+
+通过作用域链找到golbal对象，但不存在“x”，就尝试查找golbal对象的原型链，它从Object.prototype继承而来，相应地，“x”解析为10。
+
+#### 全局和eval中的作用域链
+全局上下文的作用域链仅包含全局对象。代码eval的上下文与当前的调用上下文（calling context）拥有同样的作用域链。
+
+<!--language: js-->
+
+    globalContext.Scope = [
+      Global
+    ];
+
+    evalContext.Scope === callingContext.Scope;
+
+#### 代码执行时对作用域链影响
+在代码执行阶段有两个声明能修改作用域链。这就是with声明和catch语句。它们添加到作用域链的最前端，对象须在这些声明中出现的标识符中查找。如果发生其中的一个，作用域链简要的作如下修改：
+
+<!--language: js-->
+
+    Scope = withObject|catchObject + AO|VO + [[Scope]]
+
+在这个例子中添加对象，对象是它的参数（这样，没有前缀，这个对象的属性变得可以访问）。
+
+<!--language: !js-->
+
+    var foo = {x: 10, y: 20};
+
+    with (foo) {
+      alert(x); // 10
+      alert(y); // 20
+    }
+
+作用域链修改成这样：
+
+<!--language: js-->
+
+    Scope = foo + AO|VO + [[Scope]]
+
+我们再次看到，通过with语句，对象中标识符的解析添加到作用域链的最前端：
+
+<!--language: !js-->
+
+    var x = 10, y = 10;
+
+    with ({x: 20}) {
+
+      var x = 30, y = 30;
+
+      alert(x); // 30
+      alert(y); // 30
+    }
+
+    alert(x); // 10
+    alert(y); // 30
+
+在进入上下文时发生了什么？标识符“x”和“y”已被添加到变量对象中。此外，在代码运行阶段作如下修改：
+
+> 1. x = 10, y = 10;
+> 1. 对象{x:20}添加到作用域的前端;
+> 1. 在with内部，遇到了var声明，当然什么也没创建，因为在进入上下文时，所有变量已被解析添加;
+> 1. 在第二步中，仅修改变量“x”，实际上对象中的“x”现在被解析，并添加到作用域链的最前端，“x”为20，变为30;
+> 1. 同样也有变量对象“y”的修改，被解析后其值也相应的由10变为30;
+> 1. 此外，在with声明完成后，它的特定对象从作用域链中移除（已改变的变量“x”－－30也从那个对象中移除），即作用域链的结构恢复到with得到加强以前的状态。
+> 1. 在最后两个alert中，当前变量对象的“x”保持同一，“y”的值现在等于30，在with声明运行中已发生改变。
+
+## 函数
+
+### 函数类型
+在ECMAScript 中有三种函数类型：函数声明，函数表达式和函数构造器创建的函数。每一种都有自己的特点。
+
+#### 函数声明
+函数声明（缩写为FD）是这样一种函数：
+
+> 1. 有一个特定的名称
+> 1. 在源码中的位置：要么处于程序级（Program level），要么处于其它函数的主体（FunctionBody）中
+> 1. 在进入上下文阶段创建
+> 1. 影响变量对象
+以下面的方式声明
+
+<!--language: js-->
+
+    function exampleFunc() {
+      ...
+    }
+
+这种函数类型的主要特点在于它们仅仅影响变量对象（即存储在上下文的VO中的变量对象）。该特点也解释了第二个重要点（它是变量对象特性的结果）—— __在代码执行阶段它们已经可用__（因为FD在进入上下文阶段已经存在于VO中——代码执行之前）。
+
+函数声明在源码中的位置：
+
+<!--language: js-->
+
+    // 函数可以在如下地方声明：
+    // 1) 直接在全局上下文中
+    function globalFD() {
+      // 2) 或者在一个函数的函数体内
+      function innerFD() {}
+    }
+
+只有这两个位置可以声明函数，也就是说，__不能在表达式位置或一个代码块中定义__(如if,while,for等)它。
+
+#### 函数表达式
+函数表达式（缩写为FE）是这样一种函数：
+
+> 1. 在源码中须出现在表达式的位置
+> 1. 有可选的名称
+> 1. 不会影响变量对象
+> 1. 在代码执行阶段创建
+
+这种函数类型的主要特点在于它在源码中总是处在表达式的位置。最简单的一个例子就是一个赋值声明：
+
+<!--language: js-->
+
+    var foo = function () {
+      ...
+    };
+
+该例演示是让一个匿名函数表达式赋值给变量foo，然后该函数可以用foo这个名称进行访问——foo()。
+
+同时和定义里描述的一样，函数表达式也可以拥有可选的名称：
+
+<!--language: js-->
+
+    var foo = function _foo() {
+      ...
+    };
+
+需要注意的是，在外部FE通过变量“foo”来访问——foo()，而在函数内部（如递归调用），有可能使用名称“_foo”。
+
+如果FE有一个名称，就很难与FD区分。但是，如果你明白定义，区分起来就简单明了：FE总是处在表达式的位置。在下面的例子中我们可以看到各种ECMAScript 表达式：
+
+<!--language: js-->
+
+    // 圆括号（分组操作符）内只能是表达式
+    (function foo() {});
+
+    // 在数组初始化器内只能是表达式
+    [function bar() {}];
+
+    // 逗号也只能操作表达式
+    1, function baz() {};
+
+表达式定义里说明：__FE只能在代码 *执行阶段* 创建而且 *不存在于变量对象* 中__，让我们来看一个示例行为：
+
+<!--language: js-->
+
+    // FE在定义阶段之前不可用（因为它是在代码执行阶段创建）
+    alert(foo); // "foo" 未定义
+
+    (function foo() {});
+
+    // 定义阶段之后也不可用，因为他不在变量对象VO中
+    alert(foo);  // "foo" 未定义
+
+在表达式中使用它们，__不会污染__ 变量对象。最简单的例子是将一个函数作为参数传递给其它函数。
+
+<!--language: !js-->
+
+    function foo(callback) {
+      callback();
+    }
+
+    foo(function bar() {
+      alert('foo.bar');
+    });
+
+在上述例子里，FE赋值给了一个变量（也就是参数），函数将该表达式保存在内存中，并通过 __变量名__ 来访问（因为 __变量影响变量对象__ [参考](#TOC1.3.1))，如下：
+
+<!--language: !js-->
+
+    var foo = function () {
+      alert('foo');
+    };
+
+    foo();
+
+另外一个例子是创建封装的闭包从外部上下文中隐藏辅助性数据（在下面的例子中我们使用FE，它在创建后立即调用）：
+
+<!--language: !js-->
+
+    var foo = {};
+
+    (function initialize() {
+      var x = 10;
+
+      foo.bar = function () {
+        alert(x);
+      };
+    })();
+
+    foo.bar(); // 10;
+    alert(x); // "x" 未定义
+
+我们看到函数foo.bar（通过[[Scope]]属性）访问到函数initialize的内部变量“x”。同时，“x”在外部不能直接访问。在许多库中，__这种策略常用来创建”私有”数据和隐藏辅助实体__。在这种模式中，初始化的FE的名称(即initialize)通常被忽略：
+
+还有一个例子是：在代码执行阶段通过条件语句进行创建FE，不会污染变量对象VO。
+
+<!--language: !js-->
+
+    var foo = 10;
+
+    var bar = (foo % 2 == 0
+      ? function () { alert(0); }
+      : function () { alert(1); }
+    );
+
+    bar(); // 0
+
+#### 函数构造器创建的函数
+既然这种函数对象也有自己的特色，我们将它与FD和FE区分开来。其主要特点在于这种函数的[[Scope]]属性仅包含全局对象：
+
+<!--language: !js-->
+
+    var x = 10;
+
+    function foo() {
+      var x = 20;
+      var y = 30;
+
+      var bar = new Function('alert(x); alert(y);');
+
+      bar(); // 10, "y" 未定义
+    }
+
+我们看到，函数bar的[[Scope]]属性不包含foo上下文的Ao——变量”y”不能访问，变量”x”从全局对象中取得。顺便提醒一句，Function构造器既可使用new 关键字，也可以没有，这样说来，这些变体是等价的。
+
+### 立即调用
+“为何在函数创建后的立即调用中必须用圆括号来包围它？”，答案就是：表达式句子的限制就是这样的。
+
+按照标准，表达式语句不能以一个大括号{开始是因为他很难与代码块区分，同样，他也不能以函数关键字开始，因为很难与函数声明进行区分。即，所以，如果我们定义一个立即执行的函数，在其创建后立即按以下方式调用：
+
+<!--language: !js-->
+
+    function () {
+      ...
+    }();
+
+    // 即便有名称
+
+    function foo() {
+      ...
+    }();
+
+我们使用了函数声明，上述2个定义，解释器在解释的时候都会 __报错__，但是可能有多种原因。
+
+如果在全局代码里定义（也就是程序级别），解释器会将它看做是函数声明，因为他是以function关键字开头，第一个例子，我们会得到SyntaxError错误，是因为函数声明没有名字（我们前面提到了函数声明必须有名字）。
+
+第二个例子，我们有一个名称为foo的一个函数声明正常创建，但是我们依然得到了一个语法错误——没有任何表达式的分组操作符错误。在函数声明后面他确实是一个分组操作符，而不是一个函数调用所使用的圆括号。所以如果我们声明如下代码：
+
+<!--language: !js-->
+
+    // "foo" 是一个函数声明，在进入上下文的时候创建
+    alert(foo); // 函数
+
+    function foo(x) {
+      alert(x);
+    }(1); // 这只是一个分组操作符，不是函数调用！
+
+    foo(10); // 这才是一个真正的函数调用，结果是10
+
+上述代码是没有问题的，因为声明的时候产生了2个对象：一个函数声明，一个带有1的分组操作，上面的例子可以理解为如下代码：
+
+<!--language: !js-->
+
+    // 函数声明
+    function foo(x) {
+      alert(x);
+    }
+
+    // 一个分组操作符，包含一个表达式1
+    (1);
+
+    // 另外一个操作符，包含一个function表达式
+    (function () {});
+
+    // 这个操作符里，包含的也是一个表达式"foo"
+    ("foo");
+
+我们如果来告诉解释器：我就像在函数声明之后立即调用，答案是很明确的，你得声明函数表达式function expression，而不是函数声明function declaration，并且创建表达式最简单的方式就是用分组操作符括号，里边放入的永远是表达式，所以解释器在解释的时候就不会出现歧义。在代码执行阶段这个的function就会被创建，并且立即执行，然后自动销毁（如果没有引用的话）。
+
+<!--language: !js-->
+
+    (function foo(x) {
+      alert(x);
+    })(1); // 这才是调用，不是分组操作符
+
+上述代码就是我们所说的在用括号括住一个表达式，然后通过（1）去调用。
+
+注意，下面一个立即执行的函数，周围的括号不是必须的，因为函数已经处在表达式的位置，解析器知道它处理的是在函数执行阶段应该被创建的FE，这样在函数创建后立即调用了函数。
+
+<!--language: !js-->
+
+    var foo = {
+      bar: function (x) {
+        return x % 2 != 0 ? 'yes' : 'no';
+      }(1)
+    };
+
+    alert(foo.bar); // 'yes'
+
+就像我们看到的，foo.bar是一个字符串而不是一个函数，这里的函数仅仅用来根据条件参数初始化这个属性——它创建后并立即调用。
+
+因此，“关于圆括号”问题完整的答案如下：__当函数不在表达式的位置的时候，分组操作符圆括号是必须的——也就是手工将函数转化成FE。如果解析器知道它处理的是FE，就没必要用圆括号。__
+
+除了大括号以外，如下形式也可以将函数转化为FE类型，例如：
+
+<!--language: !js-->
+
+    // 注意是1,后面的声明
+    1, function () {
+      alert('anonymous function is called');
+    }();
+
+    // 或者这个
+    !function () {
+      alert('ECMAScript');
+    }();
+
+    // 或者这个
+    void function(){
+      alert('ECMAScript');
+    }();
+
+
+### 命名函数表达式的特性
+当函数表达式FE有一个名称（称为命名函数表达式，缩写为NFE）时，将会出现一个重要的特点。从定义（正如我们从上面示例中看到的那样）中我们知道函数表达式不会影响一个上下文的变量对象（那样意味着既不可能通过名称在函数声明之前调用它，也不可能在声明之后调用它）。但是，FE在递归调用中可以通过名称调用自身。
+
+<!--language: !js-->
+
+    (function foo(bar) {
+      if (bar) {
+        return;
+      }
+      foo(true); // "foo" 是可用的
+    })();
+
+    // 在外部，是不可用的
+    foo(); // "foo" 未定义
+
+“foo”储存在什么地方？__在foo的活动对象中？不是__，因为在foo中没有定义任何”foo”。在上下文的 __父变量对象中创建foo？也不是__，因为按照定义——FE不会影响VO(变量对象)——从外部调用foo我们可以实实在在的看到。那么在哪里呢？
+
+以下是关键点。当解释器在代码执行阶段遇到命名的FE时，在FE创建之前，它创建了 __辅助的特定对象，并添加到当前作用域链的最前端__。然后它创建了FE，此时（正如作用域链知道的那样）函数获取了[[Scope]] 属性——创建这个函数上下文的作用域链）。此后，FE的名称添加到特定对象上作为唯一的属性；这个属性的值是引用到FE上。最后一步是从父作用域链中移除那个特定的对象。让我们在伪码中看看这个算法：
+
+<!--language: js-->
+
+    specialObject = {};
+
+    Scope = specialObject + Scope;
+
+    foo = new FunctionExpression;
+    foo.[[Scope]] = Scope;
+    specialObject.foo = foo; // {DontDelete}, {ReadOnly}
+
+    delete Scope[0]; // 从作用域链中删除定义的特殊对象specialObject
+
+因此，在函数外部这个名称不可用的（因为它不在父作用域链中），但是，特定对象已经存储在函数的[[scope]]中，在那里名称是可用的。
+
+但是需要注意的是一些实现（如Rhino）不是在特定对象中而是在FE的激活对象中存储这个可选的名称。Microsoft 中的执行完全打破了FE规则，它在父变量对象中保持了这个名称，这样函数在外部变得可以访问。
+
+### 创建函数的算法
+下面的伪码描述了函数创建的算法（与联合对象相关的步骤除外）。这些描述有助于你理解ECMAScript中函数对象的更多细节。这种算法适合所有的函数类型。
+
+<!--language: js-->
+
+    F = new NativeObject();
+
+    // 属性[[Class]]是"Function"
+    F.[[Class]] = "Function"
+
+    // 函数对象的原型是Function的原型
+    F.[[Prototype]] = Function.prototype
+
+    // 医用到函数自身
+    // 调用表达式F的时候激活[[Call]]
+    // 并且创建新的执行上下文
+    F.[[Call]] = <reference to function>
+
+    // 在对象的普通构造器里编译
+    // [[Construct]] 通过new关键字激活
+    // 并且给新对象分配内存
+    // 然后调用F.[[Call]]初始化作为this传递的新创建的对象
+    F.[[Construct]] = internalConstructor
+
+    // 当前执行上下文的作用域链
+    // 例如，创建F的上下文
+    F.[[Scope]] = activeContext.Scope
+    // 如果函数通过new Function(...)来创建，
+    // 那么
+    F.[[Scope]] = globalContext.Scope
+
+    // 传入参数的个数
+    F.length = countParameters
+
+    // F对象创建的原型
+    __objectPrototype = new Object();
+    __objectPrototype.constructor = F // {DontEnum}, 在循环里不可枚举x
+    F.prototype = __objectPrototype
+
+    return F
+
+
+注意，F.[[Prototype]]是函数（构造器）的一个原型，F.prototype是通过这个函数创建的对象的原型（因为术语常常混乱，一些文章中F.prototype被称之为“构造器的原型”，这是不正确的）。
+
+
+
+## 原型与原型链
 
 
 ## 执行上下文
@@ -1492,6 +2160,11 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 ============
 
 ## 高阶函数
+在数学和计算机科学中，__高阶函数__(high-order function, HOF)是至少满足下列一个条件的函数：
+
+> - 接受一个或多个函数作为输入
+> - 输出一个函数
+
 js中函数第一公民，高阶函数自然支持，甚至下面的其他特性，都离不开它的支持。
 
 不存在Haskell与Python中的列表解析，但`Array.protype`中的函数对集合处理还是很方便的
@@ -1511,6 +2184,11 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 闭包是代码块和创建该代码块的上下文中数据的结合。
 
 ### 闭包与高阶函数
+
+<!-- http://www.cnblogs.com/TomXu/archive/2012/01/31/2330252.html -->
+
+
+
 
 
 ### 生命周期与内存泄漏
