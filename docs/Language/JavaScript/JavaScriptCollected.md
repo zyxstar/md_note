@@ -5,20 +5,19 @@
 本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
 
 ## 执行上下文
-执行上下文可以抽象为一个简单的对象。每个上下文包含一系列属性(我们称之为 上下文状态(context’s state) ) 用以跟踪相关代码的执行过程。下图展示了上下文的结构，所需要的属性(变量对象(variable object)，this指针(this value)，作用域链(scope chain)：
+执行上下文可以抽象为一个简单的对象。每个上下文包含一系列属性(我们称之为 上下文状态(context’s state) ) 用以跟踪相关代码的执行过程。下图展示了上下文的结构，所需要的属性([变量对象(variable object)](#TOC1.2)，[this指针(this value)](#TOC1.4)，[作用域链(scope chain)](#TOC1.5)：
 
 ![js_execution_context](../../../imgs/js_execution_context.png)
 
-有关这三个属性的描述，详见后面的论述
 
 ### 执行上下文堆栈
 每次当控制器转到ECMAScript可执行代码的时候，即会进入到一个执行上下文。执行上下文(简称-EC)是ECMA-262标准里的一个抽象概念，用于同可执行代码(executable code)概念进行区分。
 
-在ECMASscript中的代码有三种类型：global, function和eval。
+在ECMASscript中的代码有三种类型：`global`, `function`和`eval`。
 
-每一种代码的执行都需要依赖自身的上下文。当然global的上下文可能涵盖了很多的function和eval的实例。函数的每一次调用，都会进入函数执行中的上下文,并且来计算函数中变量等的值。eval函数的每一次执行，也会进入eval执行中的上下文，判断应该从何处获取变量的值。
+每一种代码的执行都需要依赖自身的上下文。当然`global`的上下文可能涵盖了很多的`function`和`eval`的实例。函数的每一次调用，都会进入函数执行中的上下文,并且来计算函数中变量等的值。`eval`函数的每一次执行，也会进入`eval`执行中的上下文，判断应该从何处获取变量的值。
 
-注意，一个function可能产生无限的上下文环境，因为一个函数的调用（甚至递归）都产生了一个新的上下文环境。
+注意，一个`function`可能产生无限的上下文环境，因为一个函数的调用（甚至递归）都产生了一个新的上下文环境。
 
 <!--language: js-->
 
@@ -39,10 +38,10 @@
 
     ECStack = [];
 
-每次进入function (即使function被递归调用或作为构造函数) 的时候或者内置的eval函数工作的时候，这个堆栈都会被压入。
+每次进入`function` (即使`function`被递归调用或作为构造函数) 的时候或者内置的`eval`函数工作的时候，这个堆栈都会被压入。
 
 #### 全局代码
-这种类型的代码是在"程序"级处理的：例如加载外部的js文件或者本地`<script></script>`标签内的代码。全局代码不包括任何function体内的代码。
+这种类型的代码是在"程序"级处理的：例如加载外部的js文件或者本地`<script></script>`标签内的代码。全局代码不包括任何`function`体内的代码。
 
 在初始化（程序启动）阶段，ECStack是这样的：
 
@@ -53,7 +52,7 @@
     ];
 
 #### 函数代码
-当进入funtion函数代码(所有类型的funtions)的时候，ECStack被压入新元素。需要注意的是，具体的函数代码不包括内部函数(inner functions)代码。如下所示，我们使函数自己调自己的方式递归一次：
+当进入`funtion`函数代码(所有类型的funtions)的时候，ECStack被压入新元素。需要注意的是，具体的函数代码不包括内部函数(inner functions)代码。如下所示，我们使函数自己调自己的方式递归一次：
 
 <!--language: js-->
 
@@ -81,10 +80,10 @@
       globalContext
     ];
 
-每次return的时候，都会退出当前执行上下文的，相应地ECStack就会弹出，栈指针会自动移动位置，这是一个典型的堆栈实现方式。一个抛出的异常如果没被截获的话也有可能从一个或多个执行上下文退出。相关代码执行完以后，ECStack只会包含全局上下文(global context)，一直到整个应用程序结束。
+每次`return`的时候，都会退出当前执行上下文的，相应地ECStack就会弹出，栈指针会自动移动位置，这是一个典型的堆栈实现方式。一个抛出的异常如果没被截获的话也有可能从一个或多个执行上下文退出。相关代码执行完以后，ECStack只会包含全局上下文(global context)，一直到整个应用程序结束。
 
-#### Eval代码
-eval 代码有点儿意思。它有一个概念：__调用上下文__(calling context),例如，eval函数调用的时候产生的上下文。eval(变量或函数声明)活动 __会影响__ 调用上下文。
+#### `eval`代码
+`eval` 代码有点儿意思。它有一个概念：__调用上下文__(calling context),例如，`eval`函数调用的时候产生的上下文。`eval`(变量或函数声明)活动 __会影响__ 调用上下文。
 
 <!--language: !js-->
 
@@ -132,7 +131,7 @@ ECStack的变化过程：
 
 
 ## 变量对象与活动对象
-声明函数和变量，以成功构建我们的系统，解释器是如何并且在什么地方去查找这些函数和变量呢？任何function在执行的时候都会创建一个 __执行上下文__，因为为function声明的变量和function有可能只在该function内部，这个上下文，在调用function的时候，提供了一种简单的方式来创建自由变量或私有子function。
+声明函数和变量，以成功构建我们的系统，解释器是如何并且在什么地方去查找这些函数和变量呢？任何`function`在执行的时候都会创建一个 __执行上下文__，因为为`function`声明的变量和`function`有可能只在该`function`内部，这个上下文，在调用`function`的时候，提供了一种简单的方式来创建自由变量或私有子`function`。
 
 __变量对象__（variable object）是一个与执行上下文相关的特殊对象，它存储着上下文中声明的以下内容：
 
@@ -169,7 +168,7 @@ __变量对象__（variable object）是一个与执行上下文相关的特殊�
 ### 全局上下文中的变量对象
 全局对象是进入任何执行上下文之前就已经创建了的对象，这个对象只存在一份，它的属性在程序中任何地方都可以访问，全局对象的生命周期终止于程序退出那一刻。
 
-全局对象初始创建阶段将Math、String、Date、parseInt作为自身属性，等属性初始化，同样也可以有额外创建的其它对象作为属性（其可以指向到全局对象自身）。例如，在DOM中，全局对象的window属性就可以引用全局对象自身
+全局对象初始创建阶段将`Math`、`String`、`Date`、`parseInt`作为自身属性，等属性初始化，同样也可以有额外创建的其它对象作为属性（其可以指向到全局对象自身）。例如，在DOM中，全局对象的`window`属性就可以引用全局对象自身
 
 <!--language: js-->
 
@@ -266,7 +265,7 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 
     console.log(x); // 20
 
-为什么第一个alert “x” 的返回值是function，而且它还是在“x” 声明之前访问的“x” 的？为什么不是10或20呢？因为，根据规范函数声明是在当 __进入上下文__ 时填入的； 同一周期，在进入上下文的时候还有一个变量声明“x”，那么正如我们在上一个阶段所说，变量声明在顺序上跟在函数声明和形式参数声明之后，而且在这个 __进入上下文阶段，变量声明不会干扰VO中已经存在的同名函数声明或形式参数声明__，因此，在进入上下文时，VO的结构如下：
+为什么第一个`console.log(x)` 的返回值是function，而且它还是在“x” 声明之前访问的“x” 的？为什么不是10或20呢？因为，根据规范函数声明是在当 __进入上下文__ 时填入的； 同一周期，在进入上下文的时候还有一个变量声明“x”，那么正如我们在上一个阶段所说，变量声明在顺序上跟在函数声明和形式参数声明之后，而且在这个 __进入上下文阶段，变量声明不会干扰VO中已经存在的同名函数声明或形式参数声明__，因此，在进入上下文时，VO的结构如下：
 
 <!--language: js-->
 
@@ -288,9 +287,9 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
     VO['x'] = 10;
     VO['x'] = 20;
 
-我们可以在第二、三个console.log中看到这个效果。
+我们可以在第二、三个`console.log`中看到这个效果。
 
-在下面的例子里我们可以再次看到，变量是在进入上下文阶段放入VO中的。(因为，虽然else部分代码永远不会执行，但是不管怎样，变量“b”仍然存在于VO中。)
+在下面的例子里我们可以再次看到，变量是在进入上下文阶段放入VO中的。(因为，虽然`else`部分代码永远不会执行，但是不管怎样，变量“b”仍然存在于VO中。)
 
 <!--language: !js-->
 
@@ -303,8 +302,8 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
     alert(a); // 1
     alert(b); // undefined,不是b没有声明，而是b的值是undefined
 
-## this关键字
-this是执行上下文中的一个属性：
+## `this`关键字
+`this`是执行上下文中的一个属性：
 
 <!--language: js-->
 
@@ -315,13 +314,13 @@ this是执行上下文中的一个属性：
 
 这里VO是我们前一章讨论的变量对象。
 
-this与上下文中可执行代码的类型有直接关系，this值在进入上下文时确定，并且在上下文运行期间永久不变。
+`this`与上下文中可执行代码的类型有直接关系，`this`值在进入上下文时确定，并且在上下文运行期间永久不变。
 
-### 全局代码中this
+### 全局代码中`this`
 在这里一切都简单。在全局代码中，this始终是全局对象本身，这样就有可能间接的引用到它了。
 
-### 函数代码中this
-它不是静态的绑定到一个函数，this是 __进入上下文时确定__，在一个函数代码中，这个值在每一次完全不同。不管怎样，在代码运行时的this值是不变的，也就是说，因为它不是一个变量，就不可能为其分配一个新值（相反，在Python编程语言中，它明确的定义为对象本身，在运行期间可以不断改变）。
+### 函数代码中`this`
+它不是静态的绑定到一个函数，`this`是 __进入上下文时确定__，在一个函数代码中，这个值在每一次完全不同。不管怎样，在代码运行时的`this`值是不变的，也就是说，因为它不是一个变量，就不可能为其分配一个新值（相反，在Python编程语言中，它明确的定义为对象本身，在运行期间可以不断改变）。
 
 <!--language: !js-->
 
@@ -347,9 +346,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     // 尽管调用的是相同的function
     foo.test(); // false, 10
 
-影响了函数代码中this值的变化有几个因素：
+影响了函数代码中`this`值的变化有几个因素：
 
-首先，在通常的函数调用中，__this是由激活上下文代码的调用者来提供的__，即调用函数的父上下文(parent context )。this取决于调用函数的方式。为了在任何情况下准确无误的确定this值，有必要理解和记住这重要的一点。正是调用函数的方式影响了调用的上下文中的this值，没有别的什么
+首先，在通常的函数调用中，__`this`是由激活上下文代码的调用者来提供的__，即调用函数的父上下文(parent context )。`this`取决于调用函数的方式。为了在任何情况下准确无误的确定`this`值，有必要理解和记住这重要的一点。正是调用函数的方式影响了调用的上下文中的`this`值，没有别的什么
 
 即使是正常的全局函数也会被调用方式的不同形式激活，这些不同的调用方式导致了不同的this值。
 
@@ -366,7 +365,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     // 但是同一个function的不同的调用表达式，this是不同的
     foo.prototype.constructor(); // foo.prototype
 
-有可能作为一些对象定义的方法来调用函数，但是this将不会设置为这个对象。
+有可能作为一些对象定义的方法来调用函数，但是`this`将不会设置为这个对象。
 
 <!--language: !js-->
 
@@ -385,10 +384,10 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     // 再一次，同一个function的不同的调用表达式，this是不同的
     exampleFunc(); // global, false
 
-那么，调用函数的方式如何影响this值？为了充分理解this值的确定，需要详细分析其内部类型之一—— __引用类型__（Reference type）。
+那么，调用函数的方式如何影响`this`值？为了充分理解`this`值的确定，需要详细分析其内部类型之一—— __引用类型__（Reference type）。
 
 ### 引用类型
-使用伪代码我们可以将引用类型的值可以表示为拥有两个属性的对象——base（即拥有属性的那个对象），和base中的propertyName 。
+使用伪代码我们可以将引用类型的值可以表示为拥有两个属性的对象——`base`（即拥有属性的那个对象），和`base`中的`propertyName` 。
 
 <!--language: js-->
 
@@ -425,7 +424,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       propertyName: 'bar'
     };
 
-为了从引用类型中得到一个对象真正的值，伪代码中的GetValue方法可以做如下描述：
+为了从引用类型中得到一个对象真正的值，伪代码中的`GetValue`方法可以做如下描述：
 
 <!--language: js-->
 
@@ -443,7 +442,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       return base.[[Get]](GetPropertyName(value));
     }
 
-内部的[[Get]]方法返回对象属性真正的值，包括对原型链中继承的属性分析。
+内部的`[[Get]]`方法返回对象属性真正的值，包括对原型链中继承的属性分析。
 
 <!--language: js-->
 
@@ -451,7 +450,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     GetValue(barReference); // function object "bar"
 
 #### 属性访问器
-它有两种变体：点（.）语法（此时属性名是正确的标示符，且事先知道），或括号语法（[]）。
+它有两种变体：点（`.`）语法（此时属性名是正确的标示符，且事先知道），或括号语法（`[]`）。
 
 <!--language: js-->
 
@@ -469,9 +468,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     GetValue(fooBarReference); // function object "bar"
 
-### 决定this的值
+### 决定`this`的值
 
-在一个函数上下文中，this由调用者提供，由调用函数的方式来决定。如果调用括号()的左边是引用类型的值，this将设为引用类型值的base对象（base object），在其他情况下（与引用类型不同的任何其它属性），这个值为null。不过，实际不存在this的值为null的情况，因为当this的值为null的时候，其值会被隐式转换为全局对象。注：第5版的ECMAScript中，已经不强迫转换成全局变量了，而是赋值为undefined。
+在一个函数上下文中，`this`由调用者提供，由调用函数的方式来决定。如果调用括号`()`的左边是引用类型的值，`this`将设为引用类型值的`base`对象（base object），在其他情况下（与引用类型不同的任何其它属性），这个值为`null`。不过，实际不存在`this`的值为`null`的情况，因为当`this`的值为`null`的时候，其值会被隐式转换为全局对象。注：第5版的ECMAScript中，已经不强迫转换成全局变量了，而是赋值为`undefined`。
 
 <!--language: !js-->
 
@@ -481,7 +480,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     foo(); // global
 
-我们看到在调用括号的左边是一个引用类型值（因为foo是一个 __标示符__）。
+我们看到在调用括号的左边是一个引用类型值（因为`foo`是一个 __标示符__）。
 
 <!--language: js-->
 
@@ -490,7 +489,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       propertyName: 'foo'
     };
 
-相应地，this也设置为引用类型的base对象。即全局对象。
+相应地，`this`也设置为引用类型的`base`对象。即全局对象。
 
 同样，使用 __属性访问器__：
 
@@ -504,7 +503,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     foo.bar(); // foo
 
-我们再次拥有一个引用类型，其base是foo对象，在函数bar激活时用作this。
+我们再次拥有一个引用类型，其`base`是`foo`对象，在函数`bar`激活时用作`this`。
 
 <!--language: js-->
 
@@ -513,14 +512,14 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       propertyName: 'bar'
     };
 
-但是，用另外一种形式激活相同的函数，我们得到其它的this值。
+但是，用另外一种形式激活相同的函数，我们得到其它的`this`值。
 
 <!--language: !js-->
 
     var test = foo.bar;
     test(); // global
 
-因为test作为 __标示符__，__生成了引用类型的其他值__，其base（全局对象）用作this 值。
+因为`test`作为 __标示符__，__生成了引用类型的其他值__，其`base`（全局对象）用作`this`值。
 
 <!--language: js-->
 
@@ -529,7 +528,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       propertyName: 'test'
     };
 
-为什么用表达式的不同形式激活同一个函数会不同的this值，__答案在于引用类型（type Reference）不同的中间值__。
+为什么用表达式的不同形式激活同一个函数会不同的`this`值，__答案在于引用类型（type Reference）不同的中间值__。
 
 <!--language: js-->
 
@@ -556,7 +555,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     };
 
 ### 函数调用和非引用类型
-因此，正如我们已经指出，当调用括号的左边不是引用类型而是其它类型，这个值自动设置为null，结果为全局对象。让我们再思考这种表达式：
+因此，正如我们已经指出，当调用括号的左边不是引用类型而是其它类型，这个值自动设置为`null`，结果为全局对象。让我们再思考这种表达式：
 
 <!--language: !js-->
 
@@ -564,7 +563,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       alert(this); // null => global
     })();
 
-在这个例子中，我们有一个函数对象但不是引用类型的对象（它 __不是标示符，也不是属性访问器__），相应地，this值最终设为全局对象。
+在这个例子中，我们有一个函数对象但不是引用类型的对象（它 __不是标示符，也不是属性访问器__），相应地，`this`值最终设为全局对象。
 
 更多复杂的例子：
 
@@ -583,13 +582,13 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     (false || foo.bar)(); // global?
     (foo.bar, foo.bar)(); // global?
 
-- 第一个例子很明显——明显的引用类型，结果是，this为base对象，即foo。
-- 在第二个例子中，组运算符并不适用，想想上面提到的，从引用类型中获得一个对象真正的值的方法，如GetValue。相应的，在组运算的返回中——我们得到仍是一个引用类型。这就是this值为什么再次设为base对象，即foo。
-- 第三个例子中，与组运算符不同，赋值运算符调用了GetValue方法。返回的结果是函数对象（但不是引用类型），这意味着this设为null，结果是global对象。
-- 第四个和第五个也是一样——逗号运算符和逻辑运算符（OR）调用了GetValue 方法，相应地，我们失去了引用而得到了函数。并再次设为global。
+- 第一个例子很明显——明显的引用类型，结果是，`this`为`base`对象，即`foo`。
+- 在第二个例子中，组运算符并不适用，想想上面提到的，从引用类型中获得一个对象真正的值的方法，如`GetValue`。相应的，在组运算的返回中——我们得到仍是一个引用类型。这就是`this`值为什么再次设为`base`对象，即`foo`。
+- 第三个例子中，与组运算符不同，赋值运算符调用了`GetValue`方法。返回的结果是函数对象（但不是引用类型），这意味着`this`设为`null`，结果是`global`对象。
+- 第四个和第五个也是一样——逗号运算符和逻辑运算符（OR）调用了`GetValue`方法，相应地，我们失去了引用而得到了函数。并再次设为`global`。
 
-### 引用类型和this为null
-当调用表达式限定了call括号左边的引用类型的值，尽管this被设定为null，但结果被隐式转化成global。当引用类型值的base对象是被 __活动对象__ 时，这种情况就会出现。
+### 引用类型和`this`为`null`
+当调用表达式限定了call括号左边的引用类型的值，尽管`this`被设定为`null`，但结果被隐式转化成`global`。当引用类型值的`base`对象是被 __活动对象__ 时，这种情况就会出现。
 
 下面的实例中，内部函数被父函数调用，此时我们就能够看到上面说的那种特殊情况，局部变量、内部函数、形式参数储存在给定函数的激活对象中。
 
@@ -602,9 +601,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       bar(); // the same as AO.bar()
     }
 
-活动对象总是作为this返回，值为null——（即伪代码的 __AO.bar()相当于null.bar()__）。这里我们再次回到上面描述的例子，this设置为全局对象。
+活动对象总是作为`this`返回，值为`null`——（即伪代码的 __`AO.bar()`相当于`null.bar()`__）。这里我们再次回到上面描述的例子，`this`设置为全局对象。
 
-有一种情况除外：如果with对象包含一个函数名属性，在with语句的内部块中调用函数。With语句添加到该对象作用域的最前端，即在活动对象的前面。相应地，也就有了引用类型（通过标示符或属性访问器）， 其base对象不再是活动对象，__而是with语句的对象__。顺便提一句，它不仅与内部函数相关，也与全局函数相关，因为with对象比作用域链里的 __最前端的对象__ (全局对象或一个活动对象)还要靠前。
+有一种情况除外：如果`with`对象包含一个函数名属性，在`with`语句的内部块中调用函数。`with`语句添加到该对象作用域的最前端，即在活动对象的前面。相应地，也就有了引用类型（通过标示符或属性访问器）， 其`base`对象不再是活动对象，__而是`with`语句的对象__。顺便提一句，它不仅与内部函数相关，也与全局函数相关，因为`with`对象比作用域链里的 __最前端的对象__ (全局对象或一个活动对象)还要靠前。
 
 <!--language: !js-->
 
@@ -628,9 +627,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       propertyName: 'foo'
     };
 
-同样的情况出现在catch语句的实际参数中函数调用：在这种情况下，catch对象添加到作用域的最前端，即在活动对象或全局对象的前面。但是，这个特定的行为被确认为ECMA-262-3的一个bug，这个在新版的ECMA-262-5中修复了。这样，在特定的活动对象中，this指向全局对象。而不是catch对象
+同样的情况出现在`catch`语句的实际参数中函数调用：在这种情况下，`catch`对象添加到作用域的最前端，即在活动对象或全局对象的前面。但是，这个特定的行为被确认为ECMA-262-3的一个bug，这个在新版的ECMA-262-5中修复了。这样，在特定的活动对象中，`this`指向全局对象。而不是`catch`对象
 
-### 构造器调用的函数中this
+### 构造器调用的函数中`this`
 
 <!--language: !js-->
 
@@ -642,10 +641,10 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     var a = new A();
     alert(a.x); // 10
 
-在这个例子中，new运算符调用“A”函数的内部的[[Construct]] 方法，接着，在对象创建后，调用内部的[[Call]] 方法。 函数“A”将this的值设置为新创建的对象。
+在这个例子中，new运算符调用“A”函数的内部的`[[Construct]]`方法，接着，在对象创建后，调用内部的`[[Call]]`方法。 函数“A”将`this`的值设置为新创建的对象。
 
-### 函数调用中手动设置this
-它们是.apply和.call方法
+### 函数调用中手动设置`this`
+即`apply`和`call`方法，[参考](#TOC3.1.4)
 
 ## 作用域链
 作用域链大多数与内部函数相关，ECMAScript 允许创建内部函数，我们甚至能从父函数中返回这些函数。
@@ -668,7 +667,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
 作用域链与一个执行上下文相关，变量对象的链用于在标识符解析中变量查找。
 
-函数上下文的作用域链在函数调用时创建的，包含活动对象和这个函数内部的[[scope]]属性。下面我们将更详细的讨论一个函数的[[scope]]属性。在上下文中示意如下：
+函数上下文的作用域链在函数调用时创建的，包含活动对象和这个函数内部的`[[scope]]`属性。下面我们将更详细的讨论一个函数的`[[scope]]`属性。在上下文中示意如下：
 
 <!--language: js-->
 
@@ -709,11 +708,11 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       y: undefined // undefined – 进入上下文的时候是20 – at activation
     };
 
-函数“foo”如何访问到变量“x”？理论上函数应该能访问一个更高一层上下文的变量对象。实际上它正是这样，这种机制是通过函数内部的[[scope]]属性来实现的。
+函数“foo”如何访问到变量“x”？理论上函数应该能访问一个更高一层上下文的变量对象。实际上它正是这样，这种机制是通过函数内部的`[[scope]]`属性来实现的。
 
-[[scope]]是所有父变量对象的层级链，处于当前函数上下文之上，在函数创建时存于其中。[[scope]]在函数创建时被存储－－静态（不变的），直至函数销毁。
+`[[scope]]`是所有父变量对象的层级链，处于当前函数上下文之上，在函数创建时存于其中。`[[scope]]`在函数创建时被存储－－静态（不变的），直至函数销毁。
 
-与作用域链对比，[[scope]]是函数的一个属性而不是上下文。考虑到上面的例子，函数“foo”的[[scope]]如下：
+与作用域链对比，`[[scope]]`是函数的一个属性而不是上下文。考虑到上面的例子，函数“foo”的`[[scope]]`如下：
 
 <!--language: js-->
 
@@ -722,7 +721,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     ];
 
 #### 函数激活
-函数调用时进入上下文，这时候活动对象被创建，this和作用域（作用域链）被确定。进入上下文创建AO/VO之后，上下文的Scope属性（变量查找的一个作用域链）作如下定义：
+函数调用时进入上下文，这时候活动对象被创建，`this`和作用域（作用域链）被确定。进入上下文创建AO/VO之后，上下文的Scope属性（变量查找的一个作用域链）作如下定义：
 
 <!--language: js-->
 
@@ -738,7 +737,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
 标示符解析是一个处理过程，用来确定一个变量（或函数声明）属于哪个变量对象。
 
-这个算法的返回值中，我们总有一个引用类型，它的base组件是相应的变量对象（或若未找到则为null），属性名组件是向上查找的标示符的名称。引用类型的详细信息在this中已讨论。
+这个算法的返回值中，我们总有一个引用类型，它的`base`组件是相应的变量对象（或若未找到则为`null`），属性名组件是向上查找的标示符的名称。引用类型的详细信息在this中已讨论。
 
 标识符解析过程包含与变量名对应属性的查找，即作用域中变量对象的连续查找，从最深的上下文开始，绕过作用域链直到最上层。
 
@@ -763,7 +762,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     foo(); // 60
 
-对此，我们有如下的变量/活动对象，函数的的[[scope]]属性以及上下文的作用域链：
+对此，我们有如下的变量/活动对象，函数的的`[[scope]]`属性以及上下文的作用域链：
 
 - 全局上下文的变量对象是：
 
@@ -774,7 +773,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       foo: <reference to function>
     };
 
-- 在“foo”创建时，“foo”的[[scope]]属性是：
+- 在“foo”创建时，“foo”的`[[scope]]`属性是：
 
 <!--language: js-->
 
@@ -802,7 +801,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       globalContext.VO
     ];
 
-- 内部函数“bar”创建时，其[[scope]]为：
+- 内部函数“bar”创建时，其`[[scope]]`为：
 
 <!--language: js-->
 
@@ -850,7 +849,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 ### 作用域特征
 
 #### 闭包
-在ECMAScript中，闭包与函数的[[scope]]直接相关，正如我们提到的那样，[[scope]]在函数创建时被存储，与函数共存亡。实际上，闭包是函数代码和其[[scope]]的结合。因此，作为其对象之一，[[Scope]]包括在函数内创建的词法作用域（父变量对象）。当函数进一步激活时，在变量对象的这个词法链（静态的存储于创建时）中，来自较高作用域的变量将被搜寻。
+在ECMAScript中，闭包与函数的`[[scope]]`直接相关，正如我们提到的那样，`[[scope]]`在函数创建时被存储，与函数共存亡。实际上，闭包是函数代码和其`[[scope]]`的结合。因此，作为其对象之一，`[[Scope]]`包括在函数内创建的词法作用域（父变量对象）。当函数进一步激活时，在变量对象的这个词法链（静态的存储于创建时）中，来自较高作用域的变量将被搜寻。
 
 <!--language: !js-->
 
@@ -865,11 +864,11 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       foo(); // 10, but not 20
     })();
 
-在标识符解析过程中，使用 __函数创建时__ 定义的 __词法作用域__－－变量解析为10，而不是30。此外，这个例子也清晰的表明，一个函数（这个例子中为从函数“foo”返回的匿名函数）的[[scope]] __持续存在__，即使是 __在函数创建的作用域已经完成__ 之后。
+在标识符解析过程中，使用 __函数创建时__ 定义的 __词法作用域__－－变量解析为`10`，而不是`30`。此外，这个例子也清晰的表明，一个函数（这个例子中为从函数“foo”返回的匿名函数）的`[[scope]]` __持续存在__，即使是 __在函数创建的作用域已经完成__ 之后。
 
 
 #### Function创建的函数
-在函数创建时获得函数的[[scope]]属性，通过该属性访问到所有父上下文的变量。但是，这个规则有一个重要的例外，它涉及到通过函数构造函数Function创建的函数。
+在函数创建时获得函数的`[[scope]]`属性，通过该属性访问到所有父上下文的变量。但是，这个规则有一个重要的例外，它涉及到通过函数构造函数`Function`创建的函数。
 
 <!--language: !js-->
 
@@ -897,13 +896,13 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     foo();
 
-通过函数构造函数（Function constructor）创建的函数“bar”，是不能访问变量“y”的。但这并不意味着函数“barFn”没有[[scope]]属性（否则它不能访问到变量“x”）。问题在于通过函构造函数创建的函数的[[scope]]属性总是唯一的全局对象。考虑到这一点，如通过这种函数创建除全局之外的最上层的上下文闭包是不可能的。
+通过函数构造函数（Function constructor）创建的函数“bar”，是不能访问变量“y”的。但这并不意味着函数“barFn”没有`[[scope]]`属性（否则它不能访问到变量“x”）。问题在于通过函构造函数创建的函数的`[[scope]]`属性总是唯一的全局对象。考虑到这一点，如通过这种函数创建除全局之外的最上层的上下文闭包是不可能的。
 
 #### 二维作用域链查找
 在作用域链中查找最重要的一点是变量对象的属性（如果有的话）须考虑其中－－源于ECMAScript 的 __原型__ 特性。如果一个属性在对象中没有直接找到，查询将在原型链中继续。即常说的二维链查找：
 
 > 1. 作用域链环节；
-> 1. 每个作用域链－－深入到原型链环节。如果在Object.prototype 中定义了属性，我们能看到这种效果。
+> 1. 每个作用域链－－深入到原型链环节。如果在`Object.prototype`中定义了属性，我们能看到这种效果。
 
 <!--language: !js-->
 
@@ -915,10 +914,10 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     foo(); // 10
 
-通过作用域链找到golbal对象，但不存在“x”，就尝试查找golbal对象的原型链，它从Object.prototype继承而来，相应地，“x”解析为10。
+通过作用域链找到`golbal`对象，但不存在“x”，就尝试查找`golbal`对象的原型链，它从`Object.prototype`继承而来，相应地，“x”解析为`10`。
 
-#### 全局和eval中的作用域链
-全局上下文的作用域链仅包含全局对象。代码eval的上下文与当前的调用上下文（calling context）拥有同样的作用域链。
+#### 全局和`eval`中的作用域链
+全局上下文的作用域链仅包含全局对象。代码`eval`的上下文与当前的调用上下文（calling context）拥有同样的作用域链。
 
 <!--language: js-->
 
@@ -929,7 +928,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     evalContext.Scope === callingContext.Scope;
 
 #### 代码执行时对作用域链影响
-在代码执行阶段有两个声明能修改作用域链。这就是with声明和catch语句。它们添加到作用域链的最前端，对象须在这些声明中出现的标识符中查找。如果发生其中的一个，作用域链简要的作如下修改：
+在代码执行阶段有两个声明能修改作用域链。这就是`with`声明和`catch`语句。它们添加到作用域链的最前端，对象须在这些声明中出现的标识符中查找。如果发生其中的一个，作用域链简要的作如下修改：
 
 <!--language: js-->
 
@@ -952,7 +951,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     Scope = foo + AO|VO + [[Scope]]
 
-我们再次看到，通过with语句，对象中标识符的解析添加到作用域链的最前端：
+我们再次看到，通过`with`语句，对象中标识符的解析添加到作用域链的最前端：
 
 <!--language: !js-->
 
@@ -973,11 +972,11 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
 > 1. x = 10, y = 10;
 > 1. 对象{x:20}添加到作用域的前端;
-> 1. 在with内部，遇到了var声明，当然什么也没创建，因为在进入上下文时，所有变量已被解析添加;
+> 1. 在`with`内部，遇到了`var`声明，当然什么也没创建，因为在进入上下文时，所有变量已被解析添加;
 > 1. 在第二步中，仅修改变量“x”，实际上对象中的“x”现在被解析，并添加到作用域链的最前端，“x”为20，变为30;
 > 1. 同样也有变量对象“y”的修改，被解析后其值也相应的由10变为30;
-> 1. 此外，在with声明完成后，它的特定对象从作用域链中移除（已改变的变量“x”－－30也从那个对象中移除），即作用域链的结构恢复到with得到加强以前的状态。
-> 1. 在最后两个alert中，当前变量对象的“x”保持同一，“y”的值现在等于30，在with声明运行中已发生改变。
+> 1. 此外，在`with`声明完成后，它的特定对象从作用域链中移除（已改变的变量“x”－－30也从那个对象中移除），即作用域链的结构恢复到`with`得到加强以前的状态。
+> 1. 在最后两个`alert`中，当前变量对象的“x”保持同一，“y”的值现在等于30，在`with`声明运行中已发生改变。
 
 ## 函数
 
@@ -1012,7 +1011,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       function innerFD() {}
     }
 
-只有这两个位置可以声明函数，也就是说，__不能在表达式位置或一个代码块中定义__(如if,while,for等)它。
+只有这两个位置可以声明函数，也就是说，__不能在表达式位置或一个代码块中定义__(如`if,while,for`等)它。
 
 #### 函数表达式
 函数表达式（缩写为FE）是这样一种函数：
@@ -1030,7 +1029,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       ...
     };
 
-该例演示是让一个匿名函数表达式赋值给变量foo，然后该函数可以用foo这个名称进行访问——foo()。
+该例演示是让一个匿名函数表达式赋值给变量`foo`，然后该函数可以用`foo`这个名称进行访问——`foo()`。
 
 同时和定义里描述的一样，函数表达式也可以拥有可选的名称：
 
@@ -1040,7 +1039,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       ...
     };
 
-需要注意的是，在外部FE通过变量“foo”来访问——foo()，而在函数内部（如递归调用），有可能使用名称“_foo”。
+需要注意的是，在外部FE通过变量“foo”来访问——`foo()`，而在函数内部（如递归调用），有可能使用名称“_foo”。
 
 如果FE有一个名称，就很难与FD区分。但是，如果你明白定义，区分起来就简单明了：FE总是处在表达式的位置。在下面的例子中我们可以看到各种ECMAScript 表达式：
 
@@ -1106,7 +1105,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     foo.bar(); // 10;
     alert(x); // "x" 未定义
 
-我们看到函数foo.bar（通过[[Scope]]属性）访问到函数initialize的内部变量“x”。同时，“x”在外部不能直接访问。在许多库中，__这种策略常用来创建”私有”数据和隐藏辅助实体__。在这种模式中，初始化的FE的名称(即initialize)通常被忽略：
+我们看到函数`foo.bar`（通过`[[Scope]]`属性）访问到函数`initialize`的内部变量“x”。同时，“x”在外部不能直接访问。在许多库中，__这种策略常用来创建”私有”数据和隐藏辅助实体__。在这种模式中，初始化的FE的名称(即`initialize`)通常被忽略：
 
 还有一个例子是：在代码执行阶段通过条件语句进行创建FE，不会污染变量对象VO。
 
@@ -1122,7 +1121,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     bar(); // 0
 
 #### 函数构造器创建的函数
-既然这种函数对象也有自己的特色，我们将它与FD和FE区分开来。其主要特点在于这种函数的[[Scope]]属性仅包含全局对象：
+既然这种函数对象也有自己的特色，我们将它与FD和FE区分开来。其主要特点在于这种函数的`[[Scope]]`属性仅包含全局对象：
 
 <!--language: !js-->
 
@@ -1137,7 +1136,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       bar(); // 10, "y" 未定义
     }
 
-我们看到，函数bar的[[Scope]]属性不包含foo上下文的Ao——变量”y”不能访问，变量”x”从全局对象中取得。顺便提醒一句，Function构造器既可使用new 关键字，也可以没有，这样说来，这些变体是等价的。
+我们看到，函数`bar`的`[[Scope]]`属性不包含`foo`上下文的Ao——变量”y”不能访问，变量”x”从全局对象中取得。顺便提醒一句，`Function`构造器既可使用`new`关键字，也可以没有，这样说来，这些变体是等价的。
 
 ### 立即调用
 “为何在函数创建后的立即调用中必须用圆括号来包围它？”，答案就是：表达式句子的限制就是这样的。
@@ -1158,9 +1157,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
 我们使用了函数声明，上述2个定义，解释器在解释的时候都会 __报错__，但是可能有多种原因。
 
-如果在全局代码里定义（也就是程序级别），解释器会将它看做是函数声明，因为他是以function关键字开头，第一个例子，我们会得到SyntaxError错误，是因为函数声明没有名字（我们前面提到了函数声明必须有名字）。
+如果在全局代码里定义（也就是程序级别），解释器会将它看做是函数声明，因为他是以`function`关键字开头，第一个例子，我们会得到`SyntaxError`错误，是因为函数声明没有名字（我们前面提到了函数声明必须有名字）。
 
-第二个例子，我们有一个名称为foo的一个函数声明正常创建，但是我们依然得到了一个语法错误——没有任何表达式的分组操作符错误。在函数声明后面他确实是一个分组操作符，而不是一个函数调用所使用的圆括号。所以如果我们声明如下代码：
+第二个例子，我们有一个名称为`foo`的一个函数声明正常创建，但是我们依然得到了一个语法错误——没有任何表达式的分组操作符错误。在函数声明后面他确实是一个分组操作符，而不是一个函数调用所使用的圆括号。所以如果我们声明如下代码：
 
 <!--language: !js-->
 
@@ -1191,7 +1190,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     // 这个操作符里，包含的也是一个表达式"foo"
     ("foo");
 
-我们如果来告诉解释器：我就像在函数声明之后立即调用，答案是很明确的，你得声明函数表达式function expression，而不是函数声明function declaration，并且创建表达式最简单的方式就是用分组操作符括号，里边放入的永远是表达式，所以解释器在解释的时候就不会出现歧义。在代码执行阶段这个的function就会被创建，并且立即执行，然后自动销毁（如果没有引用的话）。
+我们如果来告诉解释器：我就像在函数声明之后立即调用，答案是很明确的，你得声明函数表达式`function expression`，而不是函数声明`function declaration`，并且创建表达式最简单的方式就是用分组操作符括号，里边放入的永远是表达式，所以解释器在解释的时候就不会出现歧义。在代码执行阶段这个的`function`就会被创建，并且立即执行，然后自动销毁（如果没有引用的话）。
 
 <!--language: !js-->
 
@@ -1199,7 +1198,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
       alert(x);
     })(1); // 这才是调用，不是分组操作符
 
-上述代码就是我们所说的在用括号括住一个表达式，然后通过（1）去调用。
+上述代码就是我们所说的在用括号括住一个表达式，然后通过`(1)`去调用。
 
 注意，下面一个立即执行的函数，周围的括号不是必须的，因为函数已经处在表达式的位置，解析器知道它处理的是在函数执行阶段应该被创建的FE，这样在函数创建后立即调用了函数。
 
@@ -1213,7 +1212,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     alert(foo.bar); // 'yes'
 
-就像我们看到的，foo.bar是一个字符串而不是一个函数，这里的函数仅仅用来根据条件参数初始化这个属性——它创建后并立即调用。
+就像我们看到的，`foo.bar`是一个字符串而不是一个函数，这里的函数仅仅用来根据条件参数初始化这个属性——它创建后并立即调用。
 
 因此，“关于圆括号”问题完整的答案如下：__当函数不在表达式的位置的时候，分组操作符圆括号是必须的——也就是手工将函数转化成FE。如果解析器知道它处理的是FE，就没必要用圆括号。__
 
@@ -1254,7 +1253,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
 “foo”储存在什么地方？__在foo的活动对象中？不是__，因为在foo中没有定义任何”foo”。在上下文的 __父变量对象中创建foo？也不是__，因为按照定义——FE不会影响VO(变量对象)——从外部调用foo我们可以实实在在的看到。那么在哪里呢？
 
-以下是关键点。当解释器在代码执行阶段遇到命名的FE时，在FE创建之前，它创建了 __辅助的特定对象，并添加到当前作用域链的最前端__。然后它创建了FE，此时（正如作用域链知道的那样）函数获取了[[Scope]] 属性——创建这个函数上下文的作用域链）。此后，FE的名称添加到特定对象上作为唯一的属性；这个属性的值是引用到FE上。最后一步是从父作用域链中移除那个特定的对象。让我们在伪码中看看这个算法：
+以下是关键点。当解释器在代码执行阶段遇到命名的FE时，在FE创建之前，它创建了 __辅助的特定对象，并添加到当前作用域链的最前端__。然后它创建了FE，此时（正如作用域链知道的那样）函数获取了`[[Scope]]` 属性——创建这个函数上下文的作用域链）。此后，FE的名称添加到特定对象上作为唯一的属性；这个属性的值是引用到FE上。最后一步是从父作用域链中移除那个特定的对象。让我们在伪码中看看这个算法：
 
 <!--language: js-->
 
@@ -1268,7 +1267,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
 
     delete Scope[0]; // 从作用域链中删除定义的特殊对象specialObject
 
-因此，在函数外部这个名称不可用的（因为它不在父作用域链中），但是，特定对象已经存储在函数的[[scope]]中，在那里名称是可用的。
+因此，在函数外部这个名称不可用的（因为它不在父作用域链中），但是，特定对象已经存储在函数的`[[scope]]`中，在那里名称是可用的。
 
 但是需要注意的是一些实现（如Rhino）不是在特定对象中而是在FE的激活对象中存储这个可选的名称。Microsoft 中的执行完全打破了FE规则，它在父变量对象中保持了这个名称，这样函数在外部变得可以访问。
 
@@ -1344,9 +1343,9 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     b.calculate(30); // 60
     c.calculate(40); // 80
 
-如果在对象b中找不到calculate方法(也就是对象b中没有这个calculate属性), 那么就会沿着原型链开始找。如果这个calculate方法在b的prototype中没有找到，那么就会沿着原型链找到a的prototype，一直遍历完整个原型链。记住，一旦找到，就返回第一个找到的属性或者方法。因此，第一个找到的属性成为继承属性。如果遍历完整个原型链，仍然没有找到，那么就会返回undefined。
+如果在对象b中找不到`calculate`方法(也就是对象b中没有这个`calculate`属性), 那么就会沿着原型链开始找。如果这个`calculate`方法在b的`prototype`中没有找到，那么就会沿着原型链找到a的`prototype`，一直遍历完整个原型链。记住，一旦找到，就返回第一个找到的属性或者方法。因此，第一个找到的属性成为继承属性。如果遍历完整个原型链，仍然没有找到，那么就会返回`undefined`。
 
-除了创建对象，构造函数(constructor) 还做了另一件有用的事情—自动为创建的新对象设置了原型对象(prototype object) 。原型对象存放于 ConstructorFunction.prototype 属性中。
+除了创建对象，构造函数(constructor) 还做了另一件有用的事情—自动为创建的新对象设置了原型对象(prototype object) 。原型对象存放于`ConstructorFunction.prototype` 属性中。
 
 <!--language: !js-->
 
@@ -1417,7 +1416,7 @@ this与上下文中可执行代码的类型有直接关系，this值在进入上
     }
     alert(native_property('Object', 'toString', foo));
 
-但如果最上层的Object的原型都被重写的话，则需要以下方式：
+但如果最上层的`Object`的原型都被重写的话，则需要以下方式：
 
 <!--language: !js-->
 
@@ -2108,7 +2107,7 @@ js中，经常需要在方法调用时传入"静态方法"的回调函数，有�
     alert(result3);
 
 
-下面有关[闭包中作用域的例子](#TOC4.4.6)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
+下面有关[闭包中作用域的例子](#TOC4.3.6)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
 
 <!--language: !js-->
 
@@ -2316,206 +2315,14 @@ js中函数第一公民，高阶函数自然支持，甚至下面的其他特性
 
 js原生不支持lambda，但借助一些库（如[Functional Javascript](http://osteele.com/sources/javascript/functional/)，[lambda.js](http://www.javascriptoo.com/lambda-js)）可实现相关功能，或直接使用[CoffeScript](http://coffeescript.org/)
 
-## 偏函数用法
-计算一个数组里等于某个值的元素的个数。[参考](http://www.vaikan.com/learn-you-a-haskell-for-great-good)
+### map与reduce
+以下概念对mongodb等分布式并发NoSql具有指导意义，对于js编程可作为参考
 
-<!--language: !js-->
+指定一个Map（映射）函数，用来把一组键值对映射成一组新的键值对，指定并发的Reduce（化简）函数，用来保证所有映射的键值对中的每一个共享相同的键组
 
-    // 不灵活
-    function countMatching(array, value) {
-        var counted = 0;
-        for (var i = 0; i < array.length; i++) {
-            if (array[i] == value)
-                counted++;
-        }
-        return counted;
-    }
+简单来说，一个映射函数就是对一些独立元素组成的概念上的列表（例如，一个测试成绩的列表）的每一个元素进行指定的操作（比如，有人发现所有学生的成绩都被高估了一分，他可以定义一个“减一”的映射函数，用来修正这个错误。）。事实上，每个元素都是被独立操作的，而原始列表没有被更改，因为这里创建了一个新的列表来保存新的答案。这就是说，Map操作是可以高度并行的（js中并非并行），这对高性能要求的应用以及并行计算领域的需求非常有用。
 
-    // == 2
-    alert(countMatching([1,3,3,4,5], 3));
-
-它不灵活，因为它只能用来计算一个数组中精确匹配某个值的元素的个数。下面是一个灵活一些的版本，它能接受一个函数，而不是一个值，作为参数。我们可以用它来对任何数据、任何对象进行比较。
-
-<!--language: !js-->
-
-    // more flexible
-    function count(array, matching) {
-        var counted = 0
-        for (var i = 0; i < array.length; i++) {
-            if (matching(array[i]))
-                counted++
-        }
-        return counted
-    }
-
-    // == 2, same as first example
-    alert(count([1,3,3,4,5], function(num) {
-        return (num == 3)
-    }));
-
-    // == 2, now we can use our functions for ANY kind of items or match test!
-    alert(count([{name:"bob"}, {name:"henry"}, {name:"jon"}], function(obj) {
-        return (obj.name.length < 4)
-    }));
-
-因为高阶函数更具灵活性，你就更少有机会去写它们，因为你一旦你写成一个，你可以它应用到各种不同的情况中。
-
-但比较函数（称为predicates）却不可复用。如果是一些简单的情况，这就足够了，但经常，我们会需要更复杂的比较方法的函数。这样的函数不仅仅可用于计数，它们可以用于任何事情上，一但你写成或找到了这样的函数，从长期的角度看，它们会节省你大量的时间和调试功夫。
-
-让我们来定义一个可复用的比较函数，达到我们的目的。`==`不是一个函数。我们是否可以定义一个eq函数来帮我们完成类似的事情呢？
-
-<!--language: js-->
-
-    function eq(a, b) {
-        return (a == b)
-    }
-
-    count([1,3,3,4,5], function(num) {
-        return eq(3, num)
-    })
-
-我们用了一个库函数来完成比较任务，而不是使用我们现写的代码。如果eq函数很复杂，我们可以测试它并可以在其它的地方复用它。
-
-但这使代码变得冗长，因为count函数的参数是一个只需要一个参数——数组元素——的函数，而eq函数却需要两个参数。我还是要定义我们自己的匿名函数。让我们来简化一下这些代码。
-
-<!--language: js-->
-
-    function makeEq(a) {
-        // countMatchingWith wants a function that takes
-        // only 1 argument, just like the one we're returning
-        return function(b) {
-            return eq(a, b)
-        }
-    }
-
-    // now it's only on one line!
-    count([1,3,3,4,5], makeEq(3))
-
-我们写了一个兼容count函数的函数(一个参数——数组元素——返回true或false)。看起来就像是count函数调用的是`eq(3, item)`。这叫做 __偏函数用法__(partial function application) ，指创建一个调用另外一个部分参数已经预置的函数的函数的用法。这样，它就能被别的地方，比如count函数，以更少的参数形式来调用。我们在makeEq函数里已经实现了这些，但是，我们并不想针对我们各种功能开发出各种版本的makeX(比如makeEqt，makeGt，makeLt等)函数。让我们来找一种方法能通用于各种形式的函数。
-
-<!--language: js-->
-
-    function applyFirst(f, a) {
-        return function(b) {
-            return f.call(null, a, b)
-        }
-    }
-
-    count([1,3,3,4,5], applyFirst(eq, 3))
-
-现在我们不再需要一个makeEq函数了。任何2个参数的库函数，我们都可以按这种方式调用。通过偏函数用法，__使得定义即使是诸如`==`这样简单功能的各种函数都变得十分有意义__，我们可以在高阶函数中更容易的使用它们（更大程度的复用）。
-
-对那些超过2个参数的函数如何办呢？下面的这一版本能让我们接受任意多的参数，高阶函数可以自己追加参数。
-
-<!--language: js-->
-
-    function apply(f) {
-        var args = Array.prototype.slice.call(arguments, 1)
-        return function(x) {
-            return f.apply(null, args.concat(x))
-        }
-    }
-
-    function propertyEquals(propertyName, value, obj) {
-        return (obj[propertyName] == value)
-    }
-
-    count([{name:"bob"},{name:"john"}], apply(propertyEquals, "name", "bob")) // == 1
-
-我们预置了2个参数，“name” 和 “bob”，count函数补足了最后一个参数来完成整个调用。偏函数用法使我们能接受各样的函数为参数，例如eq，然后把它们用于各样的高阶函数，例如count，以此来解决我们特定的问题。
-
-### Map和Filter中偏函数用法
-
-<!--language: !js-->
-
-    // this equals [1,3,3]
-    [1,3,3,4,5].filter(function(num) {
-        return (num < 4)
-    })
-
-让我们把它替换成一个可以复用的比较函数`lt` (less than)。
-
-<!--language: !js-->
-
-    function apply(f) {
-        var args = Array.prototype.slice.call(arguments, 1)
-        return function(x) {
-            return f.apply(null, args.concat(x))
-        }
-    }
-
-    function lt(a, b) {
-        return (b < a)
-    }
-
-    [1,3,3,4,5].filter(apply(lt, 4))
-
-看上去添加这个lt函数的做法有点傻，但是，我们可以使用偏函数用法来创造一个很简练的比较函数，当这个比较函数变的很复杂的时候，我们就能从对它的复用过程中获得好处。
-
-map函数能让你把数组里的一个东西变成另外一个东西。
-
-<!--language: !js-->
-
-    var usersById = {"u1":{name:"bob"}, "u2":{name:"john"}}
-    var user = {name:"sean", friendIds: ["u1", "u2"]}
-
-    // == ["bob", "john"]
-    function friendsNames(usersById, user) {
-        return user.friendIds.map(function(id) {
-            return usersById[id].name
-        })
-    }
-
-我们写一个可以复用的map变换函数，就像之前我们的可复用比较函数一样。让我们写一个叫做lookup的函数。
-
-<!--language: !js-->
-
-    var usersById = {"u1":{name:"bob"}, "u2":{name:"john"}}
-    var user = {name:"sean", friendIds: ["u1", "u2"]}
-
-    function lookup(obj, key) {
-        return obj[key]
-    }
-
-    // == [{name:"bob"}, {name:"john"}]
-    function friends(usersById, user) {
-        return user.friendIds.map(apply(lookup, usersById))
-    }
-
-很接近要求，但我们需要的是名称，而不是friend对象本身。如果我们再写一个参数颠倒过来的 lookup函数，通过第二次的map可以把它们的名称取出来。
-
-<!--language: !js-->
-
-    function lookupFlipped(key, obj) {
-        return lookup(obj, key)
-    }
-
-    // == ["bob", "john"]
-    function friendsNames(usersById, user) {
-        return friends(usersById, user)
-                .map(apply(lookupFlipped, "name"))
-    }
-
-但是我不想定义这个lookupFlipped函数，这样干有点傻。这样，我们来定义一个函数，它接收参数的顺序是从右到左，而不是从左到右，于是我们就能够复用lookup了。
-
-<!--language: !js-->
-
-    function applyr(f) {
-        var args = Array.prototype.slice.call(arguments, 1)
-        return function(x) {
-            return f.apply(null, [x].concat(args))
-        }
-    }
-
-    // == ["bob", "john"]
-    function friendsNames(usersById, user) {
-        return friends(usersById, user)
-                .map(applyr(lookup, "name")) // we can use normal lookup!
-    }
-
-applyr(lookup, "name")函数返回的函数只接受一个参数——那个对象——返回对象的名称。我们不再需要反转任何东西：我们可以按任何顺序接受参数。
-
-偏函数用法需要对一些常见的功能定义各种不同的函数，就像lt函数，但这正是我们的目的。你可以以偏函数用法把lt函数既用于count函数，也可用于Array.filter函数。它们可以复用，可以组合使用。
+而化简操作指的是对一个列表的元素进行适当的合并（继续看前面的例子，如果有人想知道班级的平均分该怎么做？他可以定义一个化简函数，通过让列表中的奇数（odd）或偶数（even）元素跟自己的相邻的元素相加的方式把列表减半，如此递归运算直到列表只剩下一个元素，然后用这个元素除以人数，就得到了平均分）。虽然他不如映射函数那么并行，但是因为化简总是有一个简单的答案，大规模的运算相对独立，所以化简函数在高度并行环境下也很有用。
 
 
 ## 模式匹配
@@ -2856,14 +2663,217 @@ ECMAScript只使用 __静态（词法）作用域__（而诸如Perl这样的语�
 ## 递归/reduce
 一些语言提供了 __尾递归__(tail recursion/trai-end recursion) 优化，即如果一个函数的最后执行递归调用语句的特殊形式的递归，那么调用的过程会被替换为一个循环，可以提高速度。但js __并没有提供__ 该优化。
 
-`reduce`或`flod`对尾递归情形的一种模式固定 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#关键字_fold)
+`reduce`或`flod`对尾递归情形的一种模式固定 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#关键字_fold)，不使用变量（无空间污染，无副作用），而通过参数与返回值来保持中间结果
 
 > ES5中的`Array.prototype.reduce`已有支持
 
 <!--language: !js-->
 
+    // sum
     alert([1, 2, 3].reduce(function(memo, num){ return memo + num; }, 0));
+    // join
+    alert([1, 2, 3].reduce(function(memo, num){ return memo + num; }, ""));
 
+## 偏函数应用
+计算一个数组里等于某个值的元素的个数。[参考](http://www.vaikan.com/learn-you-a-haskell-for-great-good)
+
+<!--language: !js-->
+
+    // 不灵活
+    function countMatching(array, value) {
+        var counted = 0;
+        for (var i = 0; i < array.length; i++) {
+            if (array[i] == value)
+                counted++;
+        }
+        return counted;
+    }
+
+    // == 2
+    alert(countMatching([1,3,3,4,5], 3));
+
+它不灵活，因为它只能用来计算一个数组中精确匹配某个值的元素的个数。下面是一个灵活一些的版本，它能接受一个函数，而不是一个值，作为参数。我们可以用它来对任何数据、任何对象进行比较。
+
+<!--language: !js-->
+
+    // more flexible
+    function count(array, matching) {
+        var counted = 0
+        for (var i = 0; i < array.length; i++) {
+            if (matching(array[i]))
+                counted++
+        }
+        return counted
+    }
+
+    // == 2, same as first example
+    alert(count([1,3,3,4,5], function(num) {
+        return (num == 3)
+    }));
+
+    // == 2, now we can use our functions for ANY kind of items or match test!
+    alert(count([{name:"bob"}, {name:"henry"}, {name:"jon"}], function(obj) {
+        return (obj.name.length < 4)
+    }));
+
+因为高阶函数更具灵活性，你就更少有机会去写它们，因为你一旦你写成一个，你可以它应用到各种不同的情况中。
+
+但比较函数（称为`predicates`）却不可复用。如果是一些简单的情况，这就足够了，但经常，我们会需要更复杂的比较方法的函数。这样的函数不仅仅可用于计数，它们可以用于任何事情上，一但你写成或找到了这样的函数，从长期的角度看，它们会节省你大量的时间和调试功夫。
+
+让我们来定义一个可复用的比较函数，达到我们的目的。`==`不是一个函数。我们是否可以定义一个eq函数来帮我们完成类似的事情呢？
+
+<!--language: js-->
+
+    function eq(a, b) {
+        return (a == b)
+    }
+
+    count([1,3,3,4,5], function(num) {
+        return eq(3, num)
+    })
+
+我们用了一个库函数来完成比较任务，而不是使用我们现写的代码。如果`eq`函数很复杂，我们可以测试它并可以在其它的地方复用它。
+
+但这使代码变得冗长，因为`count`函数的参数是一个只需要一个参数——数组元素——的函数，而eq函数却需要两个参数。我还是要定义我们自己的匿名函数。让我们来简化一下这些代码。
+
+<!--language: js-->
+
+    function makeEq(a) {
+        // countMatchingWith wants a function that takes
+        // only 1 argument, just like the one we're returning
+        return function(b) {
+            return eq(a, b)
+        }
+    }
+
+    // now it's only on one line!
+    count([1,3,3,4,5], makeEq(3))
+
+我们写了一个兼容`count`函数的函数(一个参数——数组元素——返回`true`或`false`)。看起来就像是`count`函数调用的是`eq(3, item)`。这叫做 __*偏函数应用*__(partial function application) ，__指创建一个调用另外一个部分参数已经预置的函数的函数的用法__。这样，它就能被别的地方，比如`count`函数，以更少的参数形式来调用。我们在`makeEq`函数里已经实现了这些，但是，我们并不想针对我们各种功能开发出各种版本的`makeX`(比如`makeEqt`，`makeGt`，`makeLt`等)函数。让我们来找一种方法能 __通用于各种形式的函数__。
+
+<!--language: js-->
+
+    function applyFirst(f, a) {
+        return function(b) {
+            return f.call(null, a, b)
+        }
+    }
+
+    count([1,3,3,4,5], applyFirst(eq, 3))
+
+现在我们不再需要一个`makeEq`函数了。任何2个参数的库函数，我们都可以按这种方式调用。通过偏函数用法，__使得定义即使是诸如`==`这样简单功能的各种函数都变得十分有意义__，我们可以在高阶函数中更容易的使用它们（更大程度的复用）。
+
+对那些超过2个参数的函数如何办呢？下面的这一版本能让我们接受任意多的参数，高阶函数可以自己追加参数。
+
+<!--language: js-->
+
+    function apply(f) {
+        var args = Array.prototype.slice.call(arguments, 1)
+        return function(x) {
+            return f.apply(null, args.concat(x))
+        }
+    }
+
+    function propertyEquals(propertyName, value, obj) {
+        return (obj[propertyName] == value)
+    }
+
+    count([{name:"bob"},{name:"john"}], apply(propertyEquals, "name", "bob")) // == 1
+
+我们预置了2个参数，“name” 和 “bob”，count函数补足了最后一个参数来完成整个调用。偏函数用法使我们能接受各样的函数为参数，例如eq，然后把它们用于各样的高阶函数，例如count，以此来解决我们特定的问题。
+
+### Map和Filter中偏函数用法
+
+<!--language: !js-->
+
+    // this equals [1,3,3]
+    [1,3,3,4,5].filter(function(num) {
+        return (num < 4)
+    })
+
+让我们把它替换成一个可以复用的比较函数`lt` (less than)。
+
+<!--language: !js-->
+
+    function apply(f) {
+        var args = Array.prototype.slice.call(arguments, 1)
+        return function(x) {
+            return f.apply(null, args.concat(x))
+        }
+    }
+
+    function lt(a, b) {
+        return (b < a)
+    }
+
+    [1,3,3,4,5].filter(apply(lt, 4))
+
+看上去添加这个lt函数的做法有点傻，但是，我们可以使用偏函数用法来创造一个很简练的比较函数，当这个比较函数变的很复杂的时候，我们就能从对它的复用过程中获得好处。
+
+map函数能让你把数组里的一个东西变成另外一个东西。
+
+<!--language: !js-->
+
+    var usersById = {"u1":{name:"bob"}, "u2":{name:"john"}}
+    var user = {name:"sean", friendIds: ["u1", "u2"]}
+
+    // == ["bob", "john"]
+    function friendsNames(usersById, user) {
+        return user.friendIds.map(function(id) {
+            return usersById[id].name
+        })
+    }
+
+我们写一个可以复用的map变换函数，就像之前我们的可复用比较函数一样。让我们写一个叫做lookup的函数。
+
+<!--language: !js-->
+
+    var usersById = {"u1":{name:"bob"}, "u2":{name:"john"}}
+    var user = {name:"sean", friendIds: ["u1", "u2"]}
+
+    function lookup(obj, key) {
+        return obj[key]
+    }
+
+    // == [{name:"bob"}, {name:"john"}]
+    function friends(usersById, user) {
+        return user.friendIds.map(apply(lookup, usersById))
+    }
+
+很接近要求，但我们需要的是名称，而不是friend对象本身。如果我们再写一个参数颠倒过来的 lookup函数，通过第二次的map可以把它们的名称取出来。
+
+<!--language: !js-->
+
+    function lookupFlipped(key, obj) {
+        return lookup(obj, key)
+    }
+
+    // == ["bob", "john"]
+    function friendsNames(usersById, user) {
+        return friends(usersById, user)
+                .map(apply(lookupFlipped, "name"))
+    }
+
+但是我不想定义这个lookupFlipped函数，这样干有点傻。这样，我们来定义一个函数，它接收参数的顺序是从右到左，而不是从左到右，于是我们就能够复用lookup了。
+
+<!--language: !js-->
+
+    function applyr(f) {
+        var args = Array.prototype.slice.call(arguments, 1)
+        return function(x) {
+            return f.apply(null, [x].concat(args))
+        }
+    }
+
+    // == ["bob", "john"]
+    function friendsNames(usersById, user) {
+        return friends(usersById, user)
+                .map(applyr(lookup, "name")) // we can use normal lookup!
+    }
+
+applyr(lookup, "name")函数返回的函数只接受一个参数——那个对象——返回对象的名称。我们不再需要反转任何东西：我们可以按任何顺序接受参数。
+
+偏函数用法需要对一些常见的功能定义各种不同的函数，就像lt函数，但这正是我们的目的。你可以以偏函数用法把lt函数既用于count函数，也可用于Array.filter函数。它们可以复用，可以组合使用。
 
 ## Curry化
 函数也是值，`Curry`允许我们将函数与传递它的参数相结合去产生一个新的函数 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Curried_functions)
@@ -2902,6 +2912,214 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
     // var add3_x_y = add3_x.curry(null,2);
     alert(add3_x_y(6));
 
+以上实现方式是通过给函数对象加上`curry`属性来实现的，下面将`curry`定义成一个函数，支持更直接的连续调用 [参考](http://www.cnblogs.com/rubylouvre/archive/2009/11/09/1598761.html)：
+
+版本1：
+
+<!--language: !js-->
+
+    function curry(fun) {
+        if (typeof fun != 'function') {
+          throw new Error("The argument must be a function.");
+        }
+        if (fun.arity == 0) {
+          throw new Error("The function must have more than one argument.");
+        }
+
+        var funText = fun.toString();
+        var args = /function .*\((.*)\)(.*)/.exec(funText)[1].split(', ');
+        var firstArg = args.shift();
+        var restArgs = args.join(', ');
+        var body = funText.replace(/function .*\(.*\) /, "");
+
+        var curriedText =
+          "function (" + firstArg + ") {" +
+          "return function (" + restArgs + ")" + body +
+          "}";
+
+        eval("var curried =" + curriedText);
+        return curried;
+    }
+
+    function sum(x, y) {
+      return x + y;
+    }
+    function mean3(a, b, c) {
+      return (a + b + c)/3;
+    }
+
+    var a = curry(sum)(10)(15)
+    alert(a)//25
+    var b = curry(mean3)(10)(20, 30);
+    alert(b)//20
+    var c =  curry(curry(sum))(10)()(20);
+    alert(c);//error
+    var d = curry(curry(mean3)(10))(20)(30);
+    alert(d);//error
+
+版本2：
+
+<!--language: !js-->
+
+    var curry= function(fn){
+      return function(args){
+        //内部函数的参数为数组，由于立即执行，因此直接到第三重去
+        //args是相对于第三重内部函数可是全局变量
+        var self= arguments.callee;//把自身保存起来（就是那个数组为参数的第二重函数）
+        return function(){ //这才是第二次调用的函数
+          if(arguments.length){//如果还有要添加的参数
+            [].push.apply(args,arguments);//apply把当前传入的所有参数放进args中
+            return self(args);
+          }else{
+            return fn.apply(this,args);//apply的第二参数为数组
+          }
+        }
+      }([]);
+    };
+
+    function sum(){
+        var result=0;
+        for(var i=0, n=arguments.length; i<n; i++){
+            result += arguments[i];
+        }
+        return result;
+    }
+
+    var sum2= curry(sum);
+        sum2= sum2(1)(2)(3)(4)(5);
+
+    alert(sum2()); // 15
+
+    var sum3= curry(sum);
+        sum3= sum3(1,2,3);
+        sum3= sum3(4,5,6);
+        sum3= sum3(7,8,9);
+    alert(sum3()); // 45
+
+上面的函数针对不固定参数的，最后怎么也要放个括号，如果原函数的参数是固定的，想只要参数足够就返回结果，多出的参数忽略。改进如下：
+
+<!--language: !js-->
+
+    function curry(f) {
+      if (f.length == 0) return f;
+      function iterate(args) {
+        if (args.length >= f.length)
+          return f.apply(null, args);
+        return function () {
+          return iterate(args.concat(Array.prototype.slice.call(arguments)));
+        };
+      }
+      return iterate([]);
+    }
+
+    function mean3(a, b, c) { return (a + b + c) / 3; }
+
+    var curriedMean3 = curry(mean3);
+    alert(curriedMean3(1)(2, 3)); // => 2
+    alert(curriedMean3(1)(2)(3));//空括号无效
+    alert(curriedMean3()(1)()(2)()(3)); // => 2
+    alert(curriedMean3(1, 2)(3, 4)); // => 2 (第四个参数无效)
+
+
+### 偏函数 vs Curry化
+偏函数解决这样的问题：__如果我们有函数是多个参数的，我们希望能固定其中某几个参数的值__。
+
+在Python语言中，我们可以这样做：
+
+<!--language: !python-->
+
+    from functools import partial
+
+    def foo(a,b,c):
+      return a + b + c
+
+    foo23 = partial(foo, b=23)
+    print foo23(a = 1, c = 3)
+
+
+函数Curry化明显解决的是一个完全不同的问题：__如果我们有几个单参数函数，并且这是一种支持一等函数(first-class)的语言，如何去实现一个多参数函数__？函数Curry化是一种实现多参数函数的方法。
+
+下面是一个单参数的Javascript函数:
+
+<!--language: !js-->
+
+    var foo = function(a) {
+      return a * a;
+    }
+
+如果我们 __受限只能写单参数函数__，可以像下面这样模拟出一个多参数函数：
+
+<!--language: !js-->
+
+    var foo = function(a) {
+      return function(b) {
+        return a * a + b * b;
+      }
+    }
+
+通过这样调用它：`(foo(3))(4)`，或直接 `foo(3)(4)`。
+
+函数Curry化提供了一种非常自然的方式来实现某些偏函数应用。如果你希望函数`foo`的第一个参数值被固定成5，你需要做的就是`var foo5 = foo(5)`。这就OK了。函数`foo5`就是`foo`函数的偏函数。注意，尽管如此，我们没有很简单的方法对`foo`函数的第二个参数偏函数化(除非先偏函数化第一个参数)。
+
+当然，Javascript是支持多参数函数的：
+
+<!--language: !js-->
+
+    var bar = function(a, b) {
+      return a * a + b * b;
+    }
+
+我们定义的`bar`函数并不是一个Curry化的函数。调用`bar(5)`并不会返回一个可以输入`12`的函数（而实际上相当于`b`赋值为`undefined`）。我们只能像`bar(5,12)`这样调用这个函数。
+
+在一些其它语言里，比如 Haskell 和 OCaml，所有的 __多参数函数__ 都是通过Curry化实现的。
+
+下面是一个把上面的foo函数用OCaml语言写成的例子：
+
+<!--language: ocaml-->
+
+    let foo = fun a ->
+      fun b ->
+        a * a + b * b
+
+下面是把上面的bar函数用OCaml语言写成的例子：
+
+<!--language: ocaml-->
+
+    let bar = fun a b ->
+      a * a + b * b
+
+头一个函数我们叫做“显式Curry化”，第二个叫做“隐式Curry化”。跟Javascript不一样，在OCaml语言里，`foo`函数和`bar`函数是完全一样的。我们用完全一样的方式调用它们。
+
+<!--language: ocaml-->
+
+    # foo 3 4;;
+    - : int = 25
+    # bar 3 4;;
+    - : int = 25
+
+两个函数都能够通过提供一个参数值来创造一个偏函数：
+
+<!--language: ocaml-->
+
+    # let foo5 = foo 5;;
+    val foo5 : int -> int = <fun>
+
+    # let bar5 = bar 5;;
+    val bar5 : int -> int = <fun>
+    # foo5 12;;
+    - : int = 169
+    # bar5 12;;
+    - : int = 169
+
+小结：
+
+> - 偏函数应用是找一个函数，固定其中的几个参数值，从而得到一个新的函数。
+> - 函数Curry化是一种 __使用匿名单参数函数来实现多参数函数__ 的方法。
+> - 函数Curry化能够让你轻松的实现某些偏函数应用。
+> - 函数Curry化的重要意义在于可以把函数完全变成「接受一个参数；返回一个值」的固定形式，这样对于讨论和优化会更加方便。
+> - 有些语言(例如 Haskell, OCaml)所有的多参函数都是在内部通过函数Curry化实现的。
+
+
 
 ## 函数组合
 组合函数三个函数`f()`, `g()`与`h()`，执行效果与`f(g(h()))`等价，能减少括号的使用，减少参数赋值，能对函数对象组合后再调用，增加流程的灵活性 [参考1](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#Function_composition)，[参考2](http://javascriptweblog.wordpress.com/2010/04/14/compose-functions-as-building-blocks/)，函数组合是右结合的
@@ -2926,7 +3144,7 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
     var welcome = compose(greet, exclaim);
     alert(welcome('moe'));
 
-在[前面map](#TOC4.2.1)例子中，我们遍历了数组两次，一次用来获取users，一次为了获取names。如果能在一次map映射操作中同时做这两件事情，效率会高很多。
+在[前面map](#TOC4.5.1)例子中，我们遍历了数组两次，一次用来获取users，一次为了获取names。如果能在一次map映射操作中同时做这两件事情，效率会高很多。
 
 <!--language: !js-->
 
@@ -3261,3 +3479,4 @@ DocumentCloud
 
 
 
+<!-- http://www.cnblogs.com/caishen/default.html?page=3&OnlyTitle=1 -->
