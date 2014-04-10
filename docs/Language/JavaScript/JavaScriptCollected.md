@@ -1713,9 +1713,148 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
 
 ## 类型判断
 
+### 原始值类型
+6种用于ECMAScript程序的数据类型，前5种是原始值类型，包括`Undefined、Null、Boolean、String、Number、Object`。
+
+原始值类型例子：
+
+<!--language: !js-->
+
+    var a = undefined;
+    var b = null;
+    var c = true;
+    var d = 'test';
+    var e = 10;
+
+这些值是在底层上直接实现的，他们不是object，所以没有原型，没有构造函数。
+
+> 这些原生值和我们平时用的(Boolean、String、Number)虽然名字上相似，但不是同一个东西。所以`typeof(true)`和`typeof(new Boolean(true))`结果是不一样的
+
+想知道数据是哪种类型用`typeof`是最好不过了，有个例子需要注意一下，如果用`typeof`来判断`null`的类型，结果是`object`，因为规范就是这么规定的
+
+### 特殊包装类
+布尔对象，字符串对象，数字对象，这些对象的创建，是通过相应的内置构造器创建，并且包含原生值作为其内部属性，这些对象可以转换省原始值，反之亦然。
+
+<!--language: !js-->
+
+    var c = new Boolean(true); console.log(typeof c); //object
+    var d = new String('test'); console.log(typeof d); //object
+    var e = new Number(10); console.log(typeof e); //object
+
+    // 转换成原始值
+    // 使用不带new关键字的函数
+    var c2 = Boolean(c); console.log(typeof c2); //boolean
+    var d2 = String(d); console.log(typeof d2); //string
+    var e2 = Number(e); console.log(typeof e2); //number
+
+    // 重新转换成对象
+    var c3 = Object(c2); console.log(typeof c3); //object
+    var d3 = Object(d2); console.log(typeof d3); //object
+    var e3 = Object(e2); console.log(typeof e3); //object
+
+也有对象是由特殊的内置构造函数创建： `Function`（函数对象构造器）、`Array`（数组构造器） `RegExp`（正则表达式构造器）、`Math`（数学模块）、 `Date`（日期的构造器）等等，这些对象也是`Object`对象类型的值，他们彼此的区别是由内部属性管理的。
+
+
+### valueOf方法
+将对象转化成原始值可以用valueOf方法，如果一个数据是 引用类型，并且该数据需要进行值运算，js引擎将先调用它(或经过 包装后 的对象)的valueOf()方法求值，然后以该值参与运算
+
+<!--language: !js-->
+
+    var a = new Number(1);
+    var primitiveA = Number(a); // 隐式"valueOf"调用
+    var alsoPrimitiveA = a.valueOf(); // 显式调用
+
+    alert([
+      typeof a, // "object"
+      typeof primitiveA, // "number"
+      typeof alsoPrimitiveA // "number"
+    ]);
+
+这种方式允许对象参与各种操作，例如：
+
+<!--language: !js-->
+
+    var a = new Number(1);
+    var b = new Number(2);
+
+    alert(a + b); // 3
+
+    // 甚至
+    var c = {
+      x: 10,
+      y: 20,
+      valueOf: function () {
+        return this.x + this.y;
+      }
+    };
+
+    var d = {
+      x: 30,
+      y: 40,
+      // 和c的valueOf功能一样
+      valueOf: c.valueOf
+    };
+
+    alert(c + d); // 100
+
+对象还有一个更原始的代表性——字符串展示。 这个`toString`方法是可靠的，它在某些操作上是自动使用的：
+
+<!--language: !js-->
+
+    var a = {
+      valueOf: function () {
+        return 100;
+      },
+      toString: function () {
+        return '__test';
+      }
+    };
+
+    // 这个操作里，toString方法自动调用
+    alert(a); // "__test"
+
+    // 但是这里，调用的却是valueOf()方法
+    alert(a + 10); // 110
+
+    // 但，一旦valueOf删除以后
+    // toString又可以自动调用了
+    delete a.valueOf;
+    alert(a + 10); // "_test10"
+
+### Object.prototype.toString
+`Object.prototype`上定义的`toString`方法具有特殊意义，它间接得到的内部`[[Class]]`属性值，该方法应该返回下列字符串： "[object " + [[Class]] + "]" （例如，`[object Number]` ，`[object String]`等）。
+
+<!--language: !js-->
+
+    var toString = Object.prototype.toString;
+
+    var n = Object(1);
+    alert(toString.call(1)); // [object Number]
+    alert(toString.call(n)); // [object Number]
+
+    var s = Object('test');
+    alert(toString.call('test')); // [object String]
+    alert(toString.call(s)); // [object String]
+
+    // 一些类似，使用new操作符也可以
+    var b = new Object(true);
+    alert(toString.call(true)); // [object Boolean]
+    alert(toString.call(b)); // [object Boolean]
+
+    // 应用参数new Object的话创建的是简单对象
+    var o = new Object();
+    alert(toString.call(o)); // [object Object]
+
+    // 如果参数是一个现有的对象
+    // 那创建的结果就是简单返回该对象
+    var a = [];
+    alert(a === new Object(a)); // true
+    alert(a === Object(a)); // true
+
+
 ### typeof运算符
 
-js是弱类型的，具有6种基本数据类型，任何一个变量或值的类型都可以使用 __`typeof`__ 运算符来得到，以字符串形式返回此6种类型值之一：
+js是弱类型的，任何一个变量或值的类型都可以使用 __`typeof`__ 运算符来得到，以字符串形式返回此6种类型值之一：
 
 > - undefined
 > - number
@@ -1724,7 +1863,7 @@ js是弱类型的，具有6种基本数据类型，任何一个变量或值的�
 > - function 具有多种含义：函数、方法、构造器、类、函数对象等
 > - object 基于原型继承的面向对象
 
-通过typeof运算考察变量时，要么是对象(`object`)，要么是非对象(`number`,`undefined`,`string`等)
+通过typeof运算考察变量时，要么是对象(`object`)，要么是非对象(`number`,`undefined`,`string`,`boolean`,`function`)
 
 其中`function`,`object`为引用类型，其它均为值类型，包括`undefined`，但`string`在赋值运算中会按引用类型方式来处理
 
@@ -1732,11 +1871,17 @@ js是弱类型的，具有6种基本数据类型，任何一个变量或值的�
 
 <!--language: !js-->
 
-    [null, undefined, NaN, String(""), Number(0),
-     Boolean(false), function(){}, new Function()].forEach(function(item){
+    var arr = [null, undefined, NaN, '', 0,
+               false, /\s/i, function(){}, new Function()];
+    arr.forEach(function(item){
         console.log(typeof item);
-        //object,undefined,number,string,number,boolean,function
+        //object,undefined,number,string,number,boolean,object,function,function
     });
+    arr.forEach(function(item){
+        console.log(typeof Object(item));
+        //object,object,object,object,object,object,object,function,function
+    });
+
 
 ### instanceof运算符
 对象是不是另一个类的实例，使用`instanceof`运算符，会检测类的继承关系，因此一个子类的实例，在对祖先类做`instanceof`运算时，仍然得到`true`
@@ -1769,6 +1914,8 @@ js是弱类型的，具有6种基本数据类型，任何一个变量或值的�
 摘自underscore.js
 
 <!--language: js-->
+
+    var toString = Object.prototype.toString;
 
     // Is a given array, string, or object empty?
     // An "empty" object has no enumerable own-properties.
@@ -3464,6 +3611,28 @@ component.json
 DocumentCloud
 
 默认值规范
+
+第6章依赖管理
+CommonJS
+模块的声明
+模块和浏览器
+模块加载器
+Yabble
+RequireJS
+包装模块
+模块的按需加载
+LABjs
+无交互行为内容的闪烁（FUBC）
+
+第9章测试和调试
+单元测试
+断言
+QUnit
+Jasmine
+驱动
+无界面的测试
+Zombie
+Ichabod
 
 <!-- http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html -->
 
