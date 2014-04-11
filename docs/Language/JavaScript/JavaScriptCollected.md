@@ -1318,6 +1318,151 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 
 
 ## 原型与原型链
+
+### 原型
+每个对象都有一个原型（一些系统对象除外）。原型通信是通过内部的、隐式的、不可直接访问`[[Prototype]]`原型属性来进行的，原型可以是一个对象，也可以是`null`值。
+
+<!--language: !js-->
+
+    function A() {}
+    var a = new A();
+    alert(a.constructor); // function A() {}, by delegation
+    alert(a.constructor === A); // true
+
+存在着一个误区：`constructor`构造属性作为新创建对象自身的属性是错误的，但是，正如我们所看到的的，这个属性属于原型并且通过继承来访问对象。
+
+通过继承`constructor`属性的实例，可以间接得到的 __原型对象__ 的引用：
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype.x = new Number(10);
+
+    var a = new A();
+    alert(a.constructor.prototype); // [object Object]
+
+    alert(a.x); // 10, 通过原型
+    // 和a.[[Prototype]].x效果一样
+    alert(a.constructor.prototype.x); // 10
+
+    alert(a.constructor.prototype.x === a.x); // true
+
+函数的`constructor`和`prototype`属性在对象创建以后都可以重新定义的。在这种情况下，对象失去上面所说的机制。如果通过函数的`prototype`属性去编辑元素的`prototype`原型的话（添加新对象或修改现有对象），__实例上将看到新添加的属性__。
+
+然而，如果我们彻底改变函数的`prototype`属性（通过分配一个新的对象），那 __原始构造函数的引用就是丢失__，这是因为我们创建的对象不包括`constructor`属性
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype = {
+      x: 10
+    };
+
+    var a = new A();
+    alert(a.x); // 10
+    alert(a.constructor === A); // false!
+
+因此，对函数的原型引用需要手工恢复：
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype = {
+      constructor: A,
+      x: 10
+    };
+
+    var a = new A();
+    alert(a.x); // 10
+    alert(a.constructor === A); // true
+
+注意虽然手动恢复了`constructor`属性，和原来丢失的原型相比，`{DontEnum}`特性没有了，也就是说`A.prototype`里的`for..in`循环语句不支持了，ES5里，通过`[[Enumerable]]`特性提供了控制可枚举状态`enumerable`的能力。
+
+<!--language: !js-->
+
+    var foo = {x: 10};
+
+    Object.defineProperty(foo, "y", {
+      value: 20,
+      enumerable: false // aka {DontEnum} = true
+    });
+
+    console.log(foo.x, foo.y); // 10, 20
+
+    for (var k in foo) {
+      console.log(k); // only "x"
+    }
+
+    var xDesc = Object.getOwnPropertyDescriptor(foo, "x");
+    var yDesc = Object.getOwnPropertyDescriptor(foo, "y");
+
+    console.log(
+      xDesc.enumerable, // true
+      yDesc.enumerable  // false
+    );
+
+显式`prototype`和隐式`[[Prototype]]`属性，通常，一个对象的原型通过函数的`prototype`属性显式引用是不正确的，他引用的是同一个对象，对象的`[[Prototype]]`属性
+
+<!--language: js-->
+
+    a.[[Prototype]] ----> Prototype <---- A.prototype
+
+实例的`[[Prototype]]`值确实是在构造函数的`prototype`属性上获取的。
+
+然而，提交`prototype`属性不会影响已经创建对象的原型（只有在构造函数的`prototype`属性改变的时候才会影响到)，就是说新创建的对象才有有新的原型，而已创建对象还是引用到原来的旧原型（这个原型已经不能被再被修改了）。
+
+<!--language: js-->
+
+    // 在修改A.prototype原型之前的情况
+    a.[[Prototype]] ----> Prototype <---- A.prototype
+
+    // 修改之后
+    A.prototype ----> New prototype // 新对象会拥有这个原型
+    a.[[Prototype]] ----> Prototype // 引导的原来的原型上
+
+例如：
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype.x = 10;
+
+    var a = new A();
+    alert(a.x); // 10
+
+    A.prototype = {
+      constructor: A,
+      x: 20
+      y: 30
+    };
+
+    // 对象a是通过隐式的[[Prototype]]引用从原油的prototype上获取的值
+    alert(a.x); // 10
+    alert(a.y) // undefined
+
+    var b = new A();
+
+    // 但新对象是从新原型上获取的值
+    alert(b.x); // 20
+    alert(b.y) // 30
+
+因此，有的文章说“动态修改原型将影响所有的对象都会拥有新的原型”是错误的，新原型仅仅在原型修改以后的新创建对象上生效。
+
+这里的主要规则是：对象的原型是对象的创建的时候创建的，并且在此之后不能修改为新的对象，如果依然引用到同一个对象，可以通过构造函数的显式`prototype`引用，对象创建以后，只能对原型的属性进行添加或修改。
+
+
+
+非标准的`__proto__`属性
+
+
+
+
+
+
+
+
+### 原型链
+
 原型对象也只是简单的对象，并可能有自己的原型。原型链是由 __有限__(finite) 的对象链接而成，可以 __实现__ 继承(inheritance) 与 __共享__ 属性。
 
 <!--language: js-->
@@ -1399,6 +1544,19 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 
 ![constructor_proto_chain](../../../imgs/constructor_proto_chain.png)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### 使用原型被重写前属性
 以下以`toString`被重写时情况为例：
 
@@ -1435,6 +1593,115 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
     }
     alert(native_property('Object', 'toString', o));
 
+## new关键字
+
+### new的过程
+
+如果`new`不是运算符，而只是一个方法（类似ruby中的new），它可能是这样执行的
+
+<!--language: !js-->
+
+    Function.prototype.method = function(name, func){
+        if(!this.prototype[name]){
+            this.prototype[name] = func;
+            return this;
+        }
+    }
+
+    Function.method('new', function () {
+        // 创建一个新对象，它继承自构造器的原型对象
+        var that = Object.create(this.prototype);
+
+        // 调用构造器，绑定this到新对象上
+        var other = this.apply(that, arguments);
+
+        // 如果它的返回值不是一个对象，就返回该新对象
+        return (typeof other === 'object' && other) || that;
+    });
+
+    function Person(name){
+        this.name =name;
+    }
+    var p = Person.new("zyx");
+    debugger;
+
+
+或者可以把`var p = new Person();`的过程拆分成以下三步：
+
+1. `var p = {};` 初始化一个对象`p`
+1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型（ES6中即`Object.setPrototypeOf(p, Person.prototype)`）
+1. `Person.apply(p, arguments);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
+
+在[ECMAScript面向对象实现](http://dmitrysoshnikov.com/ecmascript/chapter-7-2-oop-ecmascript-implementation/#algorithm-of-objects-creation)表述为：
+
+<!--language: js-->
+
+    F.[[Construct]](initialParameters):
+
+        O = new NativeObject();
+
+        // 属性[[Class]]被设置为"Object"
+        O.[[Class]] = "Object"
+
+        // 引用F.prototype的时候获取该对象g
+        var __objectPrototype = F.prototype;
+
+        // 如果__objectPrototype是对象，就:
+        O.[[Prototype]] = __objectPrototype
+        // 否则:
+        O.[[Prototype]] = Object.prototype;
+        // 这里O.[[Prototype]]是Object对象的原型
+
+        // 新创建对象初始化的时候应用了F.[[Call]]
+        // 将this设置为新创建的对象O
+        // 参数和F里的initialParameters是一样的
+        R = F.[[Call]](initialParameters); this === O;
+        // 这里R是[[Call]]的返回值
+        // 在JS里看，像这样:
+        // R = F.apply(O, initialParameters);
+
+        // 如果R是对象
+        return R
+        // 否则
+        return O
+
+内部方法`[[Construct]]`是通过使用带`new`运算符的构造函数来激活的，正如我们所说的这个方法是负责内存分配和对象创建的。如果没有参数，调用构造函数的括号也可以省略
+
+### 构造器中包含return
+`new`构造器时，含`return`语句时的行为
+
+<!--language: !js-->
+
+    function Cat(){this.name='cat';}
+    function Animal(){ return new Cat;}
+
+    var a =new Animal;
+    alert(a.constructor); // function Cat(){this.name='cat';}
+    alert(a.__proto__); // Cat {}
+
+虽然在初始化阶段我们可以返回不同的对象（忽略第一阶段创建的tihs对象）
+
+<!--language: !js-->
+
+    function A() {
+      // 更新新创建的对象
+      this.x = 10;
+      // 但返回的是不同的对象
+      return [1, 2, 3];
+    }
+
+    var a = new A();
+    console.log(a.x, a); //undefined, [1, 2, 3]
+
+下面是`underscore.js`中一段代码
+
+<!--language: !js-->
+
+    var _ = function(obj) {
+        if (obj instanceof _) return obj;
+        if (!(this instanceof _)) return new _(obj);
+        this._wrapped = obj;
+    };
 
 基于对象
 ===========
@@ -1519,42 +1786,7 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
     alert((new SubPiece).say());
 
 
-### new的过程
 
-如果`new`不是运算符，而只是一个方法（类似ruby中的new），它可能是这样执行的
-
-<!--language: !js-->
-
-    Function.prototype.method = function(name, func){
-        if(!this.prototype[name]){
-            this.prototype[name] = func;
-            return this;
-        }
-    }
-
-    Function.method('new', function () {
-        // 创建一个新对象，它继承自构造器的原型对象
-        var that = Object.create(this.prototype);
-
-        // 调用构造器，绑定this到新对象上
-        var other = this.apply(that, arguments);
-
-        // 如果它的返回值不是一个对象，就返回该新对象
-        return (typeof other === 'object' && other) || that;
-    });
-
-    function Person(name){
-        this.name =name;
-    }
-    var p = Person.new("zyx");
-    debugger;
-
-
-或者可以把`var p = new Person();`的过程拆分成以下三步：
-
-1. `var p = {};` 初始化一个对象`p`
-1. `p.__proto__ = Person.prototype;` 实例的`__proto__`正巧指向构造器的`prototype`上，通过此找到原型（ES6中即`Object.setPrototypeOf(p, Person.prototype)`）
-1. `Person.apply(p, arguments);` 构造`p`，修正`this`指向，使实例得到构造器定义的相关属性/方法
 
 ## 原型
 每个对象都连接到一个原型对象，并且它可以从中继承属性，所有通过对象字面量创建的对象都连接到`Object.prototype`这个标准对象
@@ -2070,28 +2302,6 @@ js中共有多种调用模式：方法调用模式、函数调用模式、构造
     alert(myQuo.get_status());
 
 结合`new`前缀调用的函数称为构造器函数，以前字母大写格式命名，如果调用构造器函数时没加`new`，则可能发生问题
-
-#### 构造器中包含return
-`new`构造器时，含`return`语句时的行为
-
-<!--language: !js-->
-
-    function Cat(){this.name='cat';}
-    function Animal(){ return new Cat;}
-
-    var a =new Animal;
-    alert(a.constructor); // function Cat(){this.name='cat';}
-    alert(a.__proto__); // Cat {}
-
-下面是`underscore.js`中一段代码
-
-<!--language: !js-->
-
-    var _ = function(obj) {
-        if (obj instanceof _) return obj;
-        if (!(this instanceof _)) return new _(obj);
-        this._wrapped = obj;
-    };
 
 ### apply/call调用模式
 因为Js是一门函数式的面向对象编程语言，所以 __函数也可以拥有方法__
@@ -3405,6 +3615,7 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 基于Lazy.js，还能生成无穷序列、实现异步迭代
 
+[Lo-Dash](http://lodash.com/)也将加入惰性求值
 
 异步编程
 =========
@@ -3635,7 +3846,7 @@ Zombie
 Ichabod
 
 <!-- http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html -->
-
+<!-- http://www.cnblogs.com/zhongweiv/p/nodejs_module.html -->
 <script>
 
 (function fix_toc(){
