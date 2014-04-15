@@ -1976,7 +1976,7 @@ C++头文件
 - 按值传递(pass-by-value/call-by-value)，函数收到是实际参数值－按位拷贝(bitwise copy)
 - 接引用传递(pass-by-reference/call-by-reference)，函数收到的是实际参数的引用－内存地址
 
-- java中其实 __只存在按值传递引用对象__：
+- java/javascript中其实 __只存在 *按值* 传递 *引用对象*__ (也称为按共享传递)：
 
 <!--language: !java-->
 

@@ -1450,15 +1450,121 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 
 这里的主要规则是：对象的原型是对象的创建的时候创建的，并且在此之后不能修改为新的对象，如果依然引用到同一个对象，可以通过构造函数的显式`prototype`引用，对象创建以后，只能对原型的属性进行添加或修改。
 
+#### 非标准的`__proto__`属性
+有些实现（例如SpiderMonkey），提供了非标准的__proto__显式属性来引用对象的原型：
 
+<!--language: !js-->
 
-非标准的`__proto__`属性
+    function A() {}
+    A.prototype.x = 10;
 
+    var a = new A();
+    alert(a.x); // 10
 
+    var __newPrototype = {
+      constructor: A,
+      x: 20,
+      y: 30
+    };
 
+    // 引用到新对象
+    A.prototype = __newPrototype;
 
+    var b = new A();
+    alert(b.x); // 20
+    alert(b.y); // 30
 
+    // "a"对象使用的依然是旧的原型
+    alert(a.x); // 10
+    alert(a.y); // undefined
 
+    // 显式修改原型
+    a.__proto__ = __newPrototype;
+
+    // 现在"а"对象引用的是新对象
+    alert(a.x); // 20
+    alert(a.y); // 30
+
+ES5提供了`Object.getPrototypeOf(O)`方法，该方法直接返回对象的`[[Prototype]]`属性——实例的初始原型。 然而，和`__proto__`相比，它只是`getter`，它不允许`set`值。
+
+<!--language: !js-->
+
+    var foo = {};
+    Object.getPrototypeOf(foo) == Object.prototype; // true
+
+#### 对象独立于构造函数
+实例的原型独立于构造函数和构造函数的`prototype`属性，构造函数完成了自己的主要工作（创建对象）以后可以删除。原型对象通过引用`[[Prototype]]`属性继续存在：
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype.x = 10;
+
+    var a = new A();
+    alert(a.x); // 10
+
+    // 设置A为null - 显示引用构造函数
+    A = null;
+
+    // 但如果.constructor属性没有改变的话，
+    // 依然可以通过它创建对象
+    var b = new a.constructor();
+    alert(b.x); // 10
+
+    // 隐式的引用也删除掉
+    delete a.constructor.prototype.constructor;
+    delete b.constructor.prototype.constructor;
+
+    // 通过A的构造函数再也不能创建对象了
+    // 但这2个对象依然有自己的原型
+    alert(a.x); // 10
+    alert(b.x); // 10
+
+#### instanceof操作符的特性
+通过构造函数的`prototype`属性来显示引用原型的，这和`instanceof`操作符有关。该操作符是和 __原型链__ 一起工作的，__而不是构造函数__。
+
+这不是用来检测对象`foo`是否是用`Foo`构造函数创建的，所有`instanceof`运算符只需要一个对象属性——`foo.[[Prototype]]`，在原型链中从`Foo.prototype`开始检查其是否存在。`instanceof`运算符是通过构造函数里的内部方法`[[HasInstance]]`来激活的。
+
+<!--language: !js-->
+
+    function A() {}
+    A.prototype.x = 10;
+
+    var a = new A();
+    alert(a.x); // 10
+
+    alert(a instanceof A); // true
+
+    // 如果设置原型为null
+    A.prototype = null;
+
+    // ..."a"依然可以通过a.[[Prototype]]访问原型
+    alert(a.x); // 10
+
+    // 不过，instanceof操作符不能再正常使用了
+    // 因为它是从构造函数的prototype属性来实现的
+    alert(a instanceof A); // 错误，A.prototype不是对象
+
+另一方面，可以由构造函数来创建对象，但如果对象的`[[Prototype]]`属性和构造函数的`prototype`属性的值设置的是一样的话，`instanceof`检查的时候会返回`true`：
+
+<!--language: !js-->
+
+    function B() {}
+    var b = new B();
+
+    alert(b instanceof B); // true
+
+    function C() {}
+
+    var __proto = {
+      constructor: C
+    };
+
+    C.prototype = __proto;
+    b.__proto__ = __proto;
+
+    alert(b instanceof C); // true
+    alert(b instanceof B); // false
 
 
 ### 原型链
@@ -1533,7 +1639,7 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 
       b.constructor === Foo, // true
       c.constructor === Foo, // true
-      Foo.prototype.constructor === Foo // true
+      Foo.prototype.constructor === Foo, // true
 
       b.calculate === b.__proto__.calculate, // true
       b.__proto__.calculate === Foo.prototype.calculate // true
@@ -1545,19 +1651,7 @@ AO里并不包含函数“x”。这是因为“x” 是一个函数表达式(Fu
 ![constructor_proto_chain](../../../imgs/constructor_proto_chain.png)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-### 使用原型被重写前属性
+### 得到原型被重写前属性
 以下以`toString`被重写时情况为例：
 
 <!--language: !js-->
@@ -1756,12 +1850,12 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
 <!--language: !js-->
 
     function extend(subClass, superClass) {
-        var F = function() {};
-        F.prototype = superClass.prototype;
+        var F = function() {};  //中间构造函数创建
+        F.prototype = superClass.prototype; //保证原型链传递
         subClass.prototype = new F();
-        subClass.prototype.constructor = subClass;
+        subClass.prototype.constructor = subClass; //恢复原始构造函数
 
-        subClass.superclass = superClass.prototype;
+        subClass.superProto = superClass.prototype; //保留父类的原型对象
         if(superClass.prototype.constructor == Object.prototype.constructor) {
             superClass.prototype.constructor = superClass;
         }
@@ -1771,21 +1865,18 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
         this.name = name;
     }
 
-    BasePiece.prototype = {
-        say: function () {
-            return this.name;
-        }
+    BasePiece.prototype.say = function(){
+        return this.name;
     };
 
     extend(SubPiece, BasePiece);
 
-    function SubPiece(camp, pos) {
-        SubPiece.superclass.constructor.call(this, "sub");
+    function SubPiece() {
+        //利用保留的父类的原型对象，来实现父类方法的调用
+        SubPiece.superProto.constructor.call(this, "sub");
     }
 
     alert((new SubPiece).say());
-
-
 
 
 ## 原型
@@ -1984,6 +2075,26 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
     var d3 = Object(d2); console.log(typeof d3); //object
     var e3 = Object(e2); console.log(typeof e3); //object
 
+如果对原始值进行属性访问器取值，访问之前会先对原始值进行对象包装（包括原始值），然后通过包装的对象进行访问属性，属性访问以后，包装对象就会 __被删除__。
+
+<!--language: !js-->
+
+    var a = 10; // 原始值
+
+    // 但是可以访问方法（就像对象一样）
+    alert(a.toString()); // "10"
+
+    // 此外，我们可以在a上创建一个心属性
+    a.test = 100; // 好像是没问题的
+
+    // 但，[[Get]]方法没有返回该属性的值，返回的却是undefined
+    alert(a.test); // undefined
+
+为什么整个例子里的原始值可以访问`toString`方法，而不能访问新创建的`test`属性呢？使用属性访问器以后，它已经不是原始值了，而是一个包装过的中间对象（整个例子是使用`new Number(a)`），而`toString`方法这时候是通过 __原型链__ 查找到的
+
+任何原始值如果经常用在访问属性的话，时间效率考虑，都是直接用一个对象替代它；与此相反，如果不经常访问，或者只是用于计算的话，到可以保留这种形式。
+
+
 也有对象是由特殊的内置构造函数创建： `Function`（函数对象构造器）、`Array`（数组构造器） `RegExp`（正则表达式构造器）、`Math`（数学模块）、 `Date`（日期的构造器）等等，这些对象也是`Object`对象类型的值，他们彼此的区别是由内部属性管理的。
 
 
@@ -2117,6 +2228,8 @@ js是弱类型的，任何一个变量或值的类型都可以使用 __`typeof`_
 
 ### instanceof运算符
 对象是不是另一个类的实例，使用`instanceof`运算符，会检测类的继承关系，因此一个子类的实例，在对祖先类做`instanceof`运算时，仍然得到`true`
+
+该操作符是和 __原型链__ 一起工作的，__而不是构造函数__ [详见](#TOC1.7.1.3)。
 
 以下是特殊几个值的`instanceof`的结果
 
