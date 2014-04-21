@@ -1850,9 +1850,9 @@ __不推荐__ 使用`new`去创建对象，因为它不让对象直接从其他�
 <!--language: !js-->
 
     function extend(subClass, superClass) {
-        var F = function() {};  //中间构造函数创建
-        F.prototype = superClass.prototype; //保证原型链传递
-        subClass.prototype = new F();
+        var Ctor = function() {};  //中间构造函数创建
+        Ctor.prototype = superClass.prototype; //保证原型链传递
+        subClass.prototype = new Ctor();
         subClass.prototype.constructor = subClass; //恢复原始构造函数
 
         subClass.superProto = superClass.prototype; //保留父类的原型对象
@@ -3061,7 +3061,7 @@ ECMAScript只使用 __静态（词法）作用域__（而诸如Perl这样的语�
 
 ### 作用域与变量共享
 
-作用域控制着变量的可见性及生命周期，js中 __没有块级作用域__（如for/if并不能创建一个局部的上下文，仅有函数能够创建新的作用域）。它会导致在闭包中行为与有块级作用域的语言中表现不同：
+作用域控制着变量的可见性及生命周期，js中 __没有块级作用域__（如for/if并不能创建一个局部的上下文，仅有函数能够创建新的作用域（但with声明和catch语句能修改作用域链））。它会导致在闭包中行为与有块级作用域的语言中表现不同：
 
 <!--language: !js-->
 
@@ -3115,7 +3115,24 @@ ECMAScript只使用 __静态（词法）作用域__（而诸如Perl这样的语�
 
     fn().forEach(function(_f){_f();});
 
-另一种方式是将中间结果作为函数对象的属性进行保持：
+一种方式是使用`with`语句，将对象中标识符`{idx:i}`的解析添加到作用域链的最前端：
+
+<!--language: !js-->
+
+    function fn() {
+        var fnarr = [];
+        for (var i = 0; i < 3; i++) {
+           with({idx:i}){
+              fnarr.push(function(){alert(idx);});
+           }
+        }
+        return fnarr;
+    }
+
+    fn().forEach(function(_f){_f();});
+
+
+一种方式是将中间结果作为函数对象的属性进行保持：
 
 <!--language: !js-->
 
@@ -3131,6 +3148,8 @@ ECMAScript只使用 __静态（词法）作用域__（而诸如Perl这样的语�
 
 
 ## 递归/reduce
+递归的精髓是描述问题，而这正是函数式编程的精髓。
+
 一些语言提供了 __尾递归__(tail recursion/trai-end recursion) 优化，即如果一个函数的最后执行递归调用语句的特殊形式的递归，那么调用的过程会被替换为一个循环，可以提高速度。但js __并没有提供__ 该优化。
 
 `reduce`或`flod`对尾递归情形的一种模式固定 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#关键字_fold)，不使用变量（无空间污染，无副作用），而通过参数与返回值来保持中间结果
@@ -3704,6 +3723,7 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 
 ## 惰性求值
+表达式不在它被绑定到变量之后就立即求值，而是在该值被取用的时候求值。
 
 假设我们对包含1000个整数的数组进行一些操作，underscore.js版本，会生成许多巨大的中间数组：
 
@@ -3912,13 +3932,360 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 <!-- 权威指南 bigpipe template qunit-->
 
-模块管理
+依赖管理
 ==========
+开发者需要自己解决“应用架构”的问题。构建巨型应用当然需要引入模块化和命名空间，但还不得不考虑另外一个问题——内置的 __依赖管理__ 系统。手动维护页面的中script 标签之间的依赖关系根本不可行，代码会变得混乱不堪。
 
-## require.js
+依赖管理系统除了能解决实际的编程复杂度和可维护性的问题，还能解决性能方面的问题（异步延迟加载）。
+
+## CommonJS
+当大家开始关注如何将JavaScript应用于服务器端时，引入了很多解决依赖管理问题的建议方法。[SpiderMonkey](http://www.mozilla.org/js/spidermonkey/)和[Rhino](http://www.mozilla.org/rhino/)提供了`load()`函数，但并没有很好的解决命名空间的问题。[Node.js](http://nodejs.org/)提供了`require()`函数，用来加载外部资源文件，Node.js自有的模块系统也使用这种方式来管理。但代码的可移植性并不好，所以当你想在Node.js中运行Rhino的代码时会不会出问题呢？
+
+为了让代码更具可移植性，则亟需引入一个标准解决方案，让所有的JavaScript都能遵照这个标准来实现统一的模块管理系统，这样JavaScript代码库就可以运行在所有的环境中了。KeviniDangoor按照这个思路提出了CommonJS规范。
+
+### 模块的声明
+声明CommonJS模块非常简单、直接。命名空间的概念也被融入在内。模块被分隔为不同的文件，通过给`exports`对象添加内容来对外暴露模块的变量和方法，`exports`变量是在解释器中定义好的：
+
+<!--language: js-->
+
+    // maths.js
+    exports.per = function(value, total) {
+      return( (value / total) * 100 );
+    };
+
+    // application.js
+    var Maths = require("./maths");
+    assertEqual( Maths.per(50, 100), 50 );
+
+要想使用在模块中定义的函数，只需`require()`这个文件即可，同时将运行结果保存在本地变量中。在上面的例子中，maths.js 中暴露的方法都存在于`Maths`变量中，可以看到模块就是命名空间，并且这种代码可以在所有遵循CommonJS规范的JavaScript解释
+器中运行，比如[Narwhal](http://narwhaljs.org/)和Node.js。
+
+### 模块和浏览器
+那么，如何在 __客户端__ JS中也实现CommonJS呢？因为很多开发者发现在客户端实现的模块加载器和服务器端有所不同，也就是说如果遵照现行版本的CommonJS规范，模块都是以异步的方式加载的。在服务器端可以完美地实现CommonJS规范，但在浏览器端实现CommonJS就不那么容易了，因为它需要阻塞UI并适时地执行刚加载的script脚本（在客户端则需要避免这种情况的出现）。CommonJS团队为此提出了一个规范：[“模块转换格式”](http://wiki.commonjs.org/wiki/Modules/Transport)。这种转换格式将CommonJS的模块包装在一个回调函数中，以便更好地处理客户端的异步加载。
+
+>  在客户端里，为了处理模块依赖关系不得不将模块主逻辑包含在某个回调函数中，加载模块的过程实际是“保存回调”的过程，最后统一处理这些回调函数的执行顺序。作为模块加载器鼻祖的YUILoader便是遵循这种逻辑实现的，并在YUI3中形成了其独具特色的`use()` 和`add()` 模块化编程风格。为了便于理解客户端模块加载器的基本原理，可以参照一个小型的类库[Sandbox.js](https://github.com/jayli/sandbox)，文档中详细讲解了模块加载器的基本原理。
+
+我们对上一个例子做一些改进。将它包装进一个“转换格式”里，以启用异步加载，这样就可以完美支持浏览器了：
+
+<!--language: js-->
+
+    // maths.js
+    require.define("maths", function(require, exports){
+      exports.per = function(value, total) {
+        return( (value / total) * 100 );
+      };
+    });
+
+    // application.js
+    require.define("application", function(require, exports){
+      var per = require("./maths").per;
+      assertEqual( per(50, 100), 50 );
+    }), ["./maths"]); // 给出它的依赖 (maths.js)
 
 
-## sea.js
+这样就可以通过在浏览器中引入模块加载器来管理并执行我们的模块了。这为我们管理代码带来很多便利，我们可以将代码分隔成模块组件，这是做良好的应用架构设计的秘诀之一，同时我们还获得了依赖管理的支持，包括独立的作用域和命名空间。没错，相同的模块可以运行在浏览器、服务器、桌面应用，以及任何支持CommonJS的环境中。
+
+> underscore.js中对CommonJS的支持示例：
+
+> - 1.2.0
+
+<!--language: js-->
+
+    // Export the Underscore object for **CommonJS**, with backwards-compatibility
+    // for the old `require()` API. If we are not in CommonJS, add `_` to the
+    // global object.
+    if (typeof module !== 'undefined' && module.exports) {
+      module.exports = _;
+      _._ = _;
+    } else {
+      // Exported as a string, for Closure Compiler "advanced" mode.
+      root['_'] = _;
+    }
+
+> - 1.3.0
+
+<!--language: js-->
+
+    // Export the Underscore object for **Node.js**, with
+    // backwards-compatibility for the old `require()` API. If we are in
+    // the browser, add `_` as a global object via a string identifier,
+    // for Closure Compiler "advanced" mode.
+    if (typeof exports !== 'undefined') {
+      if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = _;
+      }
+      exports._ = _;
+    } else {
+      root['_'] = _;
+    }
+
+> - 1.6.0
+
+<!--language: js-->
+
+    // Export the Underscore object for **Node.js**, with
+    // backwards-compatibility for the old `require()` API. If we are in
+    // the browser, add `_` as a global object via a string identifier,
+    // for Closure Compiler "advanced" mode.
+    if (typeof exports !== 'undefined') {
+      if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = _;
+      }
+      exports._ = _;
+    } else {
+      root._ = _;
+    }
+
+    // AMD registration happens at the end for compatibility with AMD loaders
+    // that may not enforce next-turn semantics on modules. Even though general
+    // practice for AMD registration is to be anonymous, underscore registers
+    // as a named module because, like jQuery, it is a base library that is
+    // popular enough to be bundled in a third party lib, but not be part of
+    // an AMD load request. Those cases could generate an error when an
+    // anonymous define() is called outside of a loader request.
+    if (typeof define === 'function' && define.amd) {
+      define('underscore', [], function() {
+        return _;
+      });
+    }
+
+## 模块加载器
+为了在客户端使用CommonJS模块，我们需要引入模块加载器类库。当然，可选的库还有很多，每个类库都各有其优缺点。
+
+### Yabble
+[Yabble](http://github.com/jbrantly/yabble)是一款优秀的轻量级的模块加载器。你可以
+配置Yabble来支持通过XHR加载模块或者使用script标签来加载模块。通过XHR来抓
+取模块的优势是你不必再用转换格式把模块多包装一层了。然而，这种做法的缺点是——必须用`eval()` 来执行模块代码，调试起来很不方便。另外还会遇到跨域的问题，尤其是当使用了CDN的时候。理想情况是，应当使用XHR 来实现一些“快餐式”的开发，而不是严谨规范的开发：
+
+<!--language: js-->
+
+    <script src="https://github.com/jbrantly/yabble/raw/master/lib/yabble.js"> </script>
+    <script>
+      require.setModuleRoot("javascripts");
+      // 如果模块通过转换格式做了包装
+      // 那么我们就可以使用script 标签
+      require.useScriptTags();
+      require.ensure(["application"], function(require) {
+        // 应用加载完毕
+      });
+    </script>
+
+这个例子中，程序会抓取包装后的`application` 模块，然后加载它的依赖`utils.js` ，之后才开始运行这个模块。我们可以使用`require()`函数来加载模块：
+
+<!--language: js-->
+
+    <script>
+      require.ensure(["application", "utils"], function(require) {
+        var utils = require("utils");
+        assertEqual( utils.per( 50, 200 ), 25 );
+      });
+    </script>
+
+尽管`utils`被引用了两次，一次被内联的`require.ensure()`函数引用，另一次被`application` 模块所引用，我们的脚本却非常聪明，可以只加载它一次。但必须确保你的模块所需的所有依赖都加上了转换格式。
+
+### RequireJS
+[RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
+
+> 关于AMD规范到底是一种“模块书写格式”（Module Authoring Format）还是一种“转换格式”（Transport Format）一直存在争议
+
+为了加载JavaScript文件，只需将它们的路径传入`require()`函数即可，并指定一个回调函数，当依赖都加载完成后执行这个回调函数：
+
+<!--language: js-->
+
+    <script>
+      require(["lib/application", "lib/utils"], function(application, utils) {
+        // 加载完成!
+      });
+    </script>
+
+在这个例子中可以看出，`application` 和`utils`模块是以 __回调参数__ 的形式传入的，而不必使用`require()`函数来获取它们。
+
+你能引用的不光是模块，RequireJS同样支持原始的JavaScript类库以依赖的形式载入，尤其是jQuery和Dojo。其他的类库可以正常工作，但它们不会以参数形式正确地传入所需的回调函数中。然而，任何以依赖形式载入的类库都需要使用模块格式写法：
+
+<!--language: js-->
+
+    require(["lib/jquery.js"], function($) {
+      // jQuery 加载完毕
+      $("#el").show();
+    });
+
+传入`require()`的路径是 __相对于__ 当前文件或模块的路径，除非路径的前缀是`/` 。出于最优化的考虑，RequireJS推荐你将初始脚本加载器放入一个单独的文件中，这个迷你的类库甚至提供了一种快捷的引入方式：`data-main`属性：
+
+<!--language: html-->
+
+    <script data-main="lib/application" src="lib/require.js"></script>
+
+设置script标签的`data-main`属性是告知RequireJS直接调用`require()`，将这个属性值以参数传入`require()`中（来加载主JS模块），在这个例子中，它将会调用`lib/application.js`脚本，它还会加载我们应用所需的其他脚本：
+
+<!--language: js-->
+
+    // lib/application.js
+    require(["jquery", "models/asset", "models/user"], function($, Asset, User) {
+      //...
+    });
+
+我们刚刚讲了加载模块的方式，那么如何定义模块呢？上文已经提到，RequireJS使用一种完全不同的语法来定义模块——不是使用`require.define()`，而是直接使用`define()`函数。因为模块都在不同的文件中，因此无须使用显式的命名。第一个参数是它的依赖，是一个字符串组成的数组，随后的参数是一个回调函数，回调函数中包含实际的模块逻辑，和RequireJS的`require()`函数类似，依赖的内容以参数的形式传给回调函数：
+
+<!--language: js-->
+
+    define(["underscore", "./utils"], function(_, Utils) {
+      return({
+        size: 10
+      })
+    });
+
+默认情况下是没有`exports`变量的。如果要从模块中暴露一些变量，只需将数据从函数中返回即可。RequireJS的模块有一个优势，就是它们已经是被包装好的，因此你不必担心为了兼容浏览器还要再去写转换格式。然而，需要注意的是，这个API并不兼容CommonJS的模块，即 __不能__ 写一个同时运行在Node.js和浏览器中的模块代码。其实是可以做一些简单的hack来让CommonJS的模块代码运行在客户端，RequireJS为CommonJS提供了一个“容错层”——只需将现有的模块代码外部用`define()`函数包装一层即可：
+
+<!--language: js-->
+
+    define(function(require, exports) {
+      var mod = require("./relative/name");
+      exports.value = "exposed";
+    });
+
+回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。
+
+> 参考todomvc中的[backbone_require版本](http://todomvc.com/dependency-examples/backbone_require/)，[代码打包](../../../data/backbone_require.zip)
+
+
+
+
+### SeaJs
+[SeaJs](https://github.com/seajs/seajs)，[Dosc](http://seajs.org/docs/)
+
+[使用SeaJS实现模块化JavaScript开发](http://blog.codinglabs.org/articles/modularized-javascript-with-seajs.html)
+
+
+### LABjs
+[LABjs](http://www.labjs.com)是最简单的模块依赖管理器。它不需要任何服务器支持和CommonJS模块支持。使用LABjs载入你的脚本代码，减少了页面加载过程中的资源阻塞，这是一种极其简单且极为有效的性能优化的方法。默认状况下，LABjs会尽可能快速地以并行方式加载脚本。然而，如果代码之间有依赖关系，也可以非常简单地指定它们的执行顺序：
+
+<!--language: js-->
+
+    <script>
+    $LAB
+    .script('/js/json2.js')
+    .script('/js/jquery.js').wait()
+    .script('/js/jquery-ui.js')
+    .script('/js/vapor.js');
+    </script>
+
+在这个例子中，所有的脚本加载都是并行的，但LABjs会确保jquery.js在jquery-ui.js和vapor.js之前加载并执行。它的API非常简单且简洁明了，它的[文档](http://labjs.com/documentation.php)。
+
+> 这里将LABjs归类为“依赖管理器”有些勉强，LABjs给自己的定位是“脚本加载器”，主要是为了解决加载脚本时的性能问题。
+
+## 服务端的配合
+
+### 包装模块
+现在我们有了管理模块依赖和命名空间的方法，但仍然有一个问题自始至终都没有解决——每个文件都独占一个HTTP请求。我们依赖的所有模块都从远程加载，尽管是以异步的形式，还是会造成很严重的性能问题——将应用的启动时间推后。
+
+对于需要异步加载的模块，我们手动将模块包装成一种"转换格式"，这种做法看起来也很冗余。可以在服务器端将小文件合并为一个文件输出，这种做法一举两得。这样浏览器只需发起一个HTTP 请求来抓取一个资源文件，就能将所有的模块都载入进来，显然这种做法更高效。使用打包工具也是一种明智的做法，这样就不必随意、无组织地打包模块了，而是静态分析这些文件，然后递归地计算它们的依赖关系。打包工具同样会将不符合要求的模块包装成转换格式，这样就不必手动输入代码了。
+
+很多模块打包工具也支持代码的压缩（minify），以进一步减少请求的体积。实际上，一些工具——比如[rack-modulr](https://github.com/maccman/rack-modulr)和[Transporter](https://github.com/kriszyp/transporter)——已经整合进了Web服务器，当首次处理某个请求时会自动处理模块操作。
+
+<!--language: js-->
+
+    // app/javascripts/utils.js
+    exports.sum = function(val1, val2){
+      return(val1 + val2);
+    };
+
+    // app/javascripts/application.js
+    var utils = require("./utils");
+    console.log(utils.sum(1, 2));
+
+When the browser requests a module, all its dependencies will be recursively resolved.
+
+<!--language: shell-->
+
+    $ curl "http://localhost:5001/javascripts/application.js"
+
+<!--language: js-->
+
+    (function() {
+      require.define({
+        'utils': function(require, exports, module) {
+          exports.sum = function(val1, val2){
+            return(val1 + val2);
+          };
+        }
+      });
+
+      require.ensure(['utils'], function(require) {
+        var utils = require("./utils");
+        console.log(utils.sum(1, 2));
+      });
+    })();
+
+[FlyScript](http://www.flyscript.org/)是用PHP编写的一个CommonJS模块包装器，Transporter是基于[JSGI](http://jackjs.org/)服务器的转换器，[Stitch](http://github.com/sstephenson/stitch)则整合了Node.js服务器。
+
+### 模块的按需加载
+你可能不想用模块化的方式来写代码，或许因为你现有的代码和库改成用模块化的方法来管理需要作太多改动。幸运的是，还有很多其他的替代方案，比如[Sprockets](http://getsprockets.org)。Sprockets给你的JavaScript代码添加了同步`require()`支持。以`//=`形式书写的注释指令都会被Sprockets作 __预处理__，通知Sprockets来检查类库的加载路径，加载它并以行内形式包含进来：
+
+<!--language: js-->
+
+    //= require <jquery>
+    //= require "./states"
+
+在这个例子中，`jquery.js` 是Sprockets所需的加载地址，`states.js`是以相对路径的形式给
+出的。Sprockets非常聪明，它会保证只加载库文件一次，自动忽略之后的加载需求。相
+比于CommonJS模块，Sprockets支持缓存和压缩（minify）。在开发过程中，你的服务
+器会根据页面的需要动态解析并合并文件。当站点的访问非常频繁时，JavaScript文件可以被预合并，这样就可以作为静态文件来处理，从而提高了性能。
+
+尽管Sprockets是一个基于命令行的工具，但也有一些工具集成了Rack和Rails，比如[rack-sprockets](https://github.com/sstephenson/sprockets)，甚至还有一些[PHP的实现](https://github.com/stuartloxton/php-sprockets)。Sprockets（包括所有的模块包装器）的中心思想是，所有的JavaScript文件都需要预处理，不管是在服务器端用程序作处理，还是使用命令行工具作处理。
+
+> 参考rails [assets静态文件](http://ihower.tw/rails3/assets-and-ajax.html)
+
+
+
+
+
+
+
+
+
+
+
+                                            以                                                       以
+                                                       以                                                       以
+                                                       以                                                       以
+                                                       以                                                       以
+                                                       以                                                       以
+                                                       以                                                       以
+                                                       以                                                       以
+                                                       以
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 项目构建
