@@ -1940,7 +1940,7 @@ __通过构造一个有用的对象开始，接着可以构造（`Object.create`
 这是一种 __差异化继承__，通过定制一个新的对象，指名了它与所基于的基本对象的区别。
 
 ## 信息隐藏
-上面的继承模式没法 __保护隐私__，可选择方式的有 __模块化__ 和 __闭包__
+上面的继承模式没法 __保护隐私__，可选择方式的有 __模块化__（[javascript_module](http://www.ruanyifeng.com/blog/2012/10/javascript_module.html)） 和 __闭包__
 
 以下通过把`constructor`返回对象的私有属性/方法，封装到单独模块`spec`中
 
@@ -3985,9 +3985,9 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 这样就可以通过在浏览器中引入模块加载器来管理并执行我们的模块了。这为我们管理代码带来很多便利，我们可以将代码分隔成模块组件，这是做良好的应用架构设计的秘诀之一，同时我们还获得了依赖管理的支持，包括独立的作用域和命名空间。没错，相同的模块可以运行在浏览器、服务器、桌面应用，以及任何支持CommonJS的环境中。
 
-> underscore.js中对CommonJS的支持示例：
+CommonJS/AMD的支持示例：
 
-> - 1.2.0
+> - underscore 1.2.0
 
 <!--language: js-->
 
@@ -4002,7 +4002,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
       root['_'] = _;
     }
 
-> - 1.3.0
+> - underscore 1.3.0
 
 <!--language: js-->
 
@@ -4019,7 +4019,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
       root['_'] = _;
     }
 
-> - 1.6.0
+> - underscore 1.6.0
 
 <!--language: js-->
 
@@ -4048,6 +4048,31 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
         return _;
       });
     }
+
+> - jquery 2.0.0
+
+<!--language: js-->
+
+    if ( typeof module === "object" && module && typeof module.exports === "object" ) {
+      // Expose jQuery as module.exports in loaders that implement the Node
+      // module pattern (including browserify). Do not create the global, since
+      // the user will be storing it themselves locally, and globals are frowned
+      // upon in the Node module world.
+      module.exports = jQuery;
+    } else {
+      // Register as a named AMD module, since jQuery can be concatenated with other
+      // files that may use define, but not via a proper concatenation script that
+      // understands anonymous AMD modules. A named AMD is safest and most robust
+      // way to register. Lowercase jquery is used because AMD module names are
+      // derived from file names, and jQuery is normally delivered in a lowercase
+      // file name. Do this after creating the global so that if an AMD module wants
+      // to call noConflict to hide this version of jQuery, it will work.
+      if ( typeof define === "function" && define.amd ) {
+        define( "jquery", [], function () { return jQuery; } );
+      }
+    }
+
+
 
 ## 模块加载器
 为了在客户端使用CommonJS模块，我们需要引入模块加载器类库。当然，可选的库还有很多，每个类库都各有其优缺点。
@@ -4083,8 +4108,8 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 尽管`utils`被引用了两次，一次被内联的`require.ensure()`函数引用，另一次被`application` 模块所引用，我们的脚本却非常聪明，可以只加载它一次。但必须确保你的模块所需的所有依赖都加上了转换格式。
 
-### RequireJS
-[RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
+### AMD/RequireJS
+[whyAMD](http://cyj.me/why-seajs/requirejs/#why-amd)，[RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ，[阮一峰对它的介绍](http://www.ruanyifeng.com/blog/2012/11/require_js.html)）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)）格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
 
 > 关于AMD规范到底是一种“模块书写格式”（Module Authoring Format）还是一种“转换格式”（Transport Format）一直存在争议
 
@@ -4145,7 +4170,10 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。
 
-> 参考todomvc中的[backbone_require版本](http://todomvc.com/dependency-examples/backbone_require/)，[代码打包](../../../data/backbone_require.zip)
+> 参考todomvc中的[backbone_require版本](http://todomvc.com/dependency-examples/backbone_require/)，[代码打包](../../../data/backbone_require.zip)，更多[require+mvc示例](http://todomvc.com)
+
+
+如果你是脚本库开发者，[条件调用 define()](https://github.com/umdjs/umd)。妙处在于不依靠 AMD 你仍然可以编写你的库，只要可用的时候参与一下就可以了
 
 
 
@@ -4295,25 +4323,20 @@ build: mini + map
 
 test: qunit jslint jshint JSLitmus
 
-package.json
-bower.json
+http://javascript.ruanyifeng.com/
+
+npm管理node.js package.json
+客户端库管理工具 bower.json
+PhantomJS 提供一个浏览器环境的命令行接口
+Grunt：任务自动管理工具
+Source Map
+
 component.json
 
 DocumentCloud
 
 默认值规范
 
-第6章依赖管理
-CommonJS
-模块的声明
-模块和浏览器
-模块加载器
-Yabble
-RequireJS
-包装模块
-模块的按需加载
-LABjs
-无交互行为内容的闪烁（FUBC）
 
 第9章测试和调试
 单元测试
