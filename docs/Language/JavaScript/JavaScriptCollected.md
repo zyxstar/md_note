@@ -3750,6 +3750,8 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 [Lo-Dash](http://lodash.com/)也将加入惰性求值
 
+### 实现yield
+
 异步编程
 =========
 ## 延迟执行
@@ -3939,7 +3941,7 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 依赖管理系统除了能解决实际的编程复杂度和可维护性的问题，还能解决性能方面的问题（异步延迟加载）。
 
 ## CommonJS
-当大家开始关注如何将JavaScript应用于服务器端时，引入了很多解决依赖管理问题的建议方法。[SpiderMonkey](http://www.mozilla.org/js/spidermonkey/)和[Rhino](http://www.mozilla.org/rhino/)提供了`load()`函数，但并没有很好的解决命名空间的问题。[Node.js](http://nodejs.org/)提供了`require()`函数，用来加载外部资源文件，Node.js自有的模块系统也使用这种方式来管理。但代码的可移植性并不好，所以当你想在Node.js中运行Rhino的代码时会不会出问题呢？
+当大家开始关注如何将JavaScript应用于服务器端时，引入了很多解决依赖管理问题的建议方法。[SpiderMonkey](http://www.mozilla.org/js/spidermonkey/)和[Rhino](http://www.mozilla.org/rhino/)提供了`load()`函数，但并没有很好的解决命名空间的问题。[Node.js](http://nodejs.org/)提供了`require()`函数，用来加载外部资源文件，Node.js自有的模块系统也使用这种方式来管理。
 
 为了让代码更具可移植性，则亟需引入一个标准解决方案，让所有的JavaScript都能遵照这个标准来实现统一的模块管理系统，这样JavaScript代码库就可以运行在所有的环境中了。KeviniDangoor按照这个思路提出了CommonJS规范。
 
@@ -4109,7 +4111,7 @@ CommonJS/AMD的支持示例：
 尽管`utils`被引用了两次，一次被内联的`require.ensure()`函数引用，另一次被`application` 模块所引用，我们的脚本却非常聪明，可以只加载它一次。但必须确保你的模块所需的所有依赖都加上了转换格式。
 
 ### AMD/RequireJS
-[whyAMD](http://cyj.me/why-seajs/requirejs/#why-amd)，[RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ，[阮一峰对它的介绍](http://www.ruanyifeng.com/blog/2012/11/require_js.html)）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)）格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
+[RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ，[阮一峰对它的介绍](http://www.ruanyifeng.com/blog/2012/11/require_js.html)，[requirejs2.0相关说明](http://www.cnblogs.com/snandy/archive/2012/06/04/2532997.html)）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)，[whyAMD](http://cyj.me/why-seajs/requirejs/#why-amd)）格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
 
 > 关于AMD规范到底是一种“模块书写格式”（Module Authoring Format）还是一种“转换格式”（Transport Format）一直存在争议
 
@@ -4313,30 +4315,29 @@ When the browser requests a module, all its dependencies will be recursively res
 
 
 
-
-
-
 项目构建
 ========
 
-build: mini + map
+build:  map
 
 test: qunit jslint jshint JSLitmus
 
+google规范
+
 http://javascript.ruanyifeng.com/
 
-npm管理node.js package.json
+npm管理node.js package.json https://github.com/volojs/volo
 客户端库管理工具 bower.json
 PhantomJS 提供一个浏览器环境的命令行接口
 Grunt：任务自动管理工具
-Source Map
+mini + Source Map
 
 component.json
 
 DocumentCloud
 
 默认值规范
-
+http://www.cnblogs.com/snandy/archive/2012/03/30/2423612.html
 
 第9章测试和调试
 单元测试
@@ -4360,6 +4361,6 @@ Ichabod
 </script>
 
 
-
+http://www.cnblogs.com/nuysoft/archive/2011/11/14/2248023.html
 
 <!-- http://www.cnblogs.com/caishen/default.html?page=3&OnlyTitle=1 -->

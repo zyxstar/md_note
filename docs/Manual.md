@@ -141,7 +141,7 @@
 
     //import jquery.1.9.0
     $(function(){
-        alert(typeof jQuery);
+        alert($().jquery);
     });
 
 ### Web页面
