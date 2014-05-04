@@ -135,11 +135,11 @@
     var m = new MyClass("javascript");
     alert(m.say());
 
-使用js库，在代码的首部使用`//import «lib.version»`的方式引入，如`//import jquery.1.9.0`
+使用js库，在代码的首部使用`//= require «lib.ver»`的方式引入，如`//= require jquery.1.9.0`
 
 <!-- language: !js -->
 
-    //import jquery.1.9.0
+    //= require jquery.1.9.0
     $(function(){
         alert($().jquery);
     });
@@ -171,7 +171,7 @@
     }
 
     <!-- language: js -->
-    //import jquery.1.9.0
+    //= require jquery.1.9.0
     $(function(){
         $("#txt_say").val("hello, web")
         $("input[type='button']").click(function(){

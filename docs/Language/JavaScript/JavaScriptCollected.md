@@ -2451,7 +2451,7 @@ js中共有多种调用模式：方法调用模式、函数调用模式、构造
 
 <!--language: !js-->
 
-    //import underscore.1.4.3
+    //= require underscore.1.4.3
     var seq = _([1,3,4,5,7]);
     var result = seq.without(3,5,7,8);
     result.forEach(function(arg){alert(arg);});
@@ -2460,7 +2460,7 @@ js中共有多种调用模式：方法调用模式、函数调用模式、构造
 
 <!--language: !js-->
 
-    //import underscore.1.4.3
+    //= require underscore.1.4.3
     var seq = _([1,3,4,5,7]);
     var notNeed = [3,5,7,8];
     var result = seq.without.apply(seq,notNeed);
@@ -2672,7 +2672,7 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
 <!--language: !js-->
 
-    //import underscore.1.4.3
+    //= require underscore.1.4.3
     var stooges = [
         {name: 'curly', age: 25},
         {name: 'moe', age: 21},
@@ -3735,7 +3735,7 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 <!--language: !js-->
 
-    //import lazy.0.3.2
+    //= require lazy.0.3.2
     var array = Lazy.range(1000).toArray();
     function square(x) { return x * x; }
     function inc(x) { return x + 1; }
@@ -4275,13 +4275,13 @@ When the browser requests a module, all its dependencies will be recursively res
 
 
 
-                                            以                                                       以
-                                                       以                                                       以
-                                                       以                                                       以
-                                                       以                                                       以
-                                                       以                                                       以
-                                                       以                                                       以
-                                                       以                                                       以
+                                            以
+                                                       以
+                                                       以
+                                                       以
+                                                       以
+                                                       以
+                                                       以
                                                        以
 
 

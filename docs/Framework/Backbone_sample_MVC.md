@@ -149,10 +149,10 @@
 
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
 
     //改写默认的（ajaxSync）模式
     Backbone.sync = function(method,model,options){

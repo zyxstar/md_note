@@ -29,9 +29,9 @@ underscore.1.2.0
 
 <!--language: !js-->
 
-    //import underscore.1.2.0
-    //import json2
-    //import simpletest
+    //= require underscore.1.2.0
+    //= require json2
+    //= require simpletest
     function test(){
         var counter = 0;
         var incr = function(){ counter++; };
@@ -104,9 +104,9 @@ underscore.1.2.1
 <!--language: !js-->
 
     //#import underscore.1.2.0
-    //import underscore.1.2.1
-    //import json2
-    //import simpletest
+    //= require underscore.1.2.1
+    //= require json2
+    //= require simpletest
     function test(){
         var counter = 0;
         var incr = function(){ counter++; };
@@ -174,9 +174,9 @@ underscore.1.2.2
 <!--language: !js-->
 
     //#import underscore.1.2.1
-    //import underscore.1.2.2
-    //import json2
-    //import simpletest
+    //= require underscore.1.2.2
+    //= require json2
+    //= require simpletest
     function test(){
         var counter = 0;
         var incr = function(){ counter++; };
@@ -260,9 +260,9 @@ underscore.1.3.2
 
 <!--language: !js-->
 
-    //import underscore.1.3.2
-    //import json2
-    //import simpletest
+    //= require underscore.1.3.2
+    //= require json2
+    //= require simpletest
     function test_once() {
         var counter = 0;
         var incr = function(){ return ++counter; };
@@ -321,9 +321,9 @@ underscore.1.4.0
 
 <!--language: !js-->
 
-    //import underscore.1.4.0
-    //import json2
-    //import simpletest
+    //= require underscore.1.4.0
+    //= require json2
+    //= require simpletest
     function test_repeatedly_results() {
         var counter = 0;
         var incr = function(){ return ++counter; };
@@ -395,9 +395,9 @@ underscore.1.4.3
 <!--language: !js-->
 
     //#import underscore.1.4.0
-    //import underscore.1.4.3
-    //import json2
-    //import simpletest
+    //= require underscore.1.4.3
+    //= require json2
+    //= require simpletest
     function test_trailing_call_after_repeatedly_invoked() {
         var expected;
         var counter = 0;
@@ -432,9 +432,9 @@ underscore.1.4.4
 
 <!--language: !js-->
 
-    //import underscore.1.4.3
-    //import json2
-    //import simpletest
+    //= require underscore.1.4.3
+    //= require json2
+    //= require simpletest
     function test(){
     var counter = 0;
         var incr = function(){ counter++; };
@@ -562,9 +562,9 @@ underscore.1.5.0
 
 <!--language: !js-->
 
-    //import underscore.1.5.0
-    //import json2
-    //import simpletest
+    //= require underscore.1.5.0
+    //= require json2
+    //= require simpletest
     function test_leading_false() {
         var counter = 0;
         var incr = function(){ counter++; };
@@ -643,9 +643,9 @@ underscore.1.5.1
 <!--language: !js-->
 
     //#import underscore.1.5.0
-    //import underscore.1.5.1
-    //import json2
-    //import simpletest
+    //= require underscore.1.5.1
+    //= require json2
+    //= require simpletest
     function test_more_throttle() {
         var counter = 0;
         var incr = function(){ counter++; };

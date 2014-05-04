@@ -266,11 +266,11 @@
     }
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
-    //import backbone_localStorage
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
+    //= require backbone_localStorage
     $(function() {
 
         // Todo Model

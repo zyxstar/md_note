@@ -22,8 +22,8 @@
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         initialize: function(){
             alert("Welcome to this world");
@@ -41,8 +41,8 @@
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({});
     var person = new Person({ name: "Thomas", age: 67});
     alert(person.get("age"));
@@ -58,8 +58,8 @@
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         defaults: {
             name: "Fetus",
@@ -86,8 +86,8 @@ model可以包含多个自定义的方法，而且默认这些方法是public的
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         defaults: {
             name: "Fetus",
@@ -109,8 +109,8 @@ model可以包含多个自定义的方法，而且默认这些方法是public的
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         defaults: {
             name: "Fetus",
@@ -140,8 +140,8 @@ model可以包含多个自定义的方法，而且默认这些方法是public的
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var person = new Backbone.Model({ name: "Thomas", age: 67, children: ["Ryan"]});
     var attributes = person.toJSON(); // { name: "Thomas", age: 67, children: ["Ryan"]}
     console.log(attributes);
@@ -159,8 +159,8 @@ model可以包含多个自定义的方法，而且默认这些方法是public的
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         // If you return a string from the validate function,
         // Backbone will throw an error
@@ -191,10 +191,10 @@ model可以包含多个自定义的方法，而且默认这些方法是public的
 
 <!-- language: !js -->
 
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     Person = Backbone.Model.extend({
         url: "/person",
         validate: function( attributes ){
@@ -253,10 +253,10 @@ destroy方法同样支持success与error的回调
 
 <!-- language: !js -->
 
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var Book = Backbone.Model.extend({urlRoot : "/books"});
     var solaris = new Book({id: "1083-lem-solaris"});
     alert(solaris.url());
@@ -294,8 +294,8 @@ collection是一个包含model的有序的集合，所以它可在以下场合�
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var Song = Backbone.Model.extend({
         defaults: {
             name: "Not specified",
@@ -364,8 +364,8 @@ Events 是一个可以被mix到任意对象的模块，它拥有让对象绑定�
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var object = {};
     _.extend(object, Backbone.Events);
     object.on("alert", function(msg) {
@@ -380,8 +380,8 @@ Events 是一个可以被mix到任意对象的模块，它拥有让对象绑定�
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var book=new Backbone.Model();
     book.on("change:title change:author", function(){
         console.log(arguments);
@@ -393,8 +393,8 @@ Events 是一个可以被mix到任意对象的模块，它拥有让对象绑定�
 
 <!-- language: !js -->
 
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var model=new Backbone.Model();
     var someobj = {render: function(){
         alert(this.get("title"));
@@ -474,10 +474,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 
 <!-- language: !js -->
 
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     SearchView = Backbone.View.extend({
         initialize: function(){
             alert("Alerts suck.");
@@ -506,10 +506,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 <!-- language: web -->
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     SearchView = Backbone.View.extend({
         initialize: function(){
             this.render();
@@ -542,10 +542,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 <!-- language: web -->
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     SearchView = Backbone.View.extend({
         initialize: function(){
             this.render();
@@ -590,10 +590,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 <!-- language: web -->
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var AppRouter = Backbone.Router.extend({
         routes: {
             "*actions": "defaultRoute" // matches http://example.com/#anything-here
@@ -630,10 +630,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 <!-- language: web -->
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var AppRouter = Backbone.Router.extend({
         routes: {
             "posts/:id": "getPost",
@@ -670,10 +670,10 @@ Backbone的view是反映数据模型的 __外观__ ，也被用来监听 __事�
 <!-- language: web -->
 
     <!-- language: js -->
-    //import json2
-    //import jquery.1.9.0
-    //import underscore.1.4.3
-    //import backbone.1.0.0
+    //= require json2
+    //= require jquery.1.9.0
+    //= require underscore.1.4.3
+    //= require backbone.1.0.0
     var AppRouter = Backbone.Router.extend({
         routes: {
             "posts/:id": "getPost",
