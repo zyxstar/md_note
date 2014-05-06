@@ -2,13 +2,13 @@
 
 语言核心
 =========
-本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
 
 ## 执行上下文
 执行上下文可以抽象为一个简单的对象。每个上下文包含一系列属性(我们称之为 上下文状态(context’s state) ) 用以跟踪相关代码的执行过程。下图展示了上下文的结构，所需要的属性([变量对象(variable object)](#TOC1.2)，[this指针(this value)](#TOC1.4)，[作用域链(scope chain)](#TOC1.5)：
 
 ![js_execution_context](../../../imgs/js_execution_context.png)
 
+本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
 
 ### 执行上下文堆栈
 每次当控制器转到ECMAScript可执行代码的时候，即会进入到一个执行上下文。执行上下文(简称-EC)是ECMA-262标准里的一个抽象概念，用于同可执行代码(executable code)概念进行区分。
@@ -2508,6 +2508,21 @@ js中共有多种调用模式：方法调用模式、函数调用模式、构造
 
     fn1()(1);
 
+- 示例4
+
+提高代码的精简度
+
+<!--language: !js-->
+
+    function sum(a, b) {
+        return a + b;
+    }
+
+    var arr = [[1,2],[4,3],[5,7],[8,3]];
+    alert(arr.map(function(item){return sum.apply(null, item);}));
+
+如果不存在`apply`，对于工具函数`sum`，要么需要改写它的参数签名，接受一个具有两个元素的数组参数，但导致`sum`不够通用，否则在`map`的过程中，将`item`展开后再传递`return sum(item[0],item[1])`，但导致代码不够简洁。
+
 
 ### bind调用模式
 
@@ -4084,31 +4099,6 @@ CommonJS/AMD的支持示例：
 配置Yabble来支持通过XHR加载模块或者使用script标签来加载模块。通过XHR来抓
 取模块的优势是你不必再用转换格式把模块多包装一层了。然而，这种做法的缺点是——必须用`eval()` 来执行模块代码，调试起来很不方便。另外还会遇到跨域的问题，尤其是当使用了CDN的时候。理想情况是，应当使用XHR 来实现一些“快餐式”的开发，而不是严谨规范的开发：
 
-<!--language: js-->
-
-    <script src="https://github.com/jbrantly/yabble/raw/master/lib/yabble.js"> </script>
-    <script>
-      require.setModuleRoot("javascripts");
-      // 如果模块通过转换格式做了包装
-      // 那么我们就可以使用script 标签
-      require.useScriptTags();
-      require.ensure(["application"], function(require) {
-        // 应用加载完毕
-      });
-    </script>
-
-这个例子中，程序会抓取包装后的`application` 模块，然后加载它的依赖`utils.js` ，之后才开始运行这个模块。我们可以使用`require()`函数来加载模块：
-
-<!--language: js-->
-
-    <script>
-      require.ensure(["application", "utils"], function(require) {
-        var utils = require("utils");
-        assertEqual( utils.per( 50, 200 ), 25 );
-      });
-    </script>
-
-尽管`utils`被引用了两次，一次被内联的`require.ensure()`函数引用，另一次被`application` 模块所引用，我们的脚本却非常聪明，可以只加载它一次。但必须确保你的模块所需的所有依赖都加上了转换格式。
 
 ### AMD/RequireJS
 [RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ，[阮一峰对它的介绍](http://www.ruanyifeng.com/blog/2012/11/require_js.html)，[requirejs2.0相关说明](http://www.cnblogs.com/snandy/archive/2012/06/04/2532997.html)）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)，[whyAMD](http://cyj.me/why-seajs/requirejs/#why-amd)）格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
@@ -4178,30 +4168,11 @@ CommonJS/AMD的支持示例：
 如果你是脚本库开发者，[条件调用 define()](https://github.com/umdjs/umd)。妙处在于不依靠 AMD 你仍然可以编写你的库，只要可用的时候参与一下就可以了
 
 
-
-
 ### SeaJs
 [SeaJs](https://github.com/seajs/seajs)，[Dosc](http://seajs.org/docs/)
 
 [使用SeaJS实现模块化JavaScript开发](http://blog.codinglabs.org/articles/modularized-javascript-with-seajs.html)
 
-
-### LABjs
-[LABjs](http://www.labjs.com)是最简单的模块依赖管理器。它不需要任何服务器支持和CommonJS模块支持。使用LABjs载入你的脚本代码，减少了页面加载过程中的资源阻塞，这是一种极其简单且极为有效的性能优化的方法。默认状况下，LABjs会尽可能快速地以并行方式加载脚本。然而，如果代码之间有依赖关系，也可以非常简单地指定它们的执行顺序：
-
-<!--language: js-->
-
-    <script>
-    $LAB
-    .script('/js/json2.js')
-    .script('/js/jquery.js').wait()
-    .script('/js/jquery-ui.js')
-    .script('/js/vapor.js');
-    </script>
-
-在这个例子中，所有的脚本加载都是并行的，但LABjs会确保jquery.js在jquery-ui.js和vapor.js之前加载并执行。它的API非常简单且简洁明了，它的[文档](http://labjs.com/documentation.php)。
-
-> 这里将LABjs归类为“依赖管理器”有些勉强，LABjs给自己的定位是“脚本加载器”，主要是为了解决加载脚本时的性能问题。
 
 ## 服务端的配合
 
@@ -4266,91 +4237,145 @@ When the browser requests a module, all its dependencies will be recursively res
 > 参考rails [assets静态文件](http://ihower.tw/rails3/assets-and-ajax.html)
 
 
-
-
-
-
-
-
-
-
-
-                                            以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 项目构建
 ========
+## 代码质量
+### 代码规范
+[Google JavaScript Style Guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)，[中文](../../../data/Google-JavaScript-Style-Guide.htm)
 
-build:  map
+### JSLint
+[JSLint](www.jslint.com)，JavaScript 作为一门年轻、语法灵活多变且对格式要求相对松散的语言，代码格式的混乱和某些语言特性的不正确使用，往往使得最终交付的产品中包含许多因编码风格约定造成的未预见的行为或错误，这种习惯性的问题如果不及时指出并修改，往往会在项目的迭代过程中不断的重现，严重影响 Web 产品的稳定性与安全性。JSLint 正是 Douglas Crockford 同学为解决此类问题创建的工具，JSLint 除了能指出这些不合理的约定，还能标出结构方面的问题。虽然 JSLint 不能保证代码逻辑一定正确，但却有助于发现错误并教会开发人员一些好的编码实践，更加注重静态代码格式的检测，检测主要包括以下几个方面：
 
-test: qunit jslint jshint JSLitmus
+- 检测语法错误：例如大括号`{}`的配对错误。
+- 变量定义规范：例如未定义变量的检测。
+- 代码格式规范：例如句末分号的缺失。
+- 蹩脚语言特性的使用检测：如`eval`和`with`的使用限制。
 
-google规范
+### 其它工具
+[JSHint](http://www.jshint.com/docs/)
 
-http://javascript.ruanyifeng.com/
+[SublimeLinter](https://github.com/SublimeLinter/SublimeLinter-for-ST2‎)
+
+## 测试
+### 单元测试
+手工测试更像集成测试，从更高层次上保证应用的正常运行。单元测试则是更低层次的测试，确保特定的后台代码片段能正常运行。
+
+单元测试的另一个优势是为 __自动化测试__ 铺平道路。将很多单元测试整合起来就可以做到连续的集成测试了——每次代码有更新时都重新执行一遍所有的单元测试。这要比对应用做手动 __回归测试__ 省时省力得多，并可确保每一处代码的小改动都不会影响到应用中其他的功能。
+
+#### Qunit
+[Qunit](http://docs.jquery.com/Qunit)是现在最流行且维护良好的测试类库，这个库最初是用来测试jQuery用的。
+
+#### Jasmine
+[Jasmine](http://jasmine.github.io/)是另一个非常流行的测试类库，和QUnit不同，Jasmine定义了用以描述应用中特定对象的行为的测试片段（spec）。实际上这些片段和单元测试非常类似，只不过换了一种表述方式。
+
+### 驱动测试
+尽管使用测试框架可以做到一定程度的自动化测试，但在各式各样的浏览器中进行测试依然是个问题。每次测试时都要开发者手动在五个浏览器中执行刷新，这种做法显然很低效。
+
+驱动实际上是一个守护进程，它整合了不同的浏览器，可以自动运行JavaScript测试代码，测试不通过时会给出提示。有一个单独的持续集成服务器，利用post-commit的hook功能（SVN的一个事件）来自动运行JavaScript测试代码，确保每次提交的代码都是正确无误的。
+
+[Watir](http://watir.com)，[Selenium](http://seleniumhq.org)等工具可做UI方面的测试，并可用于驱动测试
+
+### 无界面测试
+现在越来越多的人开始在服务器端（比如基于Node.js或Rhino）编写JavaScript程序，这时就需要在脱离浏览器环境的命令行中运行你的测试代码。这种做法的优势是命令行环境速度快而且易于安装，同时不用涉及多浏览器及持续集成服务器环境。它的不足也很明显，就是测试代码无法在真实环境中运行。
+
+这听起来不像是太严重的问题，因为你会发现你写的大多数JavaScript代码都是应用逻辑，是 __不依赖于浏览器__ 的（而jQuery才更多的是处理DOM和Event的浏览器兼容性问题）。
+
+
+#### PhantomJS
+[PhantomJS](http://phantomjs.org/)是一个基于WebKit的服务器端 JavaScript API。提供一个浏览器环境的命令行接口。它全面支持web而不需浏览器支持，其快速，原生支持各种Web标准： DOM 处理，CSS 选择器，JSON，Canvas，和 SVG。PhantomJS可以用于页面自动化，网络监测，网页截屏，以及无界面测试等。
+
+#### 其它工具
+[Envjs](http://www.envjs.com)是JohnResig开发的一个类库，这个类库在Rhino环境中实现了浏览器DOM API，Rhino是Mozilla用Java实现的JavaScript引擎。你可以使用Rhino和env.js在命令行下执行JavaScript测试。
+
+[Zombie.js](http://zombie.labnotes.org)是一个无界面的JavaScript类库，专门为Node.js设计，充分利用了它的高性能和异步特性。主要特点是速度快，花在等待测试执行上的时间越少，用在实现新功能和修复bug的时间就越多。
+
+当需要一个异步测试框架，可使用[Vows.js](http://vowsjs.org/)，这是一个非常优秀的框架，它可以识别出哪些测试需要并行执行，哪些测试需要串行执行。
+
+[Ichabod](http://github.com/maccman/ichabod)是另一个用于无界面测试的类库，除了能模拟DOM和解析引擎之外，Ichabod的优势还在于它使用了Webkit解析引擎，这也是Safari和Chrome浏览器所使用的解析引擎。但它的缺点是只能运行在OS X中，因为它需要MacRuby和OSX WebView API的支持。
+
+### 分布式测试
+跨浏览器测试的一个解决方案是利用外包的专用服务器集群，这些集群都安装有不同的浏览器。这正是[TestSwarm](http://swarm.jquery.org)的做法，它简化在多个浏览器中执行繁琐、耗时的JavaScript测试用例的工作。它为你的JavaScript项目提供了一个持续集成的工作流，并带有必要的测试工具。
+
+TestSwarm并不是通过向浏览器集成一些插件和扩展来实现，这种做法非常低端，而是选择了另外一种思路。浏览器在TestSwarm的终端里运行，并自动执行推送给它们的测试。它们可以部署在任意机器、任意操作系统中，TestSwarm会自动将得到的测试地址传递给一个新打开的浏览器。
+
+## 性能
+### JSLitmus
+[JSLitmus](http://www.broofa.com/Tools/JSLitmus/)是一个轻量级的工具，用于创建针对性的JavaScript基准测试工具，这个性能基准测试工具可以看到
+
+- 使用内存的情况
+- 多长时间内执行了多少次
+
+### console.profile
+Web Inspector和Firebug都包含了检查程序运行效率和时间的工具，它们可以帮助你更精确地把控程序的性能。只要在你想统计的代码段两端加上`console.profile()`和`console.profileEnd()`即可当调用到`profileEnd()`时，控制台就会创建一个报表，将期间所有的函数调用都统计出来，包括每次调用花费的时间及调用次数
+
+你也可以使用调试器Profile的record特性，它的功能和直接嵌入console语句是一样的。通过查看哪些函数被调用了及哪些函数耗费了更长的时间，可以发现代码中的性能瓶颈。
+
+也可以使用Profile的快照（snapshot）功能生成页面当前的堆（heap）的快照，显示了当前使用了多少对象，占用了多少内存。这是查找内存泄漏的好方法，因为你可以看到哪些对象被无意间存储在内存中，应当被回收而未被回收。
+
+### console.time
+需给要统计时间的代码前后加上`console.time(name)`和`console.timeEnd(name)`即可，当执行到`timeEnd()`时，它们之间的代码执行时间就会以毫秒为单位发送给控制台，以log的形式输出。使用控制台的时间统计API，可以将性能测试也加入到你的测试代码中，以保证你的代码不会出现性能瓶颈，从而从整体上保证应用的良好用户体验。
+
+
+
+
+
+
+
+
+
+
+
+
+
+                       以
+
+                                                       以
+                                                       以
+                                                       以
+                                                       以
+                                                       以
+                                                       以
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 npm管理node.js package.json https://github.com/volojs/volo
 客户端库管理工具 bower.json
-PhantomJS 提供一个浏览器环境的命令行接口
+
 Grunt：任务自动管理工具
-mini + Source Map
+build: mini + Source Map
 
 component.json
 
-DocumentCloud
-
-默认值规范
-http://www.cnblogs.com/snandy/archive/2012/03/30/2423612.html
-
-第9章测试和调试
-单元测试
-断言
-QUnit
-Jasmine
-驱动
-无界面的测试
-Zombie
-Ichabod
-
-<!-- http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html -->
-<!-- http://www.cnblogs.com/zhongweiv/p/nodejs_module.html -->
+<!-- http://stackoverflow.com/questions/13615679/requirejs-loading-modules-qunit
+http://www.nathandavison.com/article/17/using-qunit-and-requirejs-to-build-modular-unit-tests
+http://elucidblue.com/2012/12/24/making-qunit-play-nice-with-requirejs/
+ -->
 <script>
 
 (function fix_toc(){
@@ -4361,6 +4386,34 @@ Ichabod
 </script>
 
 
+<!-- http://javascript.ruanyifeng.com/
+http://yuilibrary.com/yui/docs/tutorials/gbs/
+http://www.cnblogs.com/snandy/archive/2012/03/30/2423612.html
 http://www.cnblogs.com/nuysoft/archive/2011/11/14/2248023.html
+http://www.cnblogs.com/caishen/default.html?page=3&OnlyTitle=1
+http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html
+http://www.cnblogs.com/zhongweiv/p/nodejs_module.html -->
 
-<!-- http://www.cnblogs.com/caishen/default.html?page=3&OnlyTitle=1 -->
+
+
+```js
+
+function fn() {
+    var fnarr = [];
+    for (var i = 0; i < 3; i++) {
+        fnarr.push(function(){alert(i);});
+    }
+    return fnarr;
+}
+
+fn().forEach(function(_f){_f();});
+
+
+test
+
+```python
+
+import re
+print re
+
+```

@@ -17,7 +17,6 @@
 
 - 读书时的整理
     - [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md)
-    - [JavaScript语言精髓(周爱民).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%2528%25E5%2591%25A8%25E7%2588%25B1%25E6%25B0%2591%2529.md)
     - [RubyPlatform.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyPlatform.md)
 
 - 培训时的笔记
@@ -52,14 +51,14 @@
 
 <form  method='get' action='http://chinapub.duapp.com/gen_md' target='_blank'>
 <label for='txt_src'>填入一个网络地址，比如Python-Markdown在Github上的说明</label><br/>
-<input type='text' name='src' id='txt_src' style="width:80%" value='https://github.com/trentm/python-markdown2/raw/master/README.md'/>
+<input type='text' name='src' id='txt_src' style="width:80%" value='https://raw.githubusercontent.com/trentm/python-markdown2/master/README.md'/>
 <input type='submit' value="生成"/>
 </form>
 
 看看它有什么特性
 ================
 ## 可缩放的层级目录
-生成的html文件，会自动根据Markdown中标题(h1~h6)生成层级目录，并支持目录的展开与收缩
+生成的html文件，会自动根据Markdown中标题(h1~h6)生成层级目录，支持目录的展开与收缩，并能提示当前浏览部分在目录中的定位
 
 ![生成的目录](../imgs/manual_toc.png)
 
@@ -73,56 +72,59 @@
 
 并在编写时，在首行(不缩进)写上`<!-- language: table -->`，接着空一行，并需要将整个table缩进4个字符
 
-编写规则如下：
+编写示例如下：
 
 ![table编写规则](../imgs/manual_table_rule.png)
 
+或使用<code>```table</code>：
+
+![table编写规则2](../imgs/manual_table_rule2.png)
+
 生成效果如下(你见到的效果就是生成出来的)：
 
-<!-- language: table -->
-
-    |              | 类型        | 直接量声明       | 包装对象 |
-    |-------------:|-------------|:-----------------|:--------:|
-    | **基本类型** | *undefined* | `v=undefined`    | ~~无~~   |
-    | **基本类型** | *string*    | `v='..';v=".."`  | String   |
-    | **基本类型** | _number_    | `v=1234 `        | Number   |
-    | **基本类型** | _boolean_   | `v=true;v=false` | Boolean  |
-    | **基本类型** | _function_  | `v=function(){}` | Function |
-    | __对象__     | _object_    | `v={..};v=null`  | Object   |
-    | __对象__     | _regex_     | `v=/.../..`      | RegExp   |
-    | __对象__     | _array_     | `v=[...]`        | [__Array__](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)    |
+```table
+Name  | Lunch order | Spicy    | Owes
+------| ----------- |:--------:| -----:
+Joan  | saag paneer | medium   | $11
+Sally | vindaloo    | mild     | $14
+Erin  | lamb madras | __*HOT*__| $5
+```
 
 ## 代码语法高亮
-依赖[syntaxhighlighter](http://alexgorbatchev.com/SyntaxHighlighter/)，支持绝大多数的语法高亮，使用时，首行(不缩进)加`<!-- language: «brush» -->`，其中`«brush»`为[syntaxhighlighter brush](http://alexgorbatchev.com/SyntaxHighlighter/manual/brushes/)中所定义的brushes，接着空一行，再编写代码，所有代码缩进4个字符。
+依赖[syntaxhighlighter](http://alexgorbatchev.com/SyntaxHighlighter/)，支持绝大多数的语法高亮，使用时，首行(不缩进)加`<!-- language: «language» -->`接着空一行，再编写代码，所有代码缩进4个字符。
 
-> ps: `<!-- language: «brush» -->`的想法[参考](http://stackoverflow.com/editing-help#syntax-highlighting)，通过html的comment来标识语法，对于Markdown的解析无侵入性。<br/>
+> ps: `<!-- language: «language» -->`的想法[参考](http://stackoverflow.com/editing-help#syntax-highlighting)，通过html的comment来标识语法，对于Markdown的解析无侵入性。<br/>
 已知的BUG，在代码注释中，不要使用`'`与`"`，否则容易将注释中引号与代码中的引号相匹配；不要在注释中使用html标签，否则生成的高亮代码块中会产生该标签，影响代码阅读
 
-如css需高亮，则在首行加`<!-- language: css -->`：
+如css需高亮，则在首行加`<!-- language: css -->`
 
 ![css编写规则](../imgs/manual_css_rule.png)
 
+或[仿照github对代码高亮的处理](https://help.github.com/articles/github-flavored-markdown)，使用<code>```css</code>：
+
+![css编写规则2](../imgs/manual_css_rule2.png)
+
 生成效果如下(你见到的效果就是生成出来的)：
 
-<!-- language: css -->
+```css
+ul.TOCEntry {
+    font-family: sans-serif;
+    margin: 0;
+}
 
-    ul.TOCEntry {
-        font-family: sans-serif;
-        margin: 0;
-    }
-
-    ul.TOCEntry li {
-        list-style: none;
-        display: block;
-        margin-left: -20px;
-        font-size: 1.1em;
-    }
+ul.TOCEntry li {
+    list-style: none;
+    display: block;
+    margin-left: -20px;
+    font-size: 1.1em;
+}
+```
 
 ## 代码即时运行
-使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的，«language»等义于前面的«brush»。目前支持以下几种语言，你看到的效果都是生成出来的：
+使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。如果使用github规则，则表示为<code>```!«language»</code>，目前支持以下几种语言，你看到的效果都是生成出来的：
 
 ### JavaScript
-首行加`<!-- language: !js -->`或`<!-- language: !javascript -->`，
+首行加`<!-- language: !js -->`或<code>```!js</code>：
 
 <!-- language: !js -->
 
@@ -145,9 +147,17 @@
     });
 
 ### Web页面
-首行加`<!-- language: web -->`，并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
+首行加`<!-- language: web -->`
+
+并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
 
 ![web编写规则](../imgs/manual_web_rule.png)
+
+或使用<code>```web</code>，则表示为：
+
+![web编写规则2](../imgs/manual_web_rule2.png)
+
+以下是生成效果
 
 <!-- language: web -->
 
@@ -180,7 +190,7 @@
     })
 
 ### Python
-首行加`<!-- language: !py -->`或`<!-- language: !python -->`
+首行加`<!-- language: !py -->`或`<!-- language: !python -->`或<code>```!py</code>：
 
 <!-- language: !py -->
 
@@ -203,7 +213,7 @@
 > - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe（目前只支持这几种语言） __所在的目录__ 需要添加到环境变量PATH中
 
 ### Ruby
-首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`
+首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`或<code>```!rb</code>：
 
 <!-- language: !rb -->
 
@@ -223,7 +233,7 @@
 
 
 ### C语言
-首行加`<!-- language: !c -->`
+首行加`<!-- language: !c -->`或<code>```!c</code>：
 
 <!-- language: !c -->
 
@@ -250,7 +260,7 @@
 
 
 ### C++
-首行加`<!-- language: !cpp -->`
+首行加`<!-- language: !cpp -->`或<code>```!cpp</code>：
 
 <!-- language: !cpp -->
 
@@ -278,7 +288,7 @@
 
 
 ### CSharp
-首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`
+首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`或<code>```!c#</code>：
 
 <!-- language: !csharp -->
 
@@ -301,7 +311,7 @@
     }
 
 ### Java
-首行加`<!-- language: !java -->`
+首行加`<!-- language: !java -->`或<code>```!java</code>：
 
 <!-- language: !java -->
 
@@ -339,7 +349,6 @@
 未完待续
 ========
 
-- Github上的markdown语法支持
 - chrome插件
 - blog插件
 - 自定义样式
