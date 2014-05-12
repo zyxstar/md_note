@@ -8,7 +8,7 @@
 - 记录里的东西被删除了，但某天突然想起某个重要信息在上面，只怪当时手太痒
 - 如果你是程序员，记录的东西里面也可能有一些代码，想看看运行效果怎么办？毕竟所见即所得的效果还是不错的
 
-嗯，是的，本工具能帮助到你，它使用纯文本格式（Markdown）作笔记，非常适合做 __*版本管理*__，不用担心内容会丢失；同时能根据文档中的标题自动生成 __*目录结构*__，方便理清层次关系，帮助归纳推演；如果文档中包含代码小片断，还能在文档中 __*直接运行代码*__ ，不需要IDE，不需要CtrlC + CtrlV，直接在页面中就能得到反馈。
+嗯，是的，本工具能帮助到你，它使用纯文本格式（Markdown）作笔记，非常适合做 __*版本管理*__，不用担心内容会丢失；同时能根据文档中的标题自动生成 __*目录结构*__，方便理清层次关系，帮助归纳推演；如果文档中包含代码小片断，还能在文档中 __*直接运行代码*__ ，不需要IDE，不需要<kbd>Ctrl</kbd> <kbd>C</kbd> + <kbd>Ctrl</kbd> <kbd>V</kbd>，直接在页面中就能得到反馈。
 
 用它来做什么
 ==============
@@ -120,33 +120,7 @@ ul.TOCEntry li {
 }
 ```
 
-## 代码即时运行
-使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。如果使用github规则，则表示为<code>```!«language»</code>，目前支持以下几种语言，你看到的效果都是生成出来的：
-
-### JavaScript
-首行加`<!-- language: !js -->`或<code>```!js</code>：
-
-<!-- language: !js -->
-
-    function MyClass(name) {
-        this.name = name;
-        this.say = function() {
-            return "hello, " + name;
-        };
-    }
-    var m = new MyClass("javascript");
-    alert(m.say());
-
-使用js库，在代码的首部使用`//= require «lib.ver»`的方式引入，如`//= require jquery.1.9.0`
-
-<!-- language: !js -->
-
-    //= require jquery.1.9.0
-    $(function(){
-        alert($().jquery);
-    });
-
-### Web页面
+## 展示Web页面
 首行加`<!-- language: web -->`
 
 并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
@@ -189,21 +163,48 @@ ul.TOCEntry li {
         });
     })
 
+
+## 代码即时运行
+使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。如果使用github规则，则表示为<code>```!«language»</code>，目前支持以下几种语言，你看到的效果都是生成出来的：
+
+### JavaScript
+首行加`<!-- language: !js -->`或<code>```!js</code>：
+
+```!js
+function MyClass(name) {
+    this.name = name;
+    this.say = function() {
+        return "hello, " + name;
+    };
+}
+var m = new MyClass("javascript");
+alert(m.say());
+```
+
+使用js库，在代码的首部使用`//= require «lib.ver»`的方式引入，如`//= require jquery.1.9.0`
+
+```!js
+//= require jquery.1.9.0
+$(function(){
+    alert($().jquery);
+});
+```
+
 ### Python
 首行加`<!-- language: !py -->`或`<!-- language: !python -->`或<code>```!py</code>：
 
-<!-- language: !py -->
+```!py
+#coding:utf-8
+class MyClass(object):
+    def __init__(self, name):
+        self.name = name
 
-    #coding:utf-8
-    class MyClass(object):
-        def __init__(self, name):
-            self.name = name
+    def say(self):
+        return "hello, %s" % self.name
 
-        def say(self):
-            return "hello, %s" % self.name
-
-    m = MyClass("python")
-    print m.say()
+m = MyClass("python")
+print m.say()
+```
 
 > 细心的你可能发现，有一个"►applet"的按钮，这是通过java编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。所以，如果你需要看到编写的代码运行在本机上的效果时，可以点此按钮。使用它之前有几点特殊要求（当然，你可以忽略它，直接点此"►"）：
 
@@ -215,128 +216,124 @@ ul.TOCEntry li {
 ### Ruby
 首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`或<code>```!rb</code>：
 
-<!-- language: !rb -->
-
-    #coding:utf-8
-    class MyClass
-        def initialize(name)
-            @name = name
-        end
-
-        def say
-            return "hello, #{@name}"
-        end
+```!rb
+#coding:utf-8
+class MyClass
+    def initialize(name)
+        @name = name
     end
 
-    m = MyClass.new "ruby"
-    puts m.say
+    def say
+        return "hello, #{@name}"
+    end
+end
 
+m = MyClass.new "ruby"
+puts m.say
+```
 
 ### C语言
 首行加`<!-- language: !c -->`或<code>```!c</code>：
 
-<!-- language: !c -->
+```!c
+#include <stdio.h>
 
-    #include <stdio.h>
+typedef struct MyStruct {
+    char* name;
+    char* (*pSay)(struct MyStruct*);
+} MyStruct;
 
-    typedef struct MyStruct {
-        char* name;
-        char* (*pSay)(struct MyStruct*);
-    } MyStruct;
+char* Say(MyStruct* ins) {
+    return ins->name;
+}
 
-    char* Say(MyStruct* ins) {
-        return ins->name;
-    }
+int main(){
+    MyStruct myIns;
 
-    int main(){
-        MyStruct myIns;
+    myIns.name = "c language";
+    myIns.pSay = Say;
 
-        myIns.name = "c language";
-        myIns.pSay = Say;
-
-        printf("hello, %s", myIns.pSay(&myIns));
-        return 0;
-    }
-
+    printf("hello, %s", myIns.pSay(&myIns));
+    return 0;
+}
+```
 
 ### C++
 首行加`<!-- language: !cpp -->`或<code>```!cpp</code>：
 
-<!-- language: !cpp -->
+```!cpp
+#include <iostream>
+#include <string>
 
-    #include <iostream>
-    #include <string>
+using namespace std;
 
-    using namespace std;
+class MyClass{
+    public:
+        MyClass(string name){
+            _name = name;
+        }
+        string say(){
+            return string("hello, ") + _name;
+        }
+    private:
+        string _name;
+};
 
-    class MyClass{
-        public:
-            MyClass(string name){
-                _name = name;
-            }
-            string say(){
-                return string("hello, ") + _name;
-            }
-        private:
-            string _name;
-    };
-
-    int main(){
-        cout << MyClass("cpp").say() << endl;
-        return 0;
-    }
-
+int main(){
+    cout << MyClass("cpp").say() << endl;
+    return 0;
+}
+```
 
 ### CSharp
 首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`或<code>```!c#</code>：
 
-<!-- language: !csharp -->
+```!cpp
+using System;
 
-    using System;
+class Program {
+    static void Main(string[] args) {
+        Console.Write(new MyClass("csharp").say());
+    }
 
-    class Program {
-        static void Main(string[] args) {
-            Console.Write(new MyClass("csharp").say());
+    public class MyClass {
+        private string name;
+        public MyClass(string name) {
+            this.name = name;
         }
-
-        public class MyClass {
-            private string name;
-            public MyClass(string name) {
-                this.name = name;
-            }
-            public string say() {
-                return string.Format("hello, {0}", name);
-            }
+        public string say() {
+            return string.Format("hello, {0}", name);
         }
     }
+}
+```
 
 ### Java
 首行加`<!-- language: !java -->`或<code>```!java</code>：
 
-<!-- language: !java -->
-
-    import java.io.*;
-    import java.text.*;
-    public class Program {
-        public static void main(String[] args) {
-            try {
-                System.out.print(new Program().new MyClass("java").say());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        public class MyClass {
-            private String name;
-            public MyClass(String name){
-                this.name=name;
-            }
-            public String say(){
-                return MessageFormat.format("hello, {0}", name);
-            }
+```!java
+import java.io.*;
+import java.text.*;
+public class Program {
+    public static void main(String[] args) {
+        try {
+            System.out.print(new Program().new MyClass("java").say());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
+    public class MyClass {
+        private String name;
+        public MyClass(String name){
+            this.name=name;
+        }
+        public String say(){
+            return MessageFormat.format("hello, {0}", name);
+        }
+    }
+}
+```
 
 浏览器支持
 ==========

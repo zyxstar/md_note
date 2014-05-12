@@ -3162,9 +3162,32 @@ ECMAScript只使用 __静态（词法）作用域__（而诸如Perl这样的语�
     fn().forEach(function(_f){_f();});
 
 
-## 递归/reduce
+## 递归
 递归的精髓是描述问题，而这正是函数式编程的精髓。
 
+学生在学习递归时，有时候是被鼓励在纸上追踪 (trace)递归程序调用 (invocation)的过程。可以看到一个递归函数的追踪过程)。但这种练习可能会误导你：一个程序员在定义一个递归函数时，通常不会特别地去想函数的调用顺序所导致的结果。如果一个人总是需要这样子思考程序，递归会是艰难的、没有帮助的。
+
+递归的优点是它精确地让我们 __更抽象地来检视算法__。你不需要考虑真正函数时所有的调用过程，就可以判断一个递归函数是否是正确的。
+
+要知道一个递归函数是否做它该做的事，你只需要问，__它包含了所有的情况吗__？举例来说，一个寻找列表长度的递归函数：
+
+- 对长度为 0 的列表是有效的。
+- 给定它对于长度为 n 的列表是有效的，它对长度是 n+1 的列表也是有效的。
+
+如果这两点是成立的，我们知道这个函数对于所有可能的列表都是正确的。
+
+```!js
+function len(lst){
+    if (Array.prototype.toString.call(lst) === '') return 0;
+    return (1 + len(lst.slice(1)));
+}
+
+alert(len([1,2,3,4,5,6,7]));
+```
+
+能够判断一个递归函数是否正确只不过是理解递归的上半场，下半场是能够写出一个做你想做的事情的递归函数。
+
+### reduce
 一些语言提供了 __尾递归__(tail recursion/trai-end recursion) 优化，即如果一个函数的最后执行递归调用语句的特殊形式的递归，那么调用的过程会被替换为一个循环，可以提高速度。但js __并没有提供__ 该优化。
 
 `reduce`或`flod`对尾递归情形的一种模式固定 [参考](http://learnyouahaskell-zh-tw.csie.org/zh-cn/high-order-function.html#关键字_fold)，不使用变量（无空间污染，无副作用），而通过参数与返回值来保持中间结果
@@ -4282,7 +4305,7 @@ When the browser requests a module, all its dependencies will be recursively res
 
 
 #### PhantomJS
-[PhantomJS](http://phantomjs.org/)是一个基于WebKit的服务器端 JavaScript API。提供一个浏览器环境的命令行接口。它全面支持web而不需浏览器支持，其快速，原生支持各种Web标准： DOM 处理，CSS 选择器，JSON，Canvas，和 SVG。PhantomJS可以用于页面自动化，网络监测，网页截屏，以及无界面测试等。
+[PhantomJS](http://phantomjs.org/)是一个基于WebKit的服务器端 JavaScript API。提供一个浏览器环境的命令行接口。它全面支持web而不需浏览器支持，其快速，原生支持各种Web标准： DOM 处理，CSS 选择器，JSON，Canvas，和 SVG。PhantomJS可以用于页面自动化，网络监测，网页截屏，以及无界面测试等。[Quick-Start](https://github.com/ariya/phantomjs/wiki/Quick-Start)，[Examples](https://github.com/ariya/phantomjs/wiki/Examples)
 
 #### 其它工具
 [Envjs](http://www.envjs.com)是JohnResig开发的一个类库，这个类库在Rhino环境中实现了浏览器DOM API，Rhino是Mozilla用Java实现的JavaScript引擎。你可以使用Rhino和env.js在命令行下执行JavaScript测试。
@@ -4315,19 +4338,72 @@ Web Inspector和Firebug都包含了检查程序运行效率和时间的工具，
 ### console.time
 需给要统计时间的代码前后加上`console.time(name)`和`console.timeEnd(name)`即可，当执行到`timeEnd()`时，它们之间的代码执行时间就会以毫秒为单位发送给控制台，以log的形式输出。使用控制台的时间统计API，可以将性能测试也加入到你的测试代码中，以保证你的代码不会出现性能瓶颈，从而从整体上保证应用的良好用户体验。
 
+## 部署
+### 源码压缩
+JavaScript源码压缩是从脚本文件中删除不必要的字符，它不改变功能。删除的字符包括空白、换行和注释。更好的压缩工具应该能够翻译JavaScript，因此能安全地缩短变量和函数的名字，这样就进一步减少了字符。文件越小越好，因为在网络上传输的数据越少越好。
+
+主要工具有：
+[YUI Compressor](http://developer.yahoo.com/yui/compressor)，
+[Closure Compiler](https://developers.google.com/closure/compiler)，
+[UglifyJS](https://github.com/mishoo/UglifyJS)
+
+但压缩后的代码不容易被debug，你看着报错信息，感到毫无头绪，根本不知道它所对应的原始位置。
+
+这就是[Source map](http://www.ruanyifeng.com/blog/2013/01/javascript_source_map.html)想要解决的问题，简单说，Source map就是一个信息文件，里面储存着位置信息。也就是说，转换后的代码的每一个位置，所对应的转换前的位置。有了它，出错的时候，除错工具将直接显示原始代码，而不是转换后的代码。这无疑给开发者带来了很大方便。
+
+上述工具后两者均支持Source map。
+
+### 构建工具
+合并压缩js/css文件、单元测试、包的依赖管理、版本控制、文档化等工作如果都用手工来完成，将是一件烦杂的事情，而构建工具是将这些任务交由相应的工具来完成
+
+####Rake
+与其说[Rake](http://rake.rubyforge.org/)是一个代码构建工具，不如说Rake是一个任务管理工具，通过Rake我们可以得到两个好处：
+
+- 以任务的方式创建和运行脚本
+- 追踪和管理任务之间的依赖
+
+如underscore.js 1.4.0中的rakefile：
+
+```rb
+require 'rubygems'
+require 'uglifier'
+
+desc "Use the Closure Compiler to compress Underscore.js"
+task :build do
+  source  = File.read('underscore.js')
+  min     = Uglifier.compile(source)
+  File.open('underscore-min.js', 'w') {|f| f.write min }
+end
+
+desc "Build the docco documentation"
+task :doc do
+  sh "docco underscore.js"
+end
+```
+
+#### Grunt
+[Grunt](http://www.gruntjs.org/)，是基于Node.js的自动化任务运行器。Grunt.js结合NPM的包依赖管理，完全可以媲美Maven。Grunt.js天然适合前端应用程序的构建——不仅限于JavaScript项目，同样可以用于其他语言的应用程序构建。越来越多的JavaScript项目已经在使用Grunt，其中最大的使用者包括著名的jQuery项目。
+
+Grunt没有像Maven那样强调构建的生命周期，各种任务的执行顺序可以随意配置。Grunt本身仅是一个执行器，大量的功能都存在于NPM管理的插件中。特别是以grunt-contrib-开头的核心插件，覆盖了大部分的核心功能，比如`handlebars`，
+`jade`，`less`，`compass`，`jshint`，`jasmine`，`clean`，`concat`，`minify`，`copy`，`uglify`，`watch`，`minify`，`uglify`等。
+
+通过提供通用的接口以进行代码规范检验（Lint）、合并、压缩、测试及版本控制等任务，Grunt使入门门槛大大降低了。
+
+<!-- http://www.infoq.com/cn/articles/GruntJs -->
 
 
 
 
 
 
+Node
 
 
 
 
 
 
-                       以
+               以
 
                                                        以
                                                        以
@@ -4340,37 +4416,38 @@ Web Inspector和Firebug都包含了检查程序运行效率和时间的工具，
 
 
 
+1. 现在内存都是8G的要开啥虚拟缓存？固态硬盘速度比内存要稍慢，固态硬盘用的就是内存颗粒
+http://www.jb51.net/os/windows/19952.html
+
+1. 使用固态硬盘要尽可能多的减少硬盘的写入次数，一般把系统临时文件都放到机械硬盘区中，关闭所有的索引服务
+http://baike.baidu.com/view/58518.htm
+http://pcedu.pconline.com.cn/windows7/skill/1107/2477727.html
+
+
+
+    http://bbs.pcpop.com/thread-10057257-1-1.html
+
+    http://jingyan.baidu.com/article/3f16e003baf73e2591c103cf.html
+
+    http://jingyan.baidu.com/article/c74d6000480a620f6b595d77.html
+    mklink是windows系统下创建符号链接和硬链接的命令工具
+    mklink
+    mklink /j C:\Windows\SoftwareDistribution\Download  D:\temp\download
+
+    robocopy "C:\Users" "D:\Users" /E /COPYALL /XJ
+    rmdir "C:\Users" /S /Q
+    mklink /J "C:\Users" "D:\Users"
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-npm管理node.js package.json https://github.com/volojs/volo
-客户端库管理工具 bower.json
-
-Grunt：任务自动管理工具
-build: mini + Source Map
+npm管理node package.json https://github.com/volojs/volo
 
 component.json
+
+
+
+
 
 <!-- http://stackoverflow.com/questions/13615679/requirejs-loading-modules-qunit
 http://www.nathandavison.com/article/17/using-qunit-and-requirejs-to-build-modular-unit-tests
@@ -4388,32 +4465,15 @@ http://elucidblue.com/2012/12/24/making-qunit-play-nice-with-requirejs/
 
 <!-- http://javascript.ruanyifeng.com/
 http://yuilibrary.com/yui/docs/tutorials/gbs/
-http://www.cnblogs.com/snandy/archive/2012/03/30/2423612.html
+
 http://www.cnblogs.com/nuysoft/archive/2011/11/14/2248023.html
+
 http://www.cnblogs.com/caishen/default.html?page=3&OnlyTitle=1
+
+
 http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html
-http://www.cnblogs.com/zhongweiv/p/nodejs_module.html -->
 
+http://www.cnblogs.com/zhongweiv/p/nodejs_module.html
+http://www.zhangxinxu.com/wordpress/2010/12/css-box-flex%E5%B1%9E%E6%80%A7%EF%BC%8C%E7%84%B6%E5%90%8E%E5%BC%B9%E6%80%A7%E7%9B%92%E5%AD%90%E6%A8%A1%E5%9E%8B%E7%AE%80%E4%BB%8B/
+-->
 
-
-```js
-
-function fn() {
-    var fnarr = [];
-    for (var i = 0; i < 3; i++) {
-        fnarr.push(function(){alert(i);});
-    }
-    return fnarr;
-}
-
-fn().forEach(function(_f){_f();});
-
-
-test
-
-```python
-
-import re
-print re
-
-```
