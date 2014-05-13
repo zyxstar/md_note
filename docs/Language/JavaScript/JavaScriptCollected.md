@@ -4179,12 +4179,12 @@ CommonJS/AMD的支持示例：
 
 <!--language: js-->
 
-    define(function(require, exports, module) {
+    define(function(require, exports) {
       var mod = require("./relative/name");
       exports.value = "exposed";
     });
 
-回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。
+回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。当 `define(id?, dependencies?, factory)` 只有 `factory` 参数时，`dependencies` 无需开发者提前指定，`define` 会调用 `factory.toString` 方法，通过正则匹配，自动找出需要依赖的模块。
 
 >  [CommonJS 的模块系统，AMD 和 Wrappings, 以及 RequireJS](http://www.udpwork.com/item/3978.html)
 
