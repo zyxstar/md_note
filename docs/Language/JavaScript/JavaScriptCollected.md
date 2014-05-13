@@ -4117,12 +4117,6 @@ CommonJS/AMD的支持示例：
 ## 模块加载器
 为了在客户端使用CommonJS模块，我们需要引入模块加载器类库。当然，可选的库还有很多，每个类库都各有其优缺点。
 
-### Yabble
-[Yabble](http://github.com/jbrantly/yabble)是一款优秀的轻量级的模块加载器。你可以
-配置Yabble来支持通过XHR加载模块或者使用script标签来加载模块。通过XHR来抓
-取模块的优势是你不必再用转换格式把模块多包装一层了。然而，这种做法的缺点是——必须用`eval()` 来执行模块代码，调试起来很不方便。另外还会遇到跨域的问题，尤其是当使用了CDN的时候。理想情况是，应当使用XHR 来实现一些“快餐式”的开发，而不是严谨规范的开发：
-
-
 ### AMD/RequireJS
 [RequireJS](http://requirejs.org)（[中文API](http://makingmobile.org/docs/tools/requirejs-api-zh/) ，[阮一峰对它的介绍](http://www.ruanyifeng.com/blog/2012/11/require_js.html)，[requirejs2.0相关说明](http://www.cnblogs.com/snandy/archive/2012/06/04/2532997.html)）是Yabble的一个不错的替代品，它是现在最流行的加载器之一。RequireJS对模块加载的看法略有不同，它遵循“ __异步模块定义__ ”（Asynchronous Module Definition，简称[AMD](http://wiki.commonjs.org/wiki/Modules/AsynchronousDefinition)，[whyAMD](http://cyj.me/why-seajs/requirejs/#why-amd)）格式。主要的不同之处在于AMD的API是即时计算依赖关系，而不是延迟计算。实际上，RequireJS完全和CommonJS的模块相互兼容，只是包装转换的写法格式不同。
 
@@ -4174,22 +4168,31 @@ CommonJS/AMD的支持示例：
       })
     });
 
-默认情况下是没有`exports`变量的。如果要从模块中暴露一些变量，只需将数据从函数中返回即可。RequireJS的模块有一个优势，就是它们已经是被包装好的，因此你不必担心为了兼容浏览器还要再去写转换格式。然而，需要注意的是，这个API并不兼容CommonJS的模块，即 __不能__ 写一个同时运行在Node.js和浏览器中的模块代码。其实是可以做一些简单的hack来让CommonJS的模块代码运行在客户端，RequireJS为CommonJS提供了一个“容错层”——只需将现有的模块代码外部用`define()`函数包装一层即可：
+默认情况下是没有`exports`变量的。如果要从模块中暴露一些变量，只需将数据从函数中返回即可。RequireJS的模块有一个优势，就是它们已经是被包装好的，因此你不必担心为了兼容浏览器还要再去写转换格式。
+
+> 参考todomvc中的[backbone_require版本](http://todomvc.com/dependency-examples/backbone_require/)，[代码打包](../../../data/backbone_require.zip)，更多[require+mvc示例](http://todomvc.com)
+
+> 如果你是脚本库开发者，[条件调用 define()](https://github.com/umdjs/umd)。妙处在于不依靠 AMD 你仍然可以编写你的库，只要可用的时候参与一下就可以了
+
+### Modules/Wrappings
+然而，需要注意的是 ，上述API并不兼容CommonJS的模块，即 __不能__ 写一个同时运行在Node.js和浏览器中的模块代码。其实是可以做一些简单的hack来让CommonJS的模块代码运行在客户端，RequireJS为  __CommonJS提供了一个“容错层（Modules/Wrappings）”__ ——只需将现有的模块代码外部用`define()`函数包装一层即可：
 
 <!--language: js-->
 
-    define(function(require, exports) {
+    define(function(require, exports, module) {
       var mod = require("./relative/name");
       exports.value = "exposed";
     });
 
 回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。
 
-> 参考todomvc中的[backbone_require版本](http://todomvc.com/dependency-examples/backbone_require/)，[代码打包](../../../data/backbone_require.zip)，更多[require+mvc示例](http://todomvc.com)
+>  [CommonJS 的模块系统，AMD 和 Wrappings, 以及 RequireJS](http://www.udpwork.com/item/3978.html)
 
+> [AMD终极揭秘](http://www.cnblogs.com/owenChen/articles/2833166.html)
 
-如果你是脚本库开发者，[条件调用 define()](https://github.com/umdjs/umd)。妙处在于不依靠 AMD 你仍然可以编写你的库，只要可用的时候参与一下就可以了
+> [Browserify：浏览器加载Node.js模块](http://javascript.ruanyifeng.com/tool/browserify.html)
 
+> [volojs](https://github.com/volojs/volo)
 
 ### SeaJs
 [SeaJs](https://github.com/seajs/seajs)，[Dosc](http://seajs.org/docs/)
@@ -4379,43 +4382,144 @@ desc "Build the docco documentation"
 task :doc do
   sh "docco underscore.js"
 end
+
+desc 'Run tests'
+task :test do
+  pid = spawn('bundle exec serve', err: '/dev/null')
+  sleep 2
+
+  puts "Running Underscore test suite."
+  result2 = system %{phantomjs ./test/run-qunit.js "http://localhost:4000/test/test_underscore/test.html"}
+
+  Process.kill 'INT', pid
+  exit(result1 && result2 ? 0 : 1)
+end
+
 ```
 
 #### Grunt
 [Grunt](http://www.gruntjs.org/)，是基于Node.js的自动化任务运行器。Grunt.js结合NPM的包依赖管理，完全可以媲美Maven。Grunt.js天然适合前端应用程序的构建——不仅限于JavaScript项目，同样可以用于其他语言的应用程序构建。越来越多的JavaScript项目已经在使用Grunt，其中最大的使用者包括著名的jQuery项目。
 
-Grunt没有像Maven那样强调构建的生命周期，各种任务的执行顺序可以随意配置。Grunt本身仅是一个执行器，大量的功能都存在于NPM管理的插件中。特别是以grunt-contrib-开头的核心插件，覆盖了大部分的核心功能，比如`handlebars`，
-`jade`，`less`，`compass`，`jshint`，`jasmine`，`clean`，`concat`，`minify`，`copy`，`uglify`，`watch`，`minify`，`uglify`等。
+Grunt没有像Maven那样强调构建的生命周期，各种任务的执行顺序可以随意配置。Grunt本身仅是一个执行器，大量的功能都存在于NPM管理的插件中。特别是以grunt-contrib-开头的核心插件，覆盖了大部分的核心功能，比如`less`，`compass`，`jshint`，`concat`，`minify`，`uglify`等。
 
 通过提供通用的接口以进行代码规范检验（Lint）、合并、压缩、测试及版本控制等任务，Grunt使入门门槛大大降低了。
 
-<!-- http://www.infoq.com/cn/articles/GruntJs -->
+>  使用Grunt时，需要用到npm，并需要注意package.json的书写，[nmp参考](http://www.cnblogs.com/chyingp/p/npm.html)
+
+一个示例：
+
+package.json编写
+
+```js
+{
+  "name": "Bejs",
+  "version": "0.1.0",
+  "devDependencies": {
+    "grunt": "~0.4.0",
+    "grunt-contrib-uglify": "~0.1.2",
+    "grunt-contrib-concat": "~0.1.1",
+    "grunt-css":   ">0.0.0"
+  }
+}
+```
+
+shell中运行`npm install`
+
+Gruntfile.js编写
+
+```js
+module.exports = function(grunt) {
+  grunt.initConfig({
+    pkg : grunt.file.readJSON('package.json'),
+    concat : {
+      domop : {
+        src: ['src/ajax.js', 'src/selector.js'],
+        dest: 'dest/domop.js'
+      },
+      css :{
+        src: ['src/asset/*.css'],
+        dest: 'dest/asset/all.css'
+      }
+    },
+    uglify : {
+      options : {
+        banner : '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
+                sourceMap:'dest/domop.min.js.map',
+                sourceMappingURL: 'domop.min.js.map'
+      },
+      build : {
+        src : 'dest/domop.js',
+        dest : 'dest/domop.min.js'
+      }
+    },
+        cssmin: {
+            css: {
+                src: 'dest/asset/all.css',
+                dest: 'dest/asset/all-min.css'
+            }
+        }
+  });
+
+  grunt.loadNpmTasks('grunt-contrib-concat');
+  grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-css');
+
+  grunt.registerTask('default', ['concat', 'uglify', 'cssmin']);
+};
+```
+
+shell中运行`grunt`
+
+#### package.json中scripts
+通过package.json中的scripts来运行简单的shell脚本，达到轻量级的自动构建
+
+underscore.js 1.6.0中的package.json
+
+```js
+{
+  "name"          : "underscore",
+  "description"   : "JavaScript's functional programming helper library.",
+  "homepage"      : "http://underscorejs.org",
+  "keywords"      : ["util", "functional", "server", "client", "browser"],
+  "author"        : "Jeremy Ashkenas <jeremy@documentcloud.org>",
+  "repository"    : {"type": "git", "url": "git://github.com/jashkenas/underscore.git"},
+  "main"          : "underscore.js",
+  "version"       : "1.6.0",
+  "devDependencies": {
+    "docco": "0.6.x",
+    "phantomjs": "1.9.0-1",
+    "uglify-js": "2.4.x"
+  },
+  "scripts": {
+    "test": "phantomjs test/vendor/runner.js test/index.html?noglobals=true",
+    "build": "uglifyjs underscore.js -c \"evaluate=false\" --comments \"/    .*/\" -m --source-map underscore-min.map -o underscore-min.js",
+    "doc": "docco underscore.js"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://raw.github.com/jashkenas/underscore/master/LICENSE"
+    }
+  ],
+  "files"         : ["underscore.js", "underscore-min.js", "LICENSE"]
+}
+```
+
+shell中运行`npm install`，再运行`npm test`，`npm run-script build`，`npm run-script doc`
 
 
 
 
 
 
-Node
 
 
 
 
 
 
-               以
-
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-                                                       以
-
-
-
-
-
+<!--
+http://zhidao.baidu.com/question/2051094073431872107.html
 1. 现在内存都是8G的要开啥虚拟缓存？固态硬盘速度比内存要稍慢，固态硬盘用的就是内存颗粒
 http://www.jb51.net/os/windows/19952.html
 
@@ -4436,16 +4540,12 @@ http://pcedu.pconline.com.cn/windows7/skill/1107/2477727.html
 
     robocopy "C:\Users" "D:\Users" /E /COPYALL /XJ
     rmdir "C:\Users" /S /Q
-    mklink /J "C:\Users" "D:\Users"
+    mklink /J "C:\Users" "D:\Users" -->
 
 
 
 
-npm管理node package.json https://github.com/volojs/volo
-
-component.json
-
-
+ https://github.com/volojs/volo
 
 
 
