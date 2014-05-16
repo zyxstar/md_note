@@ -2778,10 +2778,11 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
     };
 
 
-
-
 函数式
 ============
+> [函数式思维: 为什么函数式编程越来越受关注](http://www.ibm.com/developerworks/cn/java/j-ft20/)
+
+> [coolshell上函数式编程](http://coolshell.cn/articles/10822.html)
 
 ## 高阶函数
 在数学和计算机科学中，__高阶函数__(high-order function, HOF)是至少满足下列一个条件的函数：
@@ -2809,10 +2810,91 @@ js原生不支持lambda，但借助一些库（如[Functional Javascript](http:/
 
 而化简操作指的是对一个列表的元素进行适当的合并（继续看前面的例子，如果有人想知道班级的平均分该怎么做？他可以定义一个化简函数，通过让列表中的奇数（odd）或偶数（even）元素跟自己的相邻的元素相加的方式把列表减半，如此递归运算直到列表只剩下一个元素，然后用这个元素除以人数，就得到了平均分）。虽然他不如映射函数那么并行，但是因为化简总是有一个简单的答案，大规模的运算相对独立，所以化简函数在高度并行环境下也很有用。
 
+### 自定义控制结构
+在支持函数式编程的语言里，我们能自定义类似`if`、`while`、`for`的控制语句（高阶函数），函数作为第一类型的作用就是允许自定义控制语句、改造语言，让程序员能在更高的层次上做开发，而不是仅仅使用语言本身提供的低级的控制语句。比如Java语言通过不断地改进语法，引入了`foreach（for (xx : xx)）`、`with_open_file（try (resources)）`等语法，但如果Java最先引入`Lambda`，或许就不用添加这些语法糖了，因为程序员早就自己实现了！
+
+比如下面的代码，需要将重复的地方给提炼出来：
+
+```js
+function is_collision(posx, posy, vec) {
+    ret.push(vec);
+    return !!me.board.getPiece(new Pos(posx,posy));
+}
+
+var topArr = utils.range(this.pos.y, Board.ROWS);
+for (i = 1, len = topArr.length; i < len; i++) {
+    if (is_collision(this.pos.x, topArr[i], [0, i]))
+        break;
+}
+
+var rightArr = utils.range(this.pos.x, Board.COLS);
+for (i = 1, len = rightArr.length; i < len; i++) {
+    if (is_collision(rightArr[i], this.pos.y, [i, 0]))
+        break;
+}
+```
+
+第一个可以想到的就是把变化部分作为 __参数__ 给提炼出来，但在传递给`is_collision`时的参数，用到了数组和下标，所以参数还必须是回调函数：
+
+```js
+function is_collision(posx, posy, vec) {
+    ret.push(vec);
+    return !!me.board.getPiece(new Pos(posx,posy));
+}
+
+function process (rangestart, rangeend, fnPosx, fnPosy, fnVec) {
+    var arr = utils.range(rangestart, rangeend);
+    for (i = 1, len = arr.length; i < len; i++) {
+        if (is_collision(fnPosx(arr,i), fnPosy(arr,i), fnVec(i)))
+            break;
+    }
+}
+
+process(this.pos.y, Board.ROWS,
+    function (arr,i) {return this.pos.x;},
+    function (arr,i) {return arr[i];},
+    function (i) {return [0,i];}
+});
+
+process(this.pos.x, Board.COLS,
+    function (arr,i) {return arr[i];},
+    function (arr,i) {return this.pos.y},
+    function (i) {return [i,0];}
+});
+```
+
+但代码并未精简，反而带来了代码阅读上面的障碍，对提炼的函数以及它的参数如何命名也是个问题（只得命名为无意义的`process`）。
+
+但如果再次审视原始的代码，代码的意图是需要将一个迭代对象进行迭代，遇到一个满足条件`predicate`时，就退出迭代，而可以将这种场景表达成一个控制结构`takeWhile`，这将是一个更通用且能被其他代码复用的结构，且重构后反而能增强代码表达：
+
+```js
+utils.takeWhile = function (list, predicate, context) {
+    var ret = [];
+    for(var i = 0, len = list.length; i < len; i++){
+        if (predicate.call(context, list[i], i, list)) break;
+        ret.push(list[i]);
+    }
+    return ret;
+};
+
+function is_collision(posx, posy, vec) {
+    ret.push(vec);
+    return !!me.board.getPiece(new Pos(posx,posy));
+}
+
+utils.takeWhile(utils.range(this.pos.y, Board.ROWS-1),
+    function(item, idx, arr){
+        return is_collision(this.pos.x, arr[idx+1], [0, idx+1]);
+    });
+
+utils.takeWhile(utils.range(this.pos.x, Board.COLS-1),
+    function(item, idx, arr){
+        return is_collision(arr[idx+1], this.pos.y, [idx+1, 0]);
+    });
+```
 
 ## 模式匹配
 原生的js不支持，但基于js的[LiveScript](http://livescript.net/)是支持的
-
 
 ## 闭包
 闭包是代码块和 __创建该代码块的上下文中数据__ 的结合。
@@ -3790,6 +3872,12 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 ### 实现yield
 
+
+
+
+
+
+
 异步编程
 =========
 ## 延迟执行
@@ -4025,94 +4113,6 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
 
 这样就可以通过在浏览器中引入模块加载器来管理并执行我们的模块了。这为我们管理代码带来很多便利，我们可以将代码分隔成模块组件，这是做良好的应用架构设计的秘诀之一，同时我们还获得了依赖管理的支持，包括独立的作用域和命名空间。没错，相同的模块可以运行在浏览器、服务器、桌面应用，以及任何支持CommonJS的环境中。
 
-CommonJS/AMD的支持示例：
-
-> - underscore 1.2.0
-
-<!--language: js-->
-
-    // Export the Underscore object for **CommonJS**, with backwards-compatibility
-    // for the old `require()` API. If we are not in CommonJS, add `_` to the
-    // global object.
-    if (typeof module !== 'undefined' && module.exports) {
-      module.exports = _;
-      _._ = _;
-    } else {
-      // Exported as a string, for Closure Compiler "advanced" mode.
-      root['_'] = _;
-    }
-
-> - underscore 1.3.0
-
-<!--language: js-->
-
-    // Export the Underscore object for **Node.js**, with
-    // backwards-compatibility for the old `require()` API. If we are in
-    // the browser, add `_` as a global object via a string identifier,
-    // for Closure Compiler "advanced" mode.
-    if (typeof exports !== 'undefined') {
-      if (typeof module !== 'undefined' && module.exports) {
-        exports = module.exports = _;
-      }
-      exports._ = _;
-    } else {
-      root['_'] = _;
-    }
-
-> - underscore 1.6.0
-
-<!--language: js-->
-
-    // Export the Underscore object for **Node.js**, with
-    // backwards-compatibility for the old `require()` API. If we are in
-    // the browser, add `_` as a global object via a string identifier,
-    // for Closure Compiler "advanced" mode.
-    if (typeof exports !== 'undefined') {
-      if (typeof module !== 'undefined' && module.exports) {
-        exports = module.exports = _;
-      }
-      exports._ = _;
-    } else {
-      root._ = _;
-    }
-
-    // AMD registration happens at the end for compatibility with AMD loaders
-    // that may not enforce next-turn semantics on modules. Even though general
-    // practice for AMD registration is to be anonymous, underscore registers
-    // as a named module because, like jQuery, it is a base library that is
-    // popular enough to be bundled in a third party lib, but not be part of
-    // an AMD load request. Those cases could generate an error when an
-    // anonymous define() is called outside of a loader request.
-    if (typeof define === 'function' && define.amd) {
-      define('underscore', [], function() {
-        return _;
-      });
-    }
-
-> - jquery 2.0.0
-
-<!--language: js-->
-
-    if ( typeof module === "object" && module && typeof module.exports === "object" ) {
-      // Expose jQuery as module.exports in loaders that implement the Node
-      // module pattern (including browserify). Do not create the global, since
-      // the user will be storing it themselves locally, and globals are frowned
-      // upon in the Node module world.
-      module.exports = jQuery;
-    } else {
-      // Register as a named AMD module, since jQuery can be concatenated with other
-      // files that may use define, but not via a proper concatenation script that
-      // understands anonymous AMD modules. A named AMD is safest and most robust
-      // way to register. Lowercase jquery is used because AMD module names are
-      // derived from file names, and jQuery is normally delivered in a lowercase
-      // file name. Do this after creating the global so that if an AMD module wants
-      // to call noConflict to hide this version of jQuery, it will work.
-      if ( typeof define === "function" && define.amd ) {
-        define( "jquery", [], function () { return jQuery; } );
-      }
-    }
-
-
 
 ## 模块加载器
 为了在客户端使用CommonJS模块，我们需要引入模块加载器类库。当然，可选的库还有很多，每个类库都各有其优缺点。
@@ -4186,9 +4186,75 @@ CommonJS/AMD的支持示例：
 
 回调函数的参数必须和这段示例代码中所示的一模一样，用`require`和`exports`。现在你的模块就可以照常使用这些变量了，而不用作任何改动。当 `define(id?, dependencies?, factory)` 只有 `factory` 参数时，`dependencies` 无需开发者提前指定，`define` 会调用 `factory.toString` 方法，通过正则匹配，自动找出需要依赖的模块。
 
->  [CommonJS 的模块系统，AMD 和 Wrappings, 以及 RequireJS](http://www.udpwork.com/item/3978.html)
+如果在node中使用，需`npm install amdefine`，再引入`define`定义，实现代码在前后端环境中都能正常使用
 
-> [AMD终极揭秘](http://www.cnblogs.com/owenChen/articles/2833166.html)
+```js
+if (typeof define !== 'function') {
+    var define = require('amdefine')(module);
+}
+```
+
+如果，想编写通用环境下的库，如underscore.js，可模仿如下写法：
+
+
+> - underscore 1.6.0
+
+<!--language: js-->
+
+    // Export the Underscore object for **Node.js**, with
+    // backwards-compatibility for the old `require()` API. If we are in
+    // the browser, add `_` as a global object via a string identifier,
+    // for Closure Compiler "advanced" mode.
+    if (typeof exports !== 'undefined') {
+      if (typeof module !== 'undefined' && module.exports) {
+        exports = module.exports = _;
+      }
+      exports._ = _;
+    } else {
+      root._ = _;
+    }
+
+    // AMD registration happens at the end for compatibility with AMD loaders
+    // that may not enforce next-turn semantics on modules. Even though general
+    // practice for AMD registration is to be anonymous, underscore registers
+    // as a named module because, like jQuery, it is a base library that is
+    // popular enough to be bundled in a third party lib, but not be part of
+    // an AMD load request. Those cases could generate an error when an
+    // anonymous define() is called outside of a loader request.
+    if (typeof define === 'function' && define.amd) {
+      define('underscore', [], function() {
+        return _;
+      });
+    }
+
+> - jquery 2.0.0
+
+<!--language: js-->
+
+    if ( typeof module === "object" && module && typeof module.exports === "object" ) {
+      // Expose jQuery as module.exports in loaders that implement the Node
+      // module pattern (including browserify). Do not create the global, since
+      // the user will be storing it themselves locally, and globals are frowned
+      // upon in the Node module world.
+      module.exports = jQuery;
+    } else {
+      // Register as a named AMD module, since jQuery can be concatenated with other
+      // files that may use define, but not via a proper concatenation script that
+      // understands anonymous AMD modules. A named AMD is safest and most robust
+      // way to register. Lowercase jquery is used because AMD module names are
+      // derived from file names, and jQuery is normally delivered in a lowercase
+      // file name. Do this after creating the global so that if an AMD module wants
+      // to call noConflict to hide this version of jQuery, it will work.
+      if ( typeof define === "function" && define.amd ) {
+        define( "jquery", [], function () { return jQuery; } );
+      }
+    }
+
+其它参考：
+
+> [CommonJS 的模块系统，AMD 和 Wrappings, 以及 RequireJS](http://www.udpwork.com/item/3978.html)
+
+> [AMD终极揭秘](http://blog.csdn.net/dojotoolkit/article/details/7820321)
 
 > [Browserify：浏览器加载Node.js模块](http://javascript.ruanyifeng.com/tool/browserify.html)
 
@@ -4270,12 +4336,7 @@ When the browser requests a module, all its dependencies will be recursively res
 [Google JavaScript Style Guide](http://google-styleguide.googlecode.com/svn/trunk/javascriptguide.xml)，[中文](../../../data/Google-JavaScript-Style-Guide.htm)
 
 ### JSLint
-[JSLint](www.jslint.com)，JavaScript 作为一门年轻、语法灵活多变且对格式要求相对松散的语言，代码格式的混乱和某些语言特性的不正确使用，往往使得最终交付的产品中包含许多因编码风格约定造成的未预见的行为或错误，这种习惯性的问题如果不及时指出并修改，往往会在项目的迭代过程中不断的重现，严重影响 Web 产品的稳定性与安全性。JSLint 正是 Douglas Crockford 同学为解决此类问题创建的工具，JSLint 除了能指出这些不合理的约定，还能标出结构方面的问题。虽然 JSLint 不能保证代码逻辑一定正确，但却有助于发现错误并教会开发人员一些好的编码实践，更加注重静态代码格式的检测，检测主要包括以下几个方面：
-
-- 检测语法错误：例如大括号`{}`的配对错误。
-- 变量定义规范：例如未定义变量的检测。
-- 代码格式规范：例如句末分号的缺失。
-- 蹩脚语言特性的使用检测：如`eval`和`with`的使用限制。
+[JSLint](www.jslint.com)，JavaScript 作为一门年轻、语法灵活多变且对格式要求相对松散的语言，代码格式的混乱和某些语言特性的不正确使用，往往使得最终交付的产品中包含许多因编码风格约定造成的未预见的行为或错误，这种习惯性的问题如果不及时指出并修改，往往会在项目的迭代过程中不断的重现，严重影响 Web 产品的稳定性与安全性。JSLint 正是为解决此类问题创建的工具，JSLint 除了能指出这些不合理的约定，还能标出结构方面的问题。虽然 JSLint 不能保证代码逻辑一定正确，但却有助于发现错误并教会开发人员一些好的编码实践，更加注重静态代码格式的检测。
 
 ### 其它工具
 [JSHint](http://www.jshint.com/docs/)
@@ -4540,12 +4601,17 @@ http://pcedu.pconline.com.cn/windows7/skill/1107/2477727.html
 
     robocopy "C:\Users" "D:\Users" /E /COPYALL /XJ
     rmdir "C:\Users" /S /Q
-    mklink /J "C:\Users" "D:\Users" -->
+    mklink /J "C:\Users" "D:\Users"
 
 
+http://blog.csdn.net/lutinghuan/article/details/7395080
+http://blog.sina.com.cn/s/blog_49cea9d60100jla7.html
 
 
- https://github.com/volojs/volo
+360目录
+
+-->
+
 
 
 
