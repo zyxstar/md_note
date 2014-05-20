@@ -28,6 +28,7 @@
 # Skill
 - [DataBase.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FDataBase.md) <span>2009-10-25</span>
 - [UnitTesting.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FUnitTesting.md) <span>2010-07-26</span>
+- [VMwareNetSetting.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FVMwareNetSetting.md) <span></span>
 
 # Framework
 - [Backbone_intro.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_intro.md) <span>2013-07-01</span>

@@ -2822,13 +2822,13 @@ function is_collision(posx, posy, vec) {
 }
 
 var topArr = utils.range(this.pos.y, Board.ROWS);
-for (i = 1, len = topArr.length; i < len; i++) {
+for (i = 0, len = topArr.length; i < len; i++) {
     if (is_collision(this.pos.x, topArr[i], [0, i]))
         break;
 }
 
 var rightArr = utils.range(this.pos.x, Board.COLS);
-for (i = 1, len = rightArr.length; i < len; i++) {
+for (i = 0, len = rightArr.length; i < len; i++) {
     if (is_collision(rightArr[i], this.pos.y, [i, 0]))
         break;
 }
@@ -2844,7 +2844,7 @@ function is_collision(posx, posy, vec) {
 
 function process (rangestart, rangeend, fnPosx, fnPosy, fnVec) {
     var arr = utils.range(rangestart, rangeend);
-    for (i = 1, len = arr.length; i < len; i++) {
+    for (i = 0, len = arr.length; i < len; i++) {
         if (is_collision(fnPosx(arr,i), fnPosy(arr,i), fnVec(i)))
             break;
     }
@@ -2882,15 +2882,15 @@ function is_collision(posx, posy, vec) {
     return !!me.board.getPiece(new Pos(posx,posy));
 }
 
-utils.takeWhile(utils.range(this.pos.y, Board.ROWS-1),
+utils.takeWhile(utils.range(this.pos.y, Board.ROWS),
     function(item, idx, arr){
-        return is_collision(this.pos.x, arr[idx+1], [0, idx+1]);
-    });
+        return is_collision(this.pos.x, arr[idx], [0, idx]);
+    }, this);
 
-utils.takeWhile(utils.range(this.pos.x, Board.COLS-1),
+utils.takeWhile(utils.range(this.pos.x, Board.COLS),
     function(item, idx, arr){
-        return is_collision(arr[idx+1], this.pos.y, [idx+1, 0]);
-    });
+        return is_collision(arr[idx], this.pos.y, [idx, 0]);
+    }, this);
 ```
 
 ## 模式匹配
@@ -4575,42 +4575,6 @@ shell中运行`npm install`，再运行`npm test`，`npm run-script build`，`np
 
 
 
-
-
-
-
-<!--
-http://zhidao.baidu.com/question/2051094073431872107.html
-1. 现在内存都是8G的要开啥虚拟缓存？固态硬盘速度比内存要稍慢，固态硬盘用的就是内存颗粒
-http://www.jb51.net/os/windows/19952.html
-
-1. 使用固态硬盘要尽可能多的减少硬盘的写入次数，一般把系统临时文件都放到机械硬盘区中，关闭所有的索引服务
-http://baike.baidu.com/view/58518.htm
-http://pcedu.pconline.com.cn/windows7/skill/1107/2477727.html
-
-
-
-    http://bbs.pcpop.com/thread-10057257-1-1.html
-
-    http://jingyan.baidu.com/article/3f16e003baf73e2591c103cf.html
-
-    http://jingyan.baidu.com/article/c74d6000480a620f6b595d77.html
-    mklink是windows系统下创建符号链接和硬链接的命令工具
-    mklink
-    mklink /j C:\Windows\SoftwareDistribution\Download  D:\temp\download
-
-    robocopy "C:\Users" "D:\Users" /E /COPYALL /XJ
-    rmdir "C:\Users" /S /Q
-    mklink /J "C:\Users" "D:\Users"
-
-
-http://blog.csdn.net/lutinghuan/article/details/7395080
-http://blog.sina.com.cn/s/blog_49cea9d60100jla7.html
-
-
-360目录
-
--->
 
 
 
