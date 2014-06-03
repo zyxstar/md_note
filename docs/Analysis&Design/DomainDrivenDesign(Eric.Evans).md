@@ -193,9 +193,15 @@ Factory负责处理对象生命周期的开始，而Repository帮助管理生命
 
 
 
-
-
-
+<!--
+> DDD vs 四色建模
+http://www.jdon.com/36343
+http://www.jdon.com/tags/427
+http://www.cnblogs.com/netfocus/archive/2011/01/17/1937779.html
+http://www.cnblogs.com/netfocus/archive/2011/03/05/1971899.html
+http://www.cnblogs.com/netfocus/archive/2011/07/10/2102099.html
+http://www.cnblogs.com/netfocus/archive/2011/10/10/2204949.html
+ -->
 
 
 
