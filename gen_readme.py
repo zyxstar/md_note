@@ -16,6 +16,7 @@ ORDER_DIC = {"Analysis&Design":10,
              "Skill":40,
              "Framework":50,
              "RubyProgramming.md":10,
+             "RubyPlatform.md":20,
              "PythonCookBook.md":10,
              u"需求分析训练营(徐锋).md".encode(SYS_ENCODING):10,
              u"系统分析UML实务(MDA).md".encode(SYS_ENCODING):20

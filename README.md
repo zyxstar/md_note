@@ -4,6 +4,7 @@
 # Analysis&Design
 - [需求分析训练营(徐锋).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590%25E8%25AE%25AD%25E7%25BB%2583%25E8%2590%25A5%2528%25E5%25BE%2590%25E9%2594%258B%2529.md) <span>2013-12-08</span>
 - [系统分析UML实务(MDA).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E7%25B3%25BB%25E7%25BB%259F%25E5%2588%2586%25E6%259E%2590UML%25E5%25AE%259E%25E5%258A%25A1%2528MDA%2529.md) <span>2009-06-03</span>
+- [DomainDrivenDesign(Eric.Evans).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FDomainDrivenDesign%2528Eric.Evans%2529.md) <span>2014-05-30</span>
 - [EffectiveUML(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FEffectiveUML%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
 - [OOD_principles(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FOOD_principles%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
 
@@ -24,6 +25,7 @@
 ## Ruby
 - [RubyProgramming.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyProgramming.md) <span>2012-12-18</span>
 - [RubyPlatform.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyPlatform.md) <span>2012-12-18</span>
+- [RailsCast.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRailsCast.md) <span>2014-05-17</span>
 
 # Skill
 - [DataBase.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FDataBase.md) <span>2009-10-25</span>

@@ -8,7 +8,7 @@
 
 ![js_execution_context](../../../imgs/js_execution_context.png)
 
-本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
+> 本部分主要摘自[Stoyan Stefanov](http://hub.tutsplus.com/authors/stoyan-stefanov)，[zhangxinxu](http://www.zhangxinxu.com/)，[TomXu](http://www.cnblogs.com/TomXu/archive/2011/12/15/2288411.html)相关内容
 
 ### 执行上下文堆栈
 每次当控制器转到ECMAScript可执行代码的时候，即会进入到一个执行上下文。执行上下文(简称-EC)是ECMA-262标准里的一个抽象概念，用于同可执行代码(executable code)概念进行区分。
@@ -3880,6 +3880,501 @@ curried的函数固化第一个参数为固定参数,并返回另一个带n-1个
 
 异步编程
 =========
+> 本节主要摘自《Async JavaScript》
+## 异步事件
+### 事件的调度
+如果想让JavaScript中的某段代码将来再运行，可以将它放在回调中。回调就是一种普通函数，只不过它是传给像`setTimeout`这样的函数，或者绑定为像`document.onready`这样的属性。运行回调时，我们称已触发某事件（譬如延时结束或页面加载完毕）。
+
+#### 现在还是将来运行
+```!js
+for (var i = 1; i <= 3; i++) {
+  setTimeout(function(){ console.log(i); }, 0);
+}
+```
+要理解为什么输出是4，4，4，需要知道以下3件事：
+
+- 这里只有一个名为i的变量，其 __作用域__ 由声明语句`var i`定义（该声明语句在不经意间让`i`的作用域不是循环内部，而是扩散至蕴含循环的那个最内侧函数）。
+- `i`一直递增，直到不再满足条件`i<=3`为止，循环结束后`i===4`
+- JavaScript事件处理器在 __线程空闲之前__ 不会运行。
+
+#### 线程的阻塞
+```!js
+var start = new Date;
+setTimeout(function(){
+  var end = new Date;
+  console.log('Time elapsed:', end - start, 'ms');
+}, 500);
+while (new Date - start < 1000) {};
+```
+按照多线程的思维定势，我会预计500毫秒后计时函数就会运行。不过这要求中断欲持续整整一秒钟的循环。如果运行代码，会得到类似这样的结果：`Time elapsed: 1021ms`，这个数字肯定至少是1000，因为`setTimeout`回调在`while`循环结束运行之前 __不__ 可能被触发。
+
+#### 队列
+调用`setTimeout`的时候，会有一个延时事件排入队列。然后`setTimeout`调用之后的那行代码运行，接着是再下一行代码，直到再也没有任何代码。
+
+用户单击一个已附加有单击事件处理器的`DOM`元素时，会有一个单击事件排入队列。但是，该单击事件处理器要等到当前所有正在运行的代码 __均已结束后__（可能还要等其他此前已排队的事件也依次结束）才会执行。因此，使用JavaScript的那些网页一不小心就会变得毫无反应。
+
+这隐含着一个意思，即触发的每个事件都会位于堆栈轨迹的底部。事件的易调度性是JavaScript语言最大的特色之一。像`setTimeout`这样的异步函数只是简单地做延迟执行，而不是孵化新的线程。JavaScript 代码永远不会被中断，这是因为代码在运行期间只需要排队事件即可，而这些事件在代码运行结束之前不会被触发。
+
+### 异步函数的类型
+#### 异步的IO函数
+创造Node.js，并不是为了人们能在服务器上运行JavaScript，仅仅是因为Ryan Dahl想要一个建立在某高级语言之上的 __事件驱动型__ 服务器框架。JavaScript碰巧就是适合干这个的语言。为什么？因为JavaScript语言可以完美地实现非阻塞式I/O。
+
+在其他语言中，一不小心就会“阻塞”应用（通常是运行循环）直到完成I/O请求为止。而在JavaScript中，这种阻塞方式几乎沦为无稽之谈。相反，我们需要附加一个事件处理器，随即返回事件队列。不论是在等待用户的按键行为，还是在等待远程服务器的批量数据，所需要做的就是 __定义一个回调__ (除非JavaScript环境提供的某个同步I/O函数已经替我们完成了阻塞，如Ajax方法有一个可设置为`false`的`async`选项，在Node.js中，同步的API方法在名称上会有明确的标示，譬如`fs.readFileSync`)
+
+在现代浏览器中操纵DOM对象时，从脚本角度看，更改是即时生效的，但从视效角度看，在返回事件队列之前不会渲染这些DOM对象更改。这可以防止DOM对象被渲染成不一致的状态。
+
+JavaScript采用了非阻塞式I/O，这对新手来说是最大的一个障碍，但这同样也是该语言的核心优势之一。有了非阻塞式I/O，就能自然而然地写出高效的基于事件的代码。
+
+#### 异步的计时函数
+有些时候，我们仅仅是因为需要异步而想要异步性。换句话说，我们想让一个函数在将来某个时刻再运行——这样的函数可能是为了作动画或模拟。
+
+```!js
+var fireCount = 0;
+var start =new Date;
+var timer = setInterval(function() {
+  if(new Date-start > 1000) {
+    clearInterval(timer);
+    console.log(fireCount);
+    return;
+  }
+  fireCount++;
+}, 0);
+```
+
+如果使用`setInterval`调度事件且延迟设定为0毫秒，则会尽可能频繁地运行此事件，现代浏览器中，大约为200次/秒。在Node环境下，此事件的触发频率大约能达到1000次/秒（若使用`setTimeout` 来调度事件，重复这些实验也会得到类似的结果）。如果将setInterval替换成简单的while循环，则在Chrome中此事件的触发频率将达到400万次/秒，而在Node中会达到500万次/秒！`setTimeout`和`setInterval`就是想 __设计成慢吞吞__ 的！事实上，HTML规范（这是所有主要浏览器都遵守的规范）推行的延时/时隔的最小值就是4毫秒！
+
+如果需要更细粒度的计时，该怎么办呢？有些运行时环境提供了备选方案：
+
+- 在Node中，`process.nextTick`允许将事件调度成尽可能快地触发。对于笔者的系统，`process.nextTick`事件的触发频率可以超过10万次/秒。
+- 一些现代浏览器（含IE9+）带有一个`requestAnimationFrame`函数。此函数有两个目标：一方面，它允许以60+帧/秒的速度运行JavaScript 动画；另一方面，它又避免后台选项卡运行这些动画，从而节约CPU周期。在最新版的Chrome浏览器中，甚至能实现亚毫秒级的精度。
+
+
+### 异步函数的编写
+JavaScript 中的每个异步函数都构建在其他某个或某些异步函数之上。凡是异步函数，从上到下（一直到原生代码）都是异步的！任何函数只要使用了异步的函数，就必须以异步的方式给出其操作结果。
+
+#### 何时称函数为异步的
+如果称一个函数为“异步的”，其意思是这个函数会导致 __将来__ 再运行另一个函数，后者取自于事件队列（若后面这个函数是作为参数传递给前者的，则称其为回调函数，简称为 __回调__）。
+
+异步函数还涉及另一个术语，即 __非阻塞__。非阻塞这个词强调了异步函数的 __高速度__：异步MySQL数据库驱动程序做一个查询可能要花上一小时，但负责发送查询请求的那个函数却能以微秒级速度返回。这对于那些需要快速处理海量请求的网站服务器来说，绝对是个福音。
+
+遗憾的是，要想确认某个函数异步与否，唯一的方法就是审查其源代码。有些同步函数却拥有看起来像是异步的API，这或者是因为它们将来可能会变成异步的，又或者是因为回调这种形式能 __方便地返回多个参数__。
+
+#### 间或异步的函数
+有些函数某些时候是异步的，但其他时候却不然。举个例子，jQuery的同名函数（通常记作`$`）可用于延迟函数直至DOM已经结束加载。但是，若DOM早已结束了加载，则不存在任何延迟，`$`的回调将会立即触发。
+
+#### 缓存型异步函数
+间或异步的函数有一个常见变种是 __可缓存结果的异步请求类函数__。举例来说，假设正在编写一个基于浏览器的计算器，它使用了网页`Worker`对象以单独开一个线程来进行计算。
+
+```js
+var calculationCache = {},
+    calculationCallbacks = {},
+    mathWorker = newWorker('calculator.js');
+mathWorker.addEventListener('message', function(e) {
+  varmessage = e.data;
+  calculationCache[message.formula] = message.result;
+  calculationCallbacks[message.formula](message.result);
+});
+functionrunCalculation(formula, callback) {
+  if(formula in calculationCache) {
+    return callback(calculationCache[formula]);
+  };
+  if (formula in calculationCallbacks) {
+    return setTimeout(function() {
+      runCalculation(formula, callback);
+    }, 0);
+  };
+  mathWorker.postMessage(formula);
+  calculationCallbacks[formula] = callback;
+}
+```
+
+在这里，当结果已经缓存时，`runCalculation`函数是同步的，否则就是异步的。存在3种可能的情景：
+
+- 公式已经计算完成，于是结果位于`calculationCache`中。这种情况下，`runCalculation`是同步的
+- 公式已经发送给`Worker`对象，但尚未收到结果，即`formula in calculationCallbacks`。这种情况下，`runCalculation`设定了一个延时以便再次调用自身；重复这一过程直到结果位于`calculationCache`中为止。
+> 如果把`if (formula in calculationCallbacks)` 中代码去掉，如在未到收结果前多次发送，将多次激发监听器，导致不必要的消息发送。
+- 公式尚未发送给`Worker`对象。这种情况下，将会从`Worker`对象的`message`事件监听器激活回调，并设置`calculationCallbacks[formula]`。
+
+[完整的例子](http://webworkersandbox.com/5009efc12245588e410002cf)：
+
+```js
+var $output = $('#sandbox').html('<p></p>').children(),
+    calculationCache = {},
+    calculationCallbacks = {},
+    mathWorker = new Worker('worker.js');
+
+mathWorker.addEventListener('message', function(e) {
+  var message = e.data;
+  $output.append('computed: ' + message.result + '<br />');
+  calculationCache[message.formula] = message.result;
+  calculationCallbacks[message.formula](message.result + 'listen');
+});
+
+function runCalculation(formula, callback) {
+  if (formula in calculationCache) {
+    return callback(calculationCache[formula] + 'cache');
+  };
+  if (formula in calculationCallbacks) {
+    return setTimeout(function() {
+      runCalculation(formula, callback);
+    }, 0);
+  };
+  mathWorker.postMessage(formula);
+  calculationCallbacks[formula] = callback;
+}
+
+function showResult(result) {
+  $output.append('result: ' + result + '<br />');
+}
+runCalculation('52 * 25', showResult);
+runCalculation('52 * 25', showResult);
+setTimeout(function() {
+  runCalculation('52 * 25', showResult);
+}, 100);
+```
+
+worker.js
+
+```js
+self.addEventListener('message', function(e) {
+  // In a real application, we'd do some kind of parsing here.
+  // Instead, we just eval the given formula directly.
+  var message = {
+    formula: e.data,
+    result: eval(e.data)
+  };
+  self.postMessage(message);
+});
+```
+
+#### 异步递归与回调存储
+在`runCalculation`函数中，为了等待`Worker`对象完成自己的工作，或者通过延时而重复相同的函数调用（即异步递归），或者简单地存储回调结果。
+
+异步递归有一点很可怕，即在等待任务完成期间，可触发之延时的次数是不受限的！此外，异步递归还毫无必要地复杂化了应用程序的事件结构。基于这些原因，应将异步递归视作一种“反模式”的方式。
+
+在这个计算器例子中，为了避免异步递归，可以为每个公式存储一个回调数组（当然也避免了多次消息发送）
+
+```js
+var calculationCache = {},
+    calculationCallbacks = {},
+    mathWorker =new Worker('calculator.js');
+mathWorker.addEventListener('message',function(e) {
+  var message = e.data;
+  calculationCache[message.formula] = message.result;
+  calculationCallbacks[message.formula]
+  .forEach(function(callback) { // beautiful
+    callback(message.result);
+  });
+});
+function runCalculation(formula, callback) {
+  if (formula in calculationCache) {
+    return callback(calculationCache[formula]);
+  };
+  if(formula in calculationCallbacks) {
+    return calculationCallbacks[formula].push(callback);
+  };
+  mathWorker.postMessage(formula);
+  calculationCallbacks[formula] = [callback];
+}
+```
+
+没有了延时，我们的代码要直观得多，也高效得多。总的来说，请 __避免异步递归__。仅当所采用的库提供了异步功能但没有提供任何形式的回调机制时，异步递归才有必要。
+
+#### 返回与回调的混搭
+永远不要定义一个潜在的同步，而返回值却有可能用于回调的函数。
+
+一个反例：
+
+```js
+var webSocketCache = {};
+function openWebSocket(serverAddress, callback) {
+  var socket;
+  if (serverAddress in webSocketCache) {
+    socket = webSocketCache[serverAddress];
+    if(socket.readyState === WebSocket.OPEN) {
+      callback();
+    } else {
+      socket.onopen = _.compose(callback, socket.onopen);
+    }
+  } else {
+    socket = new WebSocket(serverAddress);
+    webSocketCache[serverAddress] = socket;
+    socket.onopen = callback;
+  }
+  return socket;
+};
+```
+
+这段代码的问题在于，如果套接字已经缓存且打开，则会在函数返值之前就运行回调，这会使以下代码崩溃（`socket`未定义）。
+
+```js
+var socket = openWebSocket(url, function(){
+  socket.send('Hello, server!');
+});
+```
+
+怎么解决呢？将回调封装在`setTimeout`中即可
+
+```js
+if (socket.readyState === WebSocket.OPEN) {
+  setTimeout(callback, 0);
+} else{
+  // ...
+}
+```
+
+一些编写异步函数的最佳实践：
+
+- 请勿依赖那些看似始终异步的函数，除非已经阅读其源代码。
+- 请避免使用计时器方法来等待某个会变化的东西。
+- 如果同一个函数既返值又运行回调，则请确保回调在返值之后才运行。
+
+
+### 异步错误的处理
+#### 回调内抛出的错误
+```!js
+setTimeout(function A() {
+  setTimeout(function B() {
+    setTimeout(function C() {
+      throw new Error('Something terrible has happened!');
+    }, 0);
+  }, 0);
+}, 0);
+```
+
+上述应用的结果是一条极其简短的堆栈轨迹
+
+```shell
+Error: Something terrible has happened!
+  at C
+```
+
+A和B发生了什么事？为什么它们没有出现在堆栈轨迹中？这是因为运行C的时候，A和B并不在内存堆栈里。这3个函数都是从事件队列直接运行的。
+
+基于同样的理由，利用`try/catch`语句块 __并不能__ 捕获从异步回调中抛出的错误。
+
+```!js
+try {
+  setTimeout(function() {
+    throw new Error('Catch me if you can!');
+  }, 0);
+}catch(e) {
+  console.error(e);
+}
+```
+
+这里的`try/catch`语句块只捕获`setTimeout`函数自身内部发生的那些错误。因为`setTimeout` 异步地运行其回调，所以即使延时设置为0，回调抛出的错误也会直接流向应用程序的未捕获异常处理器
+
+最常见的模式是，针对成败这两种情形各规定一个单独的回调。jQuery 的Ajax方法就遵循了这个模式。
+
+```js
+$.get('/data', {
+  success: successHandler,
+  failure: failureHandler
+});
+```
+
+不管API形态像什么，始终要记住的是，__只能在回调内部处理源于回调的异步错误__。异步尤达大师会说：“做，或者不做，没有试试看一说。”
+
+#### 未捕获异常的处理
+如果是从回调中抛出异常的，则由那个调用了回调的人负责捕获该异常。但如果异常从未被捕获，又会怎么样？这时，不同的JavaScript环境有着不同的游戏规则
+
+在浏览器环境中:
+
+```js
+window.onerror = function(err) {
+  return true; //彻底忽略所有错误
+};
+```
+
+在Node.js环境中使用`Domain`对象
+
+```js
+varmyDomain = require('domain').create();
+myDomain.run(function() {
+  setTimeout(function() {
+    throw new Error('Listen to me!')
+  }, 50);
+});
+myDomain.on('error', function(err) {
+  console.log('Error ignored!');
+});
+```
+
+`Domain`对象让`throw`语句生动了很多。仅在Node 0.8+环境中才能使用`Domain`对象
+
+不管在浏览器端还是服务器端，全局的异常处理器都应被视作最后一根救命稻草。请仅在调试时才使用它。
+
+#### 抛出还是不抛出
+在任的Node开发负责人）就主张`try/catch`是一种“反模式”的方式，是包装着漂亮花括弧的`goto`语句。
+
+如果想让整个应用停止工作，请勇往直前地大胆使用`throw`。否则，请认真考虑一下应该如何处理错误。是想给用户显示一条出错消息吗？是想重试请求吗？那就这么处理吧，只是请尽可能地靠近错误源头。
+
+### 嵌套式回调的解嵌套
+```js
+function checkPassword(username, passwordGuess, callback) {
+  var queryStr = 'SELECT * FROM user WHERE username = ?';
+  db.query(queryStr, username, function(err, result) {
+    if(err)throwerr;
+    hash(passwordGuess, function(passwordGuessHash) {
+      callback(passwordGuessHash === result['password_hash']);
+    });
+  });
+}
+```
+
+如果试图向其添加新特性，它就会变得毛里毛躁、险象环生，比如去处理那个数据库错误，而不是抛出错误、记录尝试访问数据库的次数、阻塞访问数据库，等等。
+
+嵌套式回调诱惑我们通过添加更多代码来添加更多特性，而不是将这些特性实现为可管理、可重用的代码片段。`checkPassword`有一种可以避免出现上述苗头的等价实现方式，如下
+
+```js
+function checkPassword(username, passwordGuess, callback) {
+  var passwordHash;
+  var queryStr = 'SELECT * FROM user WHERE username = ?';
+  db.query(qyeryStr, username, queryCallback);
+  function queryCallback(err, result) {
+    if(err) throwerr;
+    passwordHash = result['password_hash'];
+    hash(passwordGuess, hashCallback);
+  }
+  function hashCallback(passwordGuessHash) {
+    callback(passwordHash === passwordGuessHash);
+  }
+}
+```
+
+这种写法更啰嗦一些，但读起来更清晰，也更容易扩展。由于这里赋予了异步结果（即`passwordHash`）更宽广的作用域，所以获得了更大的灵活性。__请避免两层以上的函数嵌套__，关键是找到一种在激活异步调用函数的之外部存储异步结果的方式即`passwordHash`），这样回调本身就没有必要再嵌套了。
+
+
+PubSub模式是一种将回调赋值给已命名事件的回调组织方式，而Promise对象是一种表示一次性事件的直观对象。
+
+## 分布式事件
+### PubSub模式
+Publish/Subscribe，意为“发布/订阅”，在其帮助下，我们能 __解嵌套那些嵌套式回调__，减少重复冗余，最终编写出易于理解的事件驱动型代码。
+
+从软件架构的角度看，jQuery将link元素的事件发布给了任何想订阅此事件的人。这正是称其为PubSub模式的原因
+
+Node的API架构师因为太喜欢PubSub，所以决定包含一个一般性的PubSub实体。这个实体叫做`EventEmitter`（事件发生器），其他对象可以继承它。Node中几乎所有的I/O源都是`EventEmitter`对象：文件流、HTTP服务器，甚至是应用进程本身。
+
+很多MVC框架，如Backbone.js和Spine，都提供了自己的`类EventEmitter`模块
+
+#### `EventEmitter`对象
+Node的`EventEmitter`对象作为PubSub 接口的例子。`EventEmitter`有着简单而近乎最简化的设计。
+
+```js
+emitter.on('evacuate', function(message) {
+  console.log(message);
+});
+
+emitter.emit('evacuate');
+emitter.emit('evacuate', 'Woman and children first!');
+```
+
+`EventEmitter`对象的所有方法都是公有的，但一般约定只能从`EventEmitter`对象的“内部”触发事件。也就是说，如果有一个对象继承了`EventEmitter`原型并使用了`this.emit`方法来广播事件，则不应该从这个对象之外的其他地方再调用其`emit`方法。
+
+#### 自己设计PubSub
+PubSub模式的实现如此简单，以至于用十几行代码就能建立自己的PubSub实现。
+
+```js
+PubSub = {handlers: {}};
+PubSub.on = function(eventType, handler) {
+  if(!(eventType in this.handlers)) {
+    this.handlers[eventType] = [];
+  }
+  this.handlers[eventType].push(handler);
+  return this;
+}
+PubSub.emit = function(eventType) {
+  var handlerArgs = Array.prototype.slice.call(arguments, 1);
+  for (var i = 0; i < this.handlers[eventType].length; i++) {
+    this.handlers[eventType][i].apply(this, handlerArgs);
+  }
+  return this;
+}
+```
+
+现在只实现了Node之`EventEmitter`对象的核心部分。还没实现的重要部分只剩下移除事件处理器及附加一次性事件处理
+器等功能
+
+jQuery团队注意到jQuery库里到处都在用几个不同的PubSub实现，于是决定在jQuery 1.7中将它们抽象为`$.Callbacks`。这样就不再用数组来存储各种事件类型对应的事件处理器，而可以转用`$.Callbacks`实例。
+
+很多PubSub实现负责解析事件字符串以提供一些特殊功能：jQuery 的名称空间化事件：如果绑定了名称为"click.tbb"和"hover.tbb"的两个事件，则简单地调用unbind(".tbb")就可以同时解绑定它们。Backbone.js允许向"all"事件类型绑定事件处理器，这样不管发生什么事，都会导致这些事件处理器的触发。jQuery 和Backbone.js都支持用空格隔开多个事件来同时绑定或触发多种事件类型，譬如"keypress mousemove"。
+
+#### 同步性
+尽管PubSub模式是一项处理异步事件的重要技术，但它内在跟异步没有任何关系。
+
+如果事件按顺序触发了过多的处理器，就会有阻塞线程且导致浏览器不响应的风险。更糟糕的是，如果事件处理器本身触发了事件，还很容易造成无限循环。
+
+这个问题有一个很好的解决方案，就是对那些无需即刻发生的事情维持一个队列，并使用一个计时函数定时运行此队列中的下一项任务。首次尝试编码的结果可能像这样：
+
+```js
+var tasks = [];
+setInterval(function() {
+  var nextTask;
+  if(nextTask = tasks.shift()) {
+    nextTask();
+  };
+}, 0);
+```
+
+### 事件化模型
+只要对象带有PubSub接口，就可以称之为事件化对象。特殊情况出现在用于存储数据的对象因内容变化而发布事件时，这里用于存储数据的对象又称作模型。模型就是MVC中的那个M，老式的JavaScript 靠输入事件的处理器直接改变DOM。新式的JavaScript先改变模型，接着由模型触发事件而导致DOM的更新。在几乎所有的应用程序中，这种关注层面的分离都会带来更优雅、更直观的代码。
+
+#### 模型事件的传播
+作为最简形式，MVC三层架构只包括相互联系的模型和视图：“如果模型是这样变化的，那么DOM就要那样变化。”不过，MVC三层架构最大的利好出现在change（变化）事件冒泡上溯数据树的时候。不用再去订阅数据树每片叶子上发生的事件，而只需订阅数据树根和枝处发生的事件即可。
+
+为此，Backbone的Model对象常常组织成Backbone集合（Collection）的形式，其本质是事件化数组。我们可以监听什么时候对这些 __数组增减__ 了Model对象。Backbone集合可以自动传播其内蕴Model对象所发生的事件。
+
+#### 事件循环与嵌套式变化
+如果每次有个对象上的事件引发了一系列事件并最终对这个对象本身触发了相同的事件，则结果就是事件循环。如果这种事件循环还是同步的，那就造成了堆栈上溢。
+
+Backbone中的两道保险：
+
+- 当新值等于旧值时，`set`方法不会导致触发`change`事件。
+- 模型正处于自身的`change`事件期间时，不会再触发`change`事件。
+
+第二道保险代表了一种自保哲学。假设模型的一个变化导致同一个模型又一次变化。由于第二次变化被“嵌套”在第一次变化内部，所以这次变化的发生悄无声息。外面的观察者没有机会回应这种静默的变化。
+
+而另一个重要的MVC框架，即Ember.js，采用了一种完全不同的方式：双向绑定必须作显式声明。一个值发生变化时，另一个值会通过延时事件作异步更新。于是，在触发这个异步更新事件之前，应用程序的数据将一直处于不一致的状态。
+
+多个事件化模型之间的数据绑定问题不存在简单的解决方案。在Backbone中，有一种审慎绕过这个问题的途径就是`silent`标志。如果在`set`方法中添加了`{silent:true}`选项，则不会触发`change`事件。因此，如果多个彼此纠结的模型需要同时进行更新，一个很好的解决方法就是悄无声息地设置它们的值。然后，当这些模型的 __状态已经一致__ 时，才调用它们的`change`方法以触发对应的事件。
+
+### jQuery自定义事件
+在jQuery中，可以使用`trigger`方法基于任意DOM元素触发任何想要的事件。
+
+如果以前用过DOM事件，则肯定熟悉冒泡技术。只要某个DOM元素触发了某个事件（譬如'click'事件），其父元素就会接着触发这个事件，接着是父元素的父元素，以此类推，一直上溯到根元素（即document），除非在这条冒泡之路的某个地方调用了事件的`stopPropagation`方法。（如果事件处理器返回`false`，则jQuery会替我们自动调用`stopPropagation`方法。）但你是否也知道jQuery自定义事件的冒泡技术呢？举个例子，假设有个名称为“soda”的span元素嵌套在名称为“bottle”的div元素中，代码如下。
+
+```js
+$('#soda, #bottle').on('fizz', function() {
+  console.log(this.id + ' emitted fizz');
+});
+$('#soda').trigger('fizz');
+```
+
+得到的输出如下：
+
+```shell
+soda emitted fizz
+bottle emitted fizz
+```
+
+这种冒泡方式并非始终受人欢迎，幸运的是，jQuery样提供了非冒泡式的`triggerHandler`方法。
+
+jQuery自定义事件是PubSub模式的忤逆产物，因为这里由可选择的DOM元素而不是脚本中的对象来触发事件。事件化模型更像是一种直观表达状态相关事件的方式，而jQuery 的自定义事件允许直接通过DOM来表达DOM相关的事件，不必再把DOM变化的状态复制到应用程序的其他地方。
+
+PubSub模式不适用于一次性事件，一次性事件要求对异步函数执行的一次性任务的两种结果（完成任务或任务失败）做不同的处理。（Ajax请求就是常
+见的一次性事件实例。）用于解决一次性事件问题的工具叫做Promise
+
+## Promise对象和Deferred对象
+P65
+
+
+
+
+
+
+
+
 ## 延迟执行
 
 ### delay
@@ -4053,12 +4548,8 @@ underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和d
     // renderNotes is run once, after all notes have saved.
 
 
-## jquery.deferred
-
-
 ## 反应型编程(FRP)
 
-<!-- 权威指南 bigpipe template qunit-->
 
 依赖管理
 ==========
@@ -4505,20 +4996,20 @@ module.exports = function(grunt) {
     uglify : {
       options : {
         banner : '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n',
-                sourceMap:'dest/domop.min.js.map',
-                sourceMappingURL: 'domop.min.js.map'
+        sourceMap:'dest/domop.min.js.map',
+        sourceMappingURL: 'domop.min.js.map'
       },
       build : {
         src : 'dest/domop.js',
         dest : 'dest/domop.min.js'
       }
     },
-        cssmin: {
-            css: {
-                src: 'dest/asset/all.css',
-                dest: 'dest/asset/all-min.css'
-            }
+    cssmin: {
+        css: {
+            src: 'dest/asset/all.css',
+            dest: 'dest/asset/all-min.css'
         }
+    }
   });
 
   grunt.loadNpmTasks('grunt-contrib-concat');
@@ -4571,18 +5062,6 @@ shell中运行`npm install`，再运行`npm test`，`npm run-script build`，`np
 
 
 
-
-
-
-
-
-
-
-
-<!-- http://stackoverflow.com/questions/13615679/requirejs-loading-modules-qunit
-http://www.nathandavison.com/article/17/using-qunit-and-requirejs-to-build-modular-unit-tests
-http://elucidblue.com/2012/12/24/making-qunit-play-nice-with-requirejs/
- -->
 <script>
 
 (function fix_toc(){
