@@ -4365,18 +4365,800 @@ jQuery自定义事件是PubSub模式的忤逆产物，因为这里由可选择�
 PubSub模式不适用于一次性事件，一次性事件要求对异步函数执行的一次性任务的两种结果（完成任务或任务失败）做不同的处理。（Ajax请求就是常
 见的一次性事件实例。）用于解决一次性事件问题的工具叫做Promise
 
-## Promise对象和Deferred对象
-P65
+## `Promise`和`Deferred`
+jQuery1.5以后所有Ajax 函数（`$.ajax` 、`$.get`及`$.post` ）现在都会返回`Promise`（承诺）对象。`Promise`对象代表一项有两种可能结果（成功或失败）的任务，它还持有多个回调，出现不同结果时会分别触发相应的回调。举个例子，jQuery 1.4 中的代码必须写成这样：
+
+```js
+$.get( '/mydata', {
+  success: onSuccess,
+  failure: onFailure,
+  always: onAlways
+});
+```
+
+而到了jQuery 1.5+ ，可以写成这样：
+
+```js
+var  promise = $.get('/mydata');
+promise.done(onSuccess);
+promise.fail(onFailure);
+promise.always(onAlways);
+```
+
+这种变化能有什么好处呢？为什么非得在触发Ajax调用之后再附加回调呢？一言以蔽之：封装。如果Ajax 调用要实现很多效果（既要触发动画，又要插入HTML ，还要锁定/ 解锁用户输入，等等），那么仅由负责发出请求的那部分应用代码来处理所有这些效果，显然很蠢很拙劣。
+
+只传递`Promise`对象就会优雅得多。传递`Promise`对象就相当于声明：“你感兴趣的某某事就要发生了。想知道什么时候完事吗？给这个`Promise`对象一个回调就行啦！”`Promise`对象也`EventEmitter`对象一样，允许向同一个事件绑定任意多的处理器（堆积技术）。对于多个Ajax 调用分享某个功能小片段（譬如“正加载”动画）的情况，堆积技术也会使降低代码重复度容易很多。
+
+不过使用`Promise` 对象的最大优势仍然在于，它可以轻松从现有`Promise` 对象 __派生__ 出新的`Promise` 对象。我们可以要求代表着 __并行__ 任务的两个`Promise`对象 __合并__ 成一个`Promise`对象，由后者负责通知前面那些任务都已完成。也可以要求代表着任务系列中 __首任务__ 的`Promise` 对象派生出一个能代表任务系列中 __末任务__的`Promise` 对象，这样后者就能知道这一系列任务是否均已完成。待会儿我们就会看到，`Promise`对象天生就适合用来进行这些操作。
+
+### 生成`Promise`对象
+
+假设我们提示用户应敲击Y 键或N 键。为此要做的第一件事就是生成一个`$.Deferred`实例以代表用户做出的决定。
+
+<!--language: web-->
+
+    <!--language: html-->
+    <input id='playGame' type='text'/>
+
+    <!--language: js-->
+    //= require jquery.1.9.0
+    var promptDeferred = new $.Deferred();
+    promptDeferred.always(function(){ console.log( 'A choice was made:' ); });
+    promptDeferred.done(function(){ console.log('Starting game...'); });
+    promptDeferred.fail(function(){ console.log('No game today.'); });
+
+    $('#playGame').focus().on('keypress', function(e) {
+      var Y = 121, N = 110;
+      if (e.keyCode === Y) {
+        promptDeferred.resolve();
+      } else if (e.keyCode === N) {
+        promptDeferred.reject();
+      } else {
+        return false; //  这里的Deferred 对象保持着挂起状态
+      };
+    });
 
 
+`Deferred` 就是`Promise`！更准确地说，`Deferred` 是`Promise`的超集，它比 `Promise`多了一项关键特性：可以直接触发。__纯 `Promise`实例只允许添加多个调用，而且必须由其他什么东西来触发这些调用__。
 
+使用`resolve`（执行）方法和 `reject`（拒绝）方法均可触发 `Deferred`
+对象。
 
+执行了`Deferred`（即对`Deferred` 对象调用了`resolve`方法）之后，即运行该对象的`always`（恒常）回调和`done`（已完成）回调。（会按照绑定回调的 __次序__ 来运行回调）
 
+拒绝了`Deferred`（即对`Deferred` 对象调用了`reject`方法）之后，即运行该对象的`always` 回调和`fail`（失败）回调。注意，始终会按照绑定回调的次序来运行回调。如果最后绑定的是 `always` 回调，则控制台的输出行顺序会反过来。
 
+再试着反复敲击Y 键和N 键。第一次做出选择之后，就再也没有反应了！这是因为 `Promise`只能执行或拒绝一次，之后就失效了。我们断言，`Promise` 对象会一直保持 __挂起__ 状态，直到被执行或拒绝。对`Promise`对象调用`state`（状态）方法，可以查看其状态是"`pending`"、"`resolved`"，还是"`rejected`"。
 
+如果正在进行的一次性异步操作的结果可以笼统地分成两种（如成功/ 失败，或接受/ 拒绝），则生成`Deferred` 对象就能直观地表达这次任务。
+
+#### 纯`Promise`对象
+如何得到一个不是`Deferred` 对象的`Promise`对象呢？很简单，对 `Deferred`对象调用`promise`方法即可。
+
+```js
+var promptPromise = promptDeferred.promise();
+```
+
+`promptPromise` 只是`promptDeferred` 对象的一个没有`resolve`/ `reject` 方法的副本。我们把回调绑定至Deferred 或其下辖的Promise并无不同，因为这两个对象本质上分享着同样的回调。它们也分享着同样的`state`（返回的状态值为"pending"、"resolved"或"rejected"）。这意味着，对同一个 Deferred 对象生成多个Promise对象是毫无意义的。事实上，jQuery 给出的只不过是 __同一个__ 对象。
+
+```js
+var promise1 = promptDeferred.promise();
+var promise2 = promptDeferred.promise();
+console.log(promise1 === promise2);  // true
+console.log(promise1 === promise1.promise());  // true
+```
+
+使用 `promise`方法的唯一理由就是 __“封装”__。如果传递 `promptPromise`对象，但 __保留promptDeferred 对象为己所用__，则可以肯定的是，除非是你自己想触发那些回调，否则任何回调都不会被触发。纯`Promise` 对象，只能读取其状态及附加回调。
+
+#### jQuery中的Promise对象
+Promise 也同样适用于本地的一些异步操作，譬如动画。
+
+任何动画方法都可以接受传入的 __回调__(早期做法)，以便在完成动画时发出通知。
+
+```js
+$(' .error ').fadeIn(afterErrorShown);
+```
+
+在jQuery 1.6+ 中，可以转而要求 jQuery 对象生成Promise，后者代表了这个对象已附加动画的完成情况，即是否完成了目前正处于挂起状态的动画。
+
+```js
+var errorPromise = $( '.error' ).fadeIn().promise();
+errorPromise.done(afterErrorShown);
+```
+
+对同一个jQuery 对象附加的多个动画会排入队列 __按顺序运行__。仅当调用promise 方法之时已入列的 __全部动画均已执行之后__，相应的Promise 对象才会执行。因此，这会产生两个不同的、按顺序执行的Promise对象（或者根本就不执行，若先调用stop 方法的话）。
+
+```js
+var $flash = $('.flash ');
+var showPromise = $flash.show().promise();
+var hidePromise = $flash.hide().promise();
+```
+
+如果使用Deferred 对象的resolve方法作为动画的回调，即可自行轻松生成一个行为完全相同的动画版Promise对象。
+
+```js
+var slideUpDeferred = new $.Deferred();
+$('.menu').slideUp(slideUpDeferred.resolve);
+var slideUpPromise = slideUpDeferred.promise(); //给外部加done回调
+```
+
+动画版 Promise附加了额外的信息，其中包括动画运行过程中的计算值props （这对调试非常有价值）。此外，对动画版Promise对象，还可以获得进度通知，以及即时调整动画。[有关这些新特性](https://gist.github.com/54829d408993526fe475)
+
+#### 阮一峰文摘
+
+```!js
+//= require jquery.1.9.0
+var wait = function(){
+  var dtd = $.Deferred(); //在函数内部，新建一个Deferred对象
+  var tasks = function(){
+    alert("执行完毕！");
+    dtd.resolve(); // 改变deferred对象的执行状态
+  };
+  setTimeout(tasks,2000);
+  return dtd.promise(); // 返回promise对象
+};
+$.when(wait())
+  .done(function(){ alert("哈哈，成功了！"); })
+  .fail(function(){ alert("出错啦！"); });
+```
+
+异步编程同步写法，异步对回调的位置有要求，容易形成多层嵌套，改成同步写法后，位置扁平了
+
+```!js
+//= require jquery.1.9.0
+var wait = function(){
+  var dtd = $.Deferred();
+  var tasks = function(){
+    alert("执行完毕！");
+    dtd.resolve();
+  };
+  setTimeout(tasks,2000);
+  return dtd.promise();
+};
+
+var promise = wait();
+promise.done(function(){ alert("执行完成前加入的,等执行完响应"); })
+
+setTimeout(function(){
+  promise.done(function(){ alert("执行完成后加入的,立即响应"); })
+},3000);
+```
+
+### 向回调传递数据
+Promise对象可以向其回调提供额外的信息，以下代码是等效的：
+
+```js
+$.get(url, successCallback);
+
+var fetchingData = $.get(url);
+fetchingData.done(successCallback);
+```
+
+执行或拒绝Deferred对象时，提供的任何参数都会转发至相应的回调。
+
+```!js
+//= require jquery.1.9.0
+var aDreamDeferred = new $.Deferred();
+aDreamDeferred.done(function (subject) {
+  alert('I had the most wonderful dream about ', subject);
+});
+aDreamDeferred.resolve( 'the JS event model');
+```
+
+还有一些特殊的方法能实现在 __特定上下文中__ 运行回调，：`resolveWith` 和`rejectWith`。此时只需传递上下文环境作为第一个参数，同时以数组的形式传递所有其他参数。
+
+```js
+var slashdotter = {
+  comment: function (editor){
+    console.log('Obviously', editor, 'is the best text editor.');
+  }
+};
+var grammarDeferred = new $.Deferred();
+grammarDeferred.done( function (verb, object) {
+  this[verb](object);
+});
+grammarDeferred.resolveWith(slashdotter, [' comment', 'Emacs']);
+```
+
+对于前面那个例子，使用以下代码亦可得到同样的结果，省去将参数打包成数组的痛苦。
+
+```js
+grammarDeferred.resolve.call(slashdotter, ' comment', 'Emacs');
+```
+
+### 进度通知
+jQuery遵守Promises/A 规范，于是在jQuery 1.7 中为Promise 对象新添了一种可以调用无数次的回调。这个回调叫做progress （进度）。
+
+<!--language: web-->
+
+    <!--language: html-->
+    <input id='doc' type='text'/><label id='indicator'/>
+
+    <!--language: js-->
+    //= require jquery.1.9.0
+    var nanowrimoing = $.Deferred();
+    var wordGoal = 5;
+    nanowrimoing.progress(function (wordCount) {
+      var percentComplete = Math.floor(wordCount / wordGoal * 100);
+      $('#indicator').text(percentComplete + '% complete');
+    });
+    nanowrimoing.done(function(){
+      $('#indicator').text('Good job!');
+    });
+
+    $('#doc').on('keypress', function(){
+      var wordCount = $(this).val().split(/\s+/).length;
+      if (wordCount >= wordGoal) {
+        nanowrimoing.resolve();
+      };
+      nanowrimoing.notify(wordCount);
+    });
+
+Deferred 对象的notify （通知）调用会调用我们设定的progress回调。就像resolve和reject 一样，notify 也能接受任意参数。请注意，一旦执行(resolve)了nanowrimoing 对象，则再作nanowrimoing.notify 调用将不会有任何反应，这就像任何额外的 resolve调用及reject 调用也会被直接无视一样。
+
+### Promise对象的合并
+```js
+var gameReadying = $.when(tutorialPromise, gameLoadedPromise);
+gameReadying.done(startGame);
+```
+
+when 相当于Promise执行情况的逻辑与运算符（AND）。一旦给定的所有Promise均已执行，就立即执行when 方法产生的Promise对象；或者，一旦给定的任意一个Promise被拒绝，就立即拒绝when 产生的Promise。
+
+when 方法的绝佳用例是合并多重Ajax 调用。假设需要马上进行两次post 调用，而且要在这两次调用都成功时收到通知，这时就无需再为每次调用请求分别定义一个回调。
+
+```js
+$.when($.post('/1', data1), $.post('/2', data2))
+.then(onPosted, onFailure);
+```
+
+调用成功时，when 可以访问下辖的各个成员Promise 对象的回调参数，不过这么做很复杂。这些回调参数会当作参数列表进行传递，传递的次序和成员Promise对象传递给when 方法时一样。如果某个成员Promise对象提供多个回调参数，则这些参数会先转换成数组。
+
+因此，要想根据赋予$.when 方法的所有成员Promise 对象获得全部回调参数，可能会写出像下面这样的代码（不推荐这么做）。
+
+```js
+$.when(promise1, promise2)
+.done( function (promise1Args, promise2Args) {
+  // ...
+});
+```
+
+在这个例子中，如果执行 promise1 时用到了一个参数'complete'，执行promise2 时用到了3 个参数（1、2、3），则 promise1Args就是字符串'complete'，promise2Args就是数组[1,2,3]。
+
+虽然有可能，但如果不是绝对必要，我们不应该自行解析when 回调的参数，相反应该直接向那些传递至when 方法的成员Promise对象附加回调来收集相应的结果。
+
+```js
+var serverData = {};
+var getting1 = $.get('/1')
+.done( function (result) {serverData[ '1' ] = result;});
+var getting2 = $.get( '/2')
+.done( function (result) {serverData[ '2' ] = result;});
+$.when(getting1, getting2)
+.done( function () {
+  // 获得的信息现在都已位于serverData……
+});
+```
+
+#### 函数的Promise用法
+$.when 及其他能取用Promise 对象的jQuery 方法均支持传入非Promise 对象作为参数。这些非Promise 参数会被 __当成因相应参数__ 位置已赋值而执行的Promise对象来处理。例如
+
+```!js
+//= require jquery.1.9.0
+var promise = $.Deferred().resolve(' manchu ');
+$.when('foo',promise).done(function(){console.log(arguments)})
+```
+
+这带来了一个问题：$.when 如何知道参数是不是Promise对象呢？答案是：jQuery 负责检查$.when 的各个参数是否带有promise方法，如果有就使用该方法返回的值。(Promise对象的promise 方法会直接返回自身。)
+
+$.when 方法强行将那些带promise 方法的jQuery 对象转换成了jQuery 动画版Promise对象。因此，如果想生成一个在抓取某些数据且已完成#loading 动画之后执行的Promise对象，只需写下下面这样的代码：
+
+```js
+var  fetching = $.get( '/myData');
+$.when(fetching, $('#loading'));
+```
+
+只是请记住，必须要在动画开始之后再执行$.when 生成的那个Promise 对象。如果#loading的动画队列为空，则立即执行相应的Promise对象。
+
+### 管道连接未来
+在JavaScript中常常无法便捷地执行一系列异步任务，一个主要原因是无法在第一个任务结束之前就向第二个任务附加处理器。举个例子，假设我们要从一个URL 抓取数据（GET ），接着又将这些数据发送给另一个URL （POST）。
+
+```js
+var getPromise = $.get('/query' );
+getPromise.done( function (data) {
+  var postPromise = $.post('/search', data);
+  //  现在我们想给postPromise 附加处理器……
+});
+```
+
+在 GET 操作成功之前我们无法对 postPromise对象绑定回调，因为这时postPromise 对象还不存在！除非我们已经得到因$.get调用而异步抓取的数据，否则甚至无法进行那个负责生成postPromise 对象的$.post 调用！
+
+这正是jQuery 1.6 为Promise对象新增pipe（管道）方法的原因。pipe好像在说：“请针对这个 Promise 对象给我一个回调，我会 __归还一个Promise对象__ 以表示回调运行的结果。”
+
+```js
+var getPromise = $.get('/query' );
+var postPromise = getPromise.pipe(function (data) {
+  return $.post( '/search', data);
+});
+```
+
+pipe 最多能接受3个参数，它们对应着Promise对象的3 种回调类型：done、fail 和progress 。也就是说，我们在上述例子中只提供了执行 getPromise时应运行的那个回调。当这个回调返回的Promise对象已经执行/拒绝时，pipe 方法返回的那个新Promise对象也就可以执行/拒绝。
+
+从效果上看，pipe 就是 __通向未来__ 的一扇窗户！
+
+如果pipe 方法的回调返回值不是Promise/Deferred对象，它就会变成回调参数。举例来说，假设有个Promise对象发出的进度通知表示成 0 与1 之间的某个数，则可以使用 pipe 方法生成一个完全相同的Promise对象，但它发出的进度通知却转变成可读性更高的字符串。
+
+```js
+var promise2 = promise1.pipe(null, null, function (progress) {
+  return Math.floor(progress * 100) + ' % complete';
+});
+```
+
+#### 管道级联技术
+pipe 方法并不要求提供所有的可能回调。事实上，我们通常只想写成这样：
+
+```js
+var pipedPromise = originalPromise.pipe(successCallback);
+```
+
+或是这样：
+
+```js
+var pipedPromise = originalPromise.pipe(null, failCallback);
+```
+
+这种级联技术非常有用，因为它让我们不费吹灰之力就能定义异步任务的分化逻辑。假设有这样一个分成3 步走的进程。
+
+```js
+var step1 = $.post(' /step1 ', data1);
+var step2 = step1.pipe(function () {
+  return  $.post( '/step2' , data2);
+});
+var lastStep = step2.pipe( function () {
+  return  $.post('/step3 ', data3);
+});
+```
+
+这里的lastStep 对象当且仅当所有这3 个Ajax 调用都成功完成时才执行，其中任意一个Ajax 调用未能成功完成，lastStep 均被拒绝。如果只在乎整体进程，则可以省略掉前面的变量声明。
+
+```js
+var posting = $.post('/step1 ', data1)
+  .pipe( function () {
+    return  $.post('/step2 ', data2)
+    .pipe(function () {
+       return  $.post('/step3 ', data3);
+    });
+  });
+```
+
+当然，这会重现金字塔厄运。大家应该了解这种书写风格，不过请尽量逐一声明pipe 生成的那些Promise对象。也许并不需要这些变量名称，但它们能让代码更加自文档化。
+
+### jQuery与Promises/A的对比
+Q.js 库是最流行的Promises/A 实现，其提供的方法甚至能与jQuery 的Promise和谐共存。这两者的区别只是形式上的，即用相同的词语表示不同的含义。
+
+3.2节中提到过，jQuery 使用resolve 作为fail 的反义词，而Promises/A使用的是fulfill。在 Promises/A 规范中，Promise对象不管是已履行还是已失败，都称“已执行”。
+
+在jQuery 1.8 问世之前，jQuery 的then 方法只是一种可以同时调用done、fail 和progress 这3 种回调的速写法，而Promises/A 的then在行为上更像是jQuery 的pipe。jQuery 1.8 订正了这个问题，使得then 成为pipe 的同义词。
+
+当然还有其他一些细微的差别。例如，在Promises/A 规范中，由then方法生成的Promise对象是已执行还是已拒绝，取决于由then 方法调用的那个回调是返回值还是抛出错误。（在jQuery 的Promise对象的回调中抛出错误是个糟糕的主意，因为错误不会被捕获。）
+
+### 用Promise对象代替回调函数
+理想情况下，开始执行异步任务的任何函数都应该返回Promise对象。遗憾的是，大多数 JavaScript API （包括所有浏览器及Node.js均使用的那些原生函数）都基于回调函数，而不是基于 Promise对象。在本节中，我们将看到如何在基于回调函数的API 中使用Promise对象。
+
+在基于回调函数的API 中使用Promise对象的最直接的方法是，生成一个Deferred 对象并传递其触发器函数作为API 的回调参数。例如，我们可以把Deferred对象的`resolve`方法传递给一个像setTimeout这样的简单异步函数。
+
+```js
+var timing = new $.Deferred();
+setTimeout(timing.resolve, 500);
+```
+
+考虑到API 可能会出错，我们还要写一个根据情况指向resolve 或reject 的回调函数。例如，我们会这样写Node风格的回调：
+
+```js
+var fileReading = new $.Deferred();
+fs.readFile(filename, 'utf8',  function (err) {
+  if (err) {
+    fileReading.reject(err);
+  } else {
+    fileReading.resolve(Array.prototype.slice.call(arguments, 1));
+  };
+});
+```
+
+总这么写很麻烦，所以何不写一个工具函数以根据任何给定 Deferred对象来生成Node风格的回调呢？
+
+```js
+deferredCallback = function (deferred) {
+  return function(err) {
+    if (err) {
+      deferred.reject(err);
+    } else {
+      deferred.resolve(Array.prototype.slice.call(arguments, 1));
+    };
+  };
+}
+
+var fileReading = new $.Deferred();
+fs.readFile(filename, ' utf8', deferredCallback(fileReading));
+```
+
+## Async.js的工作流控制
+PubSub这种抽象设计允许应用程序把来源层的事件发布至其他层（譬如，在 MVC三层架构设计模式中把从视图层的事件发布至模型层）。Promise这种抽象设计允许将简单任务表示成对象，进而合并这些对象来表示更复杂的任务。总之，这些抽象设计一直在致力于帮助我们 __解决意面式回调__ 这一问题。
+
+不过我们的武器库仍然有一处短板：迭代。假设需要执行一组 I/O 操作（或者并行执行，或者串行执行），该怎么做呢？这个问题在Node中非常常见，以至于有了个专有名称：工作流控制（也称作控制工作流）。就像 Underscore.js 可以大幅度简化同步代码中的迭代一样，优秀的工作流控制库也可以消解异步代码中的套话。
+
+### 异步工作流的次序问题
+假设想先按字母顺序读取recipes（菜谱）目录中的所有文件，接着把读取出的这些内容连接成一个字符串并显示出来。
+
+```js
+var fs = require( 'fs');
+process.chdir('recipes'); //  改变工作目录
+
+var concatenation = '';
+
+fs.readdirSync('.')
+  .filter(function (filename) {
+    // 跳过不是文件的目录
+    return  fs.statSync(filename).isFile();
+  })
+    .forEach( function (filename) {
+      // 内容添加到输出上
+      concatenation += fs.readFileSync(filename, 'utf8')
+    });
+
+console.log(concatenation);
+```
+
+不过，所有这种 I/O 阻塞的效率都极其低下，尤其是当应用程序还能同时做点其他事情的时候。问题在于不能单纯地将下面这行代码替换掉
+
+```js
+concatenation += fs.readFileSync(filename, 'utf8');
+//--------------
+fs.readFile(filename, ' utf8',  function (err, contents) {
+  if (err) throw err;
+  concatenation += contents;
+});
+```
+
+因为这么做根本无法保证按照做出 readFile 调用的次序来触发readFile 调用的回调。readFile 仅仅负责告诉操作系统开始读取某个文件。对操作系统而言，读取短文件通常比读取长文件更快一些。因此，菜谱内容添加到concatenation 字符串的次序是不可预知的。而且，在触发所有回调之后，必须要运行console.log 。
+
+### 异步的数据收集方法
+先尝试在不借助任何工具函数的情况下来解决这个问题。最简单的方法是：因前一个 readFile 的回调运行下一个readFile ，同时跟踪记录迄今已触发的回调次数，并最终显示输出。
+
+```js
+var fs = require('fs');
+process.chdir('recipes'); // 改变工作目录
+var concatenation = '';
+
+fs.readdir('.',  function (err, filenames) {
+  if (err) throw err;
+
+  function  readFileAt(i) {
+    var  filename = filenames[i];
+    fs.stat(filename, function (err, stats) {
+       if (err) throw err;
+       if (! stats.isFile()) return  readFileAt(i + 1);
+
+      fs.readFile(filename, 'utf8',  function (err, text) {
+         if (err) throw err;
+        concatenation += text;
+         if (i + 1 === filenames.length) {
+          //  所有文件均已读取，可显示输出
+          return  console.log(concatenation);
+        }
+        readFileAt(i + 1);
+      });
+    });
+  }
+  readFileAt(0);
+});
+```
+
+如你所见，异步版本的代码要比同步版本多很多。如果使用filter、forEach这些同步方法，代码的行数大约只有一半，而且读起来也要容易得多。如果这些漂亮的迭代器存在异步版本该多好啊！使用Async.js就能做到这一点！
+
+#### Async.js 的函数式写法
+我们想把同步迭代器所使用的filter 和forEach方法替换成相应的异步方法。Async.js给了我们两个选择
+
+- `async.filter`和`async.forEach` ，它们会并行处理给定的数组。
+- `async.filterSeries` 和`async.forEachSeries`，它们会顺序处理给定的数组。
+
+并行运行这些异步操作应该会更快，那为什么还要使用序列式方法呢？原因有两个
+
+- 前面提到的工作流次序不可预知的问题。我们确实可以先把结果存储成数组，然后再 joining（联接）数组来解决这个问题，但这毕竟多了一个步骤。
+- Node及其他任何应用进程能够同时读取的文件数量有一个上限。如果超过这个上限，操作系统就会报错。如果能顺序读取文件，则无需担心这一限制。
+
+```js
+var async = require('async');
+var fs = require('fs');
+process.chdir('recipes'); //  改变工作目录
+var concatenation = '';
+
+var dirContents = fs.readdirSync('.');
+
+async.filter(dirContents, isFilename,  function (filenames) {
+  async.forEachSeries(filenames, readAndConcat, onComplete);
+});
+
+function isFilename(filename, callback) {
+  fs.stat(filename, function (err, stats) {
+    if (err) throw err;
+    callback(stats.isFile());
+  });
+}
+
+function readAndConcat(filename, callback) {
+  fs.readFile(filename, 'utf8' , function(err, fileContents) {
+    if (err) return callback(err);
+    concatenation += fileContents;
+    callback();
+  });
+}
+
+function onComplete(err) {
+  if (err) throw err;
+  console.log(concatenation);
+}
+```
+
+现在我们的代码 __漂亮地分成了两个部分__：__*任务概貌*__（表现形式为async.filter调用和async.forEachSeries 调用）和 __*实现细节*__（表现形式为两个迭代器函数和一个完工回调onComplete）。
+
+#### Async.js的错误处理技术
+Async.js遵守Node的约定。这意味着所有的 I/O 回调都形如callback(err, results...) ，唯一的例外是结果为布尔型的回调。布尔型回调的写法就是 callback(result) ，所以上一代码示例中的isFilename迭代器需要自己亲自处理错误。
+
+要怪就怪Node的fs.exists 首开这一先河吧！而这也意味着使用了Async.js数据收集方法（filter/filterSeries 、reject/rejectSeries 、detect / detectSeries、some、every 等）的迭代器均无法报告错误。
+
+对于非布尔型的所有Async.js迭代器，传递非 null/ undefined 的值作为迭代器回调的首参数将会立即因该错误值而调用完工回调。这正是readAndConcat 不用throw也能工作的原因。
+
+所以，如果callback(err) 确实是在readAndConcat 中被调用的，则这个err 会传递给完工回调（即 onComplete）。Async.js只负责保证onComplete只被调用一次，而不管是因首次出错而调用，还是因成功完成所有操作而调用。
+
+Node的错误处理约定对Async.js 数据收集方法而言也许并不理想，但对于Async.js的６所有其他方法而言，遵守这些约定可以让错误干净利落地从各个任务流向完工回调。
+
+### Async.js的任务组织技术
+Async.js 的数据收集方法解决了一个异步函数如何运用于一个数据集的问题。但如果是一个函数集而不是一个数据集，又该怎么办呢？下面将探讨Async.js 中一些可以派发异步函数并收集其结果的强大工具。
+
+#### 异步函数序列的运行
+假设我们希望某一组异步函数能依次运行。在不使用工具函数的情况下，可能会编写出类似这样的代码：
+
+```js
+funcs[0](function () {
+  funcs[1]( function () {
+    funcs[2](onComplete);
+  })
+});
+```
+
+幸好我们还有async.series 和async.waterfall。这两个方法均接受一组函数（即任务列表）作为参数并按顺序运行它们，二者给任务列表中的每个函数均传递一个Node风格的回调。async.series与async. waterfall 之间的差别是，前者提供给各个任务的只有回调，而后者还会提供任务列表中 __前一任务__ 的结果。（所谓“ 结果” ，指的是各个任务传递给其回调的非错误的值。）
+
+```!js
+//= require async.0.2.5
+var start = new Date;
+async.series([
+  function (callback) { setTimeout(callback, 100); },
+  function (callback) { setTimeout(callback, 300); },
+  function (callback) { setTimeout(callback, 200); }
+],  function (err, results) {
+  alert('Completed in ' + ( new  Date -start) + 'ms');
+});
+```
+
+Async.js传递给任务列表中每个函数的回调好像在说：“ 出错了吗（回调的首参数是否为错误）？如果没出错，我就要收集结果（回调的次参数）并运行下一个任务了。”
+
+#### 异步函数的并行运行
+Async.js提供了async.series的并行版本，即async.parallel。就像async.series 一样，async.parallel 也接受一组形为function(callback) {...}的函数作为参数，但会再加上一个（可选的）在触发最末回调后运行的完工事件处理器。
+
+```!js
+//= require async.0.2.5
+var start = new Date;
+async.parallel([
+  function (callback) { setTimeout(callback, 100); },
+  function (callback) { setTimeout(callback, 300); },
+  function (callback) { setTimeout(callback, 200); }
+],  function (err, results) {
+  alert('Completed in ' + ( new  Date -start) + 'ms');
+});
+```
+
+Async.js按照任务列表的次序向完工事件处理器传递结果，而不是按照生成这些结果的次序。这样，我们既拥有了并行机制的性能优势，又没有失去结果的可预知性。
+
+### 异步工作流的动态排队技术
+大多数情况下，前两节介绍的那些简单方法足以解决我们的异步窘境，但async.series和async.parallel 均存在各自的局限性。
+
+- 任务列表是静态的。一旦调用了async.series 或async.parallel，就再也不能增减任务了。
+- 不可能问：“已经完成多少任务了？”任务处于黑箱状态，除非我们自行从任务内部派发更新信息。
+- 只有两个选择，要么是完全没有并发性，要么是不受限制的并发性。这对文件I/O 任务可是个大问题。如果要操作上千个文件，当然不
+想因按顺序操作而效率低下，但如果试着并行执行所有操作，又很
+可能会激怒操作系统。
+
+Async.js提供了一种可以解决上述所有问题的全能方法：async.queue。
+
+#### 深入理解队列
+async.queue 的底层基本理念令人想起DMV（Dynamic Management View，动态管理视图）。它可以同时应对很多人（最多时等于在岗办事员的数目），但并不是每位办事员前面各排一个队，而是维持着一个排号队列。人到了就排队，并取得一个排队号码。任何一个办事员空闲时，就会叫下一个排队号码。
+
+async.queue 的接口比async.series和async.parallel 稍微复杂一些。async.queue 接受的参数有两个：一个是 worker （办事员）函数，而不是一个函数列表；一个是代表着concurrency（并发度）的值，代表了办事员最多可同时处理的任务数。async.queue 的返回值是一个队列，我们可以向这个队列推入任意的任务数据及可选的回调。
+
+```!js
+//= require async.0.2.5
+function worker(data, callback) {
+  console.log(data);
+  callback();
+}
+var concurrency = 2;
+var queue = async.queue(worker, concurrency);
+queue.push(1);
+queue.push(2);
+queue.push(3);
+```
+
+并发度为 2 时，需要两轮才能遍历事件队列；如果并发度为1，则需要3 轮才能遍历，每轮输出一行代码；如果并发度为3 或更大的值，则只需要1 轮即可遍历。并发度为0 的队列不会做任何事情。如果想要最大的并发度，请直接使用Infinity 关键字。
+
+#### 任务的入列
+```js
+queue.push([1, 2, 3]);
+```
+
+等价于
+
+```js
+queue.push(1);
+queue.push(2);
+queue.push(3);
+```
+
+这意味着 __不能直接使用数组__ 作为任务的数据。不过可以使用其他任何东西（甚至函数）作为任务的数据。事实上，如果想让async.queue像async.series/ async.parallel 那样也使用一组函数作为任务列表，只需定义一个其次参数会直接传递给其首参数的 worker 函数。
+
+```!js
+//= require async.0.2.5
+function  worker(task, callback) {
+  task(callback);
+}
+var concurrency = 2;
+var queue = async.queue(worker, concurrency);
+var tasks = [function(){console.log(1);},function(){console.log(arguments);}]
+queue.push(tasks);
+```
+
+async.queue 中的每次push 调用可附带提供一个回调函数。如果提供了，该回调函数会直接送给worker 函数作为其回调参数。因此，（假设worker 函数确实运行了其回调，即它未因抛出错误而直接关停）下面这个例子将会触发3 次输出事件，即输出3 次'Task complete!' 。
+
+```!js
+//= require async.0.2.5
+function worker(data, callback) {
+  console.log(data);
+  callback();
+}
+var concurrency = 2;
+var queue = async.queue(worker, concurrency);
+queue.push([1, 2, 3], function (err, result) {
+  console.log('Task complete!');
+});
+```
+
+对async.queue 而言，push 方法的回调函数非常重要，因为async. queue不像async.series/ async.parallel 那样可以在内部存储每次任务的结果。如果想要这些结果，就必须自行去捕获。
+
+#### 完工事件的处理
+和async.series 及其类似方法一样，我们也可以给async.queue指定一个完工事件处理器。不过，这时并不是传递完工事件处理器作为async.queue 方法的参数，而是要附加它作为async.queue 对象的`drain`（排空）属性。（请想象有一个盆，里面满是待完成的任务。当最后一个任务也排空流出盆时，就会触发完工事件的回调。）下面用计时器做了一个示例。
+
+```!js
+//= require async.0.2.5
+function  worker(data, callback) {
+  setTimeout(callback, data);
+}
+var concurrency = 2;
+var queue = async.queue(worker, concurrency);
+var start = new Date;
+queue.drain = function () {
+  console.log('Completed in ' + ( new Date - start) + 'ms');
+};
+
+queue.push([100, 300, 200]);
+```
+
+注意，可以一直调用push 方法向队列推入更多后续任务，而且，每当队列中的末任务结束运行时，都会触发一次 drain（也就是说，如果任务队列完工之后再让新任务入列，新任务队列的完工也同样会触发完工事件处理器）。遗憾的是，这意味着async.queue 不能像async.waterfall 那样提供清晰排序的结果。如果想收集那些入列的任务的结果数据，就只能靠自己了。
+
+#### 队列的高级回调方法
+尽管drain常常是我们唯一要用到的事件处理器，但async.queue还是提供了其他一些事件及其处理器。
+
+- 队末任务开始运行时，会调用队列的 empty方法。（队末任务运行结束时，会调用队列的drain方法。）
+- 达到并发度的上限时，会调用队列的saturated 方法。
+- 如果提供了一个函数作为push 方法的次参数，则在结束运行给定任务时会调用该函数，或在给定任务列表中的每个任务结束运行时均调用一次该函数。
+
+### 极简主义者Step的工作流控制
+Step 接受一个函数列表作为参数，例子如下。
+
+```js
+Step(task1, task2, task3);
+```
+
+其中的每一个函数都有3 种控制工作流的方式。
+
+- 它可以调用this，让Step 直接运行列表中的下一个函数。
+- 它可以调用n 次由this.parallel 或this.group生成的回调，以告诉Step 应运行列表中的下一个函数n 次。
+- 它可以返回一个值，这也会让Step 运行列表中的下一个函数。这简化了同步函数与异步函数的混合使用。
+
+下一个函数会收到上一个函数的结果（或者是其返回的值，或者是其传递给this 的参数），或者是上一函数所有实例的结果（如果因this.parallel 或this.group而运行该函数的话）。其区别在于，this. parallel 会将结果作为一个个单独的参数来提供，而this.group会将结果合并成数组。
+
+这种极简主义的不足是，要想理解Step生成的工作流，只有去通读其中的每一个函数。而无所不包、无所不能的Async.js所生成的工作流一般更能够自我解释。  不过，如果想自己动手、亲历亲为，那么用 Step 来写一些类似于Async.js的工具函数会是一种很好的练习。例如，下面只用11 行代码就实现了等价的async.map。
+
+```js
+var Step = require(' step');
+
+function  stepMap(arr, iterator, callback) {
+  Step(
+    function() {
+       var  group = this.group();
+       for  (var  i = 0; i < arr.length; i++) {
+        iterator(arr[i], group());
+      }
+    },
+    callback
+  );
+}
+```
+
+使用Async.js主要是想找到最适合任务的那个工具函数，而Step 却能鼓励我们透彻地思考问题并编写出优雅高效的解决方案。
+
+## worker对象的多线程技术
+应用程序的主线程可以这样跟worker 说：“ 去，开一个单独的线程来运行这段代码。”worker 可以给我们发送消息（反之亦可），其表现形式是事件队列中运行的回调（还能是别的吗？）。简而言之，与不同线程进行交互的方式与在JavaScript中进行I/O 操作一模一样。
+
+### 网页版worker对象
+要想生成worker 对象，只需以脚本URL 为参数来调用全局Worker 构造函数即可。
+
+```js
+var worker = new Worker('worker.js');
+worker.addEventListener('message',  function (e) {
+  console.log(e.data); //  重复由postMessage 发送的任何东西
+});
+```
+
+通常，我们只用到 message事件的data 属性。如果已经把同一个事件处理器绑定至多个worker 对象，则可能还要用到e.target 以定位是哪一个worker 对象触发了事件。
+
+现在我们知道如何监听 worker 对象了。worker 对象的交互接口呈现出便利的对称设计：我们可以使用 worker.postMessage 来发送消息，而worker 本身可以使用 self.addEventListener('message',...)来接收消息。下面是一个[完整的例子](http://webworkersandbox.com/53b3b5ce02a3ad0000000210)。
+
+主脚本
+
+```js
+var worker = new Worker( 'worker.js');
+worker.addEventListener('message', function (e) {
+  console.log(e.data);
+});
+worker.postMessage('football ');
+worker.postMessage('baseball ');
+```
+
+worker.js
+
+```js
+self.addEventListener('message',  function (e) {
+  self.postMessage('Bo knows  ' + e.data);
+});
+```
+
+#### 网页版worker 对象的局限性
+网页版worker 对象的首要目标是，在不损害DOM响应能力的前提下处理复杂的计算。它有以下几种潜在用法：
+
+- 解码视频。流入的视频采用Broadway实现的H.264编解码器
+- 采用斯坦福的JavaScript加密库加密通信。
+- 解析网页式编辑器中的文本，如Ace 编辑器
+
+事实上，Ace 默认已经这么做了。在基于Ace 的编辑器中键入代码时，Ace 需要先进行一些相当繁重的字符串分析，然后再使用恰当的语法高亮格式更新DOM。在现代浏览器中，这种分析工作通常会另开一个独立线程来做，以确保编辑器能保持平滑度和响应度。
+
+通常情况下，worker 对象会把自己的计算结果发送给主线程，由主线程去更新页面。为什么不直接更新页面呢？这主要是为了 __保护JavaScript异步抽象概念__，使其免受影响。如果worker 对象可以改变页面的标记语言，那么最终的下场就会和 Java 一样——必须将DOM操控代码封装成互斥量和信号量以避免竞态条件。
+
+基于类似的理由，worker 对象也看不到全局的window 对象和主线程及其他worker 线程中的其他任何对象。通过 postMessage 发送的对象会透明地作序列化和反序列化，想想 JSON.parse(JSON. stringify(obj)) 吧。因此，原始对象的变化不会影响该对象在其他线程中的副本。
+
+worker 对象甚至不能使用老实可靠的console 对象。它只能看到自己的全局对象self，以及 self 已捆绑的所有东西：标准的JavaScript对象（如setTimeout和Math），以及浏览器的 Ajax 方法。
+
+worker 对象可以随意使用XMLHttpRequest。如果浏览器端支持的话，它甚至能使用WebSocket。这意味着worker 可以直接从服务器拉取数据。如果要处理大量数据（譬如说，流传输一段需要解码的视频），相比于使用postMessage 来序列化这些数据，将数据封闭在一个线程中会更好。
+
+还有一个特殊的importScripts 函数可以同步地加载并运行指定的 脚本。
+
+```js
+importScripts('https://raw.github.com/gist/1962739/danika.js');
+```
+
+正常情况下，同步加载是绝对禁忌，不过worker 对象跑的是另一个线程。既然worker 已经无所事事了，那么阻塞就阻塞好啦！
+
+### cluster带来的Node版worker
+略
 
 ## 延迟执行
-
 ### delay
 `delay(function, wait, [*arguments])`
 

@@ -1,4 +1,4 @@
-> 2014-05-30
+﻿> 2014-05-30
 
 让领域模型发挥作用
 =================
@@ -201,6 +201,9 @@ http://www.cnblogs.com/netfocus/archive/2011/01/17/1937779.html
 http://www.cnblogs.com/netfocus/archive/2011/03/05/1971899.html
 http://www.cnblogs.com/netfocus/archive/2011/07/10/2102099.html
 http://www.cnblogs.com/netfocus/archive/2011/10/10/2204949.html
+http://www.cnblogs.com/bluedoctor/p/3809163.html
+http://www.cnblogs.com/xishuai/p/3800656.html
+http://www.cnblogs.com/xishuai/p/3827216.html
  -->
 
 

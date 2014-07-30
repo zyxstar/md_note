@@ -134,7 +134,3 @@ gem install rails -v='3.2.17' --no-rdoc --no-ri
 
 ```
 
-
-
-sudo service smbd restart V
-/etc/init.d/samba restart
