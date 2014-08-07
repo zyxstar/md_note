@@ -1,5 +1,27 @@
 > 2014-05-17
 
+# rails rvm安装
+
+```shell
+curl -L get.rvm.io | bash -s stable
+source ~/.bashrc
+source ~/.bash_profile
+sed -i -e 's/ftp\.ruby-lang\.org\/pub\/ruby/ruby\.taobao\.org\/mirrors\/ruby/g' ~/.rvm/config/db
+
+rvm list known
+
+rvm install 1.9.3
+rvm use 1.9.3
+rvm gemset create r3217
+rvm use 1.9.3@r3217 --default
+
+gem source -r https://rubygems.org/
+gem source -a https://ruby.taobao.org
+
+gem install rails -v='3.2.17' --no-rdoc --no-ri
+
+```
+
 # [Dynamic find_by Methods](http://railscasts.com/episodes/2-dynamic-find-by-methods)
 > 在rails4中被废弃了，请使用`where(...)` [ref](http://edgeguides.rubyonrails.org/4_0_release_notes.html#active-record)
 

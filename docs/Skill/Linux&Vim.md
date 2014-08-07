@@ -14,6 +14,7 @@ ls -hl                            #以k m为单位显示文件大小
 ls -F                             #目录以/结尾显示
 ls -d */                          #只显示目录
 ls -i                             #显示inode
+ls -R                             #递归显示
 ls -ld /xxx                       #可以看到该目录的访问权限,不加d 有可能直接deny
 ls -a | sort -i                   #排序显示
 
