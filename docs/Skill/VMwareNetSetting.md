@@ -112,25 +112,3 @@ eth0      Link encap:Ethernet  HWaddr 00:0c:29:22:70:24
 
 
 
-rails rvm安装
-
-```shell
-curl -L get.rvm.io | bash -s stable
-source ~/.bashrc
-source ~/.bash_profile
-sed -i -e 's/ftp\.ruby-lang\.org\/pub\/ruby/ruby\.taobao\.org\/mirrors\/ruby/g' ~/.rvm/config/db
-
-rvm list known
-
-rvm install 1.9.3
-rvm use 1.9.3
-rvm gemset create r3217
-rvm use 1.9.3@r3217 --default
-
-gem source -r https://rubygems.org/
-gem source -a https://ruby.taobao.org
-
-gem install rails -v='3.2.17' --no-rdoc --no-ri
-
-```
-
