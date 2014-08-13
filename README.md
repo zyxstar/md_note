@@ -14,6 +14,9 @@
 
 # Language
 
+## C
+- [征服C指针.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588.md) <span>2014-08-01</span>
+
 ## JavaScript
 - [JavaScriptCollected.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScriptCollected.md) <span>2013-06-18</span>
 - [JavaScript语言精髓(周爱民).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%2528%25E5%2591%25A8%25E7%2588%25B1%25E6%25B0%2591%2529.md) <span>2009-11-16</span>
