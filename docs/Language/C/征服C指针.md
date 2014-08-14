@@ -317,13 +317,13 @@ C语言的变量具有区间性的作用域，用语句包围的是作用域，`
 
     void func(int arg1, int arg2){
         int var3, var4;
-        printf("func:&arg1..%p &arg2..%p", &arg1, &arg2);
-        printf("func:&var3..%p &var4..%p", &var3, &var4);        
+        printf("func:&arg1..%p &arg2..%p\n", &arg1, &arg2);
+        printf("func:&var3..%p &var4..%p\n", &var3, &var4);        
     }
 
     int main(void){
         int var1, var2;
-        printf("main:&var1..%p &var2..%p", &var1, &var2);
+        printf("main:&var1..%p &var2..%p\n", &var1, &var2);
         func(1, 2);
         return 0;
     }
