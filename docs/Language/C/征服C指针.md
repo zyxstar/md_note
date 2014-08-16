@@ -309,7 +309,7 @@ C语言的变量具有区间性的作用域，用语句包围的是作用域，`
 
 为了在链接器中将名称结合起来，各目标代码大多都具备一个 __符号表__，在unix中，可使用`nm`命令窥视符号表中内容。
 
-## 自动变量（栈）
+## 自动变量(栈)
 ### 函数调用究竟发生了什么
 <!--language: !c-->
 
@@ -358,7 +358,8 @@ C语言中，在现有被分配的内存区域之上以“堆积”的方式（�
 - __调用方__ 负责从栈中除去调用的参数
 - 在函数调用时，需要为 __形参分配__ 新的内存区域，“C的参数都是传值，向函数内部传递的是实参的副本”，__其复制动作，就在这里发生__
 
-#### 常见BUG
+### 常见BUG
+#### 自动变量的内存区域释放
 <!--language: c-->
 
     char *int_to_str(int int_val){
@@ -369,3 +370,221 @@ C语言中，在现有被分配的内存区域之上以“堆积”的方式（�
 
 像上面的代码是不能正常运行的，`buf`的内存区域在函数调用结束后就会被释放。
 
+#### 破坏自动变量的内存区域
+如果没有做数组长度检查，将数据写入了超过数组内存区域的地方，可能会破坏相邻的自动变量的内容。如果一直破坏下去，有可能将存储函数的 __返回信息给破坏掉__，导致函数不能返回。
+
+示例可参考[为什么程序会崩溃](/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC13.3)
+
+### 可变长参数
+C语言的参数是 __从后往前__ 被堆积在栈中的，应该由 __调用方__ 将参数从栈中除去
+
+> Pascal与Java中，是从 __前往后将__ 参数堆积在栈中，并且将参数从栈中除去的是 __被调用方__ 应该承担的工作
+
+故意采取与Pascal相反的方式，主要为了实现可变长参数这功能
+
+```c
+printf("%d, %s\n", 100, str);
+```
+
+对应的栈状态如下：
+
+<!--language: plain-->
+
+                     ┌──────────┐
+                     │          │  使用中的栈
+                ┌─   ├──────────┤
+                │    │    *     │  str
+                │    ├──────────┤
+                │    │   100    │  
+                │    ├──────────┤
+                │    │    *     │  指向"%d, %s\n"
+    printf()引用区域 ├──────────┤
+                │    │          │  返回信息
+                │    ├──────────┤
+                │    │          │  返回信息
+                │    ├──────────┤
+                │    │          │  printf()自己的局部变量
+                └─   ├──────────┤
+                     │    │     │  
+                          V
+    
+无论堆积多少参数，总能找到第一个参数地址（它一定存在于距离固定的场所），随着对第一个参数的占位符的解析，就可以知道后面还有几个参数
+
+#### 使用stdarg.h
+<!--language: !c-->
+
+    #include <stdio.h>
+    #include <stdarg.h>
+    #include <assert.h>
+
+    void tiny_printf(char *format, ...) {
+        int i;
+        va_list ap;
+
+        va_start(ap, format);
+        for (i = 0; format[i] != '\0'; i++) {
+            switch (format[i]) {
+                case 's':
+                    printf("%s ", va_arg(ap, char*));
+                    break;
+                case 'd':
+                    printf("%d ", va_arg(ap, int));
+                    break;
+                default:
+                    assert(0);
+            }
+        }
+        va_end(ap);
+    }
+
+    int main(void){    
+        tiny_printf("sdd", "result..", 3, 5);
+        return 0;
+    }
+
+- 头文件stdarg.h提供了一组方便使用可变长参数的宏
+- `va_list`一般是这样定义`typedef char *va_list;`
+- `va_start(ap, format)`意味着 使指针`ap`指向参数`format`的下一个位置
+- 宏`va_arg()`指定`ap`和参数类型，就可以顺序的取出可变长部分的参数
+- `va_end(ap);`是一个空定义的宏，只因标准里指出了对于`va_start()`的函数需要写`va_end()`
+
+> 在决定开发可变长参数的函数前，思考一下是否真有必要
+
+#### 实现DEBUG_WRITE
+<!--language: !c-->
+
+    #include <stdio.h>
+    #include <stdarg.h>
+
+    #define DEBUG
+
+    #ifdef DEBUG
+    #define DEBUG_WRITE(arg) debug_write arg
+    #else
+    #define DEBUG_WRITE(arg)
+    #endif
+
+    #define SNAP_INT(arg) fprintf(stderr, #arg "..%d\n", arg)
+
+    void debug_write(char *format, ...){
+        va_list ap;
+        va_start(ap, format);
+        vfprintf(stderr, format, ap);
+        va_end(ap);
+    }
+
+    int main(void){    
+        DEBUG_WRITE(("\n%s..%d\n", "debug_write", 10));
+        int hoge = 4;
+        SNAP_INT(hoge);
+        return 0;
+    }
+
+- 使用`DEBUG_WRITE`应加 __两重括号__，使用gcc时
+> `gcc -DDEBUG ...`将会加上`DEBUG`的宏定义
+- `vfprintf(stderr, format, ap);`输出到`stderr`不会有缓冲
+- `#define SNAP_INT(arg) fprintf(stderr, #arg "..%d\n", arg)`，`#arg`将输出原文，其后只有空格，将合并两个字符串
+
+### ANSI C初始化自动变量
+ANSI C以前的C只有标量才能在声明的同时被初始化，类似初始化数组等聚合类型时，需要加上`static`作为静态变量分配内存区域，就可以在程序的 __执行前__ 被完全初始化。
+
+现在编译器复杂了，能支持 __执行中__ 初始化数组等聚合类型，但在聚合类型初始化运算符中也只能写 __常量__，像下面的写法就违反规范了。
+
+```c
+void func(double angle){
+    double hoge[] = {sin(angle), cos(angle)};
+}
+```
+
+## malloc()动态内存分配(堆)
+`malloc()`的返回值是`void*`，该类型的指针可以不强制转型的赋给所有指针类型变量，如下的代码其实不必要了：
+
+```c
+book_data_p = (BookData*)malloc(sizeof(BookData));
+```
+
+这点和 C++不同，后者可以将任意的指针赋值给`void*`类型的变量，但`void*`类型的值赋给通常的指针变量时，需要强制转型
+
+### malloc()中发生了什么
+`malloc()`不是"系统调用"
+> 而`printf()`却最终调用系统的`write()`API。
+
+`malloc()`大体实现是，从操作系统一次性取得比较大的内存，然后再零售给应用程序。根据操作系统不同，从操作系统取得内存的手段也不一样，在unix情况下使用`brk()`的系统调用。
+> 有时也会用`mmap()`系统调用
+
+调用函数时，__栈会向地址较小的一方伸长__，多次调用`malloc()`时，会调用一次`brk()`，__内存区域（堆）会向地址较大的一方伸长__。
+
+<!--language: plain-->
+
+    ┌──────────┐
+    │          │  自动变量
+    ├──────────┤
+    │          │  调用函数伸长（栈）
+         |
+         V
+
+         ^
+         |
+    │          │  通过brk()伸长（堆）
+    ├──────────┤
+    │          │  利用malloc分配的内存区域
+    ├──────────┤
+    │          │  静态变量（函数/文件内static变量、全局变量）
+    ├──────────┤
+    │          │  函数（程序自身）、字符串常量
+    └──────────┘
+
+实现`malloc()`时，有些实现会在分配出的各块之前加上一个管理区域，如果该区域被破坏了，以后`malloc(),free()`时，程序将有可能崩溃。
+
+#### 建议
+- 考虑给`malloc()`加一层包装，在每次分配内存的时候多留一点空间，然后在 __最前面部分__ 设定区域的大小信息，填充如0xCC的值，防止未做好初始化，并增加计数；
+- 而`free()`也做个包装，在区域被释放前故意 __做一些破坏__（如填充0xCC，防止再被引用），方便BUG的查找，也增加计数，最后看是否和`malloc()`的计数一致；
+- 当然这些包装只在调试模式下有效，去掉调试模式，发行版的还是直接调用底层函数。
+- 谨慎使用`realloc()`，如果利用它扩展巨大内存区域，复制上花费很多时间，同时也造成大量的的空间过度活跃。如果想要动态为大量元素分配空间，最好不要使用连续的内存区域，考虑使用链表。
+
+## 内存布局对齐
+<!--language: !c-->
+
+    #include <stdio.h>
+    #include <stddef.h>
+
+    typedef struct{
+        int int1;
+        double double1;
+        char char1;
+        double double2;
+    } Hoge;
+
+    int main(void)
+    {
+        printf("offset of int1 in Hoge: %d\n", offsetof(Hoge, int1));
+        printf("offset of double1 in Hoge: %d\n", offsetof(Hoge, double1));
+        printf("offset of char1 in Hoge: %d\n", offsetof(Hoge, char1));
+        printf("offset of double2 in Hoge: %d\n", offsetof(Hoge, double2));
+        return 0;
+    }
+
+`sizeof()`后的结果为24，`char1`后面空出一块来，根据CPU特征，对于不同类型的可配置地址受到一定限制，编译器会适当进行边界调整（布局对齐），在结构体内插入合适的填充物，使int,double等被配置在4的倍数的地址上（有些机器将double配置在8的倍数的地址上）。
+
+## 字节排序(大小端)
+<!--language: !c-->
+
+    #include <stdio.h>
+
+    int main(int argc, const char *argv[]){
+        int hoge = 0x12345678;
+        unsigned char *hoge_p = (unsigned char*)&hoge;
+
+        printf("%x\n", hoge_p[0]);
+        printf("%x\n", hoge_p[1]);
+        printf("%x\n", hoge_p[2]);
+        printf("%x\n", hoge_p[3]);
+
+        return 0;
+    }
+
+输出78 56 34 12的，这种配置方式称为小端字节序(little-endian)，Intel,AMD均属于此类
+
+揭秘C的语法
+==========
+## 解读C的声明
