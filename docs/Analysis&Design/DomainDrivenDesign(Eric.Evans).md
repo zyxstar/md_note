@@ -205,6 +205,8 @@ Factory负责处理对象生命周期的开始，而Repository帮助管理生命
 - Cargo的运送目标已指定
 - 由一系列满足Specification的Carrier Movement来完成运送目标
 
+![ddd_01](../../imgs/ddd_01.png)
+
 ```ruby
 class Cargo
   attr_accessible :tracking_ID
@@ -294,6 +296,7 @@ end
 
 如果我们的应用要对一系列货船进行跟踪，那么从`CarrierMovement`遍历到`HandlingEvent`将是很重要的。但我们的业务只需跟踪`Cargo`，因此只需从`HandlingEvent`遍历到`CarrierMovement`就能满足我们的业务需求，这实现简化为一个简单的对象引用，双向关系已经被禁用。
 
+![ddd_02](../../imgs/ddd_02.png)
 
 ```ruby
 class Cargo
@@ -342,6 +345,8 @@ end
 ## Aggregate边界
 `Customer`,`Location`,`CarrierMovement`都有自己的标识，而且被许多`Cargo`共享，因此它们在各自的Aggregate中必须是根，这些聚合除了包含它们的属性之外，可能还包含其他比这里细节级别更低层的对象。
 
+![ddd_03](../../imgs/ddd_03.png)
+
 `Cargo`的Aggregate可以把一切只因`Cargo`存在的事物包含进来，包括`DeliveryHistory`,`HandlingEvent`,`DeliverySpecification`:
 
 - `DeliveryHistory`，因为没有会在不知道`Cargo`的情况下直接查询`DeliveryHistory`，它也不需要直接在全局访问，而且它的标识实际是由`Cargo`派生出的，很合适放在`Cargo`的边界之内
@@ -352,12 +357,15 @@ end
 ## 选择Repository
 在我们的设计只有5个Entity（`Cargo`,`Customer`,`Location`,`CarrierMovemnet`,`HandlingEvent`）是Aggregate的根，因此在选择存储库时只需考虑这5个实体，其它对象都不能有Repository
 
+
 为了确定这5个实体中哪些确实需要Repository，必须回头看一下应用的要求：
 
 - 要想通过Booking Application进行预订，用户需要选择一些承担不同角色（托运人、收货人等）的`Customer`，需要一个它的Repository。在指定货物的目的地时还需要一个`Location`，因此也要创建一个Repository
 - 用户需要通过Activity Logging Application来查找装货的`CarrierMovement`，也需要一个Repository。用户还必须告诉系统哪个`Cargo`已经完成了装货，因此还需要一个它的Repository
 - 我们没有创建`HandlingEvent`的Repository，因为决定在第一次迭代中将它与`DeliveryHistory`的关联实现为一个集合，而且应用不需要查找在一次`CarrierMovement`中都装载了什么货物。
 > 这两个原因都有可能会发生变化，如果确实改变了，可以增加一个Repository
+
+![ddd_04](../../imgs/ddd_04.png)
 
 ```ruby
 class CustomerRepository
@@ -461,6 +469,8 @@ public static HandlingEvent newLoading(
 
 通过对Value、Entity、Aggregate进行建模，已大大减小了这些设计修改的影响，示例中，所有修改都封装在`Cargo`的Aggregate边界内。还需要增加一个`HandlingEventRepository`，但并不需要重新设计`HandlingEvent`本身。现在`HandlingEvent`的创建不会修改`Cargo`边界中任何东西。
 
+![ddd_05](../../imgs/ddd_05.png)
+
 ```ruby
 class HandlingEventRepository
   def find_by_cargo_id_time_type(id,time,type); end
@@ -473,12 +483,18 @@ end
 ## 运输模型中的Module
 对象根据其所遵循的模式来分组，结果那些概念上没有关系（低内聚）的对象被分到一起，而且所有Module之间关联错综复杂（高耦合），这种打包方式描述了开发人员对模型的认识，而不是描述真正的领域。
 
+![ddd_06](../../imgs/ddd_06.png)
+
 按照对象是持久对象还是临时对象，而不是根据对象的意义，也没有意义。
 
 我们应该寻找紧密关联的概念，并弄清打算向项目中其他人员传递什么信息。
 
+![ddd_07](../../imgs/ddd_07.png)
+
 ## 引入新特性:配额检查
 当客户进行一个预订时，根据配额来检查是否应该接受预订，Booking Application必须通过查询这些信息才能确定接受或拒绝，它需要根据`CargoRepository`来确定这种类型货物已经被预订了多少，通过Sales Management System来查询这种类型货物可以接受多少预订。
+
+![ddd_08](../../imgs/ddd_08.png)
 
 ### 连接两个系统
 Sales Management System并不是根据这里所使用的模型编写的，如果Booking Application直接与它交互，那么我们的应用程序就必须兼容另一个系统的设计，将很难保持一个清晰的 Model-Driven Design。
@@ -488,9 +504,9 @@ Sales Management System并不是根据这里所使用的模型编写的，如果
 这是连接Sales Management System的一个接口，首先会想叫它Sales Management Interface，但这样就失去用更有用语言来重新描述问题的机会，用名为`AllocationChecker`的类来实现这些Service，反映了它系统中的职责。
 
 ### 进一步完善模型:划分业务
-Enterprise Segment 分析模式？？
+《分析模式》中Enterprise Segment（企业部门单元），是一组维度，它们定义了一种业务划分的方式，这些维度可能包括我们在运输业务中已经提到的所有划分，也包括时候维度。
 
-
+![ddd_09](../../imgs/ddd_09.png)
 
 
 
