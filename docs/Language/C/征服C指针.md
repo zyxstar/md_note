@@ -867,7 +867,6 @@ struct Woman_tag{
     2.3 可是,因为表达式中,所以被理解为指针(指向int的指针)
     3 对int的指针进行加法运算,取出实体
 
-
 - `hoge`的类型为"int的数组(元素5)的数组(元素3)"
 - 尽管如此，在 __表达式中数组可以被解读成指针__，因此，`hoge`的类型为"__指向int的数组(元素5)的指针__"
 - `hoge[i]`是`*(hoge+i)`的语法糖
@@ -878,10 +877,150 @@ struct Woman_tag{
 
 ## 解读C的声明(续)
 ### const修饰符
+`const`在ANSI C中追加的修饰符，它将类型修饰为　__“只读”（不一定代表常量）__。它 __主要修饰函数的参数__。
 
+```c
+char *my_strcpy(char *dest, const char *src){
+    src = NULL; /* 即使对src赋值，编译器也没报错 */
+    *src = 'a'  /* ERROR! */
+}
+```
 
+此时成为只读的不是`src`，而是`src`所指向的对象。如果将`src`自身定义为只读，需要修改成如下：
 
+```c
+char *my_strcpy(char *dest, char * const src){
+    src = NULL; /* ERROR! */
+}
+```
 
+在现实中，当指针作为参数时，__`const`常用于将指针指向的对象设定为只读__，即第一种表达方式更常见
+
+- 通常C的参数都是传值，因此无论被调用方（函数内部）对参数进行怎样的修改，都不会对调用方（函数外部）造成影响。如果想要影响调用方的变量，可以将指针作为参数传递给函数。
+- 可是有时传指针，只是为了 __传递数组__ 的值（C中数组是不能作为参数传递的，不得不将指向初始元素的指针传递过去），本身并不想被修改掉，此时考虑在原型声明中加入`const`
+> 尽管函数接受了作为参数的指针，但是指针指向的对象不会被修改，函数虽然接受了指针，但并不意味着要向调用方返回值。
+
+#### 解读const声明
+- 从标识符开始，使用英语由内向外顺序的解释下去
+- 一旦解释完毕的部分的左侧出现了`const`，就在当前位置追加read-only
+- 如果解释完毕的部分的左侧出现了数据类型修饰符，并且其左侧存在`const`，姑且先去掉数据类型修饰符，追加read-only
+- 在翻译成中文时，`const`修饰是紧跟在它后面的单词
+
+```c
+char * const src
+```
+> 解释成`src is read-only pointer to char`
+
+```c
+char const *src
+```
+> 解释成`src is pointer to read-only char`
+
+```c
+const char *src
+```
+> 解释成`src is pointer to read-only char`
+
+### 如何使用const
+```c
+void search_point(char const *name, double *x, double *y);
+```
+
+- 代表`name`是in参数，而`x`和`y`为out参数
+- `char const *name`是不能将它赋值给`char*`类型的变量的（除非强制转型），因为后者是可以修改`name`所指向的对象的内容。
+- 同理，`char const *`类型的指针传递给使用`char*`作为参数的函数，也是不允许的
+- 一旦给指针类型的参数设定了`const`，当前层次以下的函数必须全部使用`const`，在一些通用函数中，如果本应是`const`的参数却没有加上`const`，会经常导致调用方无法使用`const`
+
+### const能否代替`#define`
+不行，`const int HOGE_SIZE = 100; int hoge[HOGE_SIZE];`是不行的，C中数组的元素必须为常量，`const`修饰的标识符不是常量，只是只读而已（C++另当别论）
+
+### typedef
+```c
+typedef char *String;
+```
+- 用于给某类型定义别名，通过该声明，以后对于"指向char的指针"，可以使用"String"这个别名
+- 可以按照普通的变量声明的顺序来解释`typedef`，上面声明解读为`String is pointer to char`
+- 之后在使用`String`时，可以写成这样`String hoge[10];`，解读为`hoge is array(num 10) of String`=>`hoge is array(num 10) of pointer to char`（指向`char`指针的数组）
+
+```c
+typedef struct{    
+} Hoge;  /*类型声明*/
+
+struct Hoge_tag{
+} hoge;  /*变量声明*/
+```
+
+- `typedef`也可一次性声明多个变量
+
+```c
+typedef struct{    
+} Hoge, *HogeP; 
+```
+
+等同于：
+
+```c
+typedef struct{    
+} Hoge;
+typedef Hoge *HogeP; 
+```
+
+## 其他语法
+### 函数的形参声明
+
+```c
+void func(int a[]);
+```
+对于这种写法，无论怎么看都好像要向函数的参数传递数组，可C中不能够将数组作为函数的参数进行传递，在 __声明形参的时候，作为类型分类的数组，可以被解读成指针__，也只有在这种情况下，`int a[]`和`int *a`才具有相同的意义。
+
+```c
+void func(int a[][5]);
+```
+`a`的类型为"int的数组(元素5)的数组(元素个数不明)"，是可以被解读成
+
+```c
+void func(int (*a)[5]);
+```
+"指向int的数组(元素5)的指针"
+
+### 关于空的下标运算符[]
+以下情况下标运算符`[]`可以将元素个数省略不写：
+
+- 函数的形参的声明
+- 根据初始化表达式可以确定数组大小的情况
+
+```c
+int a[] = {1, 2, 3};
+char str[] = "abc";
+double matric[][2] = {{1, 0}, {0, 1}};
+char *color_name[] = {
+    "red",
+    "green",
+    "blue"
+};
+char color_name2[][6] = {
+    "red",
+    "green",
+    "blue"
+};
+int a[][3] = {
+    {1, 2, 3},
+    {4, 5},
+    {6}
+};
+char str[][5] = {
+    "hoge",
+    "hog",
+    "ho",
+}
+```
+
+- 使用`extern`声明 __全局变量__ 的情况
+> 全局变量在多个编译单元中的某一个中定义，然后从其他代码文件中通过`extern`进行声明，在定义的时候还是需要元素个数的，但是在使用`extern`时行声明时，在连接的时候编译器可以确定实际数组大小，所以 __可以省略 *最外层* 数组的元素个数__
+> 
+> 但是不能将数组和指针混在一起，如file_1.c中定义了`int a[100];`，file_2.c中声明`extern int *a;`则是错误的
+
+### 字符串常量
 
 
 
