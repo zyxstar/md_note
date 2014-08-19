@@ -1,5 +1,49 @@
 > 2014-05-30
 
+<!--
+`Cargo`
+`CargoFactory`
+`CargoRepository`
+
+`Customer`
+`CustomerRepository`
+
+`Roles`
+
+`HandingEvent`
+`HandingEventRepository`
+
+`DeliveryHistory`
+`DeliverySpecification`
+
+`Location`
+`LocationRepository`
+
+`Carrier`
+`CarrierMovement`
+`CarrierMovementRepository`
+
+`AllocationChecker`
+
+`EnterpriseSegment`
+
+Tracking Query
+Booking Application
+Incident Logging Application
+Activity Logging Application
+Sales Management System
+Model-Driven Design
+
+Entity
+Aggregate
+Value Object
+Service
+Repository
+Factory
+Specification
+Anticorruption Layer
+ -->
+
 让领域模型发挥作用
 =================
 为了创建真正能为用户活动创造价值的软件，开发团队必须运用一整套与这些活动有关的知识体系，所需的知识广度可能令人望而生畏，信息量和复杂度也可能超乎想象。模型正是用于 __信息超载__ 的工具，它是一种知识形式，对知识进行 __有选择的 *简化*__ 和 __有目的的 *结构化*__ ，有助人们理解信息的意义，并 __专注于问题__ 相关的信息。
@@ -294,7 +338,7 @@ end
 
 如果`Customer`对他所运送的每个`Cargo`都有一个直接的引用，那么对一些长期、频繁托运货物的客户将会非常不便。此外，`Customer`这一概念并非只与`Cargo`相关，它可能具有多种角色，以便与许多对象交互，因此最好不要将它限定为这种具体的职责，如果需要按照`Customer`来查找`Cargo`可通过数据库查询来完成，后面Repository将讨论这个问题
 
-如果我们的应用要对一系列货船进行跟踪，那么从`CarrierMovement`遍历到`HandlingEvent`将是很重要的。但我们的业务只需跟踪`Cargo`，因此只需从`HandlingEvent`遍历到`CarrierMovement`就能满足我们的业务需求，这实现简化为一个简单的对象引用，双向关系已经被禁用。
+如果我们的应用要对一系列货船进行跟踪，那么从`CarrierMovement`遍历到`HandingEvent`将是很重要的。但我们的业务只需跟踪`Cargo`，因此只需从`HandingEvent`遍历到`CarrierMovement`就能满足我们的业务需求，这实现简化为一个简单的对象引用，双向关系已经被禁用。
 
 ![ddd_02](../../imgs/ddd_02.png)
 
@@ -340,29 +384,29 @@ end
 
 ```
 
-这个模型中存在循环引用，`Cargo`知道它的`DeliveryHistory`，后者中保存了一系列的`HandlingEvent`，而它又反过来引用`Cargo`，循环引用在设计中有时必要的，但它们维护起来很复杂，在实现时，应该避免把必须同步的信息保存在两上不同的地方。
+这个模型中存在循环引用，`Cargo`知道它的`DeliveryHistory`，后者中保存了一系列的`HandingEvent`，而它又反过来引用`Cargo`，循环引用在设计中有时必要的，但它们维护起来很复杂，在实现时，应该避免把必须同步的信息保存在两上不同的地方。
 
 ## Aggregate边界
 `Customer`,`Location`,`CarrierMovement`都有自己的标识，而且被许多`Cargo`共享，因此它们在各自的Aggregate中必须是根，这些聚合除了包含它们的属性之外，可能还包含其他比这里细节级别更低层的对象。
 
 ![ddd_03](../../imgs/ddd_03.png)
 
-`Cargo`的Aggregate可以把一切只因`Cargo`存在的事物包含进来，包括`DeliveryHistory`,`HandlingEvent`,`DeliverySpecification`:
+`Cargo`的Aggregate可以把一切只因`Cargo`存在的事物包含进来，包括`DeliveryHistory`,`HandingEvent`,`DeliverySpecification`:
 
 - `DeliveryHistory`，因为没有会在不知道`Cargo`的情况下直接查询`DeliveryHistory`，它也不需要直接在全局访问，而且它的标识实际是由`Cargo`派生出的，很合适放在`Cargo`的边界之内
 - `DeliverySpecification`是一个ValueObject，将它包含在`Cargo`边界中也不复杂
-- `HandlingEvent`就是另外一回事了，已有两种与其有关的数据库查询，一种是当不想使用集合时，用查找某个`DeliveryHistory`的`HandlingEvent`作为一种可行的替代方法，这种查询是位于`Cargo` Aggregate内部的本地查询；另一种查询是查找装货和准备某次`CarrierMovement`时所进行的所有操作，即使与`Cargo`本身分开来考虑也是有意义的，因此`HandlingEvent`应该有自己的Aggregate的根
-> `HandlingEvent`需要在一个“低争用(low-contention)”的事务中创建，这也是把它作为其自己的Aggregate根的一个原因
+- `HandingEvent`就是另外一回事了，已有两种与其有关的数据库查询，一种是当不想使用集合时，用查找某个`DeliveryHistory`的`HandingEvent`作为一种可行的替代方法，这种查询是位于`Cargo` Aggregate内部的本地查询；另一种查询是查找装货和准备某次`CarrierMovement`时所进行的所有操作，即使与`Cargo`本身分开来考虑也是有意义的，因此`HandingEvent`应该有自己的Aggregate的根
+> `HandingEvent`需要在一个“低争用(low-contention)”的事务中创建，这也是把它作为其自己的Aggregate根的一个原因
 
 ## 选择Repository
-在我们的设计只有5个Entity（`Cargo`,`Customer`,`Location`,`CarrierMovemnet`,`HandlingEvent`）是Aggregate的根，因此在选择存储库时只需考虑这5个实体，其它对象都不能有Repository
+在我们的设计只有5个Entity（`Cargo`,`Customer`,`Location`,`CarrierMovemnet`,`HandingEvent`）是Aggregate的根，因此在选择存储库时只需考虑这5个实体，其它对象都不能有Repository
 
 
 为了确定这5个实体中哪些确实需要Repository，必须回头看一下应用的要求：
 
 - 要想通过Booking Application进行预订，用户需要选择一些承担不同角色（托运人、收货人等）的`Customer`，需要一个它的Repository。在指定货物的目的地时还需要一个`Location`，因此也要创建一个Repository
 - 用户需要通过Activity Logging Application来查找装货的`CarrierMovement`，也需要一个Repository。用户还必须告诉系统哪个`Cargo`已经完成了装货，因此还需要一个它的Repository
-- 我们没有创建`HandlingEvent`的Repository，因为决定在第一次迭代中将它与`DeliveryHistory`的关联实现为一个集合，而且应用不需要查找在一次`CarrierMovement`中都装载了什么货物。
+- 我们没有创建`HandingEvent`的Repository，因为决定在第一次迭代中将它与`DeliveryHistory`的关联实现为一个集合，而且应用不需要查找在一次`CarrierMovement`中都装载了什么货物。
 > 这两个原因都有可能会发生变化，如果确实改变了，可以增加一个Repository
 
 ![ddd_04](../../imgs/ddd_04.png)
@@ -426,53 +470,53 @@ public Cargo copyPrototype();
 public static Cargo newCargo(Cargo prototype);
 ```
 
-### 添加一个HandlingEvent
-货物在真实世界中每次处理，都会有人使用Incident Logging Application输入一条`HandlingEvent`记录。(过程数据)
+### 添加一个HandingEvent
+货物在真实世界中每次处理，都会有人使用Incident Logging Application输入一条`HandingEvent`记录。(过程数据)
 
-由于它是Entity，所以必须把定义了其标识的所有属性传递给构造函数，它通过cargo_id、完成时间和事件类型的组合来唯一标识的，唯一剩下就是与`CarrierMovement`的关联，而有些类型的`HandlingEvent`甚至没有这个属性
+由于它是Entity，所以必须把定义了其标识的所有属性传递给构造函数，它通过cargo_id、完成时间和事件类型的组合来唯一标识的，唯一剩下就是与`CarrierMovement`的关联，而有些类型的`HandingEvent`甚至没有这个属性
 
 ```java
-public HandlingEvent(Cargo c, String eventType, Date timeStamp){
+public HandingEvent(Cargo c, String eventType, Date timeStamp){
     cargo = c;
     type = eventType;
     completeTime = timeStamp;
 }
 ```
 
-在Entity中，那些 __不起标识的属性通常可以过后再添加__，本例中，所有属性都是在初始事务中设置的，而且过会不再改变（纠正数据录入错误除外），因此为每个事件类型的`HandlingEvent`添加一个简单的Factory Method是很方便的做法，还使得客户代码具有更强的表达能力，如loading event确实涉及一个`CarrierMovement`
+在Entity中，那些 __不起标识的属性通常可以过后再添加__，本例中，所有属性都是在初始事务中设置的，而且过会不再改变（纠正数据录入错误除外），因此为每个事件类型的`HandingEvent`添加一个简单的Factory Method是很方便的做法，还使得客户代码具有更强的表达能力，如loading event确实涉及一个`CarrierMovement`
 
 ```java
-public static HandlingEvent newLoading(
+public static HandingEvent newLoading(
   Cargo c, CarrierMovement loadOnto, Date timeStamp){
-    HandlingEvent result = new HandlingEvent(c, LOADING_EVENT, timeStamp);
+    HandingEvent result = new HandingEvent(c, LOADING_EVENT, timeStamp);
     result.setCarrierMovement(loadOnto);
     return result;
 }
 ```
 
-模型中`HandlingEvent`是一个抽象，它把各种专用的`HandlingEvent`类封装起来，包括装货、缺货、密封、存放以及其它与Carrier无关的活动，它们可以被 __实现为多个子类__，或者通过复杂的初始化过程来实现，也可以将这两种方法结合起来使用。通过在基类中为每个类型添加Factory Method，将实例创建的工作抽象起来。
+模型中`HandingEvent`是一个抽象，它把各种专用的`HandingEvent`类封装起来，包括装货、缺货、密封、存放以及其它与Carrier无关的活动，它们可以被 __实现为多个子类__，或者通过复杂的初始化过程来实现，也可以将这两种方法结合起来使用。通过在基类中为每个类型添加Factory Method，将实例创建的工作抽象起来。
 
 遗憾的是，事情并不是这么简单，`Cargo`->`DeliveryHistory`->`HistoryEvent`->`Cargo`这个引用循环使实例创建变得很复杂，`DeliveryHistory`保存了与其`Cargo`有关的`HistoryEvent`集合，而且新对象必须作为事务的一部分被添加到这个集合中。如果没有创建这个反向指针，那么对象间将发生不一致。
 
 ## 重构:Cargo Aggregate另一设计
 建模和设计是一个不断向前的过程，需要经常重构，以便利用新的知识来改进模型和设计。在设计之初看上去不太重要的问题渐渐变得棘手，让我们借助事后的认识来解决其中的问题，以便为以后的设计做好铺垫。
 
-由于在添加`HandlingEvent`时需要更新`DeliveryHistory`，因此在这个事务中将会涉及Cargo Aggregate，如果同一期间其他用户正在修改`Cargo`，那么`HandlingEvent`事务将会失败或被延迟。输入`HandlingEvent`是一项需要迅速完成的简单操作活动，因此能够在 __不发生争用的情况下__ 输入是一项重要的应用需求，这促使我们考虑另一种不同的设计。
+由于在添加`HandingEvent`时需要更新`DeliveryHistory`，因此在这个事务中将会涉及Cargo Aggregate，如果同一期间其他用户正在修改`Cargo`，那么`HandingEvent`事务将会失败或被延迟。输入`HandingEvent`是一项需要迅速完成的简单操作活动，因此能够在 __不发生争用的情况下__ 输入是一项重要的应用需求，这促使我们考虑另一种不同的设计。
 
-我们在`DeliveryHistory`中可以不使用`HandlingEvent`的集合，而是 __用一个查询来代替它__，这样在添加`HandlingEvent`时就不会在其自己的Aggregate之外引起任何完整性问题，这样修改之后这些事务就不再受到干扰。实际上如果使用关系型数据库，可以在下层使用一个查询来模拟集合。
+我们在`DeliveryHistory`中可以不使用`HandingEvent`的集合，而是 __用一个查询来代替它__，这样在添加`HandingEvent`时就不会在其自己的Aggregate之外引起任何完整性问题，这样修改之后这些事务就不再受到干扰。实际上如果使用关系型数据库，可以在下层使用一个查询来模拟集合。
 
-为了使用查询，为`HandlingEvent`增加一个Repository，它为查询与特定`Cargo`有关的Event提供支持，此外，它还可以提供优化的查询
+为了使用查询，为`HandingEvent`增加一个Repository，它为查询与特定`Cargo`有关的Event提供支持，此外，它还可以提供优化的查询
 
 这样一来，`DeliveryHistory`就不再有持久状态了，因此实际上也无需再保留它，需要时可以直接查询出来。
 
 循环引用的创建和维护也简单了，`CargoFactory`将被简化，不再需要为新的`Cargo`实例创建一个空的`DeliveryHistory`
 
-通过对Value、Entity、Aggregate进行建模，已大大减小了这些设计修改的影响，示例中，所有修改都封装在`Cargo`的Aggregate边界内。还需要增加一个`HandlingEventRepository`，但并不需要重新设计`HandlingEvent`本身。现在`HandlingEvent`的创建不会修改`Cargo`边界中任何东西。
+通过对Value、Entity、Aggregate进行建模，已大大减小了这些设计修改的影响，示例中，所有修改都封装在`Cargo`的Aggregate边界内。还需要增加一个`HandingEventRepository`，但并不需要重新设计`HandingEvent`本身。现在`HandingEvent`的创建不会修改`Cargo`边界中任何东西。
 
 ![ddd_05](../../imgs/ddd_05.png)
 
 ```ruby
-class HandlingEventRepository
+class HandingEventRepository
   def find_by_cargo_id_time_type(id,time,type); end
   def find_by_cargo_tracking_id(id); end
   def find_by_schedule_id(id); end
@@ -501,19 +545,37 @@ Sales Management System并不是根据这里所使用的模型编写的，如果
 
 我们将创建另一个类，让它充当我们的模型与Sales Management System的语言之间的翻译，根据领域模型重新对这些特性进行抽象，这个类将作为一个Anticorruption Layer。
 
-这是连接Sales Management System的一个接口，首先会想叫它Sales Management Interface，但这样就失去用更有用语言来重新描述问题的机会，用名为`AllocationChecker`的类来实现这些Service，反映了它系统中的职责。
-
-### 进一步完善模型:划分业务
-《分析模式》中Enterprise Segment（企业部门单元），是一组维度，它们定义了一种业务划分的方式，这些维度可能包括我们在运输业务中已经提到的所有划分，也包括时候维度。
+这是连接Sales Management System的一个接口，首先会想叫它Sales Management Interface，但这样就失去用更有用语言来重新描述问题的机会，用名为`AllocationChecker`的类来实现这些Service，__反映了它系统中的职责__（依据使用方来定义，而非实现方来定义）。
 
 ![ddd_09](../../imgs/ddd_09.png)
 
+### 进一步完善模型:划分业务
+《分析模式》中Enterprise Segment（企业部门单元），是一组维度，它们定义了一种业务划分的方式，这些维度可能包括我们在运输业务中已经提到的所有划分，也包括时候维度。在我们的配额模型中使用这个概念，可以增强模型的表达力，并简化接口。模型中增加一个名为`EnterpriseSegment`类，它是一个Value Object，每个`Cargo`都必须获得一个`EnterpriseSegment`类
 
+`AllocationChecker`将充当`EnterpriseSegment`与外部系统的类别名称之间的翻译，`CargoRepository`还必须提供一种基于`EnterpriseSegment`的查询（结果只是数字，而不用是实例的集合），但这种设计存在几个问题：
 
+1. 给Booking Application分配民一个不该由它来执行的工作，“如果`EnterpriseSegment`的配额大于已预订的数据与新`Cargo`数量的和，则接受该`Cargo`”，这条业务规则 __应属于领域层的职责__，而不应该在应用层中执行。
+2. 没有清楚的表明Booking Application是如何得出`EnterpriseSegment`的
 
+这两个职责看起来都属于`AllocationChecker`
 
+![ddd_10](../../imgs/ddd_10.png)
+
+### 性能优化
+货物的`EnterpriseSegment`，类似基于数据和行为与配额决策本身相比是静态的，可以缓存在服务器上，但需要考虑数据保持最新
+
+## 小结
+在使用了一个Anticorruption Layer、Service、EnterpriseSegment后，把Sales Management System的功能集成到我们的预订系统中了。
+
+为什么不把获取`EnterpriseSegment`的职责分配给`Cargo`呢，在于根据业务策略的维度划分，我们可以任意定义`EnterpriseSegment`，出于不同的目的，可能需要对Entity进行不同的划分，如出于预订配额的目的，需要根据特定的`Cargo`进行划分，但出于税务目的时，可能会采取完全不同的`EnterpriseSegment`划分方式，甚至当新的销售策略而对Sales Management System进行重新配置时，配额的`EnterpriseSegment`划分也可能会发生变化。因此`Cargo`必须知道`AllocationChecker`，而这完全不在其概念范围之内。
+
+正确的做法是让那些知道划分规则的对象来承担获取这个值的职责，而不把这个职责施加给包含具体数据（那些规则就作用于这些数据上）的对象（贫血模型？？）。这些规则可以被分离到一个独立的Strategy对象中，然后将这个对象传递给`Cargo`，以便它能够得出一个`EnterpriseSegment`。
 
 <!--
+
+
+
+
 > DDD vs 四色建模
 http://www.jdon.com/36343
 http://www.jdon.com/tags/427
