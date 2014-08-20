@@ -1110,6 +1110,14 @@ char *str = "abc"; /* 存在只读区域中 */
 str[0] = 'd'; 　　 /* ERROR! */
 ```
 
+可通过`strdup()` 动态分配 __堆__ 的内存，并将地址返回给指针，该内存是需要手工`free()`的
+
+```c
+char *str = strdup("abc"); /* 存在堆中 */
+str[0] = 'd'; 　　 /* 可写 */
+free(str);
+```
+
 ### 指向函数的指针引起的混乱
 基于C语言的声明规则：
 
@@ -1261,20 +1269,159 @@ char color_name[][6] = {
     │r│e│d│\0│\0│\0│g│r│e│e│n│\0│b│l│u│e│\0│\0│
     └─┴─┴─┴──┴──┴──┴─┴─┴─┴─┴─┴──┴─┴─┴─┴─┴──┴──┘
 
-以上两种情况都可以用`color_name[i][j]`的方式对数组进行访问，但 __内存中的数据布局完全不同__ 的，第一种情况，由于指针所指向的字符串常量存在于 __只读__ 内存区域，是不能改写的，而后者的char数组一般存在 __栈__ 中，是可以被改写的。
+以上两种情况都可以用`color_name[i][j]`的方式对数组进行访问，但 __内存中的数据布局完全不同__ 的：
+
+- 第一种情况，由于指针所指向的字符串常量存在于 __只读__ 内存区域，是不能改写的，而后者的char数组一般存在 __栈__ 中，是可以被改写的。
+- 第一种情况的`sizeof()`将得到3个指针的长度，而后者得到18
 
 数组和指针的常用方法
 ===================
 
 ## 基本的使用方法
-### 函数返值之外的方式来返回值
+### 函数返值之外方式来返回值
+C语言可通过函数返回值，但函数只能返回一个值，如果需要通过函数返回值以外的方式返回值，将 "指向T的指针" 作为参数传递给函数（out参数）
+
+### 将数组作为函数的参数传递
+C中数组不能作为参数进行传递，但可通过传递指向数组初始元素的指针，使得在函数内部操作数组成为可能
+
+但调用方需要将数组长度作为参数传递给被调用方，否则在被调用方中`sizeof`得到的只是指针的大小，而非数组的大小
+> 字符串(char数组)则可以通过末尾的`\0`判断字符个数
+
+### 可变长数组
+即使用`malloc()`在运行时再为数组申请必要的内存区域（准确的说，得到的并不是数组，而是指针），程序员必须自己来管理数组的元素个数。
+
+## 组合使用
+### 可变长数组的数组
+```c
+char *slogan[7];
+```
+
+声明 一周标语 所需要可变长数组(`char*`)的数组，如果从配置文件中读取一周的标语，程序可能像下面
+
+<!-- language: !c -->
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <malloc.h>
+    #include <string.h>
+    #include <assert.h>
+
+    void read_slogan(FILE *fp, char **slogan){
+        char buf[1024];
+        int i;
+        for (i = 0; i < 7; i++){
+            fgets(buf, sizeof(buf), fp);
+            buf[strlen(buf)-1] = '\0'; /* remove '\n' */
+            slogan[i] = malloc(sizeof(char) * (strlen(buf) + 1));
+            assert(slogan[i] != NULL);
+            strcpy(slogan[i], buf);
+        }
+    }
+
+    int main(int argc, const char *argv[]){
+        char *slogan[7];
+        int i;
+
+        read_slogan(stdin, slogan);
+
+        for (i = 0; i < 7; i++){
+            printf("%s\n", slogan[i]);
+        }
+        return 0;
+    }
+
+上面程序对标语的长度作了1024的限制，这让人感到不便，可使用下面程序来动态分配临时缓冲区
+
+<!-- language: !c -->
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <malloc.h>
+    #include <string.h>
+    #include <assert.h>
+
+    #define ALLOC_SIZE (256)
+
+    typedef struct{
+        char *buffer;
+        int logic_size;
+        int used_size;
+        int alloc_size;
+    } LineStatus;
+
+    static void new_line_status(LineStatus *line_status){
+        line_status->buffer = NULL;
+        line_status->logic_size = 0;
+        line_status->used_size = 0;
+        line_status->alloc_size = ALLOC_SIZE; 
+    }
+
+    static void add_character(LineStatus *line_status, int ch){
+        assert(line_status->logic_size >= line_status->used_size);
+
+        if(line_status->logic_size == line_status->used_size){
+            line_status->buffer = realloc(line_status->buffer, 
+                line_status->logic_size + line_status->alloc_size * sizeof(char));
+            assert(line_status->buffer != NULL);
+            line_status->logic_size += line_status->alloc_size;
+            line_status->alloc_size *= 2;
+        }
+
+        line_status->buffer[line_status->used_size] = ch;
+        line_status->used_size++;
+    }
+
+    static void free_line_status(LineStatus *line_status){
+        free(line_status->buffer);
+    }
 
 
+    void read_line(FILE *fp, char **ret_line){
+        int ch;
+        LineStatus line_status;
+        new_line_status(&line_status);
+
+        while((ch = getc(fp)) != EOF){
+            if(ch == '\n'){
+                add_character(&line_status, '\0');
+                break;
+            }
+            add_character(&line_status, ch);
+        }
+        if(ch == EOF){
+            if(line_status.used_size > 0){
+                add_character(&line_status, '\0');
+            }else{
+                *ret_line = NULL;
+                return;
+            }
+        }
+        *ret_line = malloc(sizeof(char) * line_status.used_size);
+        strcpy(*ret_line, line_status.buffer);
+        free_line_status(&line_status);
+    }
+
+    int main(int argc, const char *argv[]){
+        char *line;
+        read_line(stdin, &line);
+        printf("%s %d\n", line, strlen(line));
+        free(line);
+        return 0;
+    }
 
 
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',6);
+})();
+
+</script>
 
 
-<!--        ┌───────┐
+<!--
+       ┌───────┐
        │       │
 baz  ->├───────┤
        │       │  bar
