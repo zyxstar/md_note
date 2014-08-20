@@ -232,11 +232,25 @@ C的形参可以和事先被设定的值的局部变量同样使用，对值进�
 在迫不得已的情形下，执意要将数组的副本作为参数进行传递，可以使用替代方法，将数组的所有元素整理成结构体的成员
 
 ### 声明函数形参的方法
-针对上例，有人会将`get_word()`声明成如下`int get_word(char buf[], int buf_size, FILE *fp)`
+针对上例，有人会将`get_word()`声明成如下
+
+```c
+int get_word(char buf[], int buf_size, FILE *fp);
+```
 
 __只有声明函数形参时，数组的声明才可以被解读成指针__
 
-即使像`int func(int a[10])`这样定义了元素的个数，编译器也是无视的，还是解读成`int func(int *a)`
+即使像
+
+```c
+int func(int a[10]);
+```
+
+这样定义了元素的个数，编译器也是 __无视__ 的，还是解读成
+
+```c
+int func(int *a);
+```
 
 C是怎么使用内存的
 =================
@@ -299,7 +313,11 @@ C语言的变量具有区间性的作用域，用语句包围的是作用域，`
 将指向函数的指针保存在变量中的技术经常被运用在如下场合：
 
 - GUI中的按钮控件记忆“当自身被按下的时候需要调用的函数”
-- 根据“指向函数的指针的数组”（如`int (*func_table[])(double)`）对处理进行 __分配__
+- 根据“指向函数的指针的数组”（如下面的声明）对处理进行 __分配__
+
+```c
+int (*func_table[])(double);
+```
 
 ## 静态变量
 静态变量总是在虚拟地址空间上占用固定的区域。
@@ -373,7 +391,7 @@ C语言中，在现有被分配的内存区域之上以“堆积”的方式（�
 #### 破坏自动变量的内存区域
 如果没有做数组长度检查，将数据写入了超过数组内存区域的地方，可能会破坏相邻的自动变量的内容。如果一直破坏下去，有可能将存储函数的 __返回信息给破坏掉__，导致函数不能返回。
 
-示例可参考[为什么程序会崩溃](/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC13.3)
+示例可参考[为什么程序会崩溃](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC13.3)
 
 ### 可变长参数
 C语言的参数是 __从后往前__ 被堆积在栈中的，应该由 __调用方__ 将参数从栈中除去
@@ -606,16 +624,23 @@ int (*func_p)(double);
     2. 用于表示 __数组的`[]`__ ，用于表示 __函数的`()`__
     3. 用于表示 __指针的`*`__
 - 解释完派生类型，使用"of, to, returning"将它们 __连接__ 起来
-- 最后，追加 __数据类型修饰符__（在左边，int,double等）
+- 最后，追加 __数据类型修饰符__（在左边，int,double等，如果函数，即为返回类型）
 - 英语不好的，可以倒序用中文解释
 
-比如`int (*func_p)(double);`：
+```c
+int (*func_p)(double);
+```
 
-1. 首先着眼于 __标识符__： `func_p is`
-2. 因为 __存在括号__，所以 __着眼于`*`__：`func_p is pointer to`
-3. 解释用于 __函数的`()`__，参数是double：`func_p is pointer to function(double) returning`
-4. 最后 __解释数据修饰符int__：`func_p is pointer to function(double) returning int`
-5. 翻译成中文（__倒序__）：`func_p是指向返回int的函数(参数是double)指针`
+1. 首先着眼于 __*标识符*__
+> __*func_p*__ is
+2. 因为 __*存在括号*__，所以 __*着眼于`*`*__
+> func_p is __*pointer to*__
+3. 解释用于 __*函数的`()`*__，参数是double
+> func_p is pointer to __*function(double) returning*__
+4. 最后 __*解释数据修饰符int*__
+> func_p is pointer to function(double) returning __*int*__
+5. 翻译成中文（__*倒序*__）
+> func_p是指向返回int的函数(参数是double)指针
 
 ```table
 C语言          |英语表达                                     |中文表达
@@ -646,7 +671,11 @@ void (*func)() |func是指向返回void函数的指针  |void (*)()   |指向返
 
 ## C的数据类型的模型
 ### 基本类型和派生类型
-`int (*func_table[10])(int a)`解释成：func_table is array(num 10) of pointer to function(int) returning int，指向返回int的函数(参数为int)的指针的数组(元素为10)
+```c
+int (*func_table[10])(int a);
+```
+
+解释成：func_table is array(num 10) of pointer to function(int) returning int，指向返回int的函数(参数为int)的指针的数组(元素为10)
 
 <!--language: plain-->
 
@@ -657,7 +686,7 @@ void (*func)() |func是指向返回void函数的指针  |void (*)()   |指向返
                           └───────┘                                 └───────┘
 
 
-这种表示称为"类型链的表示"，先忽略结构体、共用体、typedef等类型，链的最后元素是基本类型，这里可能是int,double等。
+这种表示称为"类型链的表示"，先忽略结构体、共用体、typedef等类型，链的最后元素是基本类型，这里可能是`int`,`double`等。
 
 从基本类型开始，第二个元素以后都是 __派生类型__（即从某些类型派生出来的），除了结构体、共用体，还有以下三种派生类型：
 
@@ -711,10 +740,24 @@ C中不存在真正的多维数组，只存在数组的数组。
 `int hoge[3][2]`可以通过`hoge[i][j]`的方式去访问，`hoge[i]`指“int的数组(元素2)的数组(元素3)”中的第i个元素，其 __类型为`int[2]`__
 
 #### 参数传递
-试图将数组的数组进行参数传递时，考虑“将int的数组作为参数传递时”，对应函数原型为`void func(int *hoge)`
+试图将数组的数组进行参数传递时，考虑“将int的数组作为参数传递时”，对应函数原型为
 
-在“int的数组(元素2)的数组(元素3)”的情况下，将后面的数组解释成指针时，表达为“指向int数组(元素2)的指针”，原型则为`void func(int (*hoge)[2])`
-> 另写成`void func(int hoge[3][2])`,`void func(int hoge[][2])`也都被解释一样
+```c
+void func(int *hoge);
+```
+
+在“int的数组(元素2)的数组(元素3)”的情况下，将后面的数组解释成指针时，表达为“指向int数组(元素2)的指针”，原型则为
+
+```c
+void func(int (*hoge)[2]);
+```
+
+> 另写成下面的方式，也都被解释成上面的
+
+```c
+void func(int hoge[3][2]);
+void func(int hoge[][2]);
+```
 
 ### 函数类型派生
 函数类型也是一种派生类型，参数(类型)是它的属性
@@ -798,7 +841,7 @@ struct Woman_tag{
        │       │<----│       │<----│       │<----│       │<---------│pointer│
        └───────┘     └───────┘     └───────┘     └───────┘          └───────┘
 
-当数组被解读成指针时，该指针不能作为左值（即不能再被赋值）
+当数组被解读成指针时，该指针不能作为左值（即不能再被赋值）[参考](#TOC3.7.2)
 
 ### 数组和指针的相关运算符
 #### 解引用
@@ -901,25 +944,25 @@ char *my_strcpy(char *dest, char * const src){
 > 尽管函数接受了作为参数的指针，但是指针指向的对象不会被修改，函数虽然接受了指针，但并不意味着要向调用方返回值。
 
 #### 解读const声明
-- 从标识符开始，使用英语由内向外顺序的解释下去
-- 一旦解释完毕的部分的左侧出现了`const`，就在当前位置追加read-only
-- 如果解释完毕的部分的左侧出现了数据类型修饰符，并且其左侧存在`const`，姑且先去掉数据类型修饰符，追加read-only
+- 从 __标识符__ 开始，使用英语由内向外顺序的解释下去
+- 一旦解释完毕的部分的 __左侧出现了`const`__，就在当前位置追加read-only
+- 如果解释完毕的部分的 __左侧出现了数据类型修饰符__，并且其左侧存在`const`，姑且先去掉数据类型修饰符，追加read-only
 - 在翻译成中文时，`const`修饰是紧跟在它后面的单词
 
 ```c
 char * const src
 ```
-> 解释成`src is read-only pointer to char`
+> 解释成 src is __read-only__ pointer to char
 
 ```c
 char const *src
 ```
-> 解释成`src is pointer to read-only char`
+> 解释成 src is __pointer__ to read-only char
 
 ```c
 const char *src
 ```
-> 解释成`src is pointer to read-only char`
+> 解释成 src is __pointer__ to read-only char
 
 ### 如何使用const
 ```c
@@ -932,14 +975,19 @@ void search_point(char const *name, double *x, double *y);
 - 一旦给指针类型的参数设定了`const`，当前层次以下的函数必须全部使用`const`，在一些通用函数中，如果本应是`const`的参数却没有加上`const`，会经常导致调用方无法使用`const`
 
 ### const能否代替`#define`
-不行，`const int HOGE_SIZE = 100; int hoge[HOGE_SIZE];`是不行的，C中数组的元素必须为常量，`const`修饰的标识符不是常量，只是只读而已（C++另当别论）
+```c
+const int HOGE_SIZE = 100;
+int hoge[HOGE_SIZE];
+```
+
+是不行的，C中数组的元素必须为常量，`const`修饰的标识符不是常量，只是只读而已（C++另当别论）
 
 ### typedef
 ```c
 typedef char *String;
 ```
 - 用于给某类型定义别名，通过该声明，以后对于"指向char的指针"，可以使用"String"这个别名
-- 可以按照普通的变量声明的顺序来解释`typedef`，上面声明解读为`String is pointer to char`
+- 可以 __按照普通的变量声明的顺序__ 来解释`typedef`，上面声明解读为`String is pointer to char`
 - 之后在使用`String`时，可以写成这样`String hoge[10];`，解读为`hoge is array(num 10) of String`=>`hoge is array(num 10) of pointer to char`（指向`char`指针的数组）
 
 ```c
@@ -1021,6 +1069,208 @@ char str[][5] = {
 > 但是不能将数组和指针混在一起，如file_1.c中定义了`int a[100];`，file_2.c中声明`extern int *a;`则是错误的
 
 ### 字符串常量
+字符串常量类型是"char的数组"，因此在表达式中，可以解读为指针
+
+```c
+char *str;
+str = "abc";
+```
+
+`char`数组的初始化是个例外，此时的字符串常量，作为花括号中分开书写的初始化表达式的省略形式，编译器会进行特殊处理，下面两句具有相同含义：
+
+```c
+char str[] = "abc";
+char str[] = {'a', 'b', 'c', '\0'};
+```
+
+但下面的写法是 __非法__ 的，因为`str`并 __非标量__，虽然可以初始化，但不能直接赋值：
+
+```c
+char str[4];
+str = "abc";
+```
+
+下面的例子不是初始化`char`的数组，而是初始化指针，也是合法的，此时"abc"就是普通的`char`数组，然后被赋值给`str`：
+
+```c
+char *str = "abc";
+```
+
+通常，字符串常量保存在 __只读的__ 内存区域（依赖具体环境），但如果在初始化`char`的数组，并不加`const`时，常量是可写的：
+
+```c
+char str[] = "abc"; /* 存在栈中 */
+str[0] = 'd'; 　　　/* 可写 */
+```
+
+但下面的，就会报错
+
+```c
+char *str = "abc"; /* 存在只读区域中 */
+str[0] = 'd'; 　　 /* ERROR! */
+```
+
+### 指向函数的指针引起的混乱
+基于C语言的声明规则：
+
+- `int func();`这样的声明，如果一定要使用指向函数的指针，必须写成`&func`，现实中只需要传递`func`；
+- 相反，像`void (*func_p)();`变量`func_p`声明为指向函数的指针，进行函数调用时，必须写成`(*func_p)();`，现实中只需要执行`func_p();`
+
+产生混乱的原因就是，表达式中的函数可以被解读成“指向函数的指针”，为了照顾到这种混乱，ANSI标准对语法做了规定：
+
+- 表达式中的函数自动转换成“指向函数的指针”，但当函数是地址运算符`&`或者`sizeof`运算符的操作数时，表达式的函数不能变换
+- 函数调用运算符`()`的操作数不是"函数"，而是“函数的指针”
+
+## 复杂的函数声明
+### 示例1
+```c
+int atexit(void (*func)(void));
+```
+
+1. 首先着眼于 __*标识符*__
+> __*atexit*__ is
+2. 解释用于 __*函数的`()`*__
+> atexit is __*function() returning*__
+3. 函数的 __*参数部分*__，同样先解释 __*标识符*__
+> atexit is function( __*func*__ is) returning
+4. 因为有括号，这里 __*解释`*`*__
+> atexit is function( func is __*pointer to*__) returning
+5. 解释用于 __*函数的`()`*__，这里参数还是比较简单，是`void`
+> atexit is function( func is pointer to __*function(void) returning*__) returning
+6. 解释 __*类型指定符`void`*__（函数返回类型），这样就结束了`atexit`的参数部分的解释
+> atexit is function( func is pointer to function(void) returning __*void*__) returning
+7. 解释 __*数据类型修饰符`int`*__（函数返回类型）
+> atexit is function( func is pointer to function(void) returning void) returning __*int*__
+8. 翻译成中文
+> atexit是返回int的函数(参数是，指向返回void没有参数的函数的指针)
+
+### 示例2
+```c
+void (*signal(int sig, void (*func)(int)))(int);
+```
+
+1. 首先着眼于 __*标识符*__
+> __*signal*__ is
+2. 相比`*`，__*`()`*__的优先级更高，所以先解释这部分
+> signal is __*function() returning*__
+3. 解释参数部分，这里有两个参数，__*第一个参数是`int sig`*__
+> signal is function(__*sig is int*__, ) returning
+4. __*着眼另一个参数*__，先解释 __*标识符`func`*__
+> signal is function(sig is int, __*func*__ is) returning
+5. 因为有括号，这里 __*解释`*`*__
+> signal is function(sig is int, func is __*pointer to*__) returning
+6. 解释用于 __*函数的`()`*__，参数为`int`
+> signal is function(sig is int, func is pointer to __*function(int) returning*__) returning
+7. 解释 __*类型指定符`void`*__（函数返回类型）
+> signal is function(sig is int, func is pointer to function(int) returning __*void*__) returning
+8. 参数部分已经解释完。接着因为 __*有括号*__，所以这里 __*解释`*`*__
+> signal is function(sig is int, func is pointer to function(int) returning void) returning __*pointer to*__
+9. 解释表示 __*函数的`()`*__，参数为`int`
+> signal is function(sig is int, func is pointer to function(int) returning void) returning pointer to __*function(int) returning*__
+10. 解释 __*类型指定符`void`*__（函数返回类型）
+> signal is function(sig is int, func is pointer to function(int) returning void) returning pointer to function(int) returning __*void*__
+11. 翻译成中文
+> signal是返回 "指向返回void参数为int的函数指针" 的函数，它有两个参数，一个是int，另一个是 "指向返回void参数为int的指针的函数的指针"
+
+### 简化声明
+此时用`typedef`可以让声明变得格外简洁：
+
+```c
+typedef void(*sig_t)(int);
+sig_t signal(int sig, sig_t func);
+```
+
+## 数组和指针是不同的事物
+数组是一些对象排列后形成的，而指针则表示指向某处，它们是完全不同的。
+
+### 经常错误的代码
+- 自动变量的指针在初期状态，值是不确定的
+
+```c
+int *p;
+p[3] = 'a'; /*使用没有指向内存区域的指针*/
+```
+
+- 数组既不是标量，也不是结构体，不能临时使用
+
+```c
+char str[10];
+str = "abc"; /*突然向数组赋值*/
+```
+
+### 表达式之中
+在表达式中，可以写成这样
+
+```c
+int *p;
+int array[10];
+p = array;
+```
+
+但是反过来则不可以的：
+
+```c
+array = p;
+```
+
+表达式中`array`可以被解读成指针，本质上其实是被解释成了`&array[0]`，此时的指针是一个 __右值__（另在标准中，数组也不是“可变更的左值”），右值没有对应的内存区域（类似`a + 1 = 10`中`a + 1`是右值，没有内存区域），不能被赋值
+
+### 指针的数组 vs 数组的数组
+指针的数组
+
+```c
+char *color_name[] = {
+    "red",
+    "green",
+    "blue"
+};
+```
+
+的内存布局如下：
+
+<!-- language: plain -->
+
+    ┌───────┬───────┬───────┐
+    │   *   │   *   │   *   │
+    └───┼───┴───┼───┴───┼───┘
+        │       │       │  ┌─┬─┬─┬──┐
+        │       │       │  │r│e│d│\0│  只读区域
+        └───────┼───────┼─>└─┴─┴─┴──┘
+                │       │  ┌─┬─┬─┬─┬─┬──┐  
+                │       │  │g│r│e│e│n│\0│
+                └───────┼─>└─┴─┴─┴─┴─┴──┘
+                        │  ┌─┬─┬─┬─┬──┐  
+                        │  │b│l│u│e│\0│
+                        └─>└─┴─┴─┴─┴──┘
+
+数组的数组
+
+```c
+char color_name[][6] = {
+    "red",
+    "green",
+    "blue"
+};
+```
+
+的内存布局如下：
+
+<!-- language: plain -->
+
+    ┌─┬─┬─┬──┬──┬──┬─┬─┬─┬─┬─┬──┬─┬─┬─┬─┬──┬──┐
+    │r│e│d│\0│\0│\0│g│r│e│e│n│\0│b│l│u│e│\0│\0│
+    └─┴─┴─┴──┴──┴──┴─┴─┴─┴─┴─┴──┴─┴─┴─┴─┴──┴──┘
+
+以上两种情况都可以用`color_name[i][j]`的方式对数组进行访问，但 __内存中的数据布局完全不同__ 的，第一种情况，由于指针所指向的字符串常量存在于 __只读__ 内存区域，是不能改写的，而后者的char数组一般存在 __栈__ 中，是可以被改写的。
+
+数组和指针的常用方法
+===================
+
+## 基本的使用方法
+### 函数返值之外的方式来返回值
+
+
+
 
 
 
@@ -1035,6 +1285,15 @@ baz  ->├───────┤
        ├─┴─┴─┴─┤
        │       │
 why  ->└───────┘
-
+        0       1       2       3
+         ┌───────┬───────┬───────┬───────┐
+numUnits │  21   │       │       │       │
+         ├─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┼─┬─┬─┬─┤
+         │ │ │a│ │5│x│x│\│ │ │ │ │ │ │ │ │
+         ├─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┼─┤
+stuid    │ │ │ │ │4│0│4│1│ │ │ │ │ │ │ │ │
+         ├─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┼─┴─┴─┴─┤
+name     │       │       │   *   │   *a  │
+         └───────┴───────┴───┼───┴───────┘
 
  -->
