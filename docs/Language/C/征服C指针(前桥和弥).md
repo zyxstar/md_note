@@ -991,7 +991,7 @@ typedef char *String;
 - 之后在使用`String`时，可以写成这样`String hoge[10];`，解读为`hoge is array(num 10) of String`=>`hoge is array(num 10) of pointer to char`（指向`char`指针的数组）
 
 ```c
-typedef struct{    
+typedef struct{
 } Hoge;  /*类型声明*/
 
 struct Hoge_tag{
@@ -1001,16 +1001,16 @@ struct Hoge_tag{
 - `typedef`也可一次性声明多个变量
 
 ```c
-typedef struct{    
-} Hoge, *HogeP; 
+typedef struct{
+} Hoge, *HogeP;
 ```
 
 等同于：
 
 ```c
-typedef struct{    
+typedef struct{
 } Hoge;
-typedef Hoge *HogeP; 
+typedef Hoge *HogeP;
 ```
 
 ## 其他语法
@@ -1065,7 +1065,7 @@ char str[][5] = {
 
 - 使用`extern`声明 __全局变量__ 的情况
 > 全局变量在多个编译单元中的某一个中定义，然后从其他代码文件中通过`extern`进行声明，在定义的时候还是需要元素个数的，但是在使用`extern`时行声明时，在连接的时候编译器可以确定实际数组大小，所以 __可以省略 *最外层* 数组的元素个数__
-> 
+>
 > 但是不能将数组和指针混在一起，如file_1.c中定义了`int a[100];`，file_2.c中声明`extern int *a;`则是错误的
 
 ### 字符串常量
@@ -1244,10 +1244,10 @@ char *color_name[] = {
         │       │       │  ┌─┬─┬─┬──┐
         │       │       │  │r│e│d│\0│  只读区域
         └───────┼───────┼─>└─┴─┴─┴──┘
-                │       │  ┌─┬─┬─┬─┬─┬──┐  
+                │       │  ┌─┬─┬─┬─┬─┬──┐
                 │       │  │g│r│e│e│n│\0│
                 └───────┼─>└─┴─┴─┴─┴─┴──┘
-                        │  ┌─┬─┬─┬─┬──┐  
+                        │  ┌─┬─┬─┬─┬──┐
                         │  │b│l│u│e│\0│
                         └─>└─┴─┴─┴─┴──┘
 
@@ -1279,7 +1279,7 @@ char color_name[][6] = {
 
 ## 基本的使用方法
 ### 函数返值之外方式来返回值
-C语言可通过函数返回值，但函数只能返回一个值，如果需要通过函数返回值以外的方式返回值，将 "指向T的指针" 作为参数传递给函数（out参数）
+C语言可通过函数返回值，但函数只能返回一个值，如果需要通过函数返回值以外的方式返回值，需要返回T时，将 "指向T的指针" 作为参数传递给函数（out参数）
 
 ### 将数组作为函数的参数传递
 C中数组不能作为参数进行传递，但可通过传递指向数组初始元素的指针，使得在函数内部操作数组成为可能
@@ -1353,14 +1353,14 @@ char *slogan[7];
         line_status->buffer = NULL;
         line_status->logic_size = 0;
         line_status->used_size = 0;
-        line_status->alloc_size = ALLOC_SIZE; 
+        line_status->alloc_size = ALLOC_SIZE;
     }
 
     static void add_character(LineStatus *line_status, int ch){
         assert(line_status->logic_size >= line_status->used_size);
 
         if(line_status->logic_size == line_status->used_size){
-            line_status->buffer = realloc(line_status->buffer, 
+            line_status->buffer = realloc(line_status->buffer,
                 line_status->logic_size + line_status->alloc_size * sizeof(char));
             assert(line_status->buffer != NULL);
             line_status->logic_size += line_status->alloc_size;
@@ -1374,7 +1374,6 @@ char *slogan[7];
     static void free_line_status(LineStatus *line_status){
         free(line_status->buffer);
     }
-
 
     void read_line(FILE *fp, char **ret_line){
         int ch;
@@ -1408,6 +1407,22 @@ char *slogan[7];
         free(line);
         return 0;
     }
+
+- 需要返回T时，将 "指向T的指针" 作为参数传递给函数，因为需要返回`char*`所以形参就为`char**`
+> 也可以选用`char*`作为返回类型
+- 调用方需要将输出的实参`line`进行`free()`
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 <script>
