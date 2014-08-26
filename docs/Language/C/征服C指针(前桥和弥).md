@@ -1413,16 +1413,290 @@ char *slogan[7];
 - 调用方需要将输出的实参`line`进行`free()`
 
 ### 可变长数组的可变长数组
+上面的标语个数固定为一周的天数（7个），如果需要在内存中加载任意行数的文本文件，可考虑使用“可变长数组的可变长数组”
+
+“类型T的可变长数组” 是通过 “指向T的指针” 来实现的（但元素的个数需要自己来管理）
+
+如果需要 “T的可变长数组的可变长数组”，可使用 “指向T的指针的指针”
+
+<!-- language: plain -->
+
+    ┌─────┐               
+    │  * ─┼──┐            
+    └─────┘  │
+             V            
+          ┌─────┐    ┌─┬─┬─┬─┬─┐ 
+          │  * ─┼───>└─┴─┴─┴─┴─┘   
+          ├─────┤    ┌─┬─┬─┬─┐   
+          │  * ─┼───>└─┴─┴─┴─┘
+          ├─────┤    ┌─┬─┬─┬─┬─┬─┐
+          │  * ─┼───>└─┴─┴─┴─┴─┴─┘
+          ├─────┤    ┌─┬─┬─┬─┬─┬─┬─┐ 
+          │  * ─┼───>└─┴─┴─┴─┴─┴─┴─┘
+          ├─────┤    ┌─┬─┬─┬─┐
+          │  * ─┼───>└─┴─┴─┴─┘
+          └─────┘
+ 
+<!-- language: !c -->
+
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <malloc.h>
+    #include <string.h>
+    #include <assert.h>
+
+    #define ALLOC_SIZE (256)
+
+    typedef struct{
+        char *buffer;
+        int logic_size;
+        int used_size;
+        int alloc_size;
+    } LineStatus;
+
+    static void new_line_status(LineStatus *line_status){
+        line_status->buffer = NULL;
+        line_status->logic_size = 0;
+        line_status->used_size = 0;
+        line_status->alloc_size = ALLOC_SIZE; 
+    }
+
+    static void add_character(LineStatus *line_status, int ch){
+        assert(line_status->logic_size >= line_status->used_size);
+
+        if(line_status->logic_size == line_status->used_size){
+            line_status->buffer = realloc(line_status->buffer, 
+                line_status->logic_size + line_status->alloc_size * sizeof(char));
+            assert(line_status->buffer != NULL);
+            line_status->logic_size += line_status->alloc_size;
+            line_status->alloc_size *= 2;
+        }
+
+        line_status->buffer[line_status->used_size] = ch;
+        line_status->used_size++;
+    }
+
+    static void free_line_status(LineStatus *line_status){
+        free(line_status->buffer);
+    }
+
+    char *read_line(FILE *fp){
+        int ch;
+        char *ret_line;
+        LineStatus line_status;
+        new_line_status(&line_status);
+
+        while((ch = getc(fp)) != EOF){
+            if(ch == '\n'){
+                add_character(&line_status, '\0');
+                break;
+            }
+            add_character(&line_status, ch);
+        }
+        if(ch == EOF){
+            if(line_status.used_size > 0){
+                add_character(&line_status, '\0');
+            }else{
+                return NULL;
+            }
+        }
+        ret_line = malloc(sizeof(char) * line_status.used_size);
+        strcpy(ret_line, line_status.buffer);
+        free_line_status(&line_status);
+        return ret_line;
+    }
+
+    char **add_line(char **text_data, char *line,
+                    int *line_alloc_num, int *line_num){
+        assert(*line_alloc_num >= *line_num);
+        if(*line_alloc_num == *line_num){
+            text_data = realloc(text_data, (*line_alloc_num + ALLOC_SIZE) * sizeof(char*));
+            *line_alloc_num += ALLOC_SIZE;
+        }
+        text_data[*line_num] = line;
+        (*line_num)++;
+        return text_data;
+    }
+
+    char **read_file(FILE *fp, int *ret_line_num_p){
+        char **text_data = NULL;
+        int line_num = 0;
+        int line_alloc_num = 0;
+        char *line;
+
+        while((line = read_line(fp)) != NULL){
+            text_data = add_line(text_data, line, &line_alloc_num, &line_num);
+        }
+        *ret_line_num_p = line_num;
+        return text_data;
+    }
+
+    int main(int argc, const char *argv[]){
+        char **text_data;
+        int line_num;
+        int i = 0;
+        FILE *fp = fopen("input.txt", "r");
+
+        text_data = read_file(fp, &line_num);
+
+        for(; i < line_num; i++){
+            printf("%s\n", text_data[i]);
+            free(text_data[i]);
+        }
+        free(text_data);
+        return 0;
+    }
+
+`add_line()`及`read_file()`中通过参数指针的方式，达到共享一些变量。
+
+上面的代码中，`add_line()`与`add_character()`的逻辑结构十分相似，只是数据类型有所不同，可运用泛型思维，重构代码如下：
 
 
 
 
 
+如果再进行演化，会发现，该泛型的逻辑十分像 __栈__ 的结构，可以使用一些第三方开源的 泛型栈 来进行编码
 
 
 
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <string.h>
+#include <assert.h>
+
+#define ALLOC_SIZE (256)
+
+typedef struct{
+    void *buffer;
+    int logic_size;
+    int used_size;
+    int alloc_size;
+    int elem_size;
+    void(*free_fn)(void*);
+} Cache;
+
+static void new_cache(Cache *cache, int elem_size, void(*free_fn)(void*)) {
+    cache->buffer = NULL;
+    cache->logic_size = 0;
+    cache->used_size = 0;
+    cache->alloc_size = ALLOC_SIZE; 
+    cache->elem_size = elem_size;
+    cache->free_fn = free_fn;
+}
+
+static void add_data(Cache *cache, void *data_addr){
+    assert(cache->logic_size >= cache->used_size);
+
+    if(cache->logic_size == cache->used_size){
+        cache->buffer = realloc(cache->buffer, 
+            cache->logic_size + cache->alloc_size * sizeof(cache->elem_size));
+        assert(cache->buffer != NULL);
+        cache->logic_size += cache->alloc_size;
+        cache->alloc_size *= 2;
+    }
+
+    memcpy((char*)cache->buffer + cache->elem_size * cache->used_size, data_addr, cache->elem_size);
+    cache->used_size++;
+    printf("%d\n", cache->used_size);
+    printf("%s\n", (char*)cache->buffer);
+}
+
+static void free_cache(Cache *cache){
+    int i;
+    if(cache->free_fn != NULL)
+        for(i = 0; i < cache->used_size; i++){
+            cache->free_fn(cache->buffer + cache->elem_size * i);
+        }
+    free(cache->buffer);
+}
 
 
+/* */
+
+char *read_line(FILE *fp){
+    int ch;
+    char *ret_line;
+    Cache cache;
+    char *data_addr;
+    new_cache(&cache, sizeof(char));
+
+    while((ch = getc(fp)) != EOF){
+        if(ch == '\n'){
+            *data_addr = '\0';
+            add_data(&cache, data_addr);
+            break;
+        }
+        *data_addr = ch;
+        add_data(&cache, data_addr);
+    }
+    if(ch == EOF){
+        if(cache.used_size > 0){
+            *data_addr = '\0';
+            add_data(&cache, data_addr);
+        }else{
+            return NULL;
+        }
+    }
+    ret_line = malloc(sizeof(char) * cache.used_size);
+    printf("%s\n", "aa");
+    strcpy(ret_line, (char*)cache.buffer);
+    printf("%s %d\n", ret_line, strlen(ret_line));
+    printf("%s\n", "bb");
+    free_cache(&cache, NULL);
+    printf("%s\n", "cc");
+    return ret_line;
+}
+
+// char **add_line(char **text_data, char *line,
+//                 int *line_alloc_num, int *line_num){
+//     assert(*line_alloc_num >= *line_num);
+//     if(*line_alloc_num == *line_num){
+//         text_data = realloc(text_data, (*line_alloc_num + ALLOC_SIZE) * sizeof(char*));
+//         *line_alloc_num += ALLOC_SIZE;
+//     }
+//     text_data[*line_num] = line;
+//     (*line_num)++;
+//     return text_data;
+// }
+
+// char **read_file(FILE *fp, int *ret_line_num_p){
+//     char **text_data = NULL;
+//     int line_num = 0;
+//     int line_alloc_num = 0;
+//     char *line;
+
+//     while((line = read_line(fp)) != NULL){
+//         text_data = add_line(text_data, line, &line_alloc_num, &line_num);
+//     }
+//     *ret_line_num_p = line_num;
+//     return text_data;
+// }
+
+
+// int main(int argc, const char *argv[]){
+//     char **text_data;
+//     int line_num;
+//     int i = 0;
+//     FILE *fp = fopen("input.txt", "r");
+
+//     text_data = read_file(fp, &line_num);
+
+//     for(; i < line_num; i++){
+//         printf("%s\n", text_data[i]);
+//         free(text_data[i]);
+//     }
+//     free(text_data);
+//     return 0;
+// }
+
+
+int main(int argc, const char *argv[]){
+    char *line = read_line(stdin);
+    printf("%s %d\n", line, strlen(line));
+    // free(line);
+    return 0;
+}
 
 
 
