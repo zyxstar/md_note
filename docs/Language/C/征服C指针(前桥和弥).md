@@ -1842,7 +1842,7 @@ double x = polyline[i][0],
 double (*polyline[5])[2]; // polyline is array(num5) of pointer to array(num 2) of double
 ```
 
-如果不是5根，而是任意数量的折线作为参数`int *npints`来接收的函数原型：
+如果不是5根，而是任意数量的折线 作为参数`int polyline_num, int *npints`来接收的 函数原型：
 
 ```c
 func(int polyline_num, double(**polylines)[2], int *npoints);
