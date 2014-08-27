@@ -1390,6 +1390,7 @@ char *slogan[7];
             }
         }
         ret_line = malloc(line_status.used_len * sizeof(char));
+        assert(ret_line != NULL);
         strcpy(ret_line, line_status.buffer);
         line_status_free(&line_status);
         return ret_line;
@@ -1489,6 +1490,7 @@ char *slogan[7];
             }
         }
         ret_line = malloc(line_status.used_len * sizeof(char));
+        assert(ret_line != NULL);        
         strcpy(ret_line, line_status.buffer);
         line_status_free(&line_status);
         return ret_line;
@@ -1532,6 +1534,7 @@ char *slogan[7];
             free(text_data[i]);
         }
         free(text_data);
+        fclose(fp);
         return 0;
     }
 
@@ -1652,6 +1655,7 @@ char *slogan[7];
             }
         }
         ret_line = malloc(cache.used_len * sizeof(char));
+        assert(ret_line != NULL);        
         strcpy(ret_line, (char*)cache.buffer);
         cache_free(&cache);
         return ret_line;
@@ -1675,6 +1679,7 @@ char *slogan[7];
         }
         // not *ret_file_data = ...
         ret_file_data = malloc(cache.used_len * sizeof(char*));
+        assert(ret_file_data != NULL);
 
         memcpy(ret_file_data, cache.buffer, cache.used_len * sizeof(char*));
         *ret_line_num = cache.used_len;
@@ -1695,19 +1700,183 @@ char *slogan[7];
             free(file_data[i]);
         }
         free(file_data);
+        fclose(fp);        
         return 0;
     }
 
 > 也可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
 
+### 命令行参数
+实现`cat`命令
 
+<!-- language: !c -->
 
+    #include <stdio.h>
+    #include <stdlib.h>
 
+    void type_one_file(FILE *fp){
+        int ch;
+        while((ch = getc(fp)) != EOF){
+            putchar(ch);
+        }
+    }
 
+    int main(int argc, const char *argv[]){
+        if(argc == 1){
+            type_one_file(stdin);
+        }
+        else{
+            int i;
+            FILE *fp;
+            for(i = 1; i < argc; i++){
+                fp = fopen(argv[i], "rb");
+                if(fp == NULL){
+                    fprintf(stderr, "%s:%s can not open\n", argv[0], argv[i]);
+                    exit(1);
+                }
+                type_one_file(fp);
+                fclose(fp);
+            }
+        }
 
+        return 0;
+    }
 
+### 通过参数返回指针
+前两节中`read_line()`，将读取的行作为返回值，如果到达文件的终点则返回`NULL`，可是，作为返回值的形式，`read_line()`返回的是通过`malloc()`分配的内存区域，前代码中并没有对返回值做检查。
 
+如果想让其做为通用函数，必须好好的对返回值做检查，并能向调用方返回函数的处理状态
 
+```c
+typedef enum{
+    READ_LINE_SUCCESS,
+    READ_LINE_EOF,
+    READ_LINE_OUT_OF_MEMORY
+} ReadLineStatus;
+```
+
+函数的签名将变为
+
+```c
+char *read_line(FILE *fp, ReadLineStatus *status);
+```
+
+- 但有些项目坚持 “应该通过返回值返回处理状态” 的观点，就需要改造函数的签名，将`ReadLineStatus`作为函数返回类型，而原来返回的`char*`则作为out参数来处理。
+- 需要返回T时，将 "指向T的指针" 作为参数传递给函数，因为需要返回`char*`所以形参就为`char**`
+
+```c
+ReadLineStatus read_line(FILE *fp, char **line);
+```
+
+代码改造如下：
+
+```c
+ReadLineStatus read_line(FILE *fp, char **line){
+    char ch, temp_ch;
+    Cache cache;
+    ReadLineStatus status = READ_LINE_SUCCESS;
+
+    cache_new(&cache, sizeof(char), NULL);
+
+    while((ch = getc(fp)) != EOF){
+        if(ch == '\n'){
+            temp_ch = '\0';
+            cache_add(&cache, &temp_ch);
+            break;
+        }
+        cache_add(&cache, &ch);
+    }
+    if(ch == EOF){
+        if(cache.used_len > 0){
+            temp_ch = '\0';
+            cache_add(&cache, &temp_ch);
+            goto FUNC_END;
+        }else{
+            status = READ_LINE_EOF;
+            goto FUNC_END;
+        }
+    }
+    *line = malloc(cache.used_len * sizeof(char));
+    assert(*line != NULL);
+    strcpy(*line, (char*)cache.buffer);
+
+  FUNC_END:
+    cache_free(&cache);
+    return status;
+}
+```
+
+- 异常处理中使用`goto`，反而可以让程序更整洁
+
+### 数组的可变长数组
+假设开发一个支持多点折线的画笔工具，使用变长数组来表现多点折线中的“点”，并且使用 "double的数组(元素2)" 来记录一个 "点"
+
+可使用 "指向类型T的指针" 实现 "类型T的可变长数组"
+
+```c
+double (*polyline)[2]; // polyline is pointer to array(num 2) of double
+polyline = malloc(sizeof(double[2] * npoints));
+```
+
+如果感觉这有些困难，不妨通过类型定义：
+
+```c
+typedef double Point[2];
+Point *polyline;
+polyline = malloc(sizeof(Point * npoints));
+```
+
+无论哪种方式，取第i个点的X与Y坐标如下：
+
+```c
+double x = polyline[i][0],
+       y = polyline[i][1];
+```
+
+### 考虑使用结构体
+上面的例子中，如果有5条多点折线，应该通过什么方式来管理呢？
+
+“多点折线”是“指向double的数组(元素2)的指针”（需要自己管理元素个数），因此，如果是“多点折线的数组(元素5)”，就可以解释为“指向double数组(元素2)的指针的数组(元素5)”
+
+```c
+double (*polyline[5])[2]; // polyline is array(num5) of pointer to array(num 2) of double
+```
+
+如果不是5根，而是任意数量的折线作为参数`int *npints`来接收的函数原型：
+
+```c
+func(int polyline_num, double(**polylines)[2], int *npoints);
+```
+
+如果做一个类型定义，则函数原型为：
+
+```c
+typedef double Point[2];
+func(int polyline_num, Point **polylines, int *npoints);
+```
+
+再顺便定义下面的类型：
+
+```c
+typedef Point *Polyline;
+func(int polyline_num, Polyline *polylines, int *npoints);
+```
+
+尽管`typedef`能简化声明，但不能使声明变得更容易理解，可考虑使用结构体：
+
+```c
+typedef struct{
+    double x;
+    double y;
+} Point;
+
+typedef struct{
+    int npoints;
+    Point *point;
+} Polyline;
+
+func(Polyline *polylines);
+```
 
 
 <script>
