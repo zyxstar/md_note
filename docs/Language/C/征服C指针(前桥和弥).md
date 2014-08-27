@@ -1340,45 +1340,40 @@ char *slogan[7];
     #include <string.h>
     #include <assert.h>
 
-    #define ALLOC_SIZE (256)
+    #define INIT_ALLOC_LEN (4)
 
     typedef struct{
         char *buffer;
-        int logic_size;
-        int used_size;
-        int alloc_size;
+        int used_len;
+        int alloc_len;
     } LineStatus;
 
-    static void new_line_status(LineStatus *line_status){
-        line_status->buffer = NULL;
-        line_status->logic_size = 0;
-        line_status->used_size = 0;
-        line_status->alloc_size = ALLOC_SIZE;
+    static void line_status_new(LineStatus *l){
+        l->used_len = 0;
+        l->alloc_len = INIT_ALLOC_LEN;
+        l->buffer = malloc(INIT_ALLOC_LEN * sizeof(char));
+        assert(l->buffer != NULL);
     }
 
-    static void add_character(LineStatus *line_status, int ch){
-        assert(line_status->logic_size >= line_status->used_size);
-
-        if(line_status->logic_size == line_status->used_size){
-            line_status->buffer = realloc(line_status->buffer,
-                line_status->logic_size + line_status->alloc_size * sizeof(char));
-            assert(line_status->buffer != NULL);
-            line_status->logic_size += line_status->alloc_size;
-            line_status->alloc_size *= 2;
+    static void add_character(LineStatus *l, char ch){
+        assert(l->alloc_len >= l->used_len);
+        if(l->used_len == l->alloc_len){
+            l->alloc_len *= 2;
+            l->buffer = realloc(l->buffer, l->alloc_len * sizeof(char));
+            assert(l->buffer != NULL);
         }
-
-        line_status->buffer[line_status->used_size] = ch;
-        line_status->used_size++;
+        l->buffer[l->used_len] = ch;
+        l->used_len++;
     }
 
-    static void free_line_status(LineStatus *line_status){
-        free(line_status->buffer);
+    static void line_status_free(LineStatus *l){
+        free(l->buffer);
     }
 
-    void read_line(FILE *fp, char **ret_line){
-        int ch;
+    char *read_line(FILE *fp){
+        char ch, *ret_line;
         LineStatus line_status;
-        new_line_status(&line_status);
+        line_status_new(&line_status);
 
         while((ch = getc(fp)) != EOF){
             if(ch == '\n'){
@@ -1388,28 +1383,25 @@ char *slogan[7];
             add_character(&line_status, ch);
         }
         if(ch == EOF){
-            if(line_status.used_size > 0){
+            if(line_status.used_len > 0){
                 add_character(&line_status, '\0');
             }else{
-                *ret_line = NULL;
-                return;
+                return NULL;
             }
         }
-        *ret_line = malloc(sizeof(char) * line_status.used_size);
-        strcpy(*ret_line, line_status.buffer);
-        free_line_status(&line_status);
+        ret_line = malloc(line_status.used_len * sizeof(char));
+        strcpy(ret_line, line_status.buffer);
+        line_status_free(&line_status);
+        return ret_line;
     }
 
     int main(int argc, const char *argv[]){
-        char *line;
-        read_line(stdin, &line);
+        char *line = read_line(stdin);
         printf("%s %d\n", line, strlen(line));
         free(line);
         return 0;
     }
 
-- 需要返回T时，将 "指向T的指针" 作为参数传递给函数，因为需要返回`char*`所以形参就为`char**`
-> 也可以选用`char*`作为函数的返回类型
 - 调用方需要将输出的实参`line`进行`free()`
 
 ### 可变长数组的可变长数组
@@ -1421,22 +1413,24 @@ char *slogan[7];
 
 <!-- language: plain -->
 
-    ┌─────┐               
-    │  * ─┼──┐            
+    ┌─────┐
+    │  * ─┼──┐
     └─────┘  │
-             V            
-          ┌─────┐    ┌─┬─┬─┬─┬─┐ 
-          │  * ─┼───>└─┴─┴─┴─┴─┘   
-          ├─────┤    ┌─┬─┬─┬─┐   
+             V
+          ┌─────┐    ┌─┬─┬─┬─┬─┐
+          │  * ─┼───>└─┴─┴─┴─┴─┘
+          ├─────┤    ┌─┬─┬─┬─┐
           │  * ─┼───>└─┴─┴─┴─┘
           ├─────┤    ┌─┬─┬─┬─┬─┬─┐
           │  * ─┼───>└─┴─┴─┴─┴─┴─┘
-          ├─────┤    ┌─┬─┬─┬─┬─┬─┬─┐ 
+          ├─────┤    ┌─┬─┬─┬─┬─┬─┬─┐
           │  * ─┼───>└─┴─┴─┴─┴─┴─┴─┘
           ├─────┤    ┌─┬─┬─┬─┐
           │  * ─┼───>└─┴─┴─┴─┘
           └─────┘
- 
+
+代码如下：
+
 <!-- language: !c -->
 
     #include <stdio.h>
@@ -1445,46 +1439,40 @@ char *slogan[7];
     #include <string.h>
     #include <assert.h>
 
-    #define ALLOC_SIZE (256)
+    #define INIT_ALLOC_LEN (4)
 
     typedef struct{
         char *buffer;
-        int logic_size;
-        int used_size;
-        int alloc_size;
+        int used_len;
+        int alloc_len;
     } LineStatus;
 
-    static void new_line_status(LineStatus *line_status){
-        line_status->buffer = NULL;
-        line_status->logic_size = 0;
-        line_status->used_size = 0;
-        line_status->alloc_size = ALLOC_SIZE; 
+    static void line_status_new(LineStatus *l){
+        l->used_len = 0;
+        l->alloc_len = INIT_ALLOC_LEN;
+        l->buffer = malloc(INIT_ALLOC_LEN * sizeof(char));
+        assert(l->buffer != NULL);
     }
 
-    static void add_character(LineStatus *line_status, int ch){
-        assert(line_status->logic_size >= line_status->used_size);
-
-        if(line_status->logic_size == line_status->used_size){
-            line_status->buffer = realloc(line_status->buffer, 
-                line_status->logic_size + line_status->alloc_size * sizeof(char));
-            assert(line_status->buffer != NULL);
-            line_status->logic_size += line_status->alloc_size;
-            line_status->alloc_size *= 2;
+    static void add_character(LineStatus *l, char ch){
+        assert(l->alloc_len >= l->used_len);
+        if(l->used_len == l->alloc_len){
+            l->alloc_len *= 2;
+            l->buffer = realloc(l->buffer, l->alloc_len * sizeof(char));
+            assert(l->buffer != NULL);
         }
-
-        line_status->buffer[line_status->used_size] = ch;
-        line_status->used_size++;
+        l->buffer[l->used_len] = ch;
+        l->used_len++;
     }
 
-    static void free_line_status(LineStatus *line_status){
-        free(line_status->buffer);
+    static void line_status_free(LineStatus *l){
+        free(l->buffer);
     }
 
     char *read_line(FILE *fp){
-        int ch;
-        char *ret_line;
+        char ch, *ret_line;
         LineStatus line_status;
-        new_line_status(&line_status);
+        line_status_new(&line_status);
 
         while((ch = getc(fp)) != EOF){
             if(ch == '\n'){
@@ -1494,15 +1482,15 @@ char *slogan[7];
             add_character(&line_status, ch);
         }
         if(ch == EOF){
-            if(line_status.used_size > 0){
+            if(line_status.used_len > 0){
                 add_character(&line_status, '\0');
             }else{
                 return NULL;
             }
         }
-        ret_line = malloc(sizeof(char) * line_status.used_size);
+        ret_line = malloc(line_status.used_len * sizeof(char));
         strcpy(ret_line, line_status.buffer);
-        free_line_status(&line_status);
+        line_status_free(&line_status);
         return ret_line;
     }
 
@@ -1510,8 +1498,8 @@ char *slogan[7];
                     int *line_alloc_num, int *line_num){
         assert(*line_alloc_num >= *line_num);
         if(*line_alloc_num == *line_num){
-            text_data = realloc(text_data, (*line_alloc_num + ALLOC_SIZE) * sizeof(char*));
-            *line_alloc_num += ALLOC_SIZE;
+            text_data = realloc(text_data, (*line_alloc_num + INIT_ALLOC_LEN) * sizeof(char*));
+            *line_alloc_num += INIT_ALLOC_LEN;
         }
         text_data[*line_num] = line;
         (*line_num)++;
@@ -1547,156 +1535,184 @@ char *slogan[7];
         return 0;
     }
 
+
 `add_line()`及`read_file()`中通过参数指针的方式，达到共享一些变量。
 
-上面的代码中，`add_line()`与`add_character()`的逻辑结构十分相似，只是数据类型有所不同，可运用泛型思维，重构代码如下：
+#### 重构为泛型
+上面的代码中，`add_line()`与`add_character()`的逻辑结构十分相似(当分配的空间不够时，需要增长空间，并记录相应的状态)，只是数据类型有所不同，可运用泛型思维，重构代码如下：
 
+<!-- language: !c -->
 
+    #include <stdio.h>
+    #include <stdlib.h>
+    #include <malloc.h>
+    #include <string.h>
+    #include <assert.h>
+    #include <stdarg.h>
 
+    #define DEBUG
 
+    #ifdef DEBUG
+    #define DEBUG_WRITE(arg) debug_write arg
+    #else
+    #define DEBUG_WRITE(arg)
+    #endif
 
-如果再进行演化，会发现，该泛型的逻辑十分像 __栈__ 的结构，可以使用一些第三方开源的 泛型栈 来进行编码
+    #define INIT_ALLOC_LEN (4)
 
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <malloc.h>
-#include <string.h>
-#include <assert.h>
-
-#define ALLOC_SIZE (256)
-
-typedef struct{
-    void *buffer;
-    int logic_size;
-    int used_size;
-    int alloc_size;
-    int elem_size;
-    void(*free_fn)(void*);
-} Cache;
-
-static void new_cache(Cache *cache, int elem_size, void(*free_fn)(void*)) {
-    cache->buffer = NULL;
-    cache->logic_size = 0;
-    cache->used_size = 0;
-    cache->alloc_size = ALLOC_SIZE; 
-    cache->elem_size = elem_size;
-    cache->free_fn = free_fn;
-}
-
-static void add_data(Cache *cache, void *data_addr){
-    assert(cache->logic_size >= cache->used_size);
-
-    if(cache->logic_size == cache->used_size){
-        cache->buffer = realloc(cache->buffer, 
-            cache->logic_size + cache->alloc_size * sizeof(cache->elem_size));
-        assert(cache->buffer != NULL);
-        cache->logic_size += cache->alloc_size;
-        cache->alloc_size *= 2;
+    void debug_write(char *format, ...){
+        va_list ap;
+        va_start(ap, format);
+        vfprintf(stderr, format, ap);
+        va_end(ap);
     }
 
-    memcpy((char*)cache->buffer + cache->elem_size * cache->used_size, data_addr, cache->elem_size);
-    cache->used_size++;
-    printf("%d\n", cache->used_size);
-    printf("%s\n", (char*)cache->buffer);
-}
 
-static void free_cache(Cache *cache){
-    int i;
-    if(cache->free_fn != NULL)
-        for(i = 0; i < cache->used_size; i++){
-            cache->free_fn(cache->buffer + cache->elem_size * i);
-        }
-    free(cache->buffer);
-}
+    typedef struct{
+        void *buffer;
+        int elem_size;
+        int used_len;
+        int alloc_len;
+        void(*free_fn)(void*);
+    } Cache;
 
-
-/* */
-
-char *read_line(FILE *fp){
-    int ch;
-    char *ret_line;
-    Cache cache;
-    char *data_addr;
-    new_cache(&cache, sizeof(char));
-
-    while((ch = getc(fp)) != EOF){
-        if(ch == '\n'){
-            *data_addr = '\0';
-            add_data(&cache, data_addr);
-            break;
-        }
-        *data_addr = ch;
-        add_data(&cache, data_addr);
+    static void cache_new(Cache *c, int elem_size, void(*free_fn)(void*)) {
+        assert(elem_size > 0);
+        c->elem_size = elem_size;
+        c->used_len = 0;
+        c->alloc_len = INIT_ALLOC_LEN;
+        c->buffer = malloc(INIT_ALLOC_LEN * elem_size);
+        c->free_fn = free_fn;
+        assert(c->buffer != NULL);
     }
-    if(ch == EOF){
-        if(cache.used_size > 0){
-            *data_addr = '\0';
-            add_data(&cache, data_addr);
-        }else{
-            return NULL;
-        }
+
+    static void cache_grow(Cache *c){
+        DEBUG_WRITE(("-cache_grow_b: %d\n", c->alloc_len));
+        c->alloc_len *= 2;
+        c->buffer = realloc(c->buffer, c->alloc_len * sizeof(c->elem_size));
+        assert(c->buffer != NULL);
     }
-    ret_line = malloc(sizeof(char) * cache.used_size);
-    printf("%s\n", "aa");
-    strcpy(ret_line, (char*)cache.buffer);
-    printf("%s %d\n", ret_line, strlen(ret_line));
-    printf("%s\n", "bb");
-    free_cache(&cache, NULL);
-    printf("%s\n", "cc");
-    return ret_line;
-}
 
-// char **add_line(char **text_data, char *line,
-//                 int *line_alloc_num, int *line_num){
-//     assert(*line_alloc_num >= *line_num);
-//     if(*line_alloc_num == *line_num){
-//         text_data = realloc(text_data, (*line_alloc_num + ALLOC_SIZE) * sizeof(char*));
-//         *line_alloc_num += ALLOC_SIZE;
-//     }
-//     text_data[*line_num] = line;
-//     (*line_num)++;
-//     return text_data;
-// }
+    static void cache_add(Cache *c, void *data_addr){
+        assert(c->alloc_len >= c->used_len);
+        if(c->used_len == c->alloc_len){
+            cache_grow(c);
+        }
+        void *target = (char*)c->buffer + c->used_len * c->elem_size;
+        memcpy(target, data_addr, c->elem_size);
 
-// char **read_file(FILE *fp, int *ret_line_num_p){
-//     char **text_data = NULL;
-//     int line_num = 0;
-//     int line_alloc_num = 0;
-//     char *line;
+        #ifdef DEBUG //debug write
+            if(c->elem_size == sizeof(char)){
+                DEBUG_WRITE(("-cache_add_char_s: %c\n", *(char*)data_addr));
+                DEBUG_WRITE(("-cache_add_char_t: %c\n", ((char*)c->buffer)[c->used_len]));
+            }
+            else if (c->elem_size == sizeof(char*)){
+                DEBUG_WRITE(("-cache_add_char*_s: %s\n", *(char**)data_addr));
+                DEBUG_WRITE(("-cache_add_char*_t: %s\n", ((char**)c->buffer)[c->used_len]));
+            }
+        #endif
 
-//     while((line = read_line(fp)) != NULL){
-//         text_data = add_line(text_data, line, &line_alloc_num, &line_num);
-//     }
-//     *ret_line_num_p = line_num;
-//     return text_data;
-// }
+        c->used_len++;
+    }
+
+    static void cache_free(Cache *c){
+        int i;
+        if(c->free_fn != NULL){
+            for(i = 0; i < c->used_len; i++){
+                c->free_fn(c->buffer + i * c->elem_size);
+            }
+        }
+        #ifdef DEBUG
+            if(c->elem_size == sizeof(char)){
+                DEBUG_WRITE(("-cache_free_char*: %s\n", (char*)c->buffer));
+            }
+            else if (c->elem_size == sizeof(char*)){
+                DEBUG_WRITE(("-cache_free_char**\n"));
+            }
+        #endif
+        free(c->buffer);
+    }
+
+    char *read_line(FILE *fp){
+        char ch, temp_ch, *ret_line;
+        Cache cache;
+        cache_new(&cache, sizeof(char), NULL);
+
+        while((ch = getc(fp)) != EOF){
+            if(ch == '\n'){
+                temp_ch = '\0';
+                cache_add(&cache, &temp_ch);
+                break;
+            }
+            cache_add(&cache, &ch);
+        }
+        if(ch == EOF){
+            if(cache.used_len > 0){
+                temp_ch = '\0';
+                cache_add(&cache, &temp_ch);
+            }else{
+                return NULL;
+            }
+        }
+        ret_line = malloc(cache.used_len * sizeof(char));
+        strcpy(ret_line, (char*)cache.buffer);
+        cache_free(&cache);
+        return ret_line;
+    }
+
+    void string_free(void* elemAddr) {
+        char** p = (char**)elemAddr;
+        DEBUG_WRITE(("-string_free: %s\n", *p));
+        free(*p);
+    }
+
+    char **read_file(FILE *fp, int *ret_line_num){
+        char *temp_line, **ret_file_data;
+        Cache cache;
+
+        // cache_new(&cache, sizeof(char*), string_free);
+        cache_new(&cache, sizeof(char*), NULL);
+        while((temp_line = read_line(fp)) != NULL){
+            // must use &, so add `char**`
+            cache_add(&cache, &temp_line);
+        }
+        // not *ret_file_data = ...
+        ret_file_data = malloc(cache.used_len * sizeof(char*));
+
+        memcpy(ret_file_data, cache.buffer, cache.used_len * sizeof(char*));
+        *ret_line_num = cache.used_len;
+        cache_free(&cache);
+
+        return ret_file_data;
+    }
+
+    int main(int argc, const char *argv[]){
+        char **file_data;
+        int i, line_num;
+        FILE *fp = fopen("input.txt", "r");
+
+        file_data = read_file(fp, &line_num);
+
+        for(i = 0; i < line_num; i++){
+            printf("%s\n", file_data[i]);
+            free(file_data[i]);
+        }
+        free(file_data);
+        return 0;
+    }
 
 
-// int main(int argc, const char *argv[]){
-//     char **text_data;
-//     int line_num;
-//     int i = 0;
-//     FILE *fp = fopen("input.txt", "r");
-
-//     text_data = read_file(fp, &line_num);
-
-//     for(; i < line_num; i++){
-//         printf("%s\n", text_data[i]);
-//         free(text_data[i]);
-//     }
-//     free(text_data);
-//     return 0;
-// }
 
 
-int main(int argc, const char *argv[]){
-    char *line = read_line(stdin);
-    printf("%s %d\n", line, strlen(line));
-    // free(line);
-    return 0;
-}
+> 可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
+
+
+
+
+
+
+
+
 
 
 
@@ -1733,4 +1749,31 @@ stuid    │ │ │ │ │4│0│4│1│ │ │ │ │ │ │ │ │
 name     │       │       │   *   │   *a  │
          └───────┴───────┴───┼───┴───────┘
 
+
+
+    void read_line(FILE *fp, char **ret_line){
+        int ch;
+        LineStatus line_status;
+        new_line_status(&line_status);
+
+        while((ch = getc(fp)) != EOF){
+            if(ch == '\n'){
+                add_character(&line_status, '\0');
+                break;
+            }
+            add_character(&line_status, ch);
+        }
+        if(ch == EOF){
+            if(line_status.used_size > 0){
+                add_character(&line_status, '\0');
+            }else{
+                *ret_line = NULL;
+                return;
+            }
+        }
+        *ret_line = malloc(sizeof(char) * line_status.used_size);
+        strcpy(*ret_line, line_status.buffer);
+        free_line_status(&line_status);
+    }
+    - 需要返回T时，将 "指向T的指针" 作为参数传递给函数，因为需要返回`char*`所以形参就为`char**`
  -->
