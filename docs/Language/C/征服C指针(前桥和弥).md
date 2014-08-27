@@ -1550,8 +1550,6 @@ char *slogan[7];
     #include <assert.h>
     #include <stdarg.h>
 
-    #define DEBUG
-
     #ifdef DEBUG
     #define DEBUG_WRITE(arg) debug_write arg
     #else
@@ -1566,7 +1564,6 @@ char *slogan[7];
         vfprintf(stderr, format, ap);
         va_end(ap);
     }
-
 
     typedef struct{
         void *buffer;
@@ -1701,10 +1698,7 @@ char *slogan[7];
         return 0;
     }
 
-
-
-
-> 可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
+> 也可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
 
 
 
