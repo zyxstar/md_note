@@ -18,6 +18,8 @@ ls -R                             #递归显示
 ls -ld /xxx                       #可以看到该目录的访问权限,不加d 有可能直接deny
 ls -a | sort -i                   #排序显示
 
+getfacl <filname>                 #文件权限
+
 mkdir -p aaa/bbb/ccc              #创建多层次目录
 
 mv;cp                             #最好加上 -i 否则可能覆盖

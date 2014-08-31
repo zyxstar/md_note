@@ -238,9 +238,9 @@ puts m.say
 ```!c
 #include <stdio.h>
 
-typedef struct MyStruct {
+typedef struct MyStruct_tag {
     char* name;
-    char* (*pSay)(struct MyStruct*);
+    char* (*pSay)(struct MyStruct_tag*);
 } MyStruct;
 
 char* Say(MyStruct* ins) {

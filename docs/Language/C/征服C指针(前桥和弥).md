@@ -1842,7 +1842,12 @@ double x = polyline[i][0],
 double (*polyline[5])[2]; // polyline is array(num5) of pointer to array(num 2) of double
 ```
 
-如果不是5根，而是任意数量的折线 作为参数`int polyline_num, int *npoints`来接收的 函数原型：
+如果不是5根，而是任意数量的折线时，则参数含：
+
+- 折线个数`int polyline_num`, 
+- 每条折线中点的个数`int *npoints`，表示为数组，其长度为`polyline_num`
+
+其函数原型：
 
 ```c
 func(int polyline_num, double(**polylines)[2], int *npoints);
@@ -1878,6 +1883,421 @@ typedef struct{
 func(Polyline *polylines);
 ```
 
+可见，通过结构体的封装，`fun`所需的参数就减少了，并且语义也更清楚了
+
+### __*可变长*__ 的结构体
+```c
+typedef struct{
+    int npoints;
+    Point *point;
+} Polyline;
+```
+
+当使用`malloc()`动态的为`Polyline *polyline`分配内存时，需要调用两次，即两次在堆空间上分配内存（第一次是`Polyline *polyline`的分配，第二次是`Point *point`的分配）
+
+<!--language: plain-->
+
+    Polyline         Point的数组
+    ┌────┬────┐     ┌────┬────┬────┬────┬────┐
+    │    │  *─┼────>│    │    │    │    │    │
+    └────┴────┘     └────┴────┴────┴────┴────┘
+
+不妨使用下面的方式：
+
+```c
+typedef struct{
+    int npoints;
+    Point point[1];
+} Polyline;
+
+Polyline *polyline;
+polyline = malloc(sizeof(Polyline) + sizeof(Point) * (npoints - 1));
+```
+
+如果使用`polyline->point[3]`进行引用，会发生地址越界引用，好在大多数C处理环境不做数组范围检查，我们使用`malloc()`在`Polyline`后面追加分配必要的内存空间
+
+<!--language: plain-->
+
+      Polyline
+    ┌────────────┐  ┐
+    │  npoints   │  │
+    ├────────────┤  ├─真正的Polyline只到这里
+    │  point[0]  │  │
+    ├────────────┤  ┘ ┐
+    │  point[1]  │    │
+    ├────────────┤    │
+    │  point[2]  │    │
+    ├────────────┤    │
+    │  point[3]  │    ├─该区域引用，如point[3]，虽超出了数组的范围，
+    ├────────────┤    │ 但malloc()为此分配了空间，一般情况能正常执行
+    │  point[4]  │    │ 
+    └────────────┘    ┘
+
+这种写法，结构体的最后成员 __不使用指针__ 也可以直接保存 __可变长__ 数组
+> ISO C99可变第结构体已被正式承认
+
+数据结构中的指针
+===============
+## 案例:计算单词的出现频率
+### 需求
+设计开发一个将文本文件作为输入，计算出其中各单词出现频率的程序，将英文单词按照字母顺序排序后输出，并且在各单词的后面显示当前单词的出现次数，如果省略参数，就将标准输入的内容作为输入进行处理
+
+### 设计
+![c_pointer_01](../../../imgs/c_pointer_01.jpg)
+
+1. 取得单词部分，从输入流（文件等）一个个地取得单词
+2. 管理单词部分，包括输出功能
+3. 主处理过程，统一管理以上两个模块
+
+#### 取得单词
+对于取得单词部分，可直接使用[TOC1.3.3](#TOC1.3.3)的实现，假设已提供了`get_word.h`这个头文件
+
+```c
+#ifndef GET_WORD_H_INCLUEDE
+#define GET_WORD_H_INCLUEDE
+#include <stdio.h>
+
+int get_word(char *buf, int size, FILE *stream);
+
+#endif /*GET_WORD_H_INCLUEDE*/
+```
+#### 管理单词
+管理单词部分，提供了4个函数作为对外接口
+
+- 初始化
+
+```c
+void word_initalize(void);
+```
+
+- 单词的追加，为传入的字符串动态分配内存区域，并且将字符串保存在其中
+
+```c
+void add_word(char *word);
+```
+
+- 输出单词的出现频率
+
+```c
+void dump_word(FILE *fp);
+```
+
+- 结束处理
+
+```c
+void word_finalize(void);
+```
+
+整理到 __公有__ 头文件`word_manage.h`中
+
+```c
+#ifndef WORD_MANAGE_H_INCLUEDE
+#define WORD_MANAGE_H_INCLUEDE
+#include <stdio.h>
+
+void word_initalize(void);
+void add_word(char *word);
+void dump_word(FILE *fp);
+void word_finalize(void);
+
+#endif /*WORD_MANAGE_H_INCLUEDE*/
+```
+
+#### 主处理过程
+在"主处理过程"中，使用`get_word()`努力地从输入流读取单词，然后通过调用`add_word()`，将每次读取到的单词，不断地加入到"单词管理部分"，最后再调用`dump_word()`将最终结果输出
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include "get_word.h"
+#include "word_manage.h"
+
+#define WORD_LEN_MAX (1024)
+
+int main(int argc, char **argv){
+    char buf[WORD_LEN_MAX];
+    FILE *fp;
+    if(argc == 1){
+        fp = stdin;
+    }else{
+        fp = fopen(argv[1], "r");
+        if(fp == NULL){
+            fprintf(stderr, "%s:%s can not open.\n", argv[0], argv[1]);
+            exit(1);
+        }
+    }
+
+    word_initalize();
+    while(get_word(buf, WORD_LEN_MAX, fp) != EOF){
+        add_word(buf);
+    }
+    dump_word(stdout);
+    word_finalize();
+
+    return 0;
+}
+```
+
+### 实现（数组版）
+使用数组管理单词时，采取以下方式：
+
+- 将单词和其出现的次数整理到结构体中
+- 将这些结构体组织成数组，并且管理各单词的出现频率
+- 为了将单词的追加和结果输出变得更加简单，使用将数组的元素按照单词的字母顺序排序的方式进行管理
+
+据此写的 __私有__ 头文件`word_manage_with_array.h`如下：
+
+```c
+#ifndef WORD_MANAGE_WITH_ARRAY_H_INCLUEDE
+#define WORD_MANAGE_WITH_ARRAY_H_INCLUEDE
+#include "word_manage.h"
+
+typedef struct{
+    char *name;
+    int count;
+} Word;
+
+#define WORD_NUM_MAX (10000)
+
+extern Word word_array[];
+extern int num_of_word;
+
+#endif /*WORD_MANAGE_WITH_ARRAY_H_INCLUEDE*/
+```
+
+每当加入一个新单词时：
+
+- 从数组的初始元素开始遍历，如发现同样的单词，将此单词出现的次数加1
+- 如没发现，就在行进到比当前单词“大的单词”的时候，将当前单词插入到“大的单词”的前面
+> 插入操作：将插入点后方的元素顺序后移，新的元素保存在空出来的位置上
+
+代码文件`word_manage_with_array.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "word_manage_with_array.h"
+
+Word word_array[WORD_NUM_MAX];
+int num_of_word;
+
+void word_initalize(void){
+    num_of_word = 0;
+}
+
+static void shift_array(int index){
+    int src;
+    for(src = num_of_word-1; src>=index; src--){
+        word_array[src+1] = word_array[src];
+    }
+    num_of_word++;
+}
+
+static char *my_strdup(char *src){
+    char *dest;
+    dest = malloc(sizeof(char) * (strlen(src) + 1));
+    strcpy(dest, src);
+    return dest;
+}
+
+void add_word(char *word){
+    int i;
+    int result;
+
+    for (i = 0; i < num_of_word; ++i) {
+        result = strcmp(word_array[i].name, word);
+        if(result >= 0) break;
+    }
+    if(num_of_word !=0 && result ==0){
+        word_array[i].count++;
+    }else{
+        shift_array(i);
+        word_array[i].name = my_strdup(word);
+        word_array[i].count = 1;
+    }
+}
+
+void dump_word(FILE *fp){
+    int i;
+    for (i = 0; i < num_of_word; ++i) {
+        fprintf(fp, "%-20s%5d\n", word_array[i].name, word_array[i].count);
+    }
+}
+
+void word_finalize(void){
+    int i;
+    for (i = 0; i < num_of_word; ++i) {
+        free(word_array[i].name);
+    }
+    num_of_word = 0;
+}
+```
+
+### 实现（链表版）
+数组版存以下问题：
+
+- 中途向数组插入元素，后面的元素就必须依次向后方移动，导致效率低下
+- 数组初始化时就需要决定元素个数。
+
+使用链表的数据结构，可以避免这些问题
+
+__私有__ 头文件`word_manage_with_chain.h`
+
+```c
+#ifndef WORD_MANAGE_WITH_CHAIN_H_INCLUEDE
+#define WORD_MANAGE_WITH_CHAIN_H_INCLUEDE
+#include "word_manage.h"
+
+typedef struct Word_tag{
+    char *name;
+    int count;
+    struct Word_tag *next;
+} Word;
+
+extern Word *word_header;
+
+#endif /*WORD_MANAGE_WITH_CHAIN_H_INCLUEDE*/
+```
+
+代码实现`word_manage_with_chain.c`
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "word_manage_with_chain.h"
+
+Word *word_header = NULL;
+
+void word_initalize(void){
+    word_header = NULL;
+}
+
+static char *my_strdup(char *src){
+    char *dest;
+    dest = malloc(sizeof(char) * (strlen(src) + 1));
+    strcpy(dest, src);
+    return dest;
+}
+
+static Word *create_word(char *name){
+    Word *new_word;
+    new_word = malloc(sizeof(Word));
+    new_word->name = my_strdup(name);
+    new_word->count = 1;
+    new_word->next = NULL;
+    return new_word;
+}
+
+void add_word(char *word){
+    Word *pos;
+    Word *prev;
+    Word *new_word;
+    int result;
+
+    prev = NULL;
+    for(pos = word_header; pos != NULL; pos = pos->next){
+        result = strcmp(pos->name, word);
+        if(result >=0) break;
+
+        prev = pos;
+    }
+    if(word_header != NULL && result ==0){
+        pos->count++;
+    }else{
+        new_word = create_word(word);
+        if(prev == NULL){
+            new_word->next = word_header;
+            word_header = new_word;
+        }else{
+            new_word->next = pos;
+            prev->next = new_word;
+        }
+    }
+}
+
+void dump_word(FILE *fp){
+    Word *pos;
+    for(pos = word_header; pos != NULL; pos = pos->next){
+        fprintf(fp, "%-20s%5d\n", pos->name, pos->count);
+    }
+}
+
+void word_finalize(void){
+    Word *temp;
+    while(word_header != NULL){
+        temp = word_header;
+        word_header = word_header->next;
+
+        free(temp->name);
+        free(temp);
+    }
+}
+```
+
+上面的代码使用了全局变量，是不合适的，为了管理多份数据，__公有__ 头文件`word_manage.h`应声明如下：
+
+```c
+#ifndef WORD_MANAGE_H_INCLUEDE
+#define WORD_MANAGE_H_INCLUEDE
+#include <stdio.h>
+
+typedef struct WordManager_tag WordManager;
+
+WordManager *word_initalize(void);
+void add_word(WordManager *word_manager, char *word);
+void dump_word(WordManager *word_manager, FILE *fp);
+void word_finalize(WordManager *word_manager);
+
+#endif /*WORD_MANAGE_H_INCLUEDE*/
+```
+
+- 具体实现是用数组还是链表，对于公有头文件是无关的
+- 声明一个 __*不完全类型*__ `WordManager_tag`，然后在私有头文件中，将实体填充到`struct WordManager_tag`中
+
+对应的数组的私有头文件`word_manage_with_array.h`为：
+
+```c
+#ifndef WORD_MANAGE_WITH_ARRAY_H_INCLUEDE
+#define WORD_MANAGE_WITH_ARRAY_H_INCLUEDE
+#include "word_manage.h"
+#define WORD_NUM_MAX (10000)
+
+typedef struct{
+    char *name;
+    int count;
+} Word;
+
+struct WordManager_tag{
+    Word *word_array;
+    int num_of_word;
+};
+
+#endif /*WORD_MANAGE_WITH_ARRAY_H_INCLUEDE*/
+```
+
+对应的链表的私有头文件`word_manage_with_chain.h`为：
+
+```c
+#ifndef WORD_MANAGE_WITH_CHAIN_H_INCLUEDE
+#define WORD_MANAGE_WITH_CHAIN_H_INCLUEDE
+#include "word_manage.h"
+
+typedef struct Word_tag{
+    char *name;
+    int count;
+    struct Word_tag *next;
+} Word;
+
+struct WordManager_tag{
+    Word *word_header;
+};
+
+#endif /*WORD_MANAGE_WITH_CHAIN_H_INCLUEDE*/
+```
 
 <script>
 
@@ -1913,30 +2333,4 @@ name     │       │       │   *   │   *a  │
          └───────┴───────┴───┼───┴───────┘
 
 
-
-    void read_line(FILE *fp, char **ret_line){
-        int ch;
-        LineStatus line_status;
-        new_line_status(&line_status);
-
-        while((ch = getc(fp)) != EOF){
-            if(ch == '\n'){
-                add_character(&line_status, '\0');
-                break;
-            }
-            add_character(&line_status, ch);
-        }
-        if(ch == EOF){
-            if(line_status.used_size > 0){
-                add_character(&line_status, '\0');
-            }else{
-                *ret_line = NULL;
-                return;
-            }
-        }
-        *ret_line = malloc(sizeof(char) * line_status.used_size);
-        strcpy(*ret_line, line_status.buffer);
-        free_line_status(&line_status);
-    }
-    - 需要返回T时，将 "指向T的指针" 作为参数传递给函数，因为需要返回`char*`所以形参就为`char**`
  -->
