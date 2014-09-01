@@ -1,0 +1,30 @@
+{
+	"caret_extra_width": 1,
+	"color_scheme": "Packages/Color Scheme - Default/Monokai.tmTheme",
+	"ensure_newline_at_eof_on_save": true,
+	"font_face":
+	[
+		"Consolas",
+		"微软雅黑"
+	],
+	"font_options":
+	[
+		"directwrite"
+	],
+	"font_size": 15,
+	"highlight_line": true,
+	"ignored_packages":
+	[
+		"Vintage",
+		"Markdown"
+	],
+	"index_exclude_patterns":
+	[
+		"*.log",
+		"J:\\done"
+	],
+	"reveal-on-activate": true,
+	"scroll_past_end": true,
+	"translate_tabs_to_spaces": true,
+	"update_check": false
+}

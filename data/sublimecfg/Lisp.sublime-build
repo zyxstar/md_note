@@ -1,0 +1,4 @@
+{
+    "cmd": ["clisp", "${file}"],
+    "selector": "source.lisp"
+}
