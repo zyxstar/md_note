@@ -810,6 +810,7 @@ struct Woman_tag{
 ```
 `Woman`类型的标记被声明的时候，还不知道其内容，所以无法确定其大小。因为不能确定大小，所以不能将不完全类型变成数组，也不能作为结构体成员，只能用于取得指针，将`Woman`类型的指针作为结构体成员。
 > 之后在定义`struct Woman_tag`的内容的时候，`Woman`就不是不完全类型了；
+> 对于不完全类型，__只能取得其指针__ 
 > void类型也被归类为不完全类型
 
 ## 表达式
@@ -1090,16 +1091,16 @@ char str[4];
 str = "abc";
 ```
 
-下面的例子不是初始化`char`的数组，而是初始化指针，也是合法的，此时"abc"就是普通的`char`数组，然后被赋值给`str`：
+下面的例子 __不是__ 初始化`char`的数组，而是初始化指针，也是合法的，此时"abc"就是普通的`char`数组（字符串常量），然后被赋值给`str`：
 
 ```c
-char *str = "abc";
+char *str = "abc";  /* 初始化指针 */
 ```
 
 通常，字符串常量保存在 __只读的__ 内存区域（依赖具体环境），但如果在初始化`char`的数组，并不加`const`时，常量是可写的：
 
 ```c
-char str[] = "abc"; /* 存在栈中 */
+char str[] = "abc"; /* 存在栈中, 真正的初始化char数组 */
 str[0] = 'd'; 　　　/* 可写 */
 ```
 
@@ -1933,7 +1934,9 @@ polyline = malloc(sizeof(Polyline) + sizeof(Point) * (npoints - 1));
     │  point[4]  │    │ 
     └────────────┘    ┘
 
-这种写法，结构体的最后成员 __不使用指针__ 也可以直接保存 __可变长__ 数组
+这种写法，结构体的 __*最后*__ 成员 __不使用指针__ 也可以直接保存 __可变长__ 数组
+> 一定是最后成员，否则会覆盖到其它成员
+> 
 > ISO C99可变第结构体已被正式承认
 
 数据结构中的指针
@@ -2299,20 +2302,257 @@ struct WordManager_tag{
 #endif /*WORD_MANAGE_WITH_CHAIN_H_INCLUEDE*/
 ```
 
+## 案例:绘图工具的数据结构
+### 实现各种图形的数据模型
+```c
+typedef struct{
+    double x;
+    double y;
+} Point;
 
+typedef struct{
+    int npoints;
+    Point *point;
+} Polyline;
 
+typedef struct{
+    Point minPoint;//左下角坐标
+    Point maxPoint;//右上角坐标
+} Rectangle;
 
+typedef struct{
+    Point center;
+    double radius;
+} Circle;
+```
 
+### Shape型
+```c
+typedef enum{
+    COLOR_BLACK;
+    COLOR_BLUE;
+    COLOR_RED;
+    COLOR_MAGENTA;
+    COLOR_GREEN;
+    COLOR_CYAN;
+    COLOR_YELLOW;
+    COLOR_WHITE;
+} Color;
 
-<script>
+typedef enum{
+    FILL_NONE,
+    FILL_SOLID;
+    FILL_HATCH;
+    FILL_CROSSHATCH;
+} FillPattern;
+```
 
-(function(){
-    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
-    else expand_toc('md_toc',6);
-})();
+我们无法预测图形的数量，考虑使用`malloc()`为`Shape`动态的分配内存区域，然后通过链表对它们进行管理。我们选择两向链表：
 
-</script>
+- 对所有的图形进行重绘的时候，“从后面的图形开始顺序的地” 绘制，能够以正确的顺序表示各图形。
+- 使用鼠标的方式选择图形的时候，需要 “从前面的图形开始顺序的” 检查哪个图形才是选择对象。
+- 选择后图形，可以将它移动到最前面或最后面，此时需要将图形对应的元素在链表中进行移动
 
+```c
+typedef enum{
+    POLYLINE_SHAPE;
+    RECTANGLE_SHAPE;
+    CIRCLE_SHAPE;
+} ShapeType;
+
+typedef struct Shape_tag{
+    Color pen_color;
+    FillPattern fill_pattern;
+    Color fill_color;
+    ShapeType type;
+    union {
+        Polyline polyline;
+        Rectangle rectangle;
+        Circle circle;
+    } u;
+    struct Shape_tag *prev;
+    struct Shape_tag *next;
+} Shape;
+```
+
+### 讨论
+
+- 是否有必要存在`Line`类型
+> 从应用角度而言是需要的，且是频繁的，但功能角度来言，可使用只有两个点的`Polyline`来代替，但不能使用`Polyline`来代替`Rectangle`，因为语义不同
+- `Polyline`不能使用[可变长结构体](#TOC4.2.7)，因为使用后，会破坏`prev`和`next`的数据
+> 即使调整了结构体的位置，`Polyline`的折线个数发生变化时，会发生`realloc()`，`Shape`地址就会发生变化（因为`Shape`中直接包含了`Polyline`，而不是它的指针），就需要调用前后两个结点对它的指向。
+- 使用了共用体，会根据最大成员来分配内存空间，是不是会浪费内存
+> 是的，但如果成员间的大小差别不大，是可接受的，或者使用如下方案：
+
+```c
+typedef struct Shape_tag{
+    Color pen_color;
+    FillPattern fill_pattern;
+    Color fill_color;
+    ShapeType type;
+    union {
+        Polyline *polyline;
+        Rectangle *rectangle;
+        Circle *circle;
+    } u;
+    struct Shape_tag *prev;
+    struct Shape_tag *next;
+} Shape;
+```
+
+> 使用"指针共同体"，这样也使`Polyline`使用可变长结构体具有了现实意义。但需要额外的`malloc()`与`free()`的管理。当共用体成员大小差别不大时，还是推荐先前的方案
+
+- `Shape`放进`prev`和`next`做法很不自然，它只是一个图形，使用何种方式来管理并不是它的职责，更好的方式是：
+
+```c
+typedef struct LinkableShape_tag{
+    Shape shape; //Shape *shape;
+    struct LinkableShape_tag *prev;
+    struct LinkableShape_tag *next;
+} LinkableShape;
+```
+
+> 这种做法，也是增加了额外的`malloc()`与`free()`的管理
+
+- 由上面问题引发一个通用的方案，形成 __泛型__
+
+```c
+typedef struct Linkable_tag{
+    void *object;
+    struct Linkable_tag *prev;
+    struct Linkable_tag *next;
+} Linkable;
+typedef struct{
+    Linkable *head;
+    Linkable *tail;
+} LinkedList;
+```
+
+> 但会影响代码的可读性，并且C的通用类型是不做编译检查的，许多BUG会延迟到运行时发生
+
+### 图形的组合
+将几个图形进行组合，然后当做一个图形去操作，定义一个`Group`类型，它包含多个`Shape`，但后者自身实现了双向链表，只需要`Group`中定义成如下：
+
+```c
+typedef struct{
+    Shape *head;
+    Shape *tail;
+} Group;
+```
+
+更新`ShapeType`
+
+```c
+typedef enum{
+    POLYLINE_SHAPE;
+    RECTANGLE_SHAPE;
+    CIRCLE_SHAPE;
+    GROUP_SHAPE;
+} ShapeType;
+```
+
+也许不够和谐，重构类型的定义：
+
+```c
+typedef enum{
+    POLYLINE_SHAPE;
+    RECTANGLE_SHAPE;
+    CIRCLE_SHAPE;
+} PrimitiveType;
+
+typedef struct {
+    Color pen_color;
+    FillPattern fill_pattern;
+    Color fill_color;
+    PrimitiveType type;
+    union {
+        Polyline *polyline;
+        Rectangle *rectangle;
+        Circle *circle;
+    } u;
+} Primitive;
+
+typedef struct Shape_tag Shape;
+
+typedef struct{
+    Shape *head;
+    Shape *tail;
+} Group;
+
+typedef enum{
+    PRIMITIVE_SHAPE;
+    GROUP_SHAPE;
+} ShapeType;
+
+typedef struct Shape_tag{
+    ShapeType type;
+    union {
+        Primitive primitive;
+        Group group;
+    } u;
+    struct Shape_tag *prev;
+    struct Shape_tag *next;
+};
+
+```
+
+### 对指针恐惧
+
+```c
+Shape *new_shape;
+new_shape = malloc(sizeof(Shape));
+*new_shape = *shape;
+```
+
+如果复制的是长方形或圆形，没有问题，但如果是折线时，`Polyline`自身的`*points`并未复制，会导致它被多方引用，而任一方的修改，都会导致其它地方的变化。
+
+拾遗
+=====
+- ANSI C会擅自将相邻的两个字符串连接起来
+
+```c
+char *color_name[] = {
+    "red",
+    "green",
+    "blue"
+    "yellow"
+}
+```
+
+会构成只有"red","green","blueyellow"3个元素的数组
+
+- 共用体的初始化针对第一个成员实施的
+- 全局变量的声明
+> 建立全局变量命名规则
+> 建立工具去检查，确保只有一个地方定义，其它文件中使用`extern`，使用宏来帮助：
+
+```c
+#ifdef GLOBAL_VARIABLE_DEFINE
+#define GLOBAL /* 定义无 */
+#else
+#define GLOBAL extern
+#endif /* GLOBAL_VARIABLE_DEFINE */
+
+GLOBAL int global_variable;
+```
+
+> 将头文件写成这样，只有某一个文件使用了`#define GLOBAL_VARIABLE_DEFINE`，从而保证了只有一个地方定义，而其它地方是`extern`
+
+> 使用了这个技巧，就无法使用初始化表达式，对于全局变量，最好少用初始化表达式，而借助一些函数来完成，因为前者只能发生一次，而函数调用却可以多次发生。
+
+> 但如果确实需要对数组进行初始化时，可使用下面方式：
+
+```c
+GLOBAL char *color_name[]
+#ifdef GLOBAL_VARIABLE_DEFINE
+= {
+    "red",
+    "green",
+    "blue",
+}
+#endif /* GLOBAL_VARIABLE_DEFINE */
+;
+```
 
 <!--
        ┌───────┐

@@ -366,6 +366,15 @@ public class Program {
 ========
 zyxstar2013 at 163.com
 
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',6);
+})();
+
+</script>
+
 <!--
     ┌─┬─┬─┬─┐
     ├─┼─┼─┼─┤
