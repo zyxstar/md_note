@@ -24,7 +24,7 @@ def run_notes_srv(port):
 
 
 def trans_note_urlpara(file_path, port):
-    note_srv = "http://127.0.0.1:"+str(port)
+    note_srv = "http://localhost:"+str(port)
     sys_encoding = sys.getfilesystemencoding()
     file_paths = map(lambda _pa: _pa.decode(sys_encoding),
                      os.path.normpath('\\' + file_path).split('\\'))
@@ -45,7 +45,7 @@ def show_doc(port,url):
     #add to path
     #C:\Users\Administrator\AppData\Local\Google\Chrome\Application\
     #C:\Program Files (x86)\Google\Chrome\Application\
-    subprocess.Popen("chrome.exe http:127.0.0.1:%s/gen_md?%s#footer" % (port,url))
+    subprocess.Popen("chrome.exe http://localhost:%s/gen_md?%s#footer" % (port,url))
 
 
 if __name__ == '__main__':

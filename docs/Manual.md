@@ -232,7 +232,7 @@ m = MyClass.new "ruby"
 puts m.say
 ```
 
-### C语言
+### C
 首行加`<!-- language: !c -->`或<code>```!c</code>：
 
 ```!c

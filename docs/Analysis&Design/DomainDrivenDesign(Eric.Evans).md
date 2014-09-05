@@ -22,7 +22,7 @@
 `Carrier`
 `CarrierMovement`
 `CarrierMovementRepository`
-
+`Invoice`
 `AllocationChecker`
 
 `EnterpriseSegment`
@@ -622,24 +622,154 @@ Sales Management System并不是根据这里所使用的模型编写的，如果
 ### 模式:Specification
 ![ddd_12](../../imgs/ddd_12.png)
 
+在所有类型的应用程序中，都会有布尔值测试方法，实际上它们基本不属于规则，只要它们很简单，就可以用测试方法，如`anIterator.hasNext()`或`anInvoice.isOverdue()`来处理它们
 
+```java
+public boolean isOverdue(){
+  Date currentDate = new Date();
+  return currentDate.after(dueDate);
+}
+```
 
+但并非所有规则都如此简单，在同一个`Invoice`类，还有另外一个规则`anInvoice.isDelinquent()`，它一开始也是用来检查`Invoice`是否过期，但仅仅是开始部分，根据客户账户状态的不同，可能会有宽限期政策。一些拖欠票据正准备再一次发出催款通知，而另一些则准备发给收账公司，此外，还要考虑客户的付款历史记录、公司在不同产品线上的政策等。`Invoice`作为付款请求，很快会 __消失在大量杂乱的规则计算代码中__，它还会发展出对领域类和子系统的各种 __依赖关系__，而这些领域类和子系统却与`Invoice`的基本含义无关。
 
+为了简化`Invoice`与其他对象的关系，开发人员也许将规则 __重构到应用层__ 中（账单收集应用程序），规则从领域层中分离出来，留下一个纯粹的数据对象，它将不再表达本来应该在业务模型中表示的规则。
 
+如果支持逻辑编程范式的话，如果通过谓词，显式的声明规则并在`Invoice`中使用这些规则，也是一个不错的方案
 
+业务规则通常不适合作为Entity或Value Object的职责，而且规则的变化和组合也会掩盖领域对象的含义，但将规则移出领域层结果会更糟糕，领域代码就不再表达模型了。
 
+我们并不真正完全实现逻辑编辑，大部分规则都可归类为几种特定的情况，借用谓词概念来创建可计算出布尔值的特殊对象。那些难于控制的测试方法可以巧妙的扩展出自己的对象，它们都是一些小的事实测试，可以提取到一个单独的Value Object中，而这个新对象则可以用来计算另一个对象，看看谓词对那个对象的计算是否为"真"
 
+![ddd_13](../../imgs/ddd_13.png)
 
+这个新对象就是一个 __规格（Specification）__，Specification中声明的是限制另一个对象状态的约束，被约束的对象可以存在，也可以不存在，Specification有多种用途，其中一种用途即：可以测试任何对象以检验它们是否满足指定的标准
 
+许多Specification都是具有特殊目标的简单测试，就像在拖欠票据示例中的规格一样，当规则很复杂时，可以扩展这种概念，对简单的规格进行组合，就像用逻辑运算符把多个谓词组合起来一样，基本模式保持不变，并提供了一种从简单模型过渡到复杂模型的途径
 
+Specification将规则保留在领域层，由于规则是一个完备对象，所以这个设计能够更加清晰地反映模型。利用工厂，可以用来自其他资源的信息对规格进行配置（之所以用Factory，为了避免`Invoice`直接访问这些资源，`Invoice`基本职责是请求付款，而这些资源与这一职责无关）
 
+![ddd_14](../../imgs/ddd_14.png)
 
+创建了`Delinquent Invoice Specification`（拖欠发票规格）来对一些发票进行评估
 
+### Specification的应用和实现
+Specification最有价值的地方在于它可以将看起来完全不同的应用功能统一起来，出以下三个目的中的至少一个，可能需要来指定对象的状态。
 
+- 验证对象，检查它是否满足某些需求或者是否已为实现某个目标做好了准备
+- 从集合中选择一个对象（如上述例子中的查询过期发票）
+- 指定在创建新对象时必须满足某种需求
 
+这三种用法（验证、选择、根据要求来创建）从概念层面上讲是相同的，如果没有Specification这样的模式，相同的规则可能会表现为不同的形式，甚至有可能是相互矛盾的形式。
 
+通过Specification模式，我们可以使用一致的模型，尽管在实现时可能需要分开处理。
 
+#### 验证
+![ddd_15](../../imgs/ddd_15.png)
 
+```java
+class DelinquentInvoiceSpecification extends
+      InvoiceSpecification {
+  private Date currentDate;
+
+  public DelinquentInvoiceSpecification(Date currentDate){
+    this.currentDate = currentDate;
+  }
+
+  public boolean isSatisfiedBy(Invoice candidate){
+    int gracePeriod = candidate.customer().getPaymentGracePeriod();
+    Date firmDeadline = DateUtility.addDaysToDate(candidate.dueDate(), gracePeriod);
+    return currentDate.after(firmDeadline);
+  }
+}
+```
+
+现在假设当销售人员看到一个欠账客户的信息时，系统需要显示一个红旗标识，我们只需要在客户类中编写一个方法即可
+
+```java
+public boolean accountIsDelinquent(Customer customer) {
+  Date today = new Date();
+  Specification delinquentSpec = new DelinquentInvoiceSpecification(today);
+  Iterator it = customer.getInvoices().iterator();
+  while (it.hasNext()){
+    Invoice candidate = (Invoice)it.next();
+    if(delinquentSpec.isSatisfiedBy(candidate))
+      return true;
+  }
+  return false;
+}
+```
+
+#### 选择(或查询)
+根据某些标准从对象集合中选择一个子集，Specification概念同样可以在些应用，但是实现问题会有所不同
+
+假设应用程序的需求是列出所有拖欠发票的客户，假设发票数量很少，可能已全部装入内存
+
+```java
+public Set selectSatisfying(InvoiceSpecification spec){
+  Set results = new HashSet();
+  while(it.hasNext()){
+    Invoice candidate = (Invoice)it.next();
+    if(spec.isSatisfiedBy(candidate))
+      results.add(candidate);
+  }
+  return results;
+}
+
+Set delinquentInvoices = invoiceRepository.selectSatisfying(new DelinquentInvoiceSpecification(currentDate));
+```
+
+上面的代码建立了操作背后的概念，但，`Invoice`对象可能并不在内存中，也可能会有成千上万个对象，在典型的业务系统中，数据很可能会存储在关系数据库中，在与其他技术交互使用时，很容易分散我们对模型的注意力
+
+```java
+public String asSQL(){
+  return "SELECT * FROM INVOICE, CUSTOMER" +
+         " WHERE INVOICE.CUST_ID = CUSTOMER.ID" +
+         " AND INVOICE.DUE_DATE + CUSTOMER.GRACE_PERIOD" +
+         " < " + SQLUtility.dateAsSql(currentDate);
+}
+```
+
+![ddd_16](../../imgs/ddd_16.png)
+
+该设计有一个问题，表结构细节本应该被隔离到一个映射层中，现在却泄漏到领域层中，这样一来，对表结构信息产生了依赖，而且也存在重复
+
+重写一个专用的查询方法并把它添加到`Invoice Repository`中，把SQL语句从领域对象中分离出来了，__为了避免在Repository中嵌入规则，必须采用更为通用的方式来表达查询__，这种方式不捕捉规则但可通过组合或旋转在上下文中表达规则（双分派模式）
+
+```java
+public class InvoiceRepository{
+  public Set selectWhereCracePeriodPast(Date aDate){
+    //This is not a rule, just a specialized query
+    String sql = whereGracePeriodPast_SQL(aDate);
+    ResultSet queryResultSet = SQLDatabaseInterface.instance().executeQuery(sql);
+    return buildInvoicesFromResultSet(queryResultSet);
+  }
+
+  public String whereGracePeriodPast_SQL(Date aDate){
+    return "SELECT * FROM INVOICE, CUSTOMER" +
+           " WHERE INVOICE.CUST_ID = CUSTOMER.ID" +
+           " AND INVOICE.DUE_DATE + CUSTOMER.GRACE_PERIOD" +
+           " < " + SQLUtility.dateAsSql(aDate);
+  }
+
+  public Set selectSatisfying(InvoiceSpecification spec){
+    return spec.satisfyingElementsFrom(this);
+  }
+}
+
+public class DelinquentInvoiceSpecification extends
+      InvoiceSpecification {
+  // basic DelinquentInvoiceSpecification code here
+
+  pubic Set satisfyingElementsFrom(InvoiceRepository repository){
+    //Delinquency rule is defined as:
+    //  "grace period past as of current date"
+    return repository.selectWhereGracePeriodPast(currentDate);
+  }
+}
+```
+
+将SQL置于Repository中，而应该使用哪个查询则由Specification来控制，规格中并没有定义完整的规则，但包含了Specification的基本声明，指明了什么条件构成了拖欠(即超过宽限期)
 
 
 
