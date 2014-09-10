@@ -732,13 +732,13 @@ public String asSQL(){
 
 ![ddd_16](../../imgs/ddd_16.png)
 
-该设计有一个问题，表结构细节本应该被隔离到一个映射层中，现在却泄漏到领域层中，这样一来，对表结构信息产生了依赖，而且也存在重复
+该设计有一个问题，表结构细节本应该被隔离到一个映射层中，现在却泄漏到领域层中，这样一来，对表结构信息产生了 __依赖__，而且也存在 __重复__
 
-重写一个专用的查询方法并把它添加到`Invoice Repository`中，把SQL语句从领域对象中分离出来了，__为了避免在Repository中嵌入规则，必须采用更为通用的方式来表达查询__，这种方式不捕捉规则但可通过组合或旋转在上下文中表达规则（双分派模式）
+重写一个专用的查询方法并把它添加到`Invoice Repository`中，把SQL语句从领域对象中分离出来了，__为了避免在Repository中嵌入规则，必须采用更为通用的方式来表达查询__，这种方式不捕捉规则但可通过组合或放置在上下文中表达规则（双分派模式）
 
 ```java
 public class InvoiceRepository{
-  public Set selectWhereCracePeriodPast(Date aDate){
+  public Set selectWhereGracePeriodPast(Date aDate){
     //This is not a rule, just a specialized query
     String sql = whereGracePeriodPast_SQL(aDate);
     ResultSet queryResultSet = SQLDatabaseInterface.instance().executeQuery(sql);
@@ -761,7 +761,7 @@ public class DelinquentInvoiceSpecification extends
       InvoiceSpecification {
   // basic DelinquentInvoiceSpecification code here
 
-  pubic Set satisfyingElementsFrom(InvoiceRepository repository){
+  public Set satisfyingElementsFrom(InvoiceRepository repository){
     //Delinquency rule is defined as:
     //  "grace period past as of current date"
     return repository.selectWhereGracePeriodPast(currentDate);
@@ -770,6 +770,98 @@ public class DelinquentInvoiceSpecification extends
 ```
 
 将SQL置于Repository中，而应该使用哪个查询则由Specification来控制，规格中并没有定义完整的规则，但包含了Specification的基本声明，指明了什么条件构成了拖欠(即超过宽限期)
+
+现在，Repository中包含的查询非常具有针对性，可能只适用于这种情况，虽然这可以接受的，但是根据拖欠发票在过期发票中所占数量的不同，我们可以选择一种更通用的Repository解决方案
+
+```java
+public class InvoiceRepository{
+  public Set selectWhereDueDateIsBefore(Date aDate){
+    //This is not a rule, just a specialized query
+    String sql = whereDueDateIsBefore_SQL(aDate);
+    ResultSet queryResultSet = SQLDatabaseInterface.instance().executeQuery(sql);
+    return buildInvoicesFromResultSet(queryResultSet);
+  }
+
+  public String whereDueDateIsBefore_SQL(Date aDate){
+    return "SELECT * FROM INVOICE" +
+           " WHERE INVOICE.DUE_DATE" +
+           " < " + SQLUtility.dateAsSql(aDate);
+  }
+
+  public Set selectSatisfying(InvoiceSpecification spec){
+    return spec.satisfyingElementsFrom(this);
+  }
+}
+
+public class DelinquentInvoiceSpecification extends
+      InvoiceSpecification {
+  // basic DelinquentInvoiceSpecification code here
+
+  public Set satisfyingElementsFrom(InvoiceRepository repository){
+    Collection pastDueInvoices = repository.selectWhereDueDateIsBefore(currentDate);
+
+    Set delinquentInvoices = new HashSet();
+    Iterator it = pastDueInvoices.interator();
+    while(it.hasNext()){
+      Invoice anInvoice = (Invoice)it.next();
+      if(this.isSatisfiedBy(anInvoice))
+        delinquentInvoices.add(anInvoice);
+    }
+    return delinquentInvoices;
+  }
+}
+```
+
+#### 根据要求来创建(生成)
+这种Specification与查询不同，它不用来过滤已存在对象，也与验证不同，并不用来测试已有对象，在这里，要创建或重新配置满足Specification的全新对象或对象集合。
+
+如果不使用Specification，可以编写一个生成器，包含可创建所需对象的过程或指令集。
+
+反过来，我们也可以根据Specification来定义生成器的接口，显式地约束了生成器的结果：
+
+- 生成器的实现与接口分离，声明了输出的需求，但没有定义如何得到输出的结果
+- 接口把规则显式的表示出来，需要理解所有操作细节即可知晓生成器会产生什么结果
+
+编写一个用于寻找一种可安全高效的在容器中放置化学品的方式
+
+![ddd_17](../../imgs/ddd_17.png)
+
+每种化学品都有一个容器Specification
+
+![ddd_18](../../imgs/ddd_18.png)
+
+如果将这些规格编写成Container Specification，就可以提出一种把化学品混装在容器中的配置方法，并测试它是否满足这些约束条件
+
+![ddd_19](../../imgs/ddd_19.png)
+
+`ContainerSpecification`中的方法`isSatisfied()`用来检查是否满足所需的`ContainerFeature`，如易爆化学器的规格会寻找“防爆”特性：
+
+```java
+public class ContainerSpecification{
+  private ContainerFeature requiredFeature;
+
+  boolean isSatisfiedBy(Container aContainer){
+    return aContainer.getFeatures().contains(requiredFeature);
+  }
+}
+
+tnt.setContainerSpecification(new ContainerSpecification(ARMORED));
+```
+
+`Container`对象中的方法`isSafelyPacked()`用来保证`Container`具有`Chemical`要求的所有特性
+
+```java
+boolean isSafelyPacked(){
+  Iterator it = contents.iterator();
+  while(it.hasNext()){
+    Drum drum = (Drum)it.next();
+    if(!drum.containerSpecification().isSatisfiedBy(this))
+      return false;
+  }
+  return true;
+}
+```
+
 
 
 
@@ -791,6 +883,11 @@ http://www.cnblogs.com/netfocus/archive/2011/10/10/2204949.html
 http://www.cnblogs.com/bluedoctor/p/3809163.html
 http://www.cnblogs.com/xishuai/p/3800656.html
 http://www.cnblogs.com/xishuai/p/3827216.html
+http://blog.csdn.net/bluishglc/article/details/6681253
+http://blog.csdn.net/bluishglc/article/details/6616914
+http://blog.csdn.net/bluishglc/article/details/6274841
+http://www.cnblogs.com/jesse2013/p/the-first-glance-of-ddd.html
+
  -->
 
 

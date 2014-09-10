@@ -2202,6 +2202,9 @@ MVC其实与三层架构是有区别的：
 ![prog_paradigm_mvc_3layer](../../imgs/prog_paradigm_mvc_3layer.png)
 
 
+- 其它参考[从MVC框架看MVC架构的设计](http://blog.csdn.net/bluishglc/article/details/6690693)
+
+
 ## 依赖原则-有求皆苦,无欲则刚
 
 ### 依赖反转原则
