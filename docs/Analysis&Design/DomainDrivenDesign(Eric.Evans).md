@@ -826,7 +826,7 @@ public class DelinquentInvoiceSpecification extends
 
 ![ddd_17](../../imgs/ddd_17.png)
 
-每种化学品都有一个容器Specification
+我们必须显式描述规则，同时也提供一种测试最终实现方式，每种化学品都有一个容器Specification
 
 ![ddd_18](../../imgs/ddd_18.png)
 
@@ -836,33 +836,79 @@ public class DelinquentInvoiceSpecification extends
 
 `ContainerSpecification`中的方法`isSatisfied()`用来检查是否满足所需的`ContainerFeature`，如易爆化学器的规格会寻找“防爆”特性：
 
-```java
-public class ContainerSpecification{
-  private ContainerFeature requiredFeature;
+```ruby
+class ContainerSpecification
+  def isSatisfiedBy(container)
+    container.features().contains(@requiredFeature)
+  end
+end
 
-  boolean isSatisfiedBy(Container aContainer){
-    return aContainer.getFeatures().contains(requiredFeature);
-  }
-}
-
-tnt.setContainerSpecification(new ContainerSpecification(ARMORED));
+tnt.containerSpecification = ContainerSpecification.new(ARMORED)
 ```
 
 `Container`对象中的方法`isSafelyPacked()`用来保证`Container`具有`Chemical`要求的所有特性
 
-```java
-boolean isSafelyPacked(){
-  Iterator it = contents.iterator();
-  while(it.hasNext()){
-    Drum drum = (Drum)it.next();
-    if(!drum.containerSpecification().isSatisfiedBy(this))
-      return false;
-  }
-  return true;
-}
+```ruby
+class Container
+  def isSafelyPacked
+    @contents.all? {|drum| drum.containerSpecification().isSatisfiedBy(self)}
+  end
+end
 ```
 
+编写一个监控程序，监视库存数据库并报告不安全状况
 
+```ruby
+containers.filter{|container|!container.isSafelyPacked}
+```
+
+客户并没有要求编写这样一个软件，要求的是设计一个打包程序，现在得到的是打包的测试程序，这些对领域的理解和基于Specification的模型使我们有能力为服务定义一个清晰而简单的接口，这个服务可接受`Drum`和`Container`集合并将它们按照规则进行打包
+
+```ruby
+class WarehousePacker
+  def pack(containers_to_fill, drums_to_pack)
+  end
+end
+```
+
+打包程序原型
+
+```ruby
+class Container
+  def initialize
+    @capacity = 0
+    @contents = [] #drums
+  end
+
+  def has_space_for(drum)
+    remaining_space >= drum.size
+  end
+
+  def remaining_space
+    @capacity - @contents.sum(&:size)
+  end
+
+  def can_accommondate(drum)
+    has_space_for(drum) && drum.containerSpecification().isSatisfiedBy(self)
+  end
+end
+
+class PrototypePacker < WarehousePacker
+  def pack(containers_to_fill, drums_to_pack)
+    drums_to_pack.each do |drum|
+      find_container_for(containers_to_fill, drum) << drum
+    end
+  end
+
+  def find_container_for(containers, drum)
+    _found = containers.find{|container| container.can_accommondate(drum)}
+    raise "NoFound" if _found.nil?
+    _found
+  end
+end
+```
+
+这可能将砂打包到特制容器中，导致在打包危险化学品时，特制容器已没有多余空间了，显然没对空间的利用进行优化
 
 
 
