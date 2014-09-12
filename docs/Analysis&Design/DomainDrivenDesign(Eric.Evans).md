@@ -826,15 +826,15 @@ public class DelinquentInvoiceSpecification extends
 
 ![ddd_17](../../imgs/ddd_17.png)
 
-我们必须显式描述规则，同时也提供一种测试最终实现方式，每种化学品都有一个容器Specification
+我们必须 __显式__ 描述规则（并非只是作为某一个方法而存在，而是作为一个业务对象而存在），同时也提供一种测试最终实现方式，每种化学品都有一个容器Specification
 
 ![ddd_18](../../imgs/ddd_18.png)
 
-如果将这些规格编写成Container Specification，就可以提出一种把化学品混装在容器中的配置方法，并测试它是否满足这些约束条件
+如果将这些规格编写成Container Specification，就可以提出一种把化学品混装在容器中的配置方法，并 __测试它是否满足__ 这些约束条件
 
 ![ddd_19](../../imgs/ddd_19.png)
 
-`ContainerSpecification`中的方法`isSatisfied()`用来检查是否满足所需的`ContainerFeature`，如易爆化学器的规格会寻找“防爆”特性：
+`ContainerSpecification`中的方法`isSatisfied()`用来检查是否满足所需的`ContainerFeature`，如易爆化学器的规格会寻找“防爆”特性（即所传参的容器是否包含该特性）：
 
 ```ruby
 class ContainerSpecification
@@ -850,6 +850,7 @@ tnt.containerSpecification = ContainerSpecification.new(ARMORED)
 
 ```ruby
 class Container
+  def features; end
   def isSafelyPacked
     @contents.all? {|drum| drum.containerSpecification().isSatisfiedBy(self)}
   end
@@ -908,7 +909,112 @@ class PrototypePacker < WarehousePacker
 end
 ```
 
-这可能将砂打包到特制容器中，导致在打包危险化学品时，特制容器已没有多余空间了，显然没对空间的利用进行优化
+这可能将砂打包到特制容器中，导致在打包危险化学品时，特制容器已没有多余空间了，显然没对空间的利用进行优化，但也确实遵循了到目前为止已声明过的所有规则
+
+柔性设计
+===========
+当具有复杂行为的软件缺乏一个良好的设计时，重构或元素的组合会变得很困难，一旦开发人员不能十分肯定地预知计算的全部含意，就会出现重复，当设计元素都是整块的而无法重新组合的时候，重复就是一种必然的结果。
+
+柔性设计是对深层建模的补充，一旦我们挖掘出隐式概念，并把它们 __显示__ 表达出来之后，就有原料，通过迭代，最后得到一个原型，清晰地捕获了主要关注点。
+
+但过多的抽象层和间接设计常常成为项目的绊脚石
+
+开发人员扮演两个角色：
+
+- 客户开发人员，负责将领域对象组织成应用程序代码或其他领域层代码，以便发挥设计的功能。可以灵活地使用一个最小化的、松散耦合的概念集合，来表示领域中的大量场景
+- 代码维护人员，为了便于修改，设计必须易于理解
+
+![ddd_20](../../imgs/ddd_20.png)
+
+## 模式:Intention-Revealing Interfaces
+如果开发人员为了使用一个组件而必须要去研究它的实现，那么就失去了封装的价值
+
+Kent Beck曾提出通过Intention-Revealing Selector来选择方法的名称，使名称表达出其目的
+
+在命名类和操作时要描述它们的效果和目的，而不要表露它们是通过何种方式达到目的的，这些名称应该与Ubiquitous Language保持一致，在创建一个行为之前先为它编写一个测试，这样可以促使你站在客户开发人员的角度上来思考它
+
+### 示例
+一个调漆程序
+
+![ddd_21](../../imgs/ddd_21.png)
+
+`paint(Paint)`方法行为根本猜不出来，唯一方法就是阅读代码
+
+```ruby
+def paint(paint)
+  @v += paint.v
+  # After mixing, volume is summed
+  # Omitted many lines of complicated color mixing logic
+  # ending with the assignment of new r, b, and y values.
+end
+```
+
+从代码上看，这个方法是把两种油漆混合到一起，结果是油漆的体积增加了，并变为混合颜色
+
+我们为这个方法编写一个测试
+
+```ruby
+def test_paint
+  yellow = Paint.new(100.0, 0, 50, 0)
+  blue = Paint.new(100.0, 0, 0, 50)
+
+  yellow.paint(blue)
+
+  assert_equal(200.0, yellow.v, 0.01)
+  assert_equal(25, yellow.b)
+  assert_equal(25, yellow.y)
+  assert_equal(0, yellow.r)
+end
+```
+
+从客户开发人员角度来研究一下该对象的接口设计
+
+```ruby
+def test_paint
+  our_paint = Paint.new(100.0, 0, 50, 0)
+  blue = Paint.new(100.0, 0, 0, 50)
+
+  our_paint.mix_in(blue)
+
+  assert_equal(200.0, our_paint.volume, 0.01)
+  assert_equal(25, our_paint.blue)
+  assert_equal(25, our_paint.yellow)
+  assert_equal(0, our_paint.red)
+end
+```
+
+反映出我们希望以哪些方式与这些对象进行交互。在这之后，我们重构`Paint`类，使它通过测试
+
+![ddd_22](../../imgs/ddd_22.png)
+
+## 模式:Side-Effect-Free Function
+复杂的逻辑可以在此中安全的执行
+
+
+
+
+
+
+
+
+
+## 模式:Assertion
+改变系统状态的方法可以用此来刻画
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -936,7 +1042,8 @@ http://blog.csdn.net/bluishglc/article/details/6681253
 http://blog.csdn.net/bluishglc/article/details/6616914
 http://blog.csdn.net/bluishglc/article/details/6274841
 http://www.cnblogs.com/jesse2013/p/the-first-glance-of-ddd.html
-
+http://www.umlchina.com/qa/Index1.htm
+http://www.zhangxun.com/
  -->
 
 
