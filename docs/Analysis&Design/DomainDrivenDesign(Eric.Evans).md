@@ -1044,6 +1044,7 @@ http://blog.csdn.net/bluishglc/article/details/6274841
 http://www.cnblogs.com/jesse2013/p/the-first-glance-of-ddd.html
 http://www.umlchina.com/qa/Index1.htm
 http://www.zhangxun.com/
+http://www.infoq.com/cn/news/2008/03/ddd-di-aop
  -->
 
 
