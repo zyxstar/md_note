@@ -42,6 +42,11 @@ Repository
 Factory
 Specification
 Anticorruption Layer
+
+Side-Effect-Free Function
+Intention-Revealing Interface
+Assertion
+Conceptual Contour
  -->
 
 让领域模型发挥作用
@@ -990,31 +995,119 @@ end
 ## 模式:Side-Effect-Free Function
 复杂的逻辑可以在此中安全的执行
 
+操作宽泛的分为两个类别：命令和查询
 
+- 查询是从系统获取信息，查询的方式可能只是简单的访问变量中的数据，也可能是用这些数据执行计算。
+- 命令，也称为修改器，是修改系统的操作，即会产生 __副作用__(强调了交互的不可避免性)
 
+返回结果而不产生副作用的操作称为 __函数__，可被调用多次，每次返回相同的值，比那些有副作用的操作 __更容易测试__，由此，使用函数可以降低风险
 
+---
+大多数系统中，命令的使用是不可避免的，但有两种方法可减少命令产生的问题：
 
+- __可把命令和查询严格的放在 *不同* 的操作中__，确保导致状态改变的方法不返回领域数据，并尽可能保持简单，在不引起任何可观测到的副作用的方法中执行所有查询和计算
+- 使用一些模式，不对现有对象做任何修改，创建并返回一个Value Object，用于表示计算结果，Value Object可以在响应一次查询中被创建和传递，然后被丢弃
+> Value Object是不可变的，意味着除了在创建期间调用的初始化程序之外，它们的所用操用都是函数
 
+如果一个操作把 __逻辑或计算__ 与 __状态改变__ 混在一起，就应该把这个操作重构成两个独立的操作。把 __副作用隔离到Entity__中，而把 __复杂计算的职责转移到Value Object__中，通过派生一个Value Object（而不是改变现有状态），或者通过把职责完全转移到一个Value Object中，往往可以完全消除副作用
 
+Side-Effect-Free Function，特别是不变的Value Object，允许我们安全的对多个操作进行组合，当通过一个Intention-Revealing Interface把一个函数呈现出来的时候，开发人员可以无需理解其实现细节的情况下使用它
 
+### 示例
+调漆重构后的类
+
+```ruby
+def mix_in(paint)
+  volume = volume.plus(paint.volume)
+  # Many lines of complicated color-mixing logic
+  # ending with the assignment of new red, blue,
+  # and yellow values.
+end
+```
+
+`mix_in()`方法中发生许多事情，但遵循了“修改和查询分离”原则。在这个领域中，颜色是一个重要的概念，让我们试着把它变成一个显式的对象，但油漆调色与RGB调色是不同的，__名称必须反映出这一点__
+
+![img](../../imgs/ddd_23.png)
+
+把`PigmentColor`分离出来后，确实比先前表达了更多信息，当把颜色数据移出来之后，这些数据有关的行为也应该一起移出来，注意`PigmentColor`是一个Value Object，因此，它是不可变的，当我们调漆时，`Paint`对象本身被改变了，它是一个具有生命周期的实体
+
+![img](../../imgs/ddd_24.png)
+
+```ruby
+class PigmentColor
+  def mixed_with(pigment_color, ratio)
+    # Many lines of complicated color-mixing logic
+    # ending with the create of a new PigmentColor object
+    # with appropriate new red, blue, and yellow values.
+  end
+end
+
+class Paint
+  def mix_in(other)
+    volume = volume + other.volume
+    ratio = other.volume / volume
+    pigment_color = pigment_color.mixed_with(other.pigment_color, ratio)
+  end
+end
+```
+
+现在`Paint`的代码已经尽可能简单了，新的`PigmentColor`类捕获了知识，并显式地把这些知识表达出来，函数计算结果 __容易理解__，也 __容易测试__，因此可以安全地使用或与其他操作进行组合（无副使用），安全性高，复杂调色逻辑真正被封装起来了
 
 ## 模式:Assertion
 改变系统状态的方法可以用此来刻画
 
+把复杂的计算封装在Side-Effect-Free Function中可以简化问题，但实体仍然会留有一些有副作用的命令，使用这些Entity的人必须了解使用这些命令的后果。在这种情况下，使用Assertion可以把副作用明确地表示出来，使它们更易于处理
 
+__契约式设计(design by contract)__，通过给类和方法的“断言”使开发人员知道肯定会发生的结果。“后置条件”就像合同条款，即为了满足后置条件而必须满足的前置条件。
 
+> 向Bertrand Meyer[1988]的 __契约式编程__ 和 __“命令-查询分离原则”__ 致敬
 
+所有这些断言都描述了状态，而不是过程，因此它们更易于分析。类的固定规则在描述类的意义方面起到帮助作用，并且使客户开发人员能够准确地预测对象的行为，从而简化他们的工作。如果你确信后置条件的保证，那么就必考虑方法是如何工作的
 
+如果在你的编程语言中不能直接编写Assertion，那么就把它们编写成自动的单元测试，还可以把它们写到文档或图中
 
+由于Assertion只声明状态，而不声明过程，很容易编写测试
 
+## 示例
+第一步，先把`mix_in()`方法的后置条件声明如下：
 
+`在p1.mix_in(p2)之后，p1.volume增加p2.volume的量，p2.volume不变`
 
+问题在于开发人员会犯错，因为这些属性与实际概念不符，简单的方法是让另一种油漆的体积变为零，声明一个固定规则：
 
+`混合之后油漆的总体积保持不变`
 
+但如果程序需要报告被混合之前的油漆清单时，就无法实现了
 
+很可能是丢失了概念，让我们寻找一个 __新的模型__
 
+### 寻找更清晰的模型
+我们用一个Value Object上的Side-Effect-Free Function来计算颜色，意味着可以在任何需要的时候重复进行这个计算，应该利用这种优势
 
+我们似乎为`Paint`分配了两种不同的基本职责，试着分开
 
+![img](../../imgs/ddd_25.png)
+
+```ruby
+def test_mixing_volume
+  yellow = PigmentColor.new(0, 50, 0)
+  blue = PigmentColor.new(0, 0, 50)
+
+  paint1 = StockPaint.new(1.0, yellow)
+  paint2 = StockPaint.new(1.5, blue)
+  mix = MixedPaint.new
+
+  mix.mix_in(paint1)
+  mix.mix_in(paint2)
+  assert_equal(2.5, mix.volume, 0.01)
+end
+```
+
+这个模型捕捉并传递了更多领域知识，固定规则和后置条件符合常识，使得它们更易于维护和使用
+
+Intention-Revealing Interface清楚的表明了用途，Side-Effect-Free Function和Assertion使我们能够准确地预测结果，因此封装和抽象更加安全
+
+## 模式:Conceptual Contour
 
 
 
@@ -1026,6 +1119,46 @@ end
 <!--
 
 
+syc_mod
+--------
+id
+modid (eng) char 2
+fdesc
+note        varchar 1000
+create_by
+create_date
+
+
+syc_refgrp
+--------
+id
+refgrp (eng)
+modid (fk)
+recsts (0/1) char 1
+fdesc
+note
+create_by
+create_date
+
+
+syc_refcd
+--------
+id
+refcd (eng)
+refgrp (fk)
+modid (fk)
+recsts (0/1)
+fdesc (full description)
+sdesc (short description)
+var1
+var2
+var3
+ordseq   float
+note
+create_by
+create_date
+update_by
+update_date
 
 
 > DDD vs 四色建模
