@@ -6680,3 +6680,29 @@ Code:
         button { "Submit" }
       end
     end
+
+
+
+
+<!--
+class App
+  def delegate(arg1, arg2='2')
+    p Hash[method(__method__).parameters.map { |_, arg| [arg, eval(arg.to_s)] }]
+    yield arg1, arg2
+  end
+
+  def func
+    tool=Tool.new
+    delegate('1', &tool.method(:handler))
+  end
+
+end
+
+class Tool
+  def handler(*arg)
+    p arg
+  end
+end
+
+App.new.func
+-->

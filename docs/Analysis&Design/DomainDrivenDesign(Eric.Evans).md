@@ -1069,7 +1069,7 @@ __契约式设计(design by contract)__，通过给类和方法的“断言”�
 原则4 对于每个命令都撰写一个后验条件，以规定每个基本查询的值。结合“用基本查询定义派生查询”的原则(原则3)，我们现在已经能够知道每个命令的全部可视效果。
 原则5 对于没个查询和命令，采用一个合适的先验条件。先验条件限定了客户调用查询和命令的时机。
 原则6 撰写不变式来定义对象的恒定特性。类是某种抽象的体现，应当将注意力集中在最重要的属性上，以建立关于类抽象的正确概念模型。
- 
+
 2. Design by Contract的六大准则:
 准则1 在适当的地方添加物理限制。尤其是那些需要限制变量不应该为void的地方。
 准则2 先验条件中尽可能使用高效的查询。如果有必要，可以增加高效的派生查询，并在其后验条件中确保其与较低效的基本查询之间的等价关系。
@@ -1125,6 +1125,22 @@ end
 Intention-Revealing Interface清楚的表明了用途，Side-Effect-Free Function和Assertion使我们能够准确地预测结果，因此封装和抽象更加安全
 
 ## 模式:Conceptual Contour
+- 有时对功能进行更细的分解，以便灵活地组合它们
+- 有时却把功能组合成大块，以便封装复杂性
+- 有时为了使所有类和操作都具有相似的规模而寻找一种一致的粒度
+
+上面这些方式都 __过于简单__，并不能作为通用的规则。菜谱式的规则是没有用的，大部分领域都深深隐含着某种逻辑一致性，否则就形不成领域了。领域一定存在某种原理，也是建模的意义所在。反复重构实现柔性设计，代码不断适合新理解的概念或需求，Conceptual Contour（概念轮廓）也就形成了
+
+在做每个决定时，要问“这是根据当前模型和代码中的一组特定关系做出的权宜之计呢，还是反映了底层领域的某种轮廓”
+
+## 模式:Standalone Class
+互相依赖性使模型和设计变得难以理解、测试和维护，而且互相依赖性很容易越积越多
+
+
+
+
+
+
 
 
 
@@ -1135,47 +1151,6 @@ Intention-Revealing Interface清楚的表明了用途，Side-Effect-Free Functio
 
 <!--
 
-
-syc_mod
---------
-id
-modid (eng) char 2
-fdesc
-note        varchar 1000
-create_by
-create_date
-
-
-syc_refgrp
---------
-id
-refgrp (eng)
-modid (fk)
-recsts (0/1) char 1
-fdesc
-note
-create_by
-create_date
-
-
-syc_refcd
---------
-id
-refcd (eng)
-refgrp (fk)
-modid (fk)
-recsts (0/1)
-fdesc (full description)
-sdesc (short description)
-var1
-var2
-var3
-ordseq   float
-note
-create_by
-create_date
-update_by
-update_date
 
 
 > DDD vs 四色建模
