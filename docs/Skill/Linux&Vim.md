@@ -7,6 +7,9 @@ cd -                              #返回上次使用的目录
 find /somedir -name "pattern"     #查找文件
 find . -size +10000k
 find . -name *.php|xargs ls -alt  #也可以查找指定类型的文件，然后指定按时间排序
+find . -name "*.c" |xargs cat|grep -v ^$|wc -l  #当前目录下所有c文件的行数总和，不包括空行
+
+
 
 grep -n "mail" /etc/*             #从/etc目录所有的文件中去找mail字符串
 

@@ -7,6 +7,7 @@
 - [DomainDrivenDesign(Eric.Evans).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FDomainDrivenDesign%2528Eric.Evans%2529.md) <span>2014-05-30</span>
 - [EffectiveUML(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FEffectiveUML%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
 - [OOD_principles(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FOOD_principles%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
+- [对象模型(Peter.Coad).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E5%25AF%25B9%25E8%25B1%25A1%25E6%25A8%25A1%25E5%259E%258B%2528Peter.Coad%2529.md) <span>2009-06-30</span>
 - [用例驱动的UML对象建模(ICONIX).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E7%2594%25A8%25E4%25BE%258B%25E9%25A9%25B1%25E5%258A%25A8%25E7%259A%2584UML%25E5%25AF%25B9%25E8%25B1%25A1%25E5%25BB%25BA%25E6%25A8%25A1%2528ICONIX%2529.md) <span>2009-01-30</span>
 
 # ProgrammingParadigm
