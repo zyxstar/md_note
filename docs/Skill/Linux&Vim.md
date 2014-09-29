@@ -4,12 +4,15 @@ Linux
 ```shell
 clear                             #清屏 Ctrl+L
 cd -                              #返回上次使用的目录
+cd ~zyx                           #进入zyx的home
 find /somedir -name "pattern"     #查找文件
 find . -size +10000k
 find . -name *.php|xargs ls -alt  #也可以查找指定类型的文件，然后指定按时间排序
 find . -name "*.c" |xargs cat|grep -v ^$|wc -l  #当前目录下所有c文件的行数总和，不包括空行
 
+alias                             #查看别名，存在于.cshrc中
 
+\command                          #不使用别名时，直接使用原始命令
 
 grep -n "mail" /etc/*             #从/etc目录所有的文件中去找mail字符串
 
@@ -24,8 +27,10 @@ ls -a | sort -i                   #排序显示
 getfacl <filname>                 #文件权限
 
 mkdir -p aaa/bbb/ccc              #创建多层次目录
+mkdir dir{3..7} dir{aa,bb}        #创建目录集合
 
 mv;cp                             #最好加上 -i 否则可能覆盖
+cp -r                             #复制文件夹，这样就可以将文件与文件夹一起拷贝了
 
 wc file                           #统计行数，字符，字节
 
@@ -64,11 +69,59 @@ csplit                            #由正则来分割文件
 file                              #查看文件属性
 strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
 
+du --max-depth=1 -h
+du -sh                            #查看文件夹大小
+df -h                             #查看硬盘空间
+
+
 ls --help|grep -E "time|sort"     #查找ls命令手册中有关时间与排序的条目
 
 export PS1='\u@\h:\w\$'           #修改命令行提示符，在profile中修改
 
+ESC+.                              #快捷键，得到上个命令的参数
+ALT+CTRL
+
 ```
+
+## 系统相关
+```
+/dev/sda  #第一块硬盘
+/dev/sda1 #第一块硬盘第一个分区
+/dev/sda2 #第一块硬盘第二个分区
+
+/dev/sdb  #第二块硬盘（U盘）
+
+安装时分区
+/boot 200M
+/     尽可能大
+swap  4G
+
+gkub引导程序，应放在/dev/sda上，特别是用U盘安装的
+防火墙、SELinux、Kdump关闭
+
+/bin
+/usr/bin    #普通用户使用的二进制命令
+
+/sbin
+/usr/sbin   #super用户使用的二进制命令
+
+/lib
+/var/lib
+/lib64      #库文件，由glibc提供
+
+/boot/grub  #存放引导内核
+/boot/vmlinuz-2.6.18  #linux内核版本
+
+/dev        #设备文件
+
+/tmp
+/var/tmp    #程序运行时用的临时文件
+
+/proc       #进程文件，存在内存中，所以du看不出大小
+
+```
+
+
 
 ## sort
 ```
@@ -186,6 +239,7 @@ cut -d: -c1,5-10 cut_test.txt(返回第1个和第5-10个字符)
 
 ## grep
 ```
+grep --color 高亮显示
 grep时应该把正则放到引号中(单引号优于双引号)，否则shell将它们作为文件名来解释
 grep的可选项(以下只能3选1)
   -G默认动作，搜索模式作为基本正则来解释
@@ -505,10 +559,36 @@ usage:  crontab [-u user] file
     - 立即生效，重启失效
 - 修改`/etc/sysconfig/network-scripts/ifcfg-eth0` restart生效
 
+```
+ip addr
+system-config-network
+service network restart
+```
+
 ## 启动服务
 ```shell
 sudo service smbd restart
 /etc/init.d/samba restart
+```
+
+## yum包管理
+```
+配置源
+vi /etc/yum.repos.d/rhel5.repo
+输入
+[rhel5]
+name=rhel5
+baseurl=ftp://...
+gpgcheck=0
+
+yum repolist
+yum -y install ??
+yum list
+
+yum -y remove ??
+yum grouplist
+yum -y groupinstall "??"
+
 ```
 
 ## 后台任务
@@ -562,6 +642,8 @@ ps x                               #不带终端的显示
 ```shell
 man ls |col -b >ls.txt             # col -b  过滤掉所有的控制字符
 info make -o make.txt -s
+
+man中一样可以搜索，同vi中一样
 ```
 
 ## 语言设置
@@ -670,6 +752,7 @@ Ctrl + r       撤销的撤销 #(常用)
 
 ```
 
+## 提示符模式
 ### 查找替换
 ```shell
 /string        向光标之下寻找一个名称为string字符串 #(常用)
