@@ -4,9 +4,9 @@
 ==========
 
 - 你是否有过，到处散落的小随笔而没有归档，想找到以前记录的东西，需要查找一个个文件
-- 当你做读书笔记的时候，太深入细节，没的提纲，想看看整体脉络时，却千头万绪？
+- 当你做读书笔记的时候，太深入细节，没有提纲，想看看整体脉络时，却千头万绪？
 - 记录里的东西被删除了，但某天突然想起某个重要信息在上面，只怪当时手太痒
-- 如果你是程序员，记录的东西里面也可能有一些代码，想看看运行效果怎么办？毕竟所见即所得的效果还是不错的
+- 如果你是程序员，记录的东西里面也可能有一些代码，想看看运行效果怎么办？所见即所得的是能加深学习效率的
 
 嗯，是的，本工具能帮助到你，它使用纯文本格式（Markdown）作笔记，非常适合做 __*版本管理*__，不用担心内容会丢失；同时能根据文档中的标题自动生成 __*目录结构*__，方便理清层次关系，帮助归纳推演；如果文档中包含代码小片断，还能在文档中 __*直接运行代码*__ ，不需要IDE，不需要<kbd>Ctrl</kbd> <kbd>C</kbd> + <kbd>Ctrl</kbd> <kbd>V</kbd>，直接在页面中就能得到反馈。
 
@@ -15,19 +15,15 @@
 
 本文档也是用该工具展示的，在Github的[地址](https://raw.github.com/zyxstar/md_note/master/docs/Manual.md)
 
-- 读书时的整理
+- 读书的整理
     - [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md)
-    - [RubyPlatform.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyPlatform.md)
+    - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md)
+    - [RubyProgramming.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyProgramming.md)
 
-- 培训时的笔记
+- 课堂的笔记
     - [需求分析训练营(徐锋).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590%25E8%25AE%25AD%25E7%25BB%2583%25E8%2590%25A5%2528%25E5%25BE%2590%25E9%2594%258B%2529.md)
-
-- 课堂的记录
     - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
 
-- 框架学习与示例
-    - [Backbone_intro.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_intro.md)
-    - [Backbone_todo.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_todo.md)
 
 - [更多...](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2FREADME.md)
 
