@@ -630,7 +630,9 @@ tower学习
 
 
 
-
+评论
+=======
+<div class="ds-thread" data-thread-key="RenHealthInfrastructure" data-title="RenHealthInfrastructure" data-url="http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FRenHealthInfrastructure.md"></div>
 
 <script>
 
@@ -643,9 +645,6 @@ tower学习
 
 
 
-<!-- 多说评论框 start -->
-<div class="ds-thread" data-thread-key="RenHealthInfrastructure" data-title="RenHealthInfrastructure" data-url="http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FRenHealthInfrastructure.md"></div>
-<!-- 多说评论框 end -->
 <!-- 多说公共JS代码 start (一个网页只需插入一次) -->
 <script type="text/javascript">
 var duoshuoQuery = {short_name:"chinapub"};
