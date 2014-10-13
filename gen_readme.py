@@ -10,7 +10,8 @@ SYS_ENCODING = sys.getfilesystemencoding()
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
 GITHUB_BASE_URL = "https://raw.github.com/zyxstar/md_note/master/docs"
 
-ORDER_DIC = {"Analysis&Design":10,
+ORDER_DIC = {"Analysis":10,
+             "Design":15,
              "ProgrammingParadigm":20,
              "Language":30,
              "Skill":40,
@@ -18,8 +19,9 @@ ORDER_DIC = {"Analysis&Design":10,
              "RubyProgramming.md":10,
              "RubyPlatform.md":20,
              "PythonCookBook.md":10,
+			 u"编程范式(stanford_cs107).md".encode(SYS_ENCODING):10,
              u"需求分析训练营(徐锋).md".encode(SYS_ENCODING):10,
-             u"系统分析UML实务(MDA).md".encode(SYS_ENCODING):20
+             u"有效用例模式(SteveAdolph).md".encode(SYS_ENCODING):20
             }
 
 

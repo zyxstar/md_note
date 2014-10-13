@@ -1,22 +1,23 @@
 # Manual
 - [Manual.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManual.md) <span>2014-01-08</span>
 
-# Analysis&Design
-- [需求分析训练营(徐锋).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590%25E8%25AE%25AD%25E7%25BB%2583%25E8%2590%25A5%2528%25E5%25BE%2590%25E9%2594%258B%2529.md) <span>2013-12-08</span>
-- [系统分析UML实务(MDA).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E7%25B3%25BB%25E7%25BB%259F%25E5%2588%2586%25E6%259E%2590UML%25E5%25AE%259E%25E5%258A%25A1%2528MDA%2529.md) <span>2009-06-03</span>
-- [DomainDrivenDesign(Eric.Evans).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FDomainDrivenDesign%2528Eric.Evans%2529.md) <span>2014-05-30</span>
-- [EffectiveUML(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FEffectiveUML%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
-- [OOD_principles(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2FOOD_principles%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
-- [对象模型(Peter.Coad).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E5%25AF%25B9%25E8%25B1%25A1%25E6%25A8%25A1%25E5%259E%258B%2528Peter.Coad%2529.md) <span>2009-06-30</span>
-- [用例驱动的UML对象建模(ICONIX).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2526Design%2F%25E7%2594%25A8%25E4%25BE%258B%25E9%25A9%25B1%25E5%258A%25A8%25E7%259A%2584UML%25E5%25AF%25B9%25E8%25B1%25A1%25E5%25BB%25BA%25E6%25A8%25A1%2528ICONIX%2529.md) <span>2009-01-30</span>
+# Analysis
+- [需求分析训练营(徐锋).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590%25E8%25AE%25AD%25E7%25BB%2583%25E8%2590%25A5%2528%25E5%25BE%2590%25E9%2594%258B%2529.md) <span>2013-12-08</span>
+- [有效用例模式(SteveAdolph).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2F%25E6%259C%2589%25E6%2595%2588%25E7%2594%25A8%25E4%25BE%258B%25E6%25A8%25A1%25E5%25BC%258F%2528SteveAdolph%2529.md) <span>2014-09-06</span>
+- [用例驱动的UML对象建模(ICONIX).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2F%25E7%2594%25A8%25E4%25BE%258B%25E9%25A9%25B1%25E5%258A%25A8%25E7%259A%2584UML%25E5%25AF%25B9%25E8%25B1%25A1%25E5%25BB%25BA%25E6%25A8%25A1%2528ICONIX%2529.md) <span>2009-01-30</span>
+- [系统分析UML实务(MDA).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FAnalysis%2F%25E7%25B3%25BB%25E7%25BB%259F%25E5%2588%2586%25E6%259E%2590UML%25E5%25AE%259E%25E5%258A%25A1%2528MDA%2529.md) <span>2009-06-03</span>
 
-# ProgrammingParadigm
-- [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md) <span>2013-08-15</span>
-- [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md) <span>2012-07-21</span>
+# Design
+- [EffectiveUML(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2FEffectiveUML%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
+- [OOD_principles(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2FOOD_principles%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
+- [对象模型-策略.模式.应用(Peter.Coad).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2F%25E5%25AF%25B9%25E8%25B1%25A1%25E6%25A8%25A1%25E5%259E%258B-%25E7%25AD%2596%25E7%2595%25A5.%25E6%25A8%25A1%25E5%25BC%258F.%25E5%25BA%2594%25E7%2594%25A8%2528Peter.Coad%2529.md) <span>2009-06-30</span>
+- [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md) <span>2012-07-21</span>
+- [领域驱动设计(Eric.Evans).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2F%25E9%25A2%2586%25E5%259F%259F%25E9%25A9%25B1%25E5%258A%25A8%25E8%25AE%25BE%25E8%25AE%25A1%2528Eric.Evans%2529.md) <span>2014-05-30</span>
 
 # Language
 
 ## C
+- [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md) <span>2013-08-15</span>
 - [C专家编程(PeterVanDerLinden).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FC%2FC%25E4%25B8%2593%25E5%25AE%25B6%25E7%25BC%2596%25E7%25A8%258B%2528PeterVanDerLinden%2529.md) <span>2014-09-04</span>
 - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md) <span>2014-08-01</span>
 
