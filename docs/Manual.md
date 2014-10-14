@@ -202,12 +202,12 @@ m = MyClass("python")
 print m.say()
 ```
 
-> 细心的你可能发现，有一个"►applet"的按钮，这是通过java编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。所以，如果你需要看到编写的代码运行在本机上的效果时，可以点此按钮。使用它之前有几点特殊要求（当然，你可以忽略它，直接点此"►"）：
+> <del>细心的你可能发现，有一个"►applet"的按钮，这是通过java编写的applet来调用本地的语言解析器，并将运行结果返回至applet，再显示到页面上。所以，如果你需要看到编写的代码运行在本机上的效果时，可以点此按钮。使用它之前有几点特殊要求（当然，你可以忽略它，直接点此"►"）：</del>
 
-> - 安装java，并在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动
-> - 打开 控制面板 - Java (32bit) - Security，设置为Medium
-> - 在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)
-> - 语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe（目前只支持这几种语言） __所在的目录__ 需要添加到环境变量PATH中
+> - <del>安装java，并在浏览器上启用java，如chrome，在地址栏输入`chrome://plugins/`，查看`Java(TM)`是否启动</del>
+> - <del>打开 控制面板 - Java (32bit) - Security，设置为Medium</del>
+> - <del>在Java\jre7\lib\security\java.policy文件(请确定该java版本是浏览器使用的版本)里最后加上`permission java.security.AllPermission;`，修改该文件时，修改者首先需要具备可修改的权限(以上权限的修改，由可能引起安全隐患，使用者可在运行完文档后，酌情还原)</del>
+> - <del>语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe（目前只支持这几种语言） __所在的目录__ 需要添加到环境变量PATH中</del>
 
 ### Ruby
 首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`或<code>```!rb</code>：
@@ -284,7 +284,7 @@ int main(){
 ### CSharp
 首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`或<code>```!c#</code>：
 
-```!cpp
+```!csharp
 using System;
 
 class Program {
@@ -307,7 +307,9 @@ class Program {
 ### Java
 首行加`<!-- language: !java -->`或<code>```!java</code>：
 
-```!java
+<!-- run -->
+
+```java
 import java.io.*;
 import java.text.*;
 public class Program {
@@ -355,8 +357,6 @@ public class Program {
 - [CodeMirror](http://codemirror.net/)
 - [JsFiddle](http://jsfiddle.net/)
 - [CompileOnline](http://compileonline.com)
-
-
 
 给我反馈
 ========

@@ -184,7 +184,8 @@ __讨论__
 
 ## 本节评论
 
-<div class="ds-thread" data-thread-key="RenHealthInfrastructure_user" data-title="RenHealthInfrastructure_user" data-url=""></div>
+<!-- discuss: #user -->
+
 
 子系统：社交
 ===============
@@ -479,7 +480,7 @@ __规则__
 ---
 ## 本节评论
 
-<div class="ds-thread" data-thread-key="RenHealthInfrastructure_social" data-title="RenHealthInfrastructure_social" data-url=""></div>
+<!-- discuss: #social -->
 
 子系统：应用商店
 ================
@@ -539,9 +540,10 @@ __规则__
 <!-- 2A -->
 
 ---
+
 ## 本节评论
 
-<div class="ds-thread" data-thread-key="RenHealthInfrastructure_appstore" data-title="RenHealthInfrastructure_appstore" data-url=""></div>
+<!-- discuss: #appstore -->
 
 系统机制
 ========
@@ -577,6 +579,8 @@ __规则__
 
 ## 规则描述
 领域类中具有许多规则描述的类，必须被单独标识，而不是作为某个类中的某个方法的片断
+
+全局规则请求响应(谓词+说明+参数)
 
 <!-- 设计要求：
 
@@ -630,7 +634,7 @@ tower学习
 - 日志部分
 
 ## 标准化
-- @用户、#话题、!标签 等的采用
+- @用户、#话题/标签、!重要性 等的采用
 - 标准表情
 
 

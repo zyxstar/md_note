@@ -103,7 +103,7 @@ underscore.1.2.1
 
 <!--language: !js-->
 
-    //#import underscore.1.2.0
+    //#=require underscore.1.2.0
     //= require underscore.1.2.1
     //= require json2
     //= require simpletest
@@ -173,7 +173,7 @@ underscore.1.2.2
 
 <!--language: !js-->
 
-    //#import underscore.1.2.1
+    //#=require underscore.1.2.1
     //= require underscore.1.2.2
     //= require json2
     //= require simpletest
@@ -394,7 +394,7 @@ underscore.1.4.3
 
 <!--language: !js-->
 
-    //#import underscore.1.4.0
+    //#=require underscore.1.4.0
     //= require underscore.1.4.3
     //= require json2
     //= require simpletest
@@ -642,7 +642,7 @@ underscore.1.5.1
 
 <!--language: !js-->
 
-    //#import underscore.1.5.0
+    //#=require underscore.1.5.0
     //= require underscore.1.5.1
     //= require json2
     //= require simpletest
