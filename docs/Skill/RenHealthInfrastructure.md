@@ -667,10 +667,10 @@ tower学习
 
 <script>
 
-(function(){
-    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
-    else expand_toc('md_toc',6);
-})();
+// (function(){
+//     if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+//     else expand_toc('md_toc',6);
+// })();
 
 </script>
 

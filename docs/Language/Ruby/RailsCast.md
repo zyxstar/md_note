@@ -12,7 +12,9 @@ rvm list known
 
 rvm install 1.9.3
 rvm use 1.9.3
+rvm list
 rvm gemset create r3217
+rvm gemset list
 rvm use 1.9.3@r3217 --default
 
 gem source -r https://rubygems.org/
