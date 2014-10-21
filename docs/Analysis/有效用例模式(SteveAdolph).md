@@ -1,38 +1,38 @@
 > 2014-09-06
 
 <!-- 
-`ActorIntentAccomplished`
-`Adornments`
-`BalancedTeam`
-`BreadthBeforeDepth`
-`CapuredAbstraction`
-`CleanHouse`
-`ClearCastOfCharacters`
-`CommonSubBehavior`
-`CompleteSingleGoal`
-`DetectableConditions`
-`EverUnfoldingStory`
-`ExhaustiveAlternatives`
-`ForwardProgress`
-`InterruptsAsExtensions`
-`LeveledSteps`
-`MergeDroplets`
-`MultipleForms`
-`ParticipatingAudience`
-`PreciseAndReadable`
-`PromotedAlternative`
-`QuittingTime`
-`RedistributeTheWealth`
-`ScenarioPlusFragments`
-`SharedClearVision`
-`SmallWritingTeam`
-`SpiralDevelopment`
-`TechnologyNeutral`
-`TwoTierReview`
-`UserValuedTransactions`
-`VerbPhraseName`
-`VisibleBoundary`
-`WritersLicense`
+ActorIntentAccomplished
+Adornments
+BalancedTeam
+BreadthBeforeDepth
+CapuredAbstraction
+CleanHouse
+ClearCastOfCharacters
+CommonSubBehavior
+CompleteSingleGoal
+DetectableConditions
+EverUnfoldingStory
+ExhaustiveAlternatives
+ForwardProgress
+InterruptsAsExtensions
+LeveledSteps
+MergeDroplets
+MultipleForms
+ParticipatingAudience
+PreciseAndReadable
+PromotedAlternative
+QuittingTime
+RedistributeTheWealth
+ScenarioPlusFragments
+SharedClearVision
+SmallWritingTeam
+SpiralDevelopment
+TechnologyNeutral
+TwoTierReview
+UserValuedTransactions
+VerbPhraseName
+VisibleBoundary
+WritersLicense
 
 
 
@@ -1544,11 +1544,186 @@ __因此，__ 考虑创建一个泛化的抽象用例，将具体描述的这种
 ## RedistributeTheWealth
 正在发现系统的`UserValuedTransactions`，过长的用例不实用而且难以使用，会分散用户的注意力，并使他们失去重点
 
+- 用例的目标对涉众必须清晰
+- 添加新用例的代价是昂贵的
+- 过多的细节可能会使用例难以阅读和理解
+
+__因此，__ 将冗长、难以处理的内容或过分复杂的扩展转移到它自己的用例中
+
+重新组织的一些方式：
+
+- 将片断重新放到其他用例中
+- 创建一个新用例
+- 创建一个新的较低层用例
+- 将多余的片断重新定位到补充说明中
+
+示例
+
+> __拨打电话__
+> 
+> __主参与者__：主叫方－拨打电话的人；被叫方－接听电话的人
+> 
+> __次要参与者__：交换网－处理电话间呼叫的设备
+> 
+> __级别__：用户目标
+> 
+> __主成功场景__
+> 
+> 1.主叫方摘机
+> 
+> 2.主叫方拨号
+> 
+> 3.交换网转换数字符号，连接主叫方和被叫方的电话，并发送振铃信号
+> 
+> 4.被叫方应答（摘机）并与主叫方交谈
+> 
+> 5.被叫方和主叫方挂断电话
+> 
+> 6.交换网记录此次呼叫的计费信息，如果这是主叫方在当天拨打的第一个电话，那么，就会初始化客户文件中的日使用报告条目。如果是本地电话，它还把它记录在服务提供商的日志中。如果是长途电话，它把条目记录在相应长途电话提供商的日志中
+> 
+> 7.交换网切断连接，释放呼叫要求的所有组件
+> 
+> 8.交换网释放了在呼叫中使用的所有组件后，用例结束
+
+上例违反了`CompleteSingleGoal`，它描述了两个单独的行为：拨打电话和计费，发现这种情况，可以创建一个新用例，也可以创建一个子用例，甚至做为`Adornments`。本例中，“记录计费信息”似乎实现了一个较低级的目标，因此，创建一个子用例比较合适（`EverUnfoldingStory`），应该：
+
+- 从用例中提取话费记录信息，并用它创建新的子用例
+- 修改“处理正常呼叫”用例，将引用新的子用例
+
+子用例，注意参与者
+
+> __记录计费信息__
+> 
+> __主参与者__：主叫方－拨打电话的人
+> 
+> __次要参与者__：交换网－处理电话间呼叫的设备
+> 
+> __级别__：用户目标
+> 
+> __主成功场景__
+> 
+> 1.交换网记录此次呼叫的计费信息，如果这是主叫方在当天拨打的第一个电话，那么，就会初始化客户文件中的日使用报告条目。如果是本地电话，它还把它记录在服务提供商的日志中。如果是长途电话，它把条目记录在相应长途电话提供商的日志中
+
+引用子使用的基用例：
+
+> __处理正常呼叫__
+> 
+> __主参与者__：主叫方－拨打电话的人；被叫方－接听电话的人
+> 
+> __次要参与者__：交换网－处理电话间呼叫的设备
+> 
+> __级别__：用户目标
+> 
+> __主成功场景__
+> 
+> 1.主叫方摘机
+> 
+> 2.主叫方拨号
+> 
+> 3.交换网转换数字符号，连接主叫方和被叫方的电话，并发送振铃信号
+> 
+> 4.被叫方应答（摘机）并与主叫方交谈
+> 
+> 5.被叫方和主叫方挂断电话
+> 
+> 6.交换网“记录计费信息”
+> 
+> 7.交换网切断连接，释放呼叫要求的所有组件
+> 
+> 8.交换网释放了在呼叫中使用的所有组件后，用例结束
+
+## MergeDroplets
+正在发现系统的`UserValuedTransactions`，描述细小或孤立的行为片断的用例不能传达足够的信息，来帮助读者理解系统如何提供`UserValuedTransactions`
+
+- 不完整的用例不能讲述整个故事
+- 最好是在任何可能的时候定位信息
+- 最好使用例的数量最少
+- 较小的用例易于理解和使用，每个用例应该都满足`CompleteSingleGoal`，没有不必要的细节或技术细节`TechnologyNeutral`
+
+__因此，__ 将相关的小用例或用例片断合并到相同目标相关的用例中
+
+合并用例不仅仅只是把几个步骤放到一起，因为最终得到的用例必须包含一个好用例所具备的模式，把步骤仔细编辑为描述`CompleteSingleGoal`的一个内聚单元，如果得到用例太大或太详细，对步骤精化，保持`ActorIntentAccomplished`，或对它们进行分级(`EverUnfoldingStory`，`LeveledSteps`)，很可能还需要仔细评审分支路径，删除一些路径并添加一些路径
+
+示例，呼叫处理的一组小用例
+
+> __主参与者__：主叫方－拨打电话的人；被叫方－接听电话的人
+> 
+> __次要参与者__：交换网－处理电话间呼叫的设备
+> 
+> __级别__：用户目标
+> 
+> __用例1：拨打电话__
+> 
+> __前置条件__：主叫方和被叫方的电话挂起
+> 
+> __成功保证__：系统收集了主叫方拨过的所有号码
+> 
+> __主路径__
+> 
+> 1.主叫方摘机时用例开始
+> 
+> 2.交换网发送拨号音
+> 
+> 3.主叫方拨号
+> 
+> 4.交换网转换数字符号
+> 
+> 5.交换网将呼叫连接到被叫方的电话上
+> 
+> 6.交换网向被叫方的电话发送振铃信号
+> 
+> 7.交换网向主叫方的接收器发送回铃信号，用例结束
+> 
+> __用例2：在电话中交谈__
+> 
+> __前置条件__：用例“拨打电话”向被叫方的电话发送振铃信号
+> 
+> __成功保证__：用户完成呼叫
+> 
+> __主路径__
+> 
+> 1.被叫方的电话响后，用例开始
+> 
+> 2.被叫方应答（摘机）
+> 
+> 3.交换网完成主叫方和被叫方之间的连接
+> 
+> 4.被叫方和主叫方通话
+> 
+> 5.被叫方和主叫方挂断电话，用例结束
+> 
+> __用例3：结束呼叫__
+> 
+> __前置条件__：通过“在电话中交谈”连接呼叫
+> 
+> __成功保证__：交换网切断了呼叫，所有组件都恢复了呼叫前所处的状态
+> 
+> __主路径__
+> 
+> 1.主叫方和被叫方挂断电话时用例开始
+> 
+> 2.交换网释放在呼叫中使用的所有组件
+> 
+> 3.交换网“记录计费信息”，用例结束
+
+这种方式来编写程序不错，但不适用于用例，就修改上上一章节中的形式
+
+对于读者来说包含了拨号、通话和结束电话呼叫的场景的用例才是有意义的，无需通过阅读几个用例来发现关于该行为的必要信息
+
+## CleanHouse
+正在发现系统的`UserValuedTransactions`，以于整体没有什么价值的用例是分散注意力的，并可能会使读者误入歧途
+
+不需要的用例没有什么价值，只会造成混乱，将注意力从系统的主要目标上转移开
+
+- 清除已有的用例会占用时间和精力
+- 未使用的用例搞乱了工作空间，并且会浪费精力
+- 去掉用例避免了大量的开发工作，并节约了精力
 
 
+__因此，__ 删除不会为系统添加任何价值，或者已经不在现有用例清单中的那些用例
 
-<!-- __因此，__ -->
- 
+确定了某些用例不再为系统提供任何价值后，把它们从集合中删除，可以将觉得有用的用例作为`Adornments`，但要立刻停止编写这些用例
+
 
 
 
