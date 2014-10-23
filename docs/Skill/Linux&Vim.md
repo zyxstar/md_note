@@ -2,51 +2,14 @@ Linux
 =======
 ## 常用命令
 ```shell
-clear                             #清屏 Ctrl+L
-cd -                              #返回上次使用的目录
-cd ~zyx                           #进入zyx的home
-find /somedir -name "pattern"     #查找文件
-find . -size +10000k
-find . -name *.php|xargs ls -alt  #也可以查找指定类型的文件，然后指定按时间排序
-find . -name "*.c" |xargs cat|grep -v ^$|wc -l  #当前目录下所有c文件的行数总和，不包括空行
 
 alias                             #查看别名，存在于.cshrc中
 
 \command                          #不使用别名时，直接使用原始命令
-
-grep -n "mail" /etc/*             #从/etc目录所有的文件中去找mail字符串
-
-ls -hl                            #以k m为单位显示文件大小
-ls -F                             #目录以/结尾显示
-ls -d */                          #只显示目录
-ls -i                             #显示inode
-ls -R                             #递归显示
-ls -ld /xxx                       #可以看到该目录的访问权限,不加d 有可能直接deny
-ls -a | sort -i                   #排序显示
-
-getfacl <filname>                 #文件权限
-
-mkdir -p aaa/bbb/ccc              #创建多层次目录
-mkdir dir{3..7} dir{aa,bb}        #创建目录集合
-
-mv;cp                             #最好加上 -i 否则可能覆盖
-cp -r                             #复制文件夹，这样就可以将文件与文件夹一起拷贝了
-
-wc file                           #统计行数，字符，字节
-
-head -5 /etc/passwd
-tail -2 /etc/passwd
-tail -f /var/log/messages         #不停地去读最新的内容，有实时监视的效果
 sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
 
 uniq                              # -d 只显示重复的行 -u 只显示唯一的行
 sort names | uniq -d              #显示在names文件中哪些行出现了多次
-
-cat /dev/null > a.txt             #使文件清空，但所有者和权限不变
-cat file1 file2 | grep word | wc -1   #.列出两个文件的内容.执行对输出的搜索.统计结果行的个数
-cat -n -s                         #-n给文件所有行编号 -s把多个空白行合并为一个空白行
-
-nl                                #向文件添加行号
 
 tar -zxvf XX.tar.gz               #解压文件，-z因文件使用gzip压缩过
 
@@ -66,7 +29,7 @@ fold                              #把输入行换行，以适应指定的宽度
 split                             #按行数或字节数拆分文件
 csplit                            #由正则来分割文件
 
-file                              #查看文件属性
+
 strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
 
 du --max-depth=1 -h
@@ -74,54 +37,13 @@ du -sh                            #查看文件夹大小
 df -h                             #查看硬盘空间
 
 
-ls --help|grep -E "time|sort"     #查找ls命令手册中有关时间与排序的条目
+
 
 export PS1='\u@\h:\w\$'           #修改命令行提示符，在profile中修改
 
-ESC+.                              #快捷键，得到上个命令的参数
 ALT+CTRL
 
 ```
-
-## 系统相关
-```
-/dev/sda  #第一块硬盘
-/dev/sda1 #第一块硬盘第一个分区
-/dev/sda2 #第一块硬盘第二个分区
-
-/dev/sdb  #第二块硬盘（U盘）
-
-安装时分区
-/boot 200M
-/     尽可能大
-swap  4G
-
-gkub引导程序，应放在/dev/sda上，特别是用U盘安装的
-防火墙、SELinux、Kdump关闭
-
-/bin
-/usr/bin    #普通用户使用的二进制命令
-
-/sbin
-/usr/sbin   #super用户使用的二进制命令
-
-/lib
-/var/lib
-/lib64      #库文件，由glibc提供
-
-/boot/grub  #存放引导内核
-/boot/vmlinuz-2.6.18  #linux内核版本
-
-/dev        #设备文件
-
-/tmp
-/var/tmp    #程序运行时用的临时文件
-
-/proc       #进程文件，存在内存中，所以du看不出大小
-
-```
-
-
 
 ## sort
 ```
