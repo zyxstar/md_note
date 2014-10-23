@@ -493,31 +493,13 @@ sudo service smbd restart
 /etc/init.d/samba restart
 ```
 
-## yum包管理
-```
-配置源
-vi /etc/yum.repos.d/rhel5.repo
-输入
-[rhel5]
-name=rhel5
-baseurl=ftp://...
-gpgcheck=0
-
-yum repolist
-yum -y install ??
-yum list
-
-yum -y remove ??
-yum grouplist
-yum -y groupinstall "??"
-
-```
 
 ## 后台任务
 - 在命令尾处键入&把作业发送到后台
 - 也可以把正在运行的命令发送到后台运行，首先键入Ctrl+Z挂起作业，然后键入bg移动后台继续执行
 - bg %jobnumber 或bg %name
 - fg %jobnumber 把后台作业带到前台来
+- kill -18 pid 也是唤醒
 - kill %jobnumber 删除后台作业
 - jobs -l将PID显示 -r运行中显示 -s显示停止
 - nohup command & #如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用nohup命令。该命令可以在你退出帐户之后继续运行相应的进程。
@@ -544,29 +526,6 @@ ps u
 finger {usr}                       #用户详细情况
 ```
 
-## 查看进程
-```shell
-top
-free -k
-
-ps aux | grep pattern
-ps                                 #快速浏览自己的进程与PID
-ps e                               #显示shell环境信息
-ps f                               #格式化父子进程的显示
-ps a                               #显示所有终端上进程
-ps l                               #显示详细列表
-ps u                               #显示用户及起始时间
-ps x                               #不带终端的显示
-
-```
-
-## 将man手册转存为文本
-```shell
-man ls |col -b >ls.txt             # col -b  过滤掉所有的控制字符
-info make -o make.txt -s
-
-man中一样可以搜索，同vi中一样
-```
 
 ## 语言设置
 ```shell
