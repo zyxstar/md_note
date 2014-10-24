@@ -8,7 +8,7 @@ import re
 
 SYS_ENCODING = sys.getfilesystemencoding()
 PARSE_URL = "http://chinapub.duapp.com/gen_md?src="
-GITHUB_BASE_URL = "https://raw.github.com/zyxstar/md_note/master/docs"
+GITHUB_BASE_URL = "https://github.com/zyxstar/md_note/raw/master/docs"
 
 ORDER_DIC = {"Analysis":10,
              "Design":15,
