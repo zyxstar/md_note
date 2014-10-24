@@ -1,51 +1,4 @@
-Linux
-=======
-## 常用命令
-```shell
-
-alias                             #查看别名，存在于.cshrc中
-
-\command                          #不使用别名时，直接使用原始命令
-sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
-
-uniq                              # -d 只显示重复的行 -u 只显示唯一的行
-sort names | uniq -d              #显示在names文件中哪些行出现了多次
-
-tar -zxvf XX.tar.gz               #解压文件，-z因文件使用gzip压缩过
-
-chmod 755 abc                     #组文件abc赋rwxr-xr-x
-chmod u=rwx,g=rx,o=rx abc
-
-chown user abc                    #改变abc拥有者
-chgrp root abc                    #改变abc所属组为root
-
-fdisk -l                          #查看分区情况
-df somedir -lh                    #查看目录在哪个分区和使用情况
-
-fmt                               #把文本格式化成指定宽度
-pr                                #给文件分页 ,把文本文件转换为标有页码的版本
-fold                              #把输入行换行，以适应指定的宽度
-
-split                             #按行数或字节数拆分文件
-csplit                            #由正则来分割文件
-
-
-strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
-
-du --max-depth=1 -h
-du -sh                            #查看文件夹大小
-df -h                             #查看硬盘空间
-
-
-
-
-export PS1='\u@\h:\w\$'           #修改命令行提示符，在profile中修改
-
-ALT+CTRL
-
-```
-
-## sort
+# sort
 ```
 1) 对文件内容进行排序，缺省分割符为空格，如果自定义需要使用-t选择，如-t:
 2) 使用分隔符分割后，第一个field为0，awk中为1
@@ -90,7 +43,7 @@ sort -t':' -k 6.2,6.4 -u users
 
 ```
 
-## find
+# find
 ```
 find pathname -options [-print -exec -ok]
  -print find命令将匹配的文件输出到标准输出。
@@ -137,8 +90,7 @@ find . -empty 查找所有的空文件或者空目录.
 find . -type f | xargs grep "ABC"  使用xargs和-exec的区别是, -exec可能会为每个搜索出的file,启动一个新的进程执行-exec的操作, 而xargs都是在一个进程内完成, 效率更高.
 ```
 
-
-## cut
+# cut
 ```
 cut [options] file1 file2  #从一个或多个文件中删除所选列或字段
   -b byte 指定剪切字节数
@@ -159,7 +111,7 @@ cut -d: -f1,3 cut_test.txt (基于":"作为分隔符，同时返回field 1和3�
 cut -d: -c1,5-10 cut_test.txt(返回第1个和第5-10个字符)
 ```
 
-## grep
+# grep
 ```
 grep --color 高亮显示
 grep时应该把正则放到引号中(单引号优于双引号)，否则shell将它们作为文件名来解释
@@ -193,7 +145,7 @@ grep中的file可以使用文件名扩展中任何通配符，因为它由shell�
 ps aux|gerp service
 ```
 
-## xargs
+# xargs
 ```
 xargs是给命令传递参数的一个过滤器，也是组合多个命令的一个工具。它把一个数据流分割为一些足够小的块，以方便过滤器和命令进行处理。通常情况下，xargs从管道或者stdin中读取数据，但是它也能够从文件的输出中读取数据。xargs的默认命令是echo，这意味着通过管道传递给xargs的输入将会包含换行和空白，不过通过xargs的处理，换行和空白将被空格取代。
 
@@ -216,7 +168,7 @@ find ~ -name ‘*.log’ -print0 | xargs -0 rm -f
 ```
 
 
-## sed
+# sed
 ```
 sed复制原文件并修改新文件，默认发送给标准输出，也可以保存到其它文件中
 可用于
@@ -342,7 +294,7 @@ WE所在的行被移动并追加到包含CT行的后面。
 /> sed -e '/WE/{h;d;}' -e '/CT/{G;}' testfile
 ```
 
-## awk
+# awk
 ```
  awk的基本格式：
     /> awk 'pattern' filename
@@ -429,7 +381,7 @@ awk中默认的记录分隔符是回车，保存在其内建变量ORS和RS中。
 /> awk '$8 ~ /[0-9][0-9]$/{print $8}' testfile  #第八个域以两个数字结束的打印。
 ```
 
-## crontab
+# crontab
 ```
 usage:  crontab [-u user] file
         crontab [-u user] [ -e | -l | -r ]
@@ -470,258 +422,3 @@ usage:  crontab [-u user] file
        0 2 * * * ( su - USERNAME -c "export LANG=en_US; /home/oracle/yb2.5.1/apps/admin/1.sh"; ) > /tmp/1.log 2>&1
        如果打算执行多条语句, 他们之间应使用分号进行分割. 注: 以上语句必须在root的帐户下执行.
 ```
-
-## 网络配置
-- root登录 运行setup 设置网络
-    - `/etc/rc.d/init.d/network restart`
-    - `/etc/rc.d/init.d/xinetd restart`
-- ifconfig eth0 x.x.x.x 对IP设置
-    - `ifconfig eth0 network x.x.x.x` 对子网掩码设置
-    - `ifconfig eth0 down|up` 设置网卡是否有效
-    - 立即生效，重启失效
-- 修改`/etc/sysconfig/network-scripts/ifcfg-eth0` restart生效
-
-```
-ip addr
-system-config-network
-service network restart
-```
-
-## 启动服务
-```shell
-sudo service smbd restart
-/etc/init.d/samba restart
-```
-
-
-## 后台任务
-- 在命令尾处键入&把作业发送到后台
-- 也可以把正在运行的命令发送到后台运行，首先键入Ctrl+Z挂起作业，然后键入bg移动后台继续执行
-- bg %jobnumber 或bg %name
-- fg %jobnumber 把后台作业带到前台来
-- kill -18 pid 也是唤醒
-- kill %jobnumber 删除后台作业
-- jobs -l将PID显示 -r运行中显示 -s显示停止
-- nohup command & #如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用nohup命令。该命令可以在你退出帐户之后继续运行相应的进程。
-
-## 搜索程序
-```shell
-which                              #定位一个命令，搜索磁盘上命令，不能找到内置命令
-whereis                            #定位一个命令的二进制、源文件、手册
-
-type                               #查看是否是内置命令
-
-apropos                            #查看相关名字命令的说明 同man -k
-whatis                             #查看相关名字命令的说明
-
-slocate                            #搜索文件，需要配置/etc/updatedb.conf（运行updatedb）
-```
-
-## 查看用户
-```shell
-who                                #列出登录用户列表
-w
-ps u
-
-finger {usr}                       #用户详细情况
-```
-
-
-## 语言设置
-```shell
-/etc/sysconfig/i18n
-LANG="zh_CN.GB18030"
-
-/etc/profile
-export LC_ALL=zh_CN.GB18030
-```
-
-## 加载.profile后运行shell
-```shell
--/bin/sh
-```
-
-<!-- ## gcc几个步骤
-gcc -E hello.c -o hello.i          #预处理
-gcc -S hello.i                     #编译，产行hello.s汇编文件
-gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
-gcc hello.o -o hello.out           #链接
--->
-
-
-Vim
-=====
-## 命令模式
-多按几次`ESC`即进入命令模式，以下操作均在命令模式下进行
-
-### 光标移动
-```shell
-h              光标向左移动一个字符
-20h            光标向左移动20个字符
-l              光标向右移动一个字符
-
-j              光标向下移动一行
-20j            光标向下移动20行
-k              光标向上移动一行
-
-Ctrl + f       屏幕『向下』移动一页，相当于 [Page Down]按键 #(常用)
-Ctrl + b       屏幕『向上』移动一页，相当于 [Page Up] 按键 #(常用)
-
-n[Space]       光标会向后面移动 n 个字符距离
-n[Enter]       光标向下移动 n 行 #(常用)
-
-G              移动到这个档案的最后一行 #(常用)
-nG             移动到这个档案的第 n 行 #(常用)
-gg             移动到这个档案的第一行，相当于 1G 啊！ #(常用)
-
-```
-
-### 定位单词
-```
-w              到下一个单词的开头  #(常用)
-e              到下一个单词的结尾  #(常用)
-b              到前一个单词的开头  #(常用)
-
-%              匹配括号移动，包括 (, {, [    需要把光标先移到括号上 #(常用)
-* 和 #         匹配光标当前所在的单词，移动光标到下一个（或上一个）匹配单词  #(常用，可用查找配合使用)
-
-0              到行头
-^              到本行的第一个非blank字符
-$              到行尾
-fa             到下一个为a的字符处，你也可以fs到下一个为s的字符。
-t,             到逗号前的第一个字符。逗号可以变成其它字符。
-3fa            在当前行查找第三个出现的a。
-F 和 T         和 f 和 t 一样，只不过是相反方向。
-
-dt"            删除所有的内容，直到遇到双引号(组合用法)
-
-```
-
-### 编辑操作
-```shell
-x              在一行字当中，x 为向后删除一个字符 (相当于 [del] 按键) #(常用)
-X              为向前删除一个字符(相当于 [backspace] ) #(常用)
-
-nx             n为数字，连续向后删除 n 个字符
-nX             n为数字，连续删除光标前面的 n 个字符
-
-dd             删除光标所在的那一整行 #(常用)
-ndd            n为数字。删除光标所在行向下n行，例如 20dd 则是删除 20 行
-d1G            删除光标所在行到第一行的所有数据(组合用法)
-dG             删除光标所在行到最后一行的所有数据
-d$             删除光标所在处，到该行的最后一个字符
-d0             那个是数字的 0 ，删除光标所在处，到该行的最前面一个字符
-:n1,n2 d       将 n1 行到 n2 行之间的内容删除 #(注意有冒号)
-
-yy             复制光标所在的那一行 #(常用)
-nyy            n为数字。复制光标所在行向下n行，例如 20yy 则是复制 20 行
-y1G            复制光标所在行到第一行的所有数据(组合用法)
-yG             复制光标所在行到最后一行的所有数据
-y$             复制光标所在的那个字符到该行行尾的所有数据
-y0             复制光标所在的那个字符到该行行首的所有数据
-:n1,n2 d       将 n1 行到 n2 行之间的内容复制 #(注意有冒号)
-
-p              将复制的数据，粘贴在光标的下一行 #(常用)
-P              将复制的数据,粘贴到光标的上一行
-
-ddp            上下两行的位置交换(组合用法)
-
-J              将光标所在行与下一行的数据结合成同一行 #(常用)
-
-u              撤销 #(常用)
-Ctrl + r       撤销的撤销 #(常用)
-
-```
-
-## 提示符模式
-### 查找替换
-```shell
-/string        向光标之下寻找一个名称为string字符串 #(常用)
-?string        向光标之上寻找一个名称为string字符串 #(常用)
-
-n              正向查找，搜索出的string,可以理解成next #(常用)
-N              反向查找，搜索出的string,可以理解成Not next #(常用)
-
-:g/str/s/str1/str2/g        第一个g表示对每一个包括s1的行都进行替换，第二个g表示对每一行的所有进行替换
-包括str的行所有的str1都用str2替换
-
-:n1,n2s/string1/string2/g   n1是查找的开始行数,n2是查找结束的行数,string1是要查找的字符串,string2是替换的字符串 #(常用)
-
-:2,7s/ddd/fff/g             在第2行,第7行之间，将ddd替换成fff
-:1,$s/string1/string2/gc    从第一行到最后一行寻找并替换，在替换前给用户确认 (confirm)
-
-:%s/f $/for/g               将每一行尾部的“f ”（f键和空格键）替换为for，命令之前的"%"指定该命令将作用于所有行上. 不指定一个范围的话, ":s"将只作用于当前行.
-
-```
-
-
-### 文件操作
-```shell
-vi +n FileName  打开文件 FileName,并将光标置于第 n 行首。
-vi + FileName   打开文件 FileName,并将光标置于最后一行
-vi –r FileName  在上次正用 vi 编辑 FileName 发生系统崩溃后,恢复FileName。
-
-:%!xxd          按十六进制查看当前文件
-:%!xxd -r       从十六进制返回正常模式
-```
-
-### 保存退出
-```shell
-:w              将编辑的数据写入硬盘档案中 #(常用)
-:w!             文件为『只读』时,强制写入,到底能否写入跟用户对档案的权限有关
-
-:q              离开 vi  #(常用)
-:q!             若曾修改过档案，又不想储存，使用 ! 为强制离开不储存档案。
-
-:wq             储存后离开 #(常用)
-:wq!            强制储存后离开
-
-:ZZ             若档案没有更动，则不储存离开，若档案已经被更动过，则储存后离开!
-
-:e!             重新编辑当前文件,忽略所有的修改
-
-:w [filename]   另存为
-:r [filename]   在编辑的数据中，读入另一个档案的数据。亦即将这个档案内容加到光标所在行后面
-
-```
-
-
-### 运行shell
-```shell
-:! command         暂时离开 vi 到指令列模式下执行 command 的显示结果！例如 『:! cat ./test』即可在 vi 当中察看当前文件夹中的test文件中的内容
-
-:n1,n2 w! Command  将文件中n1行到n2行的内容作为 Command的输入并执行之，若不指定 n1、n2，则将整个文件内容作为 Command 的输入。
-
-:r! Command        将命令 Command 的输出结果放到当前行。
-
-```
-
-
-### 设置环境
-```
-:set nu         显示行号
-:set nonu
-:syntax on
-:set tabstop=4
-```
-
-也可在当前用户home目录下，新建.vimrc文件，将配置写入其中（无须set前面的冒号）
-
-
-## 编辑模式
-在命令模式下，键入以下将会进入编辑模式
-
-```shell
-i               在光标前插入 #(常用)
-I               在光标行首字符前插入 #(常用)
-a               在光标后插入
-A               在光标行尾字符后插入 #(常用)
-o               在当前行后插入一个新行 #(常用)
-O               在当前行前插入一个新行
-r               替换当前字符,接着键字的字符作为替换字符
-R               替换当前字符及其后的字符，直至按 ESC 键
-
-```
-
-
-<!-- http://blog.163.com/stu_shl/blog/static/599375092011639354090/ -->

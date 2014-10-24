@@ -12,11 +12,14 @@ RHEL的经典版本：5.8和6.4
 
 [Redhat网络系统安装说明](../../data/Redhat网络系统安装说明.pdf)
 
+[老师的ule笔记.pdf](../../data/老师的ule笔记.pdf)
+
 ## Linux目录结构(FHS)
 ```
 /           根目录
 /boot       存放程序启动所必须的文件
             /boot/vmlinuz-3.2.0-61vm-generic-pae    内核文件
+            uname -a                                显示系统信息
             /boot/grub/*                            引导程序
 /var        系统中经常需要变化的一些文件
             /var/tmp 程序运行时使用的临时文件，删除可能会出错
@@ -64,7 +67,7 @@ SCSI硬盘
 /usr  ext3 看情况（程序数据）
 /     ext3 看情况
 ```
-使用`sudo fdisk -l`可查看分区情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
+使用`sudo fdisk -l`可查看硬盘分区情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
 
 ## 快捷键
 ```
@@ -76,26 +79,28 @@ ctrl shift t       新建窗口
 alt <num>          切换窗口
 ctrl l             清屏 或clear命令
 esc .              使用上次命令的参数
-快捷复制           鼠标左键选中即复制 鼠标按中键即粘贴
+快捷复制            鼠标左键选中即复制 鼠标按中键即粘贴
 ```
 
 ## 帮助
 ```shell
 <command> --help
           #查找ls命令手册中有关时间与排序的条目
-          #ls --help|grep -E "time|sort"     
+          ls --help|grep -E "time|sort"
 
 man       #man是分章节的
-            1 User Commands
-            2 System Calls
-            3 C Library Functions
-            4 Devices and Special Files
-            5 File Formats and Conventions
-            6 Games et. Al.
-            7 Miscellanea
-            8 System Administration tools and Deamons
+           # 1 User Commands
+           # 2 System Calls
+           # 3 C Library Functions
+           # 4 Devices and Special Files
+           # 5 File Formats and Conventions
+           # 6 Games et. Al.
+           # 7 Miscellanea
+           # 8 System Administration tools and Deamons
           #查找fopen的使用，在第3章节查找
-          #man 3 fopen
+          man 3 fopen
+          #查询所有含有passwd的帮助文件
+          man -k passwd
 
           #操作同less
           #space下一页；b上一页；enter下一行；q退出；G最后；g最前
@@ -103,10 +108,13 @@ man       #man是分章节的
           #n下一个关键字；shift n上一个关键字
 
           #将man手册转存为文本
-          #man ls |col -b >ls.txt  #col -b 过滤掉所有的控制字符
-          #info make -o make.txt -s
-```
+          man ls |col -b >ls.txt  #col -b 过滤掉所有的控制字符
 
+info <command>
+          #将info手册转存为文本
+          info make -o make.txt -s
+
+```
 
 文件管理
 ========
@@ -117,9 +125,8 @@ cd        #回到自己home
 cd~       #回到自己home
 cd ~jack  #去jack的home
 cd-       #切到上次目录
-
-
 ```
+
 ## 查看
 ```shell
 ls
@@ -142,28 +149,41 @@ cat
     -n    #给文件所有行编号
     -A    #控制字符都显示
     -s    #把多个空白行合并为一个空白行
-          #cat /dev/null > a.txt 使文件清空，但所有者和权限不变
+          #使文件清空，但所有者和权限不变
+          cat /dev/null > a.txt
           #列出两个文件的内容.执行对输出的搜索.统计结果行的个数
-          #cat file1 file2 | grep word | wc -1
-
-nl        #向文件添加行号
-
-wc        #统计行数，字符，字节
-
-more      #分屏，翻到最后直接退出，无法前翻
+          cat file1 file2 | grep word | wc -1
 
 less      #分屏，可前翻
           #space下一页；b上一页；enter下一行；q退出；G最后；g最前
           #?<keyword>查找光标之前关键字；/<keyword>查找光标之后
           #n下一个关键字；shift n上一个关键字
-head
+more      #分屏，翻到最后直接退出，无法前翻
+
 tail
     -f    #实时监控
+head
+
+tree      #树形显示目录
+fdisk -l  #查看硬盘分区情况
+du        #显示当前目录中对象的大小
+    -s    #显示当前目录大小
+    -h    #人性化显示
+    --max-depth=1  #设置显示深度
+df        #查看文件系统使用情况
+    -h    #人性化显示
+          #查看某目录所属硬盘
+          df /<path> -h
+
+nl        #向文件添加行号
+wc        #统计行数，字符，字节
 rev       #左右相反
 tac       #cat相反
-tree      #树形显示目录
-du
+fmt       #把文本格式化成指定宽度
+pr        #给文件分页 ,把文本文件转换为标有页码的版本
+fold      #把输入行换行，以适应指定的宽度
 
+stat      #文件信息查看
 file      #查看文件属性
 getfacl   #查看文件权限
 ```
@@ -178,21 +198,27 @@ find <path>
     -name "pattern"
     -size +1000M
     #查找指定类型的文件，然后指定按时间排序
-    -name *.php |xargs ls -alt
+    find . -name *.php |xargs ls -alt
     #统计所有c文件的行数总和，不包括空行
-    -name "*.c" |xargs cat|grep -v ^$|wc -l
-
+    find . -name "*.c" |xargs cat|grep -v ^$|wc -l
 ```
 
 ## 创建
 ```shell
-touch    #已创建的不会被清空
+touch    #已创建的不会被清空，但会更新访问时间
 
-mkdir    #创建多个目录 mkdir dir1 dir2
-    -p   #创建层次目录 mkdir -p aa/bbb/ccc
+mkdir
+         #创建多个目录
+         mkdir dir1 dir2
+    -p   #创建层次目录
+         mkdir -p aa/bbb/ccc
     {}   #创建目录集合
-         #mkdir dir{5..8}; mkdir dir{a..d}; mkdir dir{a,d}
+         mkdir dir{5..8}
+         mkdir dir{a..d}
+         mkdir dir{a,d}
 
+ln       #创建硬连接
+    -s   #创建符号连接
 ```
 
 ## 复制
@@ -273,70 +299,6 @@ tar cvjf ab.tar.bz2 a b c dfile
 tar xvzf ab.tar.gz
 tar xvjf ab.tar.bz2
 ```
-
-
-
-
-
-
-
-
-
-其它命令
-========
-
-```shell
-&&顺序执行
-
-
-mii-tool eth0
-
-vncviewer ip
-/etc/init.d/iptables stop
-setenforce 0
-
-
-lftp 
-
-eject
-eject -t
-
-
-pkill -9 httpd
-isof -i:80
-
-
-/etc/ iptables stop
-lftp <ip>
-
-cherrytree
-
-
-fdisk -l
-mount /dev/sdb /media
-      /dev/sr0 /mnt
-umount /dev/sdb      
-df -h
-
-
-/usr/local/apache2/bin/apachectl start
-
-lsof -i:80  80端口是否启动
-
-netstat -ntlp
-
-mii-tool eth0 哪块网卡有效
-ifconfig eth0 <ip> 临时ip
-service dhcpd stop
-
-
-q 276267003
-
-
-ntfs u盘
-vnc
-```
-
 
 软件安装
 ========
@@ -449,21 +411,44 @@ yum -y erase
 利用命令将源代码的包（如`.tar.gz`,`.tar.bz2`）进行解压解包
 
 ```shell
-./configure --prefix=<path/to/setup>  #建议指定，删除时方便 
+./configure --prefix=<path/to/setup>  #建议指定，删除时方便
                                       #否则分散在usr/locals各子目录
                                       #此步骤将产生配置文件
 make          #编译
 make install  #安装
 ```
 
+### 启动
+手动安装的一般在`usr/locals`目录下，如httpd，此时应该在`/usr/local/apache2`，通过`/usr/local/apache2/bin/apachectl start`来启动
+
 ### 删除
 直接删除由`--prefix`指定的目录
+
+## 搜索程序
+```shell
+which          #定位一个命令，搜索磁盘上命令，不能找到内置命令
+whereis        #定位一个命令的二进制、源文件、手册
+
+type           #查看是否是内置命令
+
+apropos        #查看相关名字命令的说明 同man -k
+whatis         #查看相关名字命令的说明
+
+locate         #搜索文件，需要配置/etc/updatedb.conf（运行updatedb）
+slocate
+
+ldd            #列出程序的动态依赖关系 ldd /bin/cp
+```
+
 
 用户管理
 ========
 ## 创建
 ```shell
 useradd <username>
+useradd -u <uid> <username>
+useradd -g <gid> <username>             #创建时指定主属组
+useradd -G <gid>[,<gid>...] <username>  #创建时指定附属组
 ```
 
 ## 查看
@@ -475,10 +460,11 @@ id <username>
 
 - uid:user identify,数字，可能出现uid相同，但用户名不同的情况，以uid为准
 - gid:group identify,数字
-- 组:主属组+附属组,数组，通过`usermod -G root jim`给jim增加 __附属组__
-            
+- 组:主属组+附属组,数组，通过`usermod -G root jim`给jim设置 __附属组__
+> 但可能会使得以前执行过的`gpasswd -a`命令失效
+
 ```shell
-cat /etc/passwd | grep <username> 
+cat /etc/passwd | grep <username>
 
 ```
 
@@ -494,11 +480,20 @@ cat /etc/passwd | grep <username>
 
 > `/etc/shadow`才是真正存储密码的地方
 
-## 切换
+## 修改
 ```shell
-su - <username>  #加载环境变量
+usermod -u <uid> <username>   #修改用户id
+usermod -g <gid> <username>   #修改用户主属组
+usermod -G <gid>[,<gid>...] <username>   #修改用户附属组
+```
+
+## 切换用户
+```shell
+su - <username>  #加载环境变量 如.profile
 su <username>    #不会加载环境变量，不推荐使用
 ```
+同理，在arm开发中，出现`-/bin/sh /path/to/script`中的`-`，也是用于加载环境设置的
+
 
 ## 设置密码
 ```shell
@@ -506,11 +501,36 @@ passwd [<username>]   #不加<username>给自己重设
                       #root用户能设置简单的密码，其他用户不行
 ```
 
-
 ## 删除账户
 ```shell
 userdel -r <username>
         -r #家目录删除
+```
+
+## 查看登录信息
+实时的登录
+
+```shell
+whoami
+who
+w
+ps u
+users
+
+```
+
+登录日志
+
+```shell
+last <username> <tty>
+finger <username>
+```
+
+发信息
+
+```shell
+write <username> <tty>
+wall
 ```
 
 组管理
@@ -528,6 +548,11 @@ cat /etc/group
 ```
 格式为`组名:组密码占位（目前无用）:gid:组员（数组）`
 
+## 切换组
+```shell
+newgrp <groupname>  #临时切换到用户的某个附属组，exit退出
+```
+
 ## 添加用户进组
 ```shell
 gpasswd -a <username> <groupname>
@@ -543,8 +568,8 @@ gpasswd -d <username> <groupname>
 groupdel <groupname>
 ```
 
-文件权限管理
-============
+文件权限
+=========
 ## 查看
 ```shell
 ls -l <file>
@@ -560,26 +585,41 @@ chmod o+w a.txt
 chmod u-x,g+x,o+w a.txt
 chmod u+w-x a.txt
 ```
+以数字方式修改 read:r=4 write:w=2 excute:x=1
 
-以数字方式修改 r4 w2 x1
-
-```shell         
+```shell
 chmod 744 a.txt
 ```
+> 对于root用户，x权限同属主，rw的设置是无效的，依然能读能写
+
+### suid
+表示设置文件在 __执行阶段__(权限仅对二进位程序(binary program)有效，不能够用在 shell script 上面) 具有 __文件所有者__ 的权限
+
+[参考](http://vbird.dic.ksu.edu.tw/linux_basic/0220filemanager_4.php#suid)
+
+如`ll /bin/ping`，得到`-rwsr-xr-x`，其中`s`就是`suid`，普通用户也是能使用`ping`的(此处为root)的权限
+
+如普通用户无法通过`cat`查看`/ect/shadow`，但修改了`cat`的权限`chmod u+s /bin/cat`后，就可以了
+
+### sgid
+[参考](http://vbird.dic.ksu.edu.tw/linux_basic/0220filemanager_4.php#sgid)
+
+如`ll /usr/bin/locate`，得到`-rwx--s--x`，其中`s`就是`sgid`
+
+### skicky
+[参考](http://vbird.dic.ksu.edu.tw/linux_basic/0220filemanager_4.php#sbit)
+
+只针对目录有效，当使用者在该目录下创建文件或目录时，仅有自己与 root 才有权力删除该文件
 
 ## 修改文件所属者/组
 间接修改了权限
 
 ```shell
-chown <username> file   #修改文件所属者
-chown .<groupname> file #修改文件所组，前面加点
-chown <username> .<groupname> file #同时修改文件所属者与组
+chown <username> <file>   #修改文件所属者
+chown .<groupname> <file> #修改文件所组，前面加点
+chown <username> .<groupname> <file> #同时修改文件所属者与组
+chgrp <groupname> <file>  #修改文件所组
 ```
-
-## 其它
-对于root用户，x权限同属主，rw的设置是无效的，依然能读能写
-
-其它权限：  suid sgid skicky
 
 
 进程控制
@@ -606,20 +646,63 @@ kill -9 <pid>
 
 `kill -l` 列出所有信号：
 
-- -9 强制 
+- -9 强制
 - -15 默认
-- - 19 挂起
-- - 18 唤醒
+- -19 挂起
+- -18 唤醒
 
 ```shell
 w               #看到所有登录系统的账户，查看是否异常
 killall -9 sshd #杀死进程名称为sshd的进程，
                 #即把所有通过ssh登录到系统的账户登出
+
+pkill -9 httpd  #杀死进程名称为httpd的进程
 ```
 
+## 后台任务
+- 在命令尾处键入`&`把作业发送到后台
+- 也可以把正在运行的命令发送到后台运行，首先键入`Ctrl+Z`挂起作业，然后键入`bg`移动后台继续执行
+- `bg %jobnumber` 或`bg %name`
+- `fg %jobnumber` 把后台作业带到前台来
+- `kill -18 pid` 也是唤醒
+- `kill %jobnumber` 删除后台作业
+- `jobs -l`将PID显示 `-r`运行中显示 `-s`显示停止
+- `disown %jobnumber`从后台列表中移除任务，并没有终止
+- `nohup command &` 如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用`nohup`命令。该命令可以在你退出帐户之后继续运行相应的进程。
 
 服务配置
 ========
+## 网络相关
+
+```shell
+ifconfig eth0 x.x.x.x         #临时设置ip地址，登出后无效
+ifconfig eth0 network x.x.x.x #对子网掩码设置
+ifconfig eth0 down|up         #设置网卡是否有效
+system-config-network         #GUI方式配置
+
+service network restart
+
+vim /etc/sysconfig/network-scripts/ifcfg-eth0   #修改后重新登录生效
+
+ip addr                       #网卡 ip相关
+lsof -i:80                    #查看80端口是否启动
+mii-tool eth0                 #eth0网卡是否有效
+
+netstat -ntlp
+    -n                        #以网络IP地址代替名称，显示出网络连接情形
+    -t                        #显示TCP协议的连接情况，-u是UDP
+    -l                        #正在listening的
+    -p                        #显示程序名字
+
+```
+
+
+
+
+
+
+
+
 ## SSH
 代替了telnet，后者通信时使用明文，不安全，另外也不能使用root用户登录
 ### 安装
@@ -718,7 +801,7 @@ lftp <ip>  #进入命令提示符
 
 ## NFS
 全称为network file system
-> ext4(linux) fat32(windows) ntfs(windows) 均是本地文件系统；cifs (samba协议）共享文件系统，用于windows与linux共享文件；nfs是linux间使用的共享文件系统
+> ext3(linux) fat32(windows) ntfs(windows) 均是本地文件系统；cifs (samba协议）共享文件系统，用于windows与linux共享文件；nfs是linux间使用的共享文件系统
 
 ### 安装
 ```shell
@@ -749,7 +832,70 @@ service rpcbind restart
 mount -t nfs <ip>:/tmp /opt
 ```
 
+linux其它
+==========
+## 重定向
+```shell
+>           #输出重定向
+            ls > /dev/null  #丢掉输出
+            ls > /dev/pts/2 #输出到另一个终端
+>>          #输出重定向追加
+2>          #错误重定向
+2>>         #错误重定向追加
 
+&>          #标准与错误一起重新向
+            ls > 0.txt 2>&1  #同上
+>> 2>>      #标准与错误一起重新向追加
+
+<           #输入重定向
+            cat < /dev/zero -A
+            cat << EOF  #打开文件缓冲区，输入完后，最后输入'EOF'
+
+            #下载ftp上内容，这类交互性的东西也可以写成脚本
+            lftp 192.168.1.245 << EOF
+             > get somefile
+             > EOF
+
+```
+
+## 杂项
+```shell
+<command1>&&<command2>            #顺序执行
+alias                             #查看别名，存在于.cshrc中
+\<command>                        #不使用别名时，直接使用原始命令
+
+mount /dev/sdb /media             #挂载U盘
+      /dev/sr0 /mnt
+umount /dev/sdb                   #取消挂载U盘
+
+sudo fdisk -l | grep NTFS         #挂载ntfs的u盘
+mount -t ntfs-3g <NTFS Partition> <Mount Point>
+
+sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
+uniq                              # -d 只显示重复的行 -u 只显示唯一的行
+sort names | uniq -d              #显示在names文件中哪些行出现了多次
+
+split                             #按行数或字节数拆分文件
+csplit                            #由正则来分割文件
+
+strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
+
+export PS1='\u@\h:\w\$'           #修改命令行提示符，在profile中修改
+
+/etc/sysconfig/i18n               #设置语言信息
+LANG="zh_CN.GB18030"
+
+/etc/profile
+export LC_ALL=zh_CN.GB18030
+
+```
+
+<!-- ## gcc几个步骤
+gcc -E hello.c -o hello.i          #预处理
+gcc -S hello.i                     #编译，产行hello.s汇编文件
+gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
+gcc hello.o -o hello.out           #链接
+-->
 
 
 vim编辑器
@@ -764,7 +910,7 @@ vim
     可视模式 V
         选择到
         y 复制
-        p 
+        p
         d
     可视行 S+V
 
@@ -778,3 +924,180 @@ vim
 
 
 
+
+Vim
+=====
+## 命令模式
+多按几次`ESC`即进入命令模式，以下操作均在命令模式下进行
+
+### 光标移动
+```shell
+h              光标向左移动一个字符
+20h            光标向左移动20个字符
+l              光标向右移动一个字符
+
+j              光标向下移动一行
+20j            光标向下移动20行
+k              光标向上移动一行
+
+Ctrl + f       屏幕『向下』移动一页，相当于 [Page Down]按键 #(常用)
+Ctrl + b       屏幕『向上』移动一页，相当于 [Page Up] 按键 #(常用)
+
+n[Space]       光标会向后面移动 n 个字符距离
+n[Enter]       光标向下移动 n 行 #(常用)
+
+G              移动到这个档案的最后一行 #(常用)
+nG             移动到这个档案的第 n 行 #(常用)
+gg             移动到这个档案的第一行，相当于 1G 啊！ #(常用)
+
+```
+
+### 定位单词
+```
+w              到下一个单词的开头  #(常用)
+e              到下一个单词的结尾  #(常用)
+b              到前一个单词的开头  #(常用)
+
+%              匹配括号移动，包括 (, {, [    需要把光标先移到括号上 #(常用)
+* 和 #         匹配光标当前所在的单词，移动光标到下一个（或上一个）匹配单词  #(常用，可用查找配合使用)
+
+0              到行头
+^              到本行的第一个非blank字符
+$              到行尾
+fa             到下一个为a的字符处，你也可以fs到下一个为s的字符。
+t,             到逗号前的第一个字符。逗号可以变成其它字符。
+3fa            在当前行查找第三个出现的a。
+F 和 T         和 f 和 t 一样，只不过是相反方向。
+
+dt"            删除所有的内容，直到遇到双引号(组合用法)
+
+```
+
+### 编辑操作
+```shell
+x              在一行字当中，x 为向后删除一个字符 (相当于 [del] 按键) #(常用)
+X              为向前删除一个字符(相当于 [backspace] ) #(常用)
+
+nx             n为数字，连续向后删除 n 个字符
+nX             n为数字，连续删除光标前面的 n 个字符
+
+dd             删除光标所在的那一整行 #(常用)
+ndd            n为数字。删除光标所在行向下n行，例如 20dd 则是删除 20 行
+d1G            删除光标所在行到第一行的所有数据(组合用法)
+dG             删除光标所在行到最后一行的所有数据
+d$             删除光标所在处，到该行的最后一个字符
+d0             那个是数字的 0 ，删除光标所在处，到该行的最前面一个字符
+:n1,n2 d       将 n1 行到 n2 行之间的内容删除 #(注意有冒号)
+
+yy             复制光标所在的那一行 #(常用)
+nyy            n为数字。复制光标所在行向下n行，例如 20yy 则是复制 20 行
+y1G            复制光标所在行到第一行的所有数据(组合用法)
+yG             复制光标所在行到最后一行的所有数据
+y$             复制光标所在的那个字符到该行行尾的所有数据
+y0             复制光标所在的那个字符到该行行首的所有数据
+:n1,n2 d       将 n1 行到 n2 行之间的内容复制 #(注意有冒号)
+
+p              将复制的数据，粘贴在光标的下一行 #(常用)
+P              将复制的数据,粘贴到光标的上一行
+
+ddp            上下两行的位置交换(组合用法)
+
+J              将光标所在行与下一行的数据结合成同一行 #(常用)
+
+u              撤销 #(常用)
+Ctrl + r       撤销的撤销 #(常用)
+
+```
+
+## 提示符模式
+### 查找替换
+```shell
+/string        向光标之下寻找一个名称为string字符串 #(常用)
+?string        向光标之上寻找一个名称为string字符串 #(常用)
+
+n              正向查找，搜索出的string,可以理解成next #(常用)
+N              反向查找，搜索出的string,可以理解成Not next #(常用)
+
+:g/str/s/str1/str2/g        第一个g表示对每一个包括s1的行都进行替换，第二个g表示对每一行的所有进行替换
+包括str的行所有的str1都用str2替换
+
+:n1,n2s/string1/string2/g   n1是查找的开始行数,n2是查找结束的行数,string1是要查找的字符串,string2是替换的字符串 #(常用)
+
+:2,7s/ddd/fff/g             在第2行,第7行之间，将ddd替换成fff
+:1,$s/string1/string2/gc    从第一行到最后一行寻找并替换，在替换前给用户确认 (confirm)
+
+:%s/f $/for/g               将每一行尾部的“f ”（f键和空格键）替换为for，命令之前的"%"指定该命令将作用于所有行上. 不指定一个范围的话, ":s"将只作用于当前行.
+
+```
+
+
+### 文件操作
+```shell
+vi +n FileName  打开文件 FileName,并将光标置于第 n 行首。
+vi + FileName   打开文件 FileName,并将光标置于最后一行
+vi –r FileName  在上次正用 vi 编辑 FileName 发生系统崩溃后,恢复FileName。
+
+:%!xxd          按十六进制查看当前文件
+:%!xxd -r       从十六进制返回正常模式
+```
+
+### 保存退出
+```shell
+:w              将编辑的数据写入硬盘档案中 #(常用)
+:w!             文件为『只读』时,强制写入,到底能否写入跟用户对档案的权限有关
+
+:q              离开 vi  #(常用)
+:q!             若曾修改过档案，又不想储存，使用 ! 为强制离开不储存档案。
+
+:wq             储存后离开 #(常用)
+:wq!            强制储存后离开
+
+:ZZ             若档案没有更动，则不储存离开，若档案已经被更动过，则储存后离开!
+
+:e!             重新编辑当前文件,忽略所有的修改
+
+:w [filename]   另存为
+:r [filename]   在编辑的数据中，读入另一个档案的数据。亦即将这个档案内容加到光标所在行后面
+
+```
+
+
+### 运行shell
+```shell
+:! command         暂时离开 vi 到指令列模式下执行 command 的显示结果！例如 『:! cat ./test』即可在 vi 当中察看当前文件夹中的test文件中的内容
+
+:n1,n2 w! Command  将文件中n1行到n2行的内容作为 Command的输入并执行之，若不指定 n1、n2，则将整个文件内容作为 Command 的输入。
+
+:r! Command        将命令 Command 的输出结果放到当前行。
+
+```
+
+
+### 设置环境
+```
+:set nu         显示行号
+:set nonu
+:syntax on
+:set tabstop=4
+```
+
+也可在当前用户home目录下，新建.vimrc文件，将配置写入其中（无须set前面的冒号）
+
+
+## 编辑模式
+在命令模式下，键入以下将会进入编辑模式
+
+```shell
+i               在光标前插入 #(常用)
+I               在光标行首字符前插入 #(常用)
+a               在光标后插入
+A               在光标行尾字符后插入 #(常用)
+o               在当前行后插入一个新行 #(常用)
+O               在当前行前插入一个新行
+r               替换当前字符,接着键字的字符作为替换字符
+R               替换当前字符及其后的字符，直至按 ESC 键
+
+```
+
+
+<!-- http://blog.163.com/stu_shl/blog/static/599375092011639354090/ -->
