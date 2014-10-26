@@ -220,10 +220,6 @@ mkdir
          mkdir dir1 dir2
     -p   #创建层次目录
          mkdir -p aa/bbb/ccc
-    {}   #创建目录集合
-         mkdir dir{5..8}
-         mkdir dir{a..d}
-         mkdir dir{a,d}
 
 ln       #创建硬连接
     -s   #创建符号连接
@@ -236,6 +232,7 @@ cp <src> <dest>
     -f   #force，强制覆盖
     -v   #verbose
     -i   #ineractive
+    -a   #权限也复制
 ```
 
 ## 移动
@@ -923,12 +920,23 @@ linux其它
 env     #查看当前用户的环境变量
 ```
 
-一般情况下，环境变量由以下几个文件进行加载
+一般情况下，环境变量由以下几个文件顺序进行加载
 
 - `/etc/profile`
-- `/etc/bashrc`
-- `~/.bashrc`
+    - `/etc/profile.d/*.sh`
 - `~/.bash_profile`
+    - `~/.bashrc`
+        - `/etc/bashrc`
+
+
+非登录shell情况 `su tom`，先
+- `~/.bash_profile`
+    - `~/.bashrc`
+        - `/etc/bashrc`
+然后
+- `/etc/profile.d/*.sh`
+没有
+- `/etc/profile`
 
 ```shell
 vim /etc/profile
