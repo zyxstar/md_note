@@ -749,7 +749,6 @@ env     #查看当前用户的环境变量
     - `~/.bashrc`
         - `/etc/bashrc`
 
-
 非登录shell情况如 `su tom`，先
 
 - `~/.bash_profile`
@@ -772,8 +771,8 @@ LANG="zh_CN.GB18030"
 
 ## Shell相关
 ```shell
-alias                             #查看别名
-    alias la = "ls -a"            #设置别名，别名的优先级高
+alias                             #查看别名，别名的优先级高
+    alias la="ls -a"              #设置别名
 
 unalias la                        #取消别名
 \<command>                        #不使用别名时，直接使用原始命令
@@ -798,7 +797,6 @@ echo -n                           #不换行，默认换行
 echo -e "a\tb\tc"                 #翻译转义，否则原样输出
 
 ```
-
 
 ## Shell脚本
 ```shell
@@ -836,9 +834,6 @@ expr
 $(($x+$y))
 $[$x+$y]
 let x=$x+1
-
-
-
 ```
 
 ## 杂项
