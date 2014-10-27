@@ -78,9 +78,29 @@ ctrl shift +       放大窗口
 ctrl -             缩小窗口
 ctrl shift t       新建窗口
 alt <num>          切换窗口
-ctrl l             清屏 或clear命令
-esc .              使用上次命令的参数
 快捷复制            鼠标左键选中即复制 鼠标按中键即粘贴
+
+ctrl l             清屏 或clear命令
+ctrl c             中止任务执行
+ctrl z             任务转至后面，挂起状态
+ctrl a             shell中输入命令时，光标跳到最前
+ctrl e             shell中输入命令时，光标跳到最后
+ctrl u             shell中输入命令时，删除所有输入
+
+ctrl s             暂停屏幕输入
+ctrl q             恢复屏幕输入
+ctrl d             退出终端
+
+```
+
+### history
+```shell
+!16                #运行history中第16行记录
+!cd                #运行history中最近的cd命令
+!!                 #运行history中上次命令
+ctrl r             #进入history搜索
+esc .              #使用上次命令的参数
+alt .              #引用上次命令的参数，一直按. 继续向上查找参数
 ```
 
 ## 帮助
@@ -115,6 +135,15 @@ info <command>
           #将info手册转存为文本
           info make -o make.txt -s
 
+```
+
+
+## 关机
+```shell
+init 0            #关机
+shutdown -h now
+
+reboot            #重启
 ```
 
 文件管理
@@ -194,7 +223,8 @@ getfacl   #查看文件权限
 grep "<key>" <path/to/file>
     --color  #高亮
     -n       #显示行号
-    
+    -P       #使用正则匹配
+
     #将配置文件中注释行和空行去掉显示
     cat /etc/dhcpd/dhcpd.conf | grep -v "^#" | grep -v "^$"
 
@@ -205,7 +235,7 @@ find <path>
     find . -name *.php |xargs ls -alt
     #统计所有c文件的行数总和，不包括空行
     find . -name "*.c" |xargs cat|grep -v ^$|wc -l
-    
+
     -i               #llignore
     -o               #or
     !                #not
@@ -663,7 +693,7 @@ pkill -9 httpd  #杀死进程名称为httpd的进程
 
 ## 后台任务
 - 在命令尾处键入`&`把作业发送到后台
-- 也可以把正在运行的命令发送到后台运行，首先键入`Ctrl+Z`挂起作业，然后键入`bg`移动后台继续执行
+- 也可以把正在运行的命令发送到后台运行，首先键入`Ctrl+Z`挂起作业（此时是挂起状态），然后键入`bg`移动后台继续执行
 - `bg %jobnumber` 或`bg %name`
 - `fg %jobnumber` 把后台作业带到前台来
 - `kill -18 pid` 也是唤醒
@@ -672,23 +702,239 @@ pkill -9 httpd  #杀死进程名称为httpd的进程
 - `disown %jobnumber`从后台列表中移除任务，并没有终止
 - `nohup command &` 如果你正在运行一个进程，而且你觉得在退出帐户时该进程还不会结束，那么可以使用`nohup`命令。该命令可以在你退出帐户之后继续运行相应的进程。
 
-服务配置
-========
-## 网络相关
+
+Linux其它
+==========
+## 重定向
+```shell
+>           #输出重定向 1> 的简写
+            ls > /dev/null  #丢掉输出
+            ls > /dev/pts/2 #输出到另一个终端
+>>          #输出重定向追加
+2>          #错误重定向
+2>>         #错误重定向追加
+
+&>          #标准与错误一起重新向
+            ls > 0.txt 2>&1  #同上
+>> 2>>      #标准与错误一起重新向追加
+
+<           #输入重定向
+            cat < /dev/zero -A
+
+<<          #输入重定向，并定义结束符
+            cat << EOF  #打开文件缓冲区，输入完后，最后输入'EOF'
+
+            #下载ftp上内容，这类交互性的东西也可以写成脚本
+            lftp 192.168.1.245 << EOF
+             > get somefile
+             > EOF
+
+tee         #在管道过程中产生分支
+            grep -v "a" file | tee file1 | grep -v "b" file
+
+```
+
+> `except`可用于写交互性的脚本
+
+## 环境变量
+```shell
+env     #查看当前用户的环境变量
+```
+
+一般情况下，环境变量由以下几个文件顺序进行加载
+
+- `/etc/profile`
+    - `/etc/profile.d/*.sh`
+- `~/.bash_profile`
+    - `~/.bashrc`
+        - `/etc/bashrc`
+
+
+非登录shell情况如 `su tom`，先
+
+- `~/.bash_profile`
+    - `~/.bashrc`
+        - `/etc/bashrc`
+
+然后`/etc/profile.d/*.sh`
+
+没有`/etc/profile`
 
 ```shell
-ifconfig eth0 x.x.x.x         #临时设置ip地址，登出后无效
-ifconfig eth0 network x.x.x.x #对子网掩码设置
-ifconfig eth0 down|up         #设置网卡是否有效
-system-config-network         #GUI方式配置
+vim /etc/profile
+export LC_ALL=zh_CN.GB18030       #设置语言信息
+export PS1='\u@\h:\w\$'           #修改命令行提示符
 
+vim /etc/sysconfig/i18n           #设置语言信息
+LANG="zh_CN.GB18030"
+
+```
+
+## Shell相关
+```shell
+alias                             #查看别名
+    alias la = "ls -a"            #设置别名，别名的优先级高
+
+unalias la                        #取消别名
+\<command>                        #不使用别名时，直接使用原始命令
+
+<command1>&&<command2>            #顺序执行，前面的不出错，后面的才执行
+<command1>||<command2>            #顺序执行，前面的出错，后面的才执行
+<command1>;<command2>             #顺序执行，不管前面结果，后面照样执行
+
+{}                                #命令的展开
+                                  mkdir dir{5..8}
+                                  mkdir dir{a..d}
+                                  mkdir dir{a,d}
+                                  #相当于括号外面 * 括号里现
+                                  cp /abc{0,1}  #cp /abc0 /abc1
+
+#保持不变，防止shell翻译
+                                  touch "a b"
+                                  touch a\ b
+                                  touch a' 'b
+
+echo -n                           #不换行，默认换行
+echo -e "a\tb\tc"                 #翻译转义，否则原样输出
+
+```
+
+
+## Shell脚本
+```shell
+$1~$9                #位置变量
+$*                   #具体参数数组，同$@
+$#                   #共几个参
+$$                   #PID
+$?                   #上次命令执行的返回值，0为正常，非0为异常
+
+test                 #if后面的条件都是 test 条件，可简写成 [ .. ]
+    -f               #是否是文件
+    -r               #是否可读
+    -w               #是否可写
+    -u               #是否具有suid
+    -ot              #是否比某文件旧
+    -gt              #数字比较 great than
+    -a               #and
+
+for((i=1;i<255;i++)); do
+  ping -c1 192.168.1.$i > /dev/null 2>&1
+  if [ $? -eq 0 ]; then
+    echo "192.168.1.$i is running"
+  fi
+done
+
+#双重[[ .. ]] 解决单层 [ .. ] 不能逻辑运算和正则匹配的问题
+[[ !cmd ]]
+[[ cmd && cmd ]]
+[[ cmd || cmd ]]
+[[ $z =~ "o" ]]
+
+#数学运算
+expr
+
+$(($x+$y))
+$[$x+$y]
+let x=$x+1
+
+
+
+```
+
+## 杂项
+```shell
+mount /dev/sdb /media             #挂载U盘、光盘
+      /dev/sr0 /mnt
+umount /dev/sdb                   #取消挂载U盘
+                                  #多取消几次 防止被多次挂载了
+sudo fdisk -l | grep NTFS         #挂载ntfs的u盘
+mount -t ntfs-3g <NTFS Partition> <Mount Point>
+
+sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
+uniq                              # -d 只显示重复的行 -u 只显示唯一的行
+sort names | uniq -d              #显示在names文件中哪些行出现了多次
+
+tr                                #翻译
+                                  #转换大小写
+                                  cat /etc/passwd | tr [a-z] [A-Z]
+                                  #计算
+                                  echo "1 2 3 4 5" | tr " " "+" | bc
+
+split                             #按行数或字节数拆分文件
+csplit                            #由正则来分割文件
+
+strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
+
+```
+
+
+网络配置
+========
+## 查看网卡
+```shell
+ifconfig eth0
+ip addr show      #或简写成 ip add sh
+```
+
+## 启动网卡
+```shell
+ifconfig eth0 up
+ifconfig eth0 down
+ifdown eth0
+ifup eth0
+```
+
+## 临时设置网卡
+```shell
+ifconfig eth0 <ip> netmask <ip> up
+ip addr add <ip> netmask 255.255.255.0 dev eth0
+ip addr add <ip/24> dev eth0    #等同于上面，24个1（二进制）即255.255.255.0
+```
+
+## 查看网关
+```shell
+route -n
+```
+
+## 临时设置网关
+```shell
+route add default gw <ip>
+```
+
+## 临时设置DNS
+```shell
+vim /etc/resolv.conf
+
+nameserver 202.106.0.46 #最多三个
+```
+
+## 永久的网络设置
+```shell
+vim /etc/sysconfig/network-scripts/ifcfg-eth{0,1..}
+
+ONBOOT                      #是否启用网卡
+NM_CONTROLLED               #是否受networkmanager(gui)控制
+BOOTPROTO=dhcp|none|static  #获取ip方式
+
+NETMASK=255.255.255.0
+PREFIX=24
+
+GETEWAY
+DNS1
+DNS2
+```
+
+## 重启网卡
+```shell
 service network restart
+```
 
-vim /etc/sysconfig/network-scripts/ifcfg-eth0   #修改后重新登录生效
-
-ip addr                       #网卡 ip相关
+## 其它
+```shell
 lsof -i:80                    #查看80端口是否启动
 mii-tool eth0                 #eth0网卡是否有效
+ping <ip>
+    -c1                       #ping一个包
 
 netstat -ntlp
     -n                        #以网络IP地址代替名称，显示出网络连接情形
@@ -696,29 +942,36 @@ netstat -ntlp
     -l                        #正在listening的
     -p                        #显示程序名字
 
-```
+service iptables stop         #关闭防火墙
+iptables -F                   #关闭防火墙
+setenforce 0                  #关闭SElinux
 
-> RHEL的GUI方式配置有问题，可把它关闭`/etc/init.d/NetWorkManager stop`
+nslookup <domain>             #根据域名查看ip，附带检查dns效果
+
+system-config-network         #GUI方式配置，RHEL6有问题
+                              #可把它关闭`/etc/init.d/NetWorkManager stop`
+```
 
 > 常用服务端口号
 
 > - tcp
->>   - ftp 21 
->>   - ssh 22 
->>   - telnet 23 
->>   - smtp 25 
->>   - http 80 
+>>   - ftp 21
+>>   - ssh 22
+>>   - telnet 23
+>>   - smtp 25
+>>   - http 80
 >>   - https 443
->>   - dns 53 
+>>   - dns 53
 >
 > - udp
->>   - dhcp 67 68 
+>>   - dhcp 67 68
 
 > windows下网络配置查看
-> 
+>
 > `ipconfig [/release] [/renew] [/all]`
 
-
+服务配置
+========
 ## SSH
 代替了telnet，后者通信时使用明文，不安全，另外也不能使用root用户登录
 ### 安装
@@ -741,7 +994,7 @@ ssh-copy-id -i <sshhostip> #输入相应登录密码后，将放置对方 /.ssh/
 ```
 
 > 有关加密
-> 
+>
 > - 对称加密（机密性）：des 3des aes rc4/5；算法简单，适合大量加密
 > - 单向加密（完整性）：md5 sha1 sha2；算法简单，不占用计算资源。又称哈希加密，具有不可逆，定长输出，雪崩效应，对应的shell命令有`md5sum` `sha1sum` `sha224sum`等
 > - 非对称加密（身份认证，密钥传输）：rsa dsa；不适合大量加密，有公钥和私钥，公钥是私钥中的一部分
@@ -886,93 +1139,27 @@ subnet 172.24.40.0 netmask 255.255.255.0{
 /etc/init.d/dhcpd start
 ```
 
+## DNS
+### 概述
+FQDN是完全限定域名，准备的描述出主机所在的位置。DNS是倒置的树状结构的 分布式 数据库系统，存储着FQDN名和ip地址的对应关系，负责它们之间的解析
 
-linux其它
-==========
-## 重定向
+一个局域网内最好只有一个DNS
+
+### 安装
 ```shell
->           #输出重定向 1> 的简写
-            ls > /dev/null  #丢掉输出
-            ls > /dev/pts/2 #输出到另一个终端
->>          #输出重定向追加
-2>          #错误重定向
-2>>         #错误重定向追加
-
-&>          #标准与错误一起重新向
-            ls > 0.txt 2>&1  #同上
->> 2>>      #标准与错误一起重新向追加
-
-<           #输入重定向
-            cat < /dev/zero -A
-            cat << EOF  #打开文件缓冲区，输入完后，最后输入'EOF'
-
-            #下载ftp上内容，这类交互性的东西也可以写成脚本
-            lftp 192.168.1.245 << EOF
-             > get somefile
-             > EOF
-
+yum install -y bind
 ```
 
-> `except`可用于写交互性的脚本
-
-## 环境变量
+### 配置
 ```shell
-env     #查看当前用户的环境变量
+vim /etc/named.conf       #负责domain <-> zonefile
+vim /var/named/xxx.zone   #负责subdomain <-> ip
 ```
 
-一般情况下，环境变量由以下几个文件顺序进行加载
-
-- `/etc/profile`
-    - `/etc/profile.d/*.sh`
-- `~/.bash_profile`
-    - `~/.bashrc`
-        - `/etc/bashrc`
-
-
-非登录shell情况 `su tom`，先
-- `~/.bash_profile`
-    - `~/.bashrc`
-        - `/etc/bashrc`
-然后
-- `/etc/profile.d/*.sh`
-没有
-- `/etc/profile`
-
+### 启动
 ```shell
-vim /etc/profile
-export LC_ALL=zh_CN.GB18030       #设置语言信息
-export PS1='\u@\h:\w\$'           #修改命令行提示符
-
-vim /etc/sysconfig/i18n           #设置语言信息
-LANG="zh_CN.GB18030"
-
+/etc/init.d/bind start
 ```
-
-
-## 杂项
-```shell
-<command1>&&<command2>            #顺序执行
-alias                             #查看别名，存在于.cshrc中
-\<command>                        #不使用别名时，直接使用原始命令
-
-mount /dev/sdb /media             #挂载U盘、光盘
-      /dev/sr0 /mnt
-umount /dev/sdb                   #取消挂载U盘
-                                  #多取消几次 防止被多次挂载了
-sudo fdisk -l | grep NTFS         #挂载ntfs的u盘
-mount -t ntfs-3g <NTFS Partition> <Mount Point>
-
-sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
-uniq                              # -d 只显示重复的行 -u 只显示唯一的行
-sort names | uniq -d              #显示在names文件中哪些行出现了多次
-
-split                             #按行数或字节数拆分文件
-csplit                            #由正则来分割文件
-
-strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
-
-```
-
 
 
 
@@ -1172,3 +1359,13 @@ R               替换当前字符及其后的字符，直至按 ESC 键
 选择后，按`=`，格式化
 
 <!-- http://blog.163.com/stu_shl/blog/static/599375092011639354090/ -->
+
+
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',1);
+})();
+
+</script>
