@@ -1356,6 +1356,89 @@ R               替换当前字符及其后的字符，直至按 ESC 键
 <!-- http://blog.163.com/stu_shl/blog/static/599375092011639354090/ -->
 
 
+Sublime快捷键
+=============
+## 编辑器
+```shell
+ctrl k b               #切换显示左侧文件夹
+ctrl p                 #搜索项目中的文件
+ctrl shift p           #控制面板
+alt shift <num>        #分屏显示
+f11                    #全屏
+```
+
+## 查找
+```shell
+ctrl f                 #当前文件查找
+ctrl shift f           #项目或文件夹查找
+ctrl h                 #替换
+```
+
+## 编辑
+```shell
+ctrl shift <up|down>   #选中行上下移动
+ctrl ]                 #当前行缩进
+ctrl [                 #去除当前行缩进
+shift tab              #去除缩进
+
+ctrl enter             #在当前行后 插入一行
+ctrl shift enter       #在当前行前 插入一行
+ctrl j                 #合并选择的多行
+ctrl t                 #词互换(首先选择好两个词)
+
+ctrl k k               #从光标处删除至行尾
+ctrl k backspace       #从光标处删除至行首
+
+ctrl k u               #大写
+ctrl k l               #小写
+
+f9                     #行排序（按a-z）
+
+ctrl y                 #恢复撤销
+```
+
+## 选择复制
+```shell
+ctrl d                 #选择单词，重复可增加选择下一个相同的单词
+                       #ctrl f调出查找，把'Aa'选中，则本快捷大小写敏感
+ctrl k d               #选择单词，过滤当前，移到下一个相同单词
+ctrl shift d           #复制上一行整行
+ctrl x                 #剪切当前行 可当删除使用
+alt f3                 #选择所有相同的词
+ctrl l                 #选择行，重复可依次增加选择下一行
+#按住ctrl 左键选择代码，可选不连续代码
+#鼠标中键框选代码，可选矩形区代码
+#直接在当前行任意位置 ctrl c，复制的是整行
+```
+
+## 程序相关
+```shell
+ctrl r                 #列出所有method
+ctrl shift v           #粘贴并自动格式化
+
+ctrl /                 #注释/取消注释 选中的行
+ctrl shift /           #注释/取消注释 当前块
+
+ctrl m                 #光标移动至括号内开始或结束的位置
+ctrl shift m           #选择当前括号内内容（继续按则选择父括号）
+ctrl shift j           #选择当前括号内内容，与上有差异（继续按则选择父括号）
+
+ctrl shift [           #当前括号 折叠代码
+ctrl shift ]           #当前括号 展开代码
+ctrl k 0               #展开所有代码
+ctrl k 1               #代码折叠至一层
+ctrl k 2               #代码折叠至二层
+
+alt .                  #闭合当前标签
+alt f2                 #增删标记 按f2可来回切
+
+ctrl b                 #编译
+f7                     #运行
+
+```
+
+
+
 <script>
 
 (function(){

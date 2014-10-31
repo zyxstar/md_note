@@ -1,5 +1,9 @@
 > 2014-10-29
 
+[Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
+
+[Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
+
 Git版本控制之道
 ===============
 ## 版本库
@@ -125,7 +129,6 @@ Author: zyxstar <248340019@qq.com>
 Date:   Wed Oct 29 15:33:50 2014 +0800
 
     add hello html
-
 ```
 
 - 第一行显示提交名称，由git自动产生的 __SHA-1__ 码(40位)，其 __前七个字符__ 与`git commit`输出的相同
@@ -213,8 +216,6 @@ Date:   Wed Oct 29 16:59:30 2014 +0800
 - 用来支持项目的不同发布版本的分支
 - 用来支持一个特定功能的开发的分支（topic branch）
 
-参考 [Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
-
 分支可以为要发布的代码保留一份拷贝，无须停止正在开发的工作
 
 ```shell
@@ -222,6 +223,8 @@ git branch RB_1.0 master
 ```
 
 该分支从主分支(master branch)上创建了一个RB_1.0的分支，分支名中"RB"代表"release branch"
+
+`git branch`不加参数，显示目前所有分支
 
 现在对index.html做一些新的改动，用下面命令提交修改
 
@@ -236,46 +239,339 @@ git commit -a
  1 file changed, 1 insertion(+)
 ```
 
-`-a`代表提交全部修改过的文件
+`-a`代表提交全部修改过的文件(不包括新建的)
 
+现在主分支上有最新的修改，而发布分支上 __还是原来的代码__，请切换到发布分支
 
+```shell
+git checkout RB_1.0
+```
 
+```
+Switched to branch 'RB_1.0'
+```
 
+可以做一些新的改动，并进行提交(master不知道)
 
+## 处理发布
+要准备发由1.0版本了，要给它打个标签，意味着在版本库的历史中（用人类可以理解的名称而非SHA号）标记出特定的点
 
+```shell
+git tag 1.0 RB_1.0
+```
 
+可使用`git tag`显示版本库中标签列表
 
+```shell
+git tag
+```
 
+```
+1.0
+```
 
+现有两条分支上有不同的提交，它们并不知道彼此所包含的代码，现在要把RB_1.0分支上所做的修改合并到主分支上来。变基命令`get rebase`(第一个参数就是成为base的)可完成这项工作，变基是把一条分支上修改在另一条分支的末梢重现
 
+```shell
+git checkout master
+```
 
+```
+Switched to branch 'master'
+```
 
+```shell
+git rebase RB_1.0
+```
 
+```
+First, rewinding head to replay your work on top of it...
+Applying: add in a bio link
+Using index info to reconstruct a base tree...
+Falling back to patching base and 3-way merge...
+Auto-merging index.html
+CONFLICT (content): Merge conflict in index.html
+Failed to merge in the changes.
+Patch failed at 0001 add in a bio link
 
+When you have resolved this problem run "git rebase --continue".
+If you would prefer to skip this patch, instead run "git rebase --skip".
+To check out the original branch and stop rebasing run "git rebase --abort".
+```
 
+有合并冲突，需解决冲突后，再`git rebase --continue`
 
+> 在master分支上进行rebase一般来说应该是 __不对__ 的。master分支默认是公共分支，当有多人协同时，master分支在多个地方都有副本。一旦修改了master的commit hash id，而如果其他人已经基于之前的commit对象做了工作，那么当他拉取master的新的对象时，会需要在合并一次，这样反复下去，会把master分支搞得一团乱
+>
+> 所以`git rebase master [<branch>]`可成更常用
+>
+> 用`git merge`的时候，merge之后的commit id是按照时间先后排列的；如果用`git rebase`，应该是将B的修改全都放到A最新的commit的后面
 
+最后，作为整理工作的一部分，删除发布分支RB_1.0，只要标签在，从标签到版本树起点一连串提交记录就都在，删除分支只是删除了分支的名字
 
+```shell
+git branch -d RB_1.0
+```
+
+```
+Deleted branch RB_1.0 (was fa11273).
+```
+
+将来如何给"1.0.x"分支打丁呢，只须从打标签的地方再创建一条分支即可
+
+```shell
+git branch RB_1.0.1 1.0
+git checkout RB_1.0.1
+```
+
+使用
+
+```shell
+git log --pretty=oneline
+```
+
+将看到该分支上只有3个提交（master后做的提交看不到）
+
+将某个标签对应的版本内容打包
+
+```shell
+git archive --format=tar --prefix=mysite-1.0/ 1.0 | gzip > mysite-1.0.tar.gz
+git archive --format=zip --prefix=mysite-1.0/ 1.0 > mysite-1.0.zip
+```
+
+Git日常用法
+==========
+## 添加与提交
+### 添加文件到暂存区
+`git add`将添加新文件和修改版本库中已有文件，暂存变更，暂存操作会更新git内部索引，该索引称为 暂存区
+
+很多情况下，暂存区没什么作用，除非在提交版本库之前要选择提交哪些，不提交哪些
+
+`git add -i`启动交互模式的添加
+
+`git add -p`启动补丁模式
+
+### 提交修改
+它将变更添加到版本库的历史记录中，并为它们分配一个提交名称
+
+> git不会单独记录和跟踪目录，确实需要跟踪空目录时，在该目录下建立一个以`.`开头的空文件
+
+此处的提交不是发送到某个中央版本库中，而只是提交到本地版本库
+
+git按以下顺序查找编辑器
+
+- 环境变量`GIT_EDITOR`
+- git的设置`core.editor`，如`git config --global core.editor vim`
+- 环境变量`VISUAL`
+- 环境变量`EDITOR`
+- 尝试启动vi
+
+三种提交方法
+
+- `git add somefile`,`git commit -m "msg"`，__先暂存__，再提交
+- `git commit -m "msg" -a`，__直接提交__  工作目录下所有文件，除未被跟踪的
+- `git commit -m "msg" somefile`，__直接提交__  具体文件或文件夹
+
+## 查看修改内容
+### 查看当前状态
+```shell
+git status
+```
+
+```
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       modified:   index.html
+#
+# Changes not staged for commit:
+#   (use "git add <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#       modified:   index.html
+#
+```
+
+- Changes to be committed:  （绿色）列出了哪些文件待提交
+- Changes not staged for commit:  （红色）未更新到索引的变更
+- Untracked files:（红色）未被跟踪的文件
+
+### 查看文件改动
+```shell
+git diff
+```
+
+```
+diff --git a/index.html b/index.html
+index e13d7c6..ca86894 100644
+--- a/index.html
++++ b/index.html
+@@ -6,7 +6,7 @@
+ <body>
+     <h1>Hello World!</h1>
+     <ul>
+-        <li><a href="bio.html">About</a></li>
++        <li><a href="about.html">About</a></li>
+     </ul>
+ </body>
+ </html>
+```
+
+- `git diff`显示工作目录树与暂存区的区别
+- `git diff --cached`显示暂存区与版本库的区别
+- `git diff HEAD`显示工作目录树与版本库的区别
+
+## 管理文件
+### 文件重命名与移动
+```shell
+git mv index.html hello.html
+git status
+```
+
+```
+# On branch master
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#       renamed:    index.html -> hello.html
+#
+```
+
+如果不使用该命令，使用系统的`mv`后，则需要再做`git add`和`git rm`达到跟踪文件移动
+
+### 复制文件
+不提供文件复制用的命令
+
+### 忽略文件
+忽略文件创建`.gitignore`文件，将相关信息写入(如*.swp)但该文件需要纳入管理（适合所有人都需要忽略的文件）
+
+也可以把要忽略的文件添加到`.git/info/exclude`文件中（适合本人需要忽略的文件）
+
+理解和使用分支
+===============
+## 什么叫分支
+添加新功能，重构代码，修复BUG等，都会占用开发人员的时间和精力，如果只使用一条版本演进，难以支持上述情形。因此要创建和使用多条分支
+
+事实上，在git里，__任何修改和提交都是 *在分支上* 完成的__
+
+git的分支只记录和跟踪该分支末稍的那个提交，因为沿这个版本回溯，可以找到该分支完整的历史轨迹
+
+### 创建新分支
+```shell
+git branch branch1
+#基于当前分支创建新分支branch1
+git checkout branch1
+```
+
+或者
+
+```shell
+git checkout -b branch1 master
+# 基于master创建新分支branch1并签出
+```
+
+### 分支改名
+```shell
+git branch -m <old> <new>
+```
+
+### 合并分支间的修改
+#### 直接合并
+把两条分支上的历史轨迹合并，交汇到一起
+
+```shell
+#在其它分支上修改(比如branch1)
+git checkout master
+git merge branch1 #无须commit
+```
 
+#### 合并压缩
+将一条分支上的若干个提交条目压合成一个提交条目，提交到另一条分支的末稍
 
+当想开发一个试验性新功能或修复BUG时，这种合并很有用，此时所需要的并不是长期记录和跟踪每个试验性的提交，只是最后的成果
 
+```shell
+git checkout master
+git merge --squash branch2
+git commit -m "add some msg inclued all submit"
+#还需commit
+```
 
+#### 拣选合并
+拣选另一条分支上的某个提交条目的改动带到当前分支上，只须合并某个提交，而不是全部改动，因为该分支上可能含有未完成的新功能
 
+```shell
+git checkout master
+git cherry-pick 321d76f
+#321d76f为某一提交名,合并后会立即提交
+```
 
+```shell
+git checkout master
+git cherry-pick -n 321d76f #合并一个，不提交，方便下一个拣选，然后手工提交
+git cherry-pick -n 321d76d
+git commit #直接提交，不要-m，保留以前提交留言
+```
 
+## 冲突处理
+```
+<<<<<<< HEAD                 #当前分支 HEAD
+<div>JS</div>
+=======                      #分隔线
+<div>EMCAScript</div>
+>>>>>>> about2               #另一分支 about2
+```
 
+对于简单的合并，只须手工编辑并解决冲突即可，然后保存，暂存并提交
 
+修改冲突后，提交可不用`-m`，将使用合并操作的信息来充当留言
 
+`git config --global merge.tool kdiff3`可设置解决冲突的工具
 
+`git mergetool`调出冲突解决工具
 
+## 删除分支
+```shell
+git branch -d about2
+```
 
+如果未合并，是不能删除分支的，除非使用`-D`，适合已执行了压合合并和拣选合并后的情形
 
+查询Git历史记录
+==============
+## 查看Git日志
+```shell
+git log                    #每个提交显示：提交名、提交人、日期、留言
+    -p                     #显示版本间的代码差异，可组合其它
+    -5                     #显示最近5条日志
+    7b1558c                #指定版本(指定前4或5位即可)
+```
 
+## 指定查找范围
+```shell
+git log
+                           #时间可以为 24 hours, 1 minute, 2008-10.01
+    --since="5 hours"      #最近5小时的提交
+    --before="5 hours"     #5小时之前的提交
+    --before="5 hours" -1  #5小时之前的最后一个提交
 
+    18f822e..0bb3dfb       #不包括起点，包括终点
+    18f822e..HEAD          #HEAD代表版本库当前分支末梢最新版本
+    18f822e..              #默认HEAD
 
+    Tag1.0..HEAD           #特定标签
+```
 
+`^`一个脱字符，相当于回溯一个版本
 
 
+## 格式化显示
+```shell
+git log
+    --pretty=oneline
+    --pretty=format:"%h %s" 1.0..HEAD  #%h哈希值 %s消息第一行
+```
 
 
 
@@ -289,8 +585,21 @@ git commit -a
 
 
 
+## 克隆远程版本库
+```shell
+apt-get good
+git clone git://github.com/tswicegood/mysite.git mysite-remote
+```
 
+```
+Cloning into 'mysite-remote'...
+remote: Counting objects: 12, done.
+remote: Total 12 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (12/12), done.
+Resolving deltas: 100% (2/2), done.
+```
 
+`git clone`有两个参数，远程版本库位置和存放该版本库的本地目录，第二个是可选的
 
 
 
@@ -581,5 +890,6 @@ git commit -a
 
 
 
-[Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
+
+
 

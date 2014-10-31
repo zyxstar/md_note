@@ -5842,6 +5842,9 @@ underscore.js 1.6.0中的package.json
 shell中运行`npm install`，再运行`npm test`，`npm run-script build`，`npm run-script doc`
 
 
+参考网站
+=============
+- [阮一锋](http://javascript.ruanyifeng.com/)
 
 
 <script>
@@ -5854,7 +5857,7 @@ shell中运行`npm install`，再运行`npm test`，`npm run-script build`，`np
 </script>
 
 
-<!-- http://javascript.ruanyifeng.com/
+<!--
 http://yuilibrary.com/yui/docs/tutorials/gbs/
 
 http://www.cnblogs.com/nuysoft/archive/2011/11/14/2248023.html
