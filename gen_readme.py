@@ -21,7 +21,11 @@ ORDER_DIC = {"Analysis":10,
              "PythonCookBook.md":10,
 			 u"编程范式(stanford_cs107).md".encode(SYS_ENCODING):10,
              u"需求分析训练营(徐锋).md".encode(SYS_ENCODING):10,
-             u"有效用例模式(SteveAdolph).md".encode(SYS_ENCODING):20
+             u"有效用例模式(SteveAdolph).md".encode(SYS_ENCODING):20,
+			 u"Linux基础(RHEL).md".encode(SYS_ENCODING):10,
+			 u"Git版本控制之道.md".encode(SYS_ENCODING):20,
+			 "UnitTesting.md":30,
+			 "DataBase.md":40,
             }
 
 
