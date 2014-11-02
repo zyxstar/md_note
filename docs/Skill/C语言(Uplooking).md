@@ -2,7 +2,13 @@
 
 回到索引
 =======
-- [嵌入式培训(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%2528Uplooking%2529.md)
+- [嵌入式培训索引(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%25E7%25B4%25A2%25E5%25BC%2595%2528Uplooking%2529.md) 
+
+> 参考
+> 
+> - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
+> - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md)
+
 
 基础测试
 ==========
@@ -13,12 +19,13 @@
 
 ```c
 #include <stdio.h>
+#define ARR_SIZE 7
 
 int is_leap_year(int);
 int main(){
-    int years[] = {1900,1901,1904,1996,2000,2004,2005};
+    int years[ARR_SIZE] = {1900,1901,1904,1996,2000,2004,2005};
     int i;
-    for(i = 0; i < 7; i++){
+    for(i = 0; i < ARR_SIZE; i++){
         if(is_leap_year(years[i]))
             printf("%d is a leap year\n", years[i]);
         else
@@ -41,10 +48,11 @@ int is_leap_year(int year){
 
 ```c
 #include <stdio.h>
+#define ARR_SIZE 20
 
 char* my_strcat(char*, char*);
 int main(){
-    char str1[20] = "abcd";
+    char str1[ARR_SIZE] = "abcd";
     char* str2 = "012345";
     printf("%s", my_strcat(str1, str2));
     return 0;
@@ -224,9 +232,10 @@ int main(){
 
 ```c
 #include <stdio.h>
+#define ARR_SIZE 20
 
-int add(int a, int b){return a + b;} /*use lou shang code*/
-int reduce(int(*callback)(int, int), int* arr, int size){ /*use lou shang code*/
+int add(int a, int b){return a + b;} /* use Exam02 code */
+int reduce(int(*callback)(int, int), int* arr, int size){ /* use Exam02 code */
     int i, acc = 0;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
@@ -247,8 +256,8 @@ int filter(int(*predicate)(int), int* arr, int size){
 }
 
 int main(){
-    int arr[20] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
-    int new_size = filter(is_positive, arr, 20);    
+    int arr[ARR_SIZE] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
+    int new_size = filter(is_positive, arr, ARR_SIZE);    
     printf("size: %d; sum: %d \n", new_size, reduce(add, arr, new_size));
     return 0;
 }
