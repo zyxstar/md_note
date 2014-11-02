@@ -171,6 +171,56 @@ Day02
 
 50道题
 =========
+## 可重用函数
+下面的解题主要使用函数式的一些方式，将共用的函数提炼出来：
+
+```c
+
+void map(int(*callback)(int), int *arr, int size){ /*reuse*/
+    int i;
+    for(i = 0; i < size; i++){
+        arr[i] = callback(arr[i]);
+    }
+}
+
+int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
+    int i, acc = 0;
+    for(i = 0; i < size; i++){
+        acc = callback(acc, arr[i]);
+    }
+    return acc;
+}
+
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
+    int i, new_size = 0, temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i])){
+            temp = arr[i];
+            arr[new_size] = temp;
+            new_size++;
+        }
+    }
+    return new_size;
+}
+
+int range(int start, int end, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i++){
+        arr[new_size++] = i;
+    }
+    return new_size;
+}
+
+void print_arr(int *arr, int size){ /*reuse*/
+    printf("array: ");
+    int i;
+    for(i = 0; i < size; i++){
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+```
+
 ## Exam01
 - 输入一个不超过五位的正整数，输出其逆数。例如输入12345，输出应为54321。
 
@@ -191,7 +241,7 @@ int reverse(int num){
 int main(){
     int a = 12345;
     printf("%d\n", reverse(a));
-    a = 45347;
+    a = 45040;
     printf("%d\n", reverse(a));
     return 0;
 }
@@ -206,22 +256,28 @@ int main(){
 ```c
 #include <stdio.h>
 
-int add(int a, int b){return a + b;}
-int reduce(int(*callback)(int, int), int* arr, int size){
+int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
     int i, acc = 0;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
     return acc;
 }
-
-int main(){
-    int n = 50, i;
-    int arr[n];
-    for(i = 0; i < n; i++){
-        arr[i] = i;
+int range(int start, int end, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i++){
+        arr[new_size++] = i;
     }
-    printf("%d\n", reduce(add, arr, n));
+    return new_size;
+}
+
+/* app */
+int add(int a, int b){return a + b;}
+int main(){
+    int n = 50;
+    int arr[n];
+    int size = range(1, n+1, arr);
+    printf("%d\n", reduce(add, arr, size));
     return 0;
 }
 
@@ -236,16 +292,14 @@ int main(){
 #include <stdio.h>
 #define ARR_SIZE 20
 
-int add(int a, int b){return a + b;} /* use Exam02 code */
-int reduce(int(*callback)(int, int), int* arr, int size){ /* use Exam02 code */
+int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
     int i, acc = 0;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
     return acc;
 }
-int is_positive(num){return num > 0;}
-int filter(int(*predicate)(int), int* arr, int size){
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     int i, new_size = 0, temp;
     for(i = 0; i < size; i++){
         if(predicate(arr[i])){
@@ -257,10 +311,14 @@ int filter(int(*predicate)(int), int* arr, int size){
     return new_size;
 }
 
+/* app */
+int add(int a, int b){return a + b;} 
+int is_positive(num){return num > 0;}
+
 int main(){
     int arr[ARR_SIZE] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
-    int new_size = filter(is_positive, arr, ARR_SIZE);    
-    printf("size: %d; sum: %d \n", new_size, reduce(add, arr, new_size));
+    int size = filter(is_positive, arr, ARR_SIZE);    
+    printf("size: %d; sum: %d \n", size, reduce(add, arr, size));
     return 0;
 }
 
@@ -269,14 +327,166 @@ int main(){
 ## Exam04
 - 从终端（键盘）将5个整数输入到数组a中，然后将a逆序复制到数组b中，并输出b中各元素的值。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#define ARR_SIZE 5
+
+void print_arr(int *arr, int size){ /*reuse*/
+    printf("array: ");
+    int i;
+    for(i = 0; i < size; i++){
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+void reverse_arr(int *arr1, int *arr2, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        arr2[i] = arr1[size - i - 1];
+    }
+}
+
+int main(){
+    int arr1[ARR_SIZE] = {1,2,3,4,5};
+    int arr2[ARR_SIZE];
+
+    reverse_arr(arr1, arr2, ARR_SIZE);
+    print_arr(arr2, ARR_SIZE);
+    return 0;
+}
+
+```
+
 ## Exam05
 - 要将5张100元的大钞票，换成等值的50元，20元，10元，5元一张的小钞票，每种面值至少1张，编程求需要多少张纸币。
+
+
+
+
+
 
 ## Exam06
 - 求n以内（不包括n）同时能被3和7整除的所有自然数之和的平方根s，n从键盘输入。例如若n为1000时，函数值应为：s=153.909064。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <math.h>
+
+int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
+    int i, acc = 0;
+    for(i = 0; i < size; i++){
+        acc = callback(acc, arr[i]);
+    }
+    return acc;
+}
+int range(int start, int end, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i++){
+        arr[new_size++] = i;
+    }
+    return new_size;
+}
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
+    int i, new_size = 0, temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i])){
+            temp = arr[i];
+            arr[new_size] = temp;
+            new_size++;
+        }
+    }
+    return new_size;
+}
+
+/* app */
+int add(int a, int b){return a + b;} 
+int mod3_mod7(int num){ return (num % 3 == 0) && (num % 7 == 0);}
+int main(){
+    int n = 1000;
+    int arr[n];
+
+    int size = range(1, n, arr);
+    size = filter(mod3_mod7, arr, size);
+    int sum = reduce(add, arr, size);
+    double ret = sqrt(sum);
+
+    printf("%f\n", ret);
+    return 0;
+}
+
+```
+
+- 需要引入`math.h`，并在gcc时，需要 `-lm`
+
 ## Exam07
 - 一辆卡车违反交通规则，撞人后逃跑。现场有三人目击事件，但都没有记住车号，只记下车号的一些特征。甲说：牌照的前两位数字是相同的；乙说：牌照的后两位数字是相同的，但与前两位不同；丙是数学家，他说：四位的车号刚好是一个整数的平方。请根据以上线索找出车号。
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <math.h>
+
+void map(int(*callback)(int), int *arr, int size){ /*reuse*/
+    int i;
+    for(i = 0; i < size; i++){
+        arr[i] = callback(arr[i]);
+    }
+}
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
+    int i, new_size = 0, temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i])){
+            temp = arr[i];
+            arr[new_size] = temp;
+            new_size++;
+        }
+    }
+    return new_size;
+}
+int range(int start, int end, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i++){
+        arr[new_size++] = i;
+    }
+    return new_size;
+}
+void print_arr(int *arr, int size){ /*reuse*/
+    printf("array: ");
+    int i;
+    for(i = 0; i < size; i++){
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+/* app */
+int my_square(int num){return num * num;}
+int check_num(int num){
+    int a = num % 10;
+    int b = (num/10) % 10;
+    int c = (num/100) % 10;
+    int d = (num/1000) % 10;
+    return a==b && c==d && a!=c;
+}
+int main(){
+    int arr[100];
+    int size = range((int)sqrt(1000), (int)sqrt(10000), arr);
+    map(my_square, arr, size);
+    size = filter(check_num, arr, size);
+    print_arr(arr, size);
+
+    return 0;
+}
+
+```
+
+- 需要引入`math.h`，并在gcc时，需要 `-lm`
 
 ## Exam08
 - 输入1~10之间的一个数字，输出它对应的英文单词。
@@ -386,6 +596,61 @@ int main(){
 ## Exam43
 - 爱因斯坦出了一道这样的数学题：有一条长阶梯，若每步跨2阶，则最后剩一阶，若每步跨3 阶，则最后剩2阶，若每步跨5阶，则最后剩4阶，若每步跨6阶则最后剩5阶。只有每次跨7阶，最后才正好一阶不剩。请问这条阶梯至少有多少阶？
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+void map(int(*callback)(int), int *arr, int size){ /*reuse*/
+    int i;
+    for(i = 0; i < size; i++){
+        arr[i] = callback(arr[i]);
+    }
+}
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
+    int i, new_size = 0, temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i])){
+            temp = arr[i];
+            arr[new_size] = temp;
+            new_size++;
+        }
+    }
+    return new_size;
+}
+int range(int start, int end, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i++){
+        arr[new_size++] = i;
+    }
+    return new_size;
+}
+void print_arr(int *arr, int size){ /*reuse*/
+    printf("array: ");
+    int i;
+    for(i = 0; i < size; i++){
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+}
+
+/* app */
+int multi7(int num){ return num*7;}
+int check_num(int num){
+    return num%2==1 && num%3==2 && num%5==4 && num%6==5;
+}
+int main(){
+    int arr[100];
+    int size = range(1, 100, arr);
+    map(multi7, arr, size);
+    size = filter(check_num, arr, size);
+    print_arr(arr, size);
+
+    return 0;
+}
+
+```
+
 ## Exam44
 - 输入任意一行字符，降序排列之。
 
@@ -403,6 +668,50 @@ int main(){
 
 ## Exam49
 - 随机生成10道100以内的加减乘除数学题 回答正确的加10分错误不加分 然后显示成绩 。
+
+```c
+
+#include <stdio.h>
+#include <stdlib.h>
+
+int add(int a, int b){return a + b;}
+int minus(int a, int b){return a - b;}
+int multi(int a, int b){return a * b;}
+int divi(int a, int b){return a / b;}
+
+int main(){
+    int(*fun)(int,int)=NULL;
+    int i=0,sum=0;
+    int a,b,op,in_ret,r_ret;
+    srand(time(NULL));
+    
+    for(;i<10;i++){
+        printf("\nquestion %d : ", i+1);
+        a = rand()%100;
+        op = rand()%4;
+        b = rand()%100;
+        switch(op){
+            case 0: {fun = add; printf("%d + %d =", a, b); break;}
+            case 1: {fun = minus; printf("%d - %d =", a, b); break;}
+            case 2: {fun = multi; printf("%d * %d =", a, b); break;}
+            default: {fun = divi; printf("%d / %d =", a, b);}
+        }
+        scanf("%d", &in_ret);
+        r_ret = fun(a,b);
+        if(in_ret == r_ret) {
+            printf(" [right]");
+            sum+=10;
+        }
+        else{
+            printf(" [error] right result is %d", r_ret);
+        }
+    }
+    printf("\nscore is %d\n", sum);
+    return 0;
+}
+
+```
+
 
 ## Exam50
 - 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱） 
