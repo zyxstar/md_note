@@ -2,10 +2,10 @@
 
 回到索引
 =======
-- [嵌入式培训索引(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%25E7%25B4%25A2%25E5%25BC%2595%2528Uplooking%2529.md) 
+- [嵌入式培训索引(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%25E7%25B4%25A2%25E5%25BC%2595%2528Uplooking%2529.md)
 
 > 参考
-> 
+>
 > - [课件C.ppt](../../data/C.ppt)
 > - [vim配置](../../data/vimrc)
 > - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
@@ -73,6 +73,8 @@ char* my_strcat(char *str1, char *str2){
 }
 ```
 
+- 最好使用`char str1[ARR_SIZE] = "abcd"`，将字符串分配在栈中；如果分配在堆中，有可能覆盖后面的空间；如果分配在只读空间，将报错
+
 ## Test03
 - 写一个函数，能够将两个整型指针的指向交换
 
@@ -104,7 +106,7 @@ void swap(int* p1, int* p2){
 
 ```c
 #include <stdio.h>
-#include <limits.h>
+#include <assert.h>
 
 int add(int a, int b){return a + b;}
 int minus(int a, int b){return a - b;}
@@ -112,9 +114,8 @@ int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
 int operator(int(*fun)(int,int), int a, int b){
-    if(fun != NULL)
-        return fun(a, b);
-    return INT_MIN;
+    assert(fun != NULL);
+    return fun(a, b);
 }
 
 int main(){
@@ -125,7 +126,6 @@ int main(){
     printf("divi %d\n", operator(divi, a, b));
     return 0;
 }
-
 ```
 
 
@@ -137,12 +137,11 @@ Day01
     - 变量就是内存中已命名的存储空间，通过引用变量就可以引用保存在该内存中的数据
 - 数据类型是对变量管理内存的范围（大小）做了规范
     - `/usr/include/limits.h` 包含常用数据类型的最大最小值
-    
+
 ## 产生随机数
 假设需要产生5个，50~100的随机数
 
 <!-- run -->
-
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -156,25 +155,130 @@ int main(){
     }
     return 0;
 }
-
 ```
 
 - 注意`%`的使用，将数值求模，可以将固定数值的取值范围
 - `srand(time(NULL))`用于产生随机数的种子
 
-
-
-
 Day02
 =========
+## 进制转换
+- 十进制转任意进制
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+void reverse(char *data){
+    int i = 0, len = strlen(data);
+
+    char temp;
+    while(i < len/2){
+        temp = data[i];
+        data[i] = data[len - i - 1];
+        data[len - i - 1] =  temp;
+        i++;
+    }
+}
+char alpha(int num){
+    if (num < 10) return 48 + num;/* 0~9 */
+    return (num - 10) + 65; /* A~F */
+}
+void trans(int num, int radix, char *out_data){
+    int i = 0;
+    while(num > 0){
+        out_data[i++] = alpha(num % radix);
+        num /= radix;
+    }
+    out_data[i] = '\0';
+    reverse(out_data);
+}
+
+int main(){
+    int num = 78;
+    char data[100];
+
+    trans(num, 2, data);
+    printf("bin: %s\n", data);
+
+    trans(num, 8, data);
+    printf("oct: %s\n", data);
+
+    trans(num, 16, data);
+    printf("hex: %s\n", data);
+
+    trans(num, 10, data);
+    printf("den: %s\n", data);
+    return 0;
+}
+
+```
+
+- 任意进制转十进制
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int digit(char ch){
+    if(isdigit(ch)) return ch - 48;
+    if(isupper(ch)) return ch - 65 + 10;
+    if(islower(ch)) return ch - 97 + 10;
+    return 0;
+}
+int trans(char *in_data, int radix){
+    int i, ret = 0, len = strlen(in_data);
+    for(i = 0; i < len; i++){
+        ret = ret * radix + digit(in_data[i]);
+    }
+    return ret;
+}
+
+int main(){
+    printf("from bin: %d\n", trans("1001100",2));
+    printf("from oct: %d\n", trans("75765",8));
+    printf("from hex: %d\n", trans("B4",16));
+    printf("from hex: %d\n", trans("b4",16));
+    printf("from den: %d\n", trans("180",10));
+
+    return 0;
+}
+```
+
+## 有关补码
+> [参考cs_107](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC2.3)，采用补码，还有一个原因是方便`0`的表达
+
+- 计算机内部全部用补码来计算
+- 正数的补码就是原码
+- 负数的补码为：除去符号位，先取反码，再加1
+> 其实负数的补码 转换到 原码，也可采取 `取反再+1`，这样比`-1再取反`容易操作
+
+## 位移
+- 右移，高位补符号位（少数机器高位补零）
+- 左移，右侧空位补零，左侧符号位移出，原先的某数据位将成为符号位（少数机器符号位被固定，是不能位移的）
+
+
+Day03
+=========
+
 
 
 50道题
 =========
 ## 可重用函数
-下面的解题主要使用函数式的一些方式，将共用的函数提炼出来：
+下面的解题思路，使用了一些函数式的方式，将共用的函数提炼出来：
+
+> 迫不得已，不会在函数内部使用`printf`，`scanf`等函数：
+>
+> - 方法之一，借由参数与返回值的方式来保持数据的获取与返回；
+> - 方法之二，是使用`FILE*`来代替直接对`stdin`和`stdout`的操作
 
 ```c
+#include <stdlib.h>
 
 void map(int(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
@@ -203,21 +307,21 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     return new_size;
 }
 
-int range(int start, int end, int* arr){ /*reuse*/
+int range(int start, int end, int step, int* arr){ /*reuse*/
     int i, new_size = 0;
-    for(i = start; i < end; i++){
+    for(i = start; i < end; i += step){
         arr[new_size++] = i;
     }
     return new_size;
 }
 
-void print_arr(int *arr, int size){ /*reuse*/
-    printf("array: ");
+void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+    fprintf(fp, "array: ");
     int i;
     for(i = 0; i < size; i++){
-        printf("%d ", arr[i]);
+        fprintf(fp, "%d ", arr[i]);
     }
-    printf("\n");
+    fprintf(fp, "\n");
 }
 ```
 
@@ -225,7 +329,6 @@ void print_arr(int *arr, int size){ /*reuse*/
 - 输入一个不超过五位的正整数，输出其逆数。例如输入12345，输出应为54321。
 
 <!-- run -->
-
 ```c
 #include <stdio.h>
 
@@ -263,9 +366,9 @@ int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
     }
     return acc;
 }
-int range(int start, int end, int* arr){ /*reuse*/
+int range(int start, int end, int step, int* arr){ /*reuse*/
     int i, new_size = 0;
-    for(i = start; i < end; i++){
+    for(i = start; i < end; i+=step){
         arr[new_size++] = i;
     }
     return new_size;
@@ -276,12 +379,13 @@ int add(int a, int b){return a + b;}
 int main(){
     int n = 50;
     int arr[n];
-    int size = range(1, n+1, arr);
+    int size = range(1, n+1, 1, arr);
     printf("%d\n", reduce(add, arr, size));
     return 0;
 }
-
 ```
+
+- 如果加变成乘，只需新写一个`multi`函数
 
 ## Exam03
 - 从终端（键盘）读入20个数据到数组中，统计其中正数的个数，并计算这些正数之和。
@@ -312,17 +416,17 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
 }
 
 /* app */
-int add(int a, int b){return a + b;} 
+int add(int a, int b){return a + b;}
 int is_positive(num){return num > 0;}
-
 int main(){
     int arr[ARR_SIZE] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
-    int size = filter(is_positive, arr, ARR_SIZE);    
+    int size = filter(is_positive, arr, ARR_SIZE);
     printf("size: %d; sum: %d \n", size, reduce(add, arr, size));
     return 0;
 }
-
 ```
+
+- 重用了Exam03的累加，新增了过滤函数，但过滤条件是可以指定的
 
 ## Exam04
 - 从终端（键盘）将5个整数输入到数组a中，然后将a逆序复制到数组b中，并输出b中各元素的值。
@@ -331,15 +435,17 @@ int main(){
 
 ```c
 #include <stdio.h>
+#include <stdlib.h>
+
 #define ARR_SIZE 5
 
-void print_arr(int *arr, int size){ /*reuse*/
-    printf("array: ");
+void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+    fprintf(fp, "array: ");
     int i;
     for(i = 0; i < size; i++){
-        printf("%d ", arr[i]);
+        fprintf(fp, "%d ", arr[i]);
     }
-    printf("\n");
+    fprintf(fp, "\n");
 }
 
 void reverse_arr(int *arr1, int *arr2, int size){
@@ -354,7 +460,7 @@ int main(){
     int arr2[ARR_SIZE];
 
     reverse_arr(arr1, arr2, ARR_SIZE);
-    print_arr(arr2, ARR_SIZE);
+    print_arr(stdout, arr2, ARR_SIZE);
     return 0;
 }
 
@@ -384,9 +490,9 @@ int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
     }
     return acc;
 }
-int range(int start, int end, int* arr){ /*reuse*/
+int range(int start, int end, int step, int* arr){ /*reuse*/
     int i, new_size = 0;
-    for(i = start; i < end; i++){
+    for(i = start; i < end; i+=step){
         arr[new_size++] = i;
     }
     return new_size;
@@ -404,13 +510,13 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
 }
 
 /* app */
-int add(int a, int b){return a + b;} 
+int add(int a, int b){return a + b;}
 int mod3_mod7(int num){ return (num % 3 == 0) && (num % 7 == 0);}
 int main(){
     int n = 1000;
     int arr[n];
 
-    int size = range(1, n, arr);
+    int size = range(1, n, 1, arr);
     size = filter(mod3_mod7, arr, size);
     int sum = reduce(add, arr, size);
     double ret = sqrt(sum);
@@ -430,6 +536,7 @@ int main(){
 
 ```c
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 
 void map(int(*callback)(int), int *arr, int size){ /*reuse*/
@@ -449,20 +556,20 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     }
     return new_size;
 }
-int range(int start, int end, int* arr){ /*reuse*/
+int range(int start, int end, int step, int* arr){ /*reuse*/
     int i, new_size = 0;
-    for(i = start; i < end; i++){
+    for(i = start; i < end; i+=step){
         arr[new_size++] = i;
     }
     return new_size;
 }
-void print_arr(int *arr, int size){ /*reuse*/
-    printf("array: ");
+void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+    fprintf(fp, "array: ");
     int i;
     for(i = 0; i < size; i++){
-        printf("%d ", arr[i]);
+        fprintf(fp, "%d ", arr[i]);
     }
-    printf("\n");
+    fprintf(fp, "\n");
 }
 
 /* app */
@@ -476,10 +583,10 @@ int check_num(int num){
 }
 int main(){
     int arr[100];
-    int size = range((int)sqrt(1000), (int)sqrt(10000), arr);
+    int size = range((int)sqrt(1000), (int)sqrt(10000), 1, arr);
     map(my_square, arr, size);
     size = filter(check_num, arr, size);
-    print_arr(arr, size);
+    print_arr(stdout, arr, size);
 
     return 0;
 }
@@ -600,6 +707,7 @@ int main(){
 
 ```c
 #include <stdio.h>
+#include <stdlib.h>
 
 void map(int(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
@@ -618,20 +726,20 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     }
     return new_size;
 }
-int range(int start, int end, int* arr){ /*reuse*/
+int range(int start, int end, int step, int* arr){ /*reuse*/
     int i, new_size = 0;
-    for(i = start; i < end; i++){
+    for(i = start; i < end; i+=step){
         arr[new_size++] = i;
     }
     return new_size;
 }
-void print_arr(int *arr, int size){ /*reuse*/
-    printf("array: ");
+void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+    fprintf(fp, "array: ");
     int i;
     for(i = 0; i < size; i++){
-        printf("%d ", arr[i]);
+        fprintf(fp, "%d ", arr[i]);
     }
-    printf("\n");
+    fprintf(fp, "\n");
 }
 
 /* app */
@@ -641,10 +749,10 @@ int check_num(int num){
 }
 int main(){
     int arr[100];
-    int size = range(1, 100, arr);
+    int size = range(1, 100, 1, arr);
     map(multi7, arr, size);
     size = filter(check_num, arr, size);
-    print_arr(arr, size);
+    print_arr(stdout, arr, size);
 
     return 0;
 }
@@ -679,12 +787,14 @@ int minus(int a, int b){return a - b;}
 int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
+
+
 int main(){
     int(*fun)(int,int)=NULL;
     int i=0,sum=0;
     int a,b,op,in_ret,r_ret;
     srand(time(NULL));
-    
+
     for(;i<10;i++){
         printf("\nquestion %d : ", i+1);
         a = rand()%100;
@@ -714,4 +824,4 @@ int main(){
 
 
 ## Exam50
-- 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱） 
+- 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱）
