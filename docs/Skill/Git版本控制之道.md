@@ -418,9 +418,6 @@ index e13d7c6..ca86894 100644
  </html>
 ```
 
-- `git diff`显示工作目录树与暂存区的区别
-- `git diff --cached`显示暂存区与版本库的区别
-- `git diff HEAD`显示工作目录树与版本库的区别
 
 ## 管理文件
 ### 文件重命名与移动
@@ -563,8 +560,16 @@ git log
     Tag1.0..HEAD           #特定标签
 ```
 
-`^`一个脱字符，相当于回溯一个版本
+- `^`一个脱字符，相当于回溯一个版本，`18f822e^`代表`18f822e`之前的那个版本，可使用多个`^`代表之前N个版本
+- `~N`波浪符加数字，指回溯N个版本，`^`==`~1`
 
+```shell
+git log -1 HEAD^^^
+git log -1 HEAD^~2
+git log -1 HEAD~1^^
+git log -1 HEAD~3
+git log HEAD~10..HEAD
+```
 
 ## 格式化显示
 ```shell
@@ -573,9 +578,72 @@ git log
     --pretty=format:"%h %s" 1.0..HEAD  #%h哈希值 %s消息第一行
 ```
 
+## 查看版本之间的差异
+- `git diff`显示工作目录树与暂存区的区别
+- `git diff --cached`显示暂存区与版本库的区别
+- `git diff HEAD`显示工作目录树与版本库的区别
+- `git diff 18f822e`显示18f822e这个版本与当前工作目录树间差异
 
+`git diff`中指定版本范围方法与`git log`一样，有一个差别是`git diff`输出最老版本与最新版本间差异，中间的并不显示
 
+获取tag距现在之间代码量统计
 
+```shell
+git diff --stat 1.0 HEAD  #HEAD为可选
+```
+
+```
+about.html   |   15 +++++++++++++++
+contact.html |   23 +++++++++++++++++++++++
+hello.html   |   13 +++++++++++++
+index.html   |    9 ---------
+4 files changed, 51 insertions(+), 9 deletions(-)
+```
+
+## 查明该向谁负责
+```shell
+git blame hello.html
+```
+
+```
+^7b1558c index.html (Travis Swicegood 2008-09-21 14:20:21 -0500  1) <html>
+a5dacabd index.html (Travis Swicegood 2008-09-21 20:37:47 -0500  2) <head>
+a5dacabd index.html (Travis Swicegood 2008-09-21 20:37:47 -0500  3)     <title>Hello World in Git</title>
+4b537794 index.html (Travis Swicegood 2008-09-22 08:04:05 -0500  4)     <meta name="description" content="hello world in Git" />
+a5dacabd index.html (Travis Swicegood 2008-09-21 20:37:47 -0500  5) </head>
+^7b1558c index.html (Travis Swicegood 2008-09-21 14:20:21 -0500  6) <body>
+^7b1558c index.html (Travis Swicegood 2008-09-21 14:20:21 -0500  7)     <h1>Hello World!</h1>
+4333289e index.html (Travis Swicegood 2008-09-22 07:54:28 -0500  8)     <ul>
+6f1bf6ff index.html (Travis Swicegood 2008-10-03 23:43:06 -0500  9)         <li><a href="about.html">About</a></li>
+6f1bf6ff index.html (Travis Swicegood 2008-10-03 23:43:06 -0500 10)         <li><a href="contact.html">Contact</a></li>
+4333289e index.html (Travis Swicegood 2008-09-22 07:54:28 -0500 11)     </ul>
+^7b1558c index.html (Travis Swicegood 2008-09-21 14:20:21 -0500 12) </body>
+^7b1558c index.html (Travis Swicegood 2008-09-21 14:20:21 -0500 13) </html>
+```
+
+第一行有个脱字符，表示版本库中第一个提交，虽然参数输入`hello.html`，实际上输出的`index.html`，能跟踪重命名的文件
+
+```shell
+git blame -L 12,13 hello.html             #查看第12 13行
+git blame -L 12,+2 hello.html             #查看第12 12+1行
+git blame -L 12,-2 hello.html             #查看第12 12-1行
+git blame -L "/<\/body>/",+2 hello.html   #正则匹配行
+git blame -L "/<\/body>/",+2 4333289e^ -- index.html #该版本之间,如果重命名了，还要指定那时候的名字
+```
+
+## 跟踪内容
+git能够跟踪文件里甚至文件间的内容移动，git认为至少要匹配三行才认为是复制和粘贴的结果
+
+```shell
+git blame -M original.txt  #检测同一文件内移动或复制的代码
+git blame -C -C copy.txt   #检测不同文件复制的代码
+git log -C -C -1 -p        #检测文件复制时代码具体变动
+```
+
+## 撤销修改
+完全分布式开发好处之一就是可以只共享准备好的东西，在push变更之前确保变更是准备好的
+
+一旦push了，就不能随意修改历史了，这会使版本库很难跟踪
 
 
 
