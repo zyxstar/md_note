@@ -21,13 +21,12 @@
 
 ```c
 #include <stdio.h>
-#define ARR_SIZE 7
 
 int is_leap_year(int);
 int main(){
-    int years[ARR_SIZE] = {1900,1901,1904,1996,2000,2004,2005};
-    int i;
-    for(i = 0; i < ARR_SIZE; i++){
+    int years[] = {1900,1901,1904,1996,2000,2004,2005};
+    int i, count = sizeof(years)/sizeof(int);
+    for(i = 0; i < count; i++){
         if(is_leap_year(years[i]))
             printf("%d is a leap year\n", years[i]);
         else
@@ -290,10 +289,11 @@ Day03
 ## 可重用函数
 下面的解题思路，使用了一些函数式的方式，将共用的函数提炼出来：
 
-> 迫不得已，不会在函数内部使用`printf`，`scanf`等函数：
+> 1. 代码更多从扩展性、重用性考虑，有些代码是牺牲了性能的，有没有坑，请自行判断
+> 2. 迫不得已，不会在函数内部使用`printf`，`scanf`等函数：
 >
-> - 方法之一，借由参数与返回值的方式来保持数据的获取与返回；
-> - 方法之二，是使用`FILE*`来代替直接对`stdin`和`stdout`的操作
+>> - 方法之一，借由参数与返回值的方式来保持数据的获取与返回；
+>> - 方法之二，是使用`FILE*`来代替直接对`stdin`和`stdout`的操作
 
 ```c
 #include <stdlib.h>
@@ -305,8 +305,10 @@ void map(int(*callback)(int), int *arr, int size){ /*reuse*/
     }
 }
 
-int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
-    int i, acc = 0;
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
@@ -378,8 +380,11 @@ int main(){
 ```c
 #include <stdio.h>
 
-int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
-    int i, acc = 0;
+typedef int REDUCE_CACHE;
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
@@ -399,7 +404,7 @@ int main(){
     int n = 50;
     int arr[n];
     int size = range(1, n+1, 1, arr);
-    printf("%d\n", reduce(add, arr, size));
+    printf("%d\n", reduce(add, arr, size, 0));
     return 0;
 }
 ```
@@ -413,10 +418,12 @@ int main(){
 
 ```c
 #include <stdio.h>
-#define ARR_SIZE 20
 
-int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
-    int i, acc = 0;
+typedef int REDUCE_CACHE;
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
@@ -438,9 +445,10 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
 int add(int a, int b){return a + b;}
 int is_positive(num){return num > 0;}
 int main(){
-    int arr[ARR_SIZE] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
-    int size = filter(is_positive, arr, ARR_SIZE);
-    printf("size: %d; sum: %d \n", size, reduce(add, arr, size));
+    int arr[] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
+    int size = sizeof(arr) / sizeof(int);
+    size = filter(is_positive, arr, size);
+    printf("size: %d; sum: %d \n", size, reduce(add, arr, size, 0));
     return 0;
 }
 ```
@@ -476,7 +484,7 @@ void reverse_arr(int *arr1, int *arr2, int size){
 }
 
 int main(){
-    int arr1[ARR_SIZE] = {1,2,3,4,5};
+    int arr1[] = {1,2,3,4,5};
     int arr2[ARR_SIZE];
 
     reverse_arr(arr1, arr2, ARR_SIZE);
@@ -489,8 +497,11 @@ int main(){
 ## Exam05
 - 要将5张100元的大钞票，换成等值的50元，20元，10元，5元一张的小钞票，每种面值至少1张，编程求需要多少张纸币。
 
+<!-- run -->
 
+```c
 
+```
 
 
 
@@ -503,8 +514,11 @@ int main(){
 #include <stdio.h>
 #include <math.h>
 
-int reduce(int(*callback)(int, int), int* arr, int size){ /*reuse*/
-    int i, acc = 0;
+typedef int REDUCE_CACHE;
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
     for(i = 0; i < size; i++){
         acc = callback(acc, arr[i]);
     }
@@ -531,14 +545,14 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
 
 /* app */
 int add(int a, int b){return a + b;}
-int mod3_mod7(int num){ return (num % 3 == 0) && (num % 7 == 0);}
+int check_num(int num){return (num % 3 == 0) && (num % 7 == 0);}
 int main(){
     int n = 1000;
     int arr[n];
 
     int size = range(1, n, 1, arr);
-    size = filter(mod3_mod7, arr, size);
-    int sum = reduce(add, arr, size);
+    size = filter(check_num, arr, size);
+    int sum = reduce(add, arr, size, 0);
     double ret = sqrt(sum);
 
     printf("%f\n", ret);
@@ -624,7 +638,7 @@ int main(){
 ```c
 #include <stdio.h>
 
-const char* mapping(int digit){
+const char* mapper(int digit){
     if(digit < 0 || digit > 10) return NULL;
     static char *arr[] = {"zero", "one", "two",
                           "three", "four", "five",
@@ -636,7 +650,7 @@ const char* mapping(int digit){
 int main(){
     int i;
     for(i = 1; i <= 10; i++){
-        printf("%d : %s\n", i, mapping(i));
+        printf("%d : %s\n", i, mapper(i));
     }
     return 0;
 }
@@ -695,9 +709,59 @@ int main(){
 }
 ```
 
-
 ## Exam10
 - 输入某年某月某日，判断这一天是这一年的第几天？
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#define MONTH_SIZE 12
+
+typedef int REDUCE_CACHE;
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
+    for(i = 0; i < size; i++){
+        acc = callback(acc, arr[i]);
+    }
+    return acc;
+}
+int is_leap_year(int year){
+    if(year % 400 == 0)  return 1;
+    if((year % 4 == 0) && (year % 100 != 0)) return 1;
+    return 0;
+}
+void copy_arr(int *souce, int *dest, int size){
+    while(size >= 0) {dest[size-1] = souce[size-1]; size--;}
+}
+void get_months(int year, int *month_days){
+    static int s_month_days[] = {31,0,31,30,31,30,31,31,30,31,30,31};
+    copy_arr(s_month_days, month_days, MONTH_SIZE);
+    month_days[1] = is_leap_year(year) ? 29 : 28;
+}
+int add(int a, int b){return a + b;}
+int day_in_year(int year, int month, int day){
+    int month_days[MONTH_SIZE];
+    get_months(year, month_days);
+    return reduce(add, month_days, month-1, 0) + day;
+}
+int main(){
+    printf("%d\n", day_in_year(1998,1,1));
+    printf("%d\n", day_in_year(1998,2,1));
+    printf("%d\n", day_in_year(1998,3,1));
+
+    printf("%d\n", day_in_year(2000,1,1));
+    printf("%d\n", day_in_year(2000,2,1));
+    printf("%d\n", day_in_year(2000,3,1));
+    printf("%d\n", day_in_year(2000,12,31));
+
+    return 0;
+}
+```
+
+
 
 ## Exam11
 - 两个乒乓球队进行比赛，各出三人。甲队为a,b,c三人，乙队为x,y,z三人。已抽签决定比赛名单。有人向队员打听比赛的名单。a说他不和x比，c说他不和x,z比，请编程序找出三队赛手的名单。
@@ -710,6 +774,44 @@ int main(){
 
 ## Exam14
 - 输入10个数，分别统计其中正数、负数、零的个数。
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+typedef struct{
+    int zero;
+    int positive;
+    int negative;
+} REDUCE_CACHE;
+
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
+                    int* arr, int size, REDUCE_CACHE init){
+    int i;
+    REDUCE_CACHE acc = init;
+    for(i = 0; i < size; i++){
+        acc = callback(acc, arr[i]);
+    }
+    return acc;
+}
+
+/* app */
+REDUCE_CACHE pipe(REDUCE_CACHE acc, int num){
+    if(num == 0) acc.zero++;
+    else if(num > 0) acc.positive++;
+    else acc.negative++;
+    return acc;
+}
+int main(){
+    int arr[] = {1,2,3,4,0,0,-5,-6,0,-7,-9};
+    REDUCE_CACHE status = {0,0,0};
+    status = reduce(pipe, arr, sizeof(arr) / sizeof(int), status);
+    printf("zero: %d; positive: %d; negative: %d\n",
+        status.zero, status.positive, status.negative);
+    return 0;
+}
+```
 
 ## Exam15
 - 先随机产生N个三位自然数输出，然后再输出其中同时是3、5、7倍数的数。（设N为100）
