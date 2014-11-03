@@ -1,5 +1,9 @@
 > 2014-09-27
 
+回到索引
+=======
+- [嵌入式培训(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%2528Uplooking%2529.md)
+
 安装相关
 ========
 ## 安装事项
@@ -764,9 +768,10 @@ vim /etc/profile
 export LC_ALL=zh_CN.GB18030       #设置语言信息
 export PS1='\u@\h:\w\$'           #修改命令行提示符
 
-vim /etc/sysconfig/i18n           #设置语言信息
-LANG="zh_CN.GB18030"
-
+vim /etc/sysconfig/i18n           
+LANG="zh_CN.GB18030"              #当前系统的语言环境变量设置
+SUPPORTED="zh_CN.GB18030:zh_CN:zh:en_US.UTF-8:en_US:en"  #系统支持哪些字符集
+SYSFONT="latarcyrheb-sun16"       #系统终端字符的字体
 ```
 
 ## Shell相关
@@ -838,6 +843,7 @@ let x=$x+1
 
 ## 杂项
 ```shell
+mount                             #查看目前所有挂载
 mount /dev/sdb /media             #挂载U盘、光盘
       /dev/sr0 /mnt
 umount /dev/sdb                   #取消挂载U盘
@@ -859,6 +865,8 @@ split                             #按行数或字节数拆分文件
 csplit                            #由正则来分割文件
 
 strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
+
+locale                            #查看系统当前locale环境变量
 
 ```
 
