@@ -334,12 +334,13 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
 }
 
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "array: ");
-    int i;
-    for(i = 0; i < size; i++){
-        fprintf(fp, "%d ", arr[i]);
+    fprintf(fp, "[");
+    int i = 0;
+    while(i < size){
+        fprintf(fp, "%4d ", arr[i++]);
+        if(i%10 == 0) fprintf(fp, "\n ");
     }
-    fprintf(fp, "\n");
+    fprintf(fp, "]\n");
 }
 ```
 
@@ -458,12 +459,13 @@ int main(){
 #define ARR_SIZE 5
 
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "array: ");
-    int i;
-    for(i = 0; i < size; i++){
-        fprintf(fp, "%d ", arr[i]);
+    fprintf(fp, "[");
+    int i = 0;
+    while(i < size){
+        fprintf(fp, "%4d ", arr[i++]);
+        if(i%10 == 0) fprintf(fp, "\n ");
     }
-    fprintf(fp, "\n");
+    fprintf(fp, "]\n");
 }
 
 void reverse_arr(int *arr1, int *arr2, int size){
@@ -582,12 +584,13 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     return new_size;
 }
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "array: ");
-    int i;
-    for(i = 0; i < size; i++){
-        fprintf(fp, "%d ", arr[i]);
+    fprintf(fp, "[");
+    int i = 0;
+    while(i < size){
+        fprintf(fp, "%4d ", arr[i++]);
+        if(i%10 == 0) fprintf(fp, "\n ");
     }
-    fprintf(fp, "\n");
+    fprintf(fp, "]\n");
 }
 
 /* app */
@@ -616,8 +619,82 @@ int main(){
 ## Exam08
 - 输入1~10之间的一个数字，输出它对应的英文单词。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+const char* mapping(int digit){
+    if(digit < 0 || digit > 10) return NULL;
+    static char *arr[] = {"zero", "one", "two",
+                          "three", "four", "five",
+                          "six", "seven", "eight",
+                          "nine", "ten" };
+    return arr[digit];
+}
+
+int main(){
+    int i;
+    for(i = 1; i <= 10; i++){
+        printf("%d : %s\n", i, mapping(i));
+    }
+    return 0;
+}
+```
+
 ## Exam09
 - 个位数为6且能被3整除但不能被5整除的三位自然数共有多少个，分别是哪些？
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
+    int i, new_size = 0, temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i])){
+            temp = arr[i];
+            arr[new_size] = temp;
+            new_size++;
+        }
+    }
+    return new_size;
+}
+
+int range(int start, int end, int step, int* arr){ /*reuse*/
+    int i, new_size = 0;
+    for(i = start; i < end; i += step){
+        arr[new_size++] = i;
+    }
+    return new_size;
+}
+
+void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+    fprintf(fp, "[");
+    int i = 0;
+    while(i < size){
+        fprintf(fp, "%4d ", arr[i++]);
+        if(i%10 == 0) fprintf(fp, "\n ");
+    }
+    fprintf(fp, "]\n");
+}
+
+/* app */
+int check_num(num){
+    return (num%3 == 0) && (num%5 != 0) && (num%10 == 6);
+}
+int main(){
+    int arr[999];
+    int size = range(100, 1000, 1, arr);
+    size = filter(check_num, arr, size);
+    printf("count is %d\n", size);
+    print_arr(stdout, arr, size);
+    return 0;
+}
+```
+
 
 ## Exam10
 - 输入某年某月某日，判断这一天是这一年的第几天？
@@ -752,12 +829,13 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     return new_size;
 }
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "array: ");
-    int i;
-    for(i = 0; i < size; i++){
-        fprintf(fp, "%d ", arr[i]);
+    fprintf(fp, "[");
+    int i = 0;
+    while(i < size){
+        fprintf(fp, "%4d ", arr[i++]);
+        if(i%10 == 0) fprintf(fp, "\n ");
     }
-    fprintf(fp, "\n");
+    fprintf(fp, "]\n");
 }
 
 /* app */
