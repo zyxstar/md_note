@@ -296,15 +296,22 @@ Day03
 >> - 方法之二，是使用`FILE*`来代替直接对`stdin`和`stdout`的操作
 
 ```c
+#include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
-void map(int(*callback)(int), int *arr, int size){ /*reuse*/
+typedef int MAP_ELEM;
+MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
+    MAP_ELEM* ret_arr = malloc(sizeof(MAP_ELEM) * size);
+    assert(ret_arr != NULL);
     for(i = 0; i < size; i++){
-        arr[i] = callback(arr[i]);
+        ret_arr[i] = callback(arr[i]);
     }
+    return ret_arr;
 }
 
+typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -328,19 +335,33 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
 }
 
 int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i += step){
-        arr[new_size++] = i;
+    if(step == 0) return 0;
+    if(step > 0 && end < start) return 0;
+    if(step < 0 && start < end) return 0;
+    int new_size = 0;
+    while(1){
+        if(step > 0 && start >= end) break;
+        if(step < 0 && start <= end) break; 
+        arr[new_size++] = start;
+        start += step;
     }
     return new_size;
+}
+
+int take_while(int(*predicate)(int), int(*move_next)(int), int init){ /*reuse*/
+    int data = init;
+    while(!(predicate(data))){
+        data = move_next(data);         
+    }
+    return data;
 }
 
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     fprintf(fp, "[");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%4d ", arr[i++]);
-        if(i%10 == 0) fprintf(fp, "\n ");
+        fprintf(fp, "%6d ", arr[i++]);
+        if(i%8 == 0) fprintf(fp, "\n ");
     }
     fprintf(fp, "]\n");
 }
@@ -391,9 +412,15 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
     return acc;
 }
 int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i+=step){
-        arr[new_size++] = i;
+    if(step == 0) return 0;
+    if(step > 0 && end < start) return 0;
+    if(step < 0 && start < end) return 0;
+    int new_size = 0;
+    while(1){
+        if(step > 0 && start >= end) break;
+        if(step < 0 && start <= end) break; 
+        arr[new_size++] = start;
+        start += step;
     }
     return new_size;
 }
@@ -470,8 +497,8 @@ void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     fprintf(fp, "[");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%4d ", arr[i++]);
-        if(i%10 == 0) fprintf(fp, "\n ");
+        fprintf(fp, "%6d ", arr[i++]);
+        if(i%8 == 0) fprintf(fp, "\n ");
     }
     fprintf(fp, "]\n");
 }
@@ -525,9 +552,15 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
     return acc;
 }
 int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i+=step){
-        arr[new_size++] = i;
+    if(step == 0) return 0;
+    if(step > 0 && end < start) return 0;
+    if(step < 0 && start < end) return 0;
+    int new_size = 0;
+    while(1){
+        if(step > 0 && start >= end) break;
+        if(step < 0 && start <= end) break; 
+        arr[new_size++] = start;
+        start += step;
     }
     return new_size;
 }
@@ -571,13 +604,18 @@ int main(){
 ```c
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #include <math.h>
+typedef int MAP_ELEM;
 
-void map(int(*callback)(int), int *arr, int size){ /*reuse*/
+MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
+    MAP_ELEM* ret_arr = malloc(sizeof(MAP_ELEM) * size);
+    assert(ret_arr != NULL);
     for(i = 0; i < size; i++){
-        arr[i] = callback(arr[i]);
+        ret_arr[i] = callback(arr[i]);
     }
+    return ret_arr;
 }
 int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     int i, new_size = 0, temp;
@@ -591,9 +629,15 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     return new_size;
 }
 int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i+=step){
-        arr[new_size++] = i;
+    if(step == 0) return 0;
+    if(step > 0 && end < start) return 0;
+    if(step < 0 && start < end) return 0;
+    int new_size = 0;
+    while(1){
+        if(step > 0 && start >= end) break;
+        if(step < 0 && start <= end) break; 
+        arr[new_size++] = start;
+        start += step;
     }
     return new_size;
 }
@@ -601,14 +645,14 @@ void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     fprintf(fp, "[");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%4d ", arr[i++]);
-        if(i%10 == 0) fprintf(fp, "\n ");
+        fprintf(fp, "%6d ", arr[i++]);
+        if(i%8 == 0) fprintf(fp, "\n ");
     }
     fprintf(fp, "]\n");
 }
 
 /* app */
-int my_square(int num){return num * num;}
+int square_num(int num){return num * num;}
 int check_num(int num){
     int a = num % 10;
     int b = (num/10) % 10;
@@ -619,9 +663,10 @@ int check_num(int num){
 int main(){
     int arr[100];
     int size = range((int)sqrt(1000), (int)sqrt(10000), 1, arr);
-    map(my_square, arr, size);
-    size = filter(check_num, arr, size);
-    print_arr(stdout, arr, size);
+    int *ret_arr = map(square_num, arr, size);
+    size = filter(check_num, ret_arr, size);
+    print_arr(stdout, ret_arr, size);
+    free(ret_arr);
 
     return 0;
 }
@@ -676,21 +721,25 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     }
     return new_size;
 }
-
 int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i += step){
-        arr[new_size++] = i;
+    if(step == 0) return 0;
+    if(step > 0 && end < start) return 0;
+    if(step < 0 && start < end) return 0;
+    int new_size = 0;
+    while(1){
+        if(step > 0 && start >= end) break;
+        if(step < 0 && start <= end) break; 
+        arr[new_size++] = start;
+        start += step;
     }
     return new_size;
 }
-
 void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     fprintf(fp, "[");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%4d ", arr[i++]);
-        if(i%10 == 0) fprintf(fp, "\n ");
+        fprintf(fp, "%6d ", arr[i++]);
+        if(i%8 == 0) fprintf(fp, "\n ");
     }
     fprintf(fp, "]\n");
 }
@@ -772,6 +821,58 @@ int main(){
 ## Exam13
 - 输入某三角形的三个边的长度，判断出这是个什么三角形（等腰、等边、任意，或不能构成）。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+typedef enum {
+    NONE,
+    GENERAL,
+    ISOSCELES,
+    EQUILATERAL
+} TriangleType;
+
+const char* describe_triangle(TriangleType type){
+    static char *arr[] = {"NONE", "GENERAL", "ISOSCELES", "EQUILATERAL"};
+    return arr[type];
+}
+
+int check_positive(int a, int b, int c){
+    return (a>0 && b>0 && c>0);
+}
+int check_general(int a, int b, int c){
+    return (a + b > c) && (a + c > b) && (b + c > a);
+}   
+int check_isosceles(int a, int b, int c){
+    return (a==b || b==c || c==a);
+}
+int check_equilateral(int a, int b, int c){
+    return (a==b && b==c);
+}
+TriangleType get_triangle_type(int a, int b, int c){
+    if(!check_positive(a,b,c) || !check_general(a,b,c)) return NONE;
+    if(check_equilateral(a,b,c)) return EQUILATERAL;
+    if(check_isosceles(a,b,c)) return ISOSCELES;
+    return GENERAL;
+}
+
+int main(){
+    int a = 10, b = 20, c = 25;
+    printf("%s\n", describe_triangle(get_triangle_type(a,b,c)));
+
+    a = 10, b = 20, c = 35;
+    printf("%s\n", describe_triangle(get_triangle_type(a,b,c)));
+
+    a = 10, b = 20, c = 20;
+    printf("%s\n", describe_triangle(get_triangle_type(a,b,c)));
+
+    a = 10, b = 10, c = 10;
+    printf("%s\n", describe_triangle(get_triangle_type(a,b,c)));
+    return 0;
+}
+```
+
 ## Exam14
 - 输入10个数，分别统计其中正数、负数、零的个数。
 
@@ -797,7 +898,7 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
 }
 
 /* app */
-REDUCE_CACHE pipe(REDUCE_CACHE acc, int num){
+REDUCE_CACHE callback(REDUCE_CACHE acc, int num){
     if(num == 0) acc.zero++;
     else if(num > 0) acc.positive++;
     else acc.negative++;
@@ -806,7 +907,7 @@ REDUCE_CACHE pipe(REDUCE_CACHE acc, int num){
 int main(){
     int arr[] = {1,2,3,4,0,0,-5,-6,0,-7,-9};
     REDUCE_CACHE status = {0,0,0};
-    status = reduce(pipe, arr, sizeof(arr) / sizeof(int), status);
+    status = reduce(callback, arr, sizeof(arr) / sizeof(int), status);
     printf("zero: %d; positive: %d; negative: %d\n",
         status.zero, status.positive, status.negative);
     return 0;
@@ -904,54 +1005,19 @@ int main(){
 
 ```c
 #include <stdio.h>
-#include <stdlib.h>
 
-void map(int(*callback)(int), int *arr, int size){ /*reuse*/
-    int i;
-    for(i = 0; i < size; i++){
-        arr[i] = callback(arr[i]);
+int take_while(int(*predicate)(int), int(*move_next)(int), int init){  /*reuse*/
+    int data = init;
+    while(!(predicate(data))){
+        data = move_next(data);         
     }
+    return data;
 }
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
-    for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
-            temp = arr[i];
-            arr[new_size] = temp;
-            new_size++;
-        }
-    }
-    return new_size;
-}
-int range(int start, int end, int step, int* arr){ /*reuse*/
-    int i, new_size = 0;
-    for(i = start; i < end; i+=step){
-        arr[new_size++] = i;
-    }
-    return new_size;
-}
-void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "[");
-    int i = 0;
-    while(i < size){
-        fprintf(fp, "%4d ", arr[i++]);
-        if(i%10 == 0) fprintf(fp, "\n ");
-    }
-    fprintf(fp, "]\n");
-}
-
 /* app */
-int multi7(int num){ return num*7;}
-int check_num(int num){
-    return num%2==1 && num%3==2 && num%5==4 && num%6==5;
-}
+int move_next(int num){ return num + 7;}
+int check_num(int num){ return num%2==1 && num%3==2 && num%5==4 && num%6==5;}
 int main(){
-    int arr[100];
-    int size = range(1, 100, 1, arr);
-    map(multi7, arr, size);
-    size = filter(check_num, arr, size);
-    print_arr(stdout, arr, size);
-
+    printf("%d", take_while(check_num, move_next, 0));
     return 0;
 }
 
