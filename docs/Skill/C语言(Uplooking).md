@@ -261,6 +261,24 @@ int main(){
 - 右移，高位补符号位（少数机器高位补零）
 - 左移，右侧空位补零，左侧符号位移出，原先的某数据位将成为符号位（少数机器符号位被固定，是不能位移的）
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+int main(){
+    char ch = 127;
+    char ret = ch << 1;
+    printf("result: %d\n", ret); /* -2 */
+
+    ch = -65;
+    ret = ch << 1;
+    printf("result: %d\n", ret); /* 126 */
+
+    return 0;
+}
+```
+
 
 Day03
 =========
@@ -778,7 +796,6 @@ int main(){
 - 随机生成10道100以内的加减乘除数学题 回答正确的加10分错误不加分 然后显示成绩 。
 
 ```c
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -787,36 +804,37 @@ int minus(int a, int b){return a - b;}
 int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
-
+int rand_operate(int *operand1, int *operand2, char *operator){
+    int(*fun)(int, int) = NULL;
+    srand(time(NULL));
+    *operand1 = rand() % 100;
+    *operand2 = rand() % 100;
+    switch(rand() % 4){
+        case 0: {fun = add; *operator = '+'; break;}
+        case 1: {fun = minus; *operator = '-'; break;}
+        case 2: {fun = multi; *operator = '*'; break;}
+        default: {fun = divi; *operator = '/';}
+    }
+    return fun(*operand1, *operand2);
+}
 
 int main(){
-    int(*fun)(int,int)=NULL;
-    int i=0,sum=0;
-    int a,b,op,in_ret,r_ret;
-    srand(time(NULL));
-
-    for(;i<10;i++){
-        printf("\nquestion %d : ", i+1);
-        a = rand()%100;
-        op = rand()%4;
-        b = rand()%100;
-        switch(op){
-            case 0: {fun = add; printf("%d + %d =", a, b); break;}
-            case 1: {fun = minus; printf("%d - %d =", a, b); break;}
-            case 2: {fun = multi; printf("%d * %d =", a, b); break;}
-            default: {fun = divi; printf("%d / %d =", a, b);}
-        }
-        scanf("%d", &in_ret);
-        r_ret = fun(a,b);
-        if(in_ret == r_ret) {
+    int score = 0, i, operand1, operand2, guess, ret;
+    char operator;
+    for(i = 0; i < 10; i++){
+        printf("\nquestion %d : ", i + 1);
+        ret = rand_operate(&operand1, &operand2, &operator);
+        printf("%d %c %d = ", operand1, operator, operand2);
+        scanf("%d", &guess);
+        if(guess == ret) {
             printf(" [right]");
-            sum+=10;
+            score += 10;
         }
         else{
-            printf(" [error] right result is %d", r_ret);
+            printf(" [error] right result is %d", ret);
         }
     }
-    printf("\nscore is %d\n", sum);
+    printf("\nscore is %d\n", score);
     return 0;
 }
 
