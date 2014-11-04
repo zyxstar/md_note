@@ -1165,15 +1165,17 @@ vim /var/named/xxx.zone   #负责subdomain <-> ip
 ```
 
 ## SAMBA
+samba的用户名必须与Linux系统的用户名一致，但密码可以不同，即必须先有linux的用户，然后使用`smbpasswd -a <username>`增加同名用户
+
 ### 配置
 `/etc/samba/smb.conf`
 
 ```
 [global]
-   workgroup = WORKGROUP
-   display charset = UTF-8
-   unix charset = UTF-8
-   dos charset = cp936
+  workgroup = WORKGROUP
+  display charset = UTF-8
+  unix charset = UTF-8
+  dos charset = cp936
 [Public]
   path = /home/zyx/Public
   available = yes
