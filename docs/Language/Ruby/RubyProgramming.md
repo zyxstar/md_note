@@ -321,7 +321,7 @@ To access the local RDoc for your gems, type gem server and point your browser t
 If the RDocs for your gems aren't installed, `gem rdoc --all` will install the documentation for all of your gems.
 
 ### 使用gem进行Ruby包管理
-<!-- language: plain -->
+<!-- language: shell -->
 
     gem install rails
     gem list
@@ -332,7 +332,7 @@ If the RDocs for your gems aren't installed, `gem rdoc --all` will install the d
     gem uninstall rails
 
 作为中国地区，我们可能需要修改gem source
-<!-- language: plain -->
+<!-- language: shell -->
 
     gem source --list
     gem source -a http://ruby.taobao.org/
@@ -341,7 +341,7 @@ If the RDocs for your gems aren't installed, `gem rdoc --all` will install the d
 
 In case you are using bundler, you need to add something like this to your Gemfile:
 
-<!-- language: plain -->
+<!-- language: shell -->
 
     gem 'redcarpet', :git => 'git://github.com/tanoku/redcarpet.git'
 

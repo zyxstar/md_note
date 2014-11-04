@@ -768,7 +768,7 @@ vim /etc/profile
 export LC_ALL=zh_CN.GB18030       #设置语言信息
 export PS1='\u@\h:\w\$'           #修改命令行提示符
 
-vim /etc/sysconfig/i18n           
+vim /etc/sysconfig/i18n
 LANG="zh_CN.GB18030"              #当前系统的语言环境变量设置
 SUPPORTED="zh_CN.GB18030:zh_CN:zh:en_US.UTF-8:en_US:en"  #系统支持哪些字符集
 SYSFONT="latarcyrheb-sun16"       #系统终端字符的字体
@@ -1164,8 +1164,28 @@ vim /var/named/xxx.zone   #负责subdomain <-> ip
 /etc/init.d/bind start
 ```
 
+## SAMBA
+### 配置
+`/etc/samba/smb.conf`
 
-
+```
+[global]
+   workgroup = WORKGROUP
+   display charset = UTF-8
+   unix charset = UTF-8
+   dos charset = cp936
+[Public]
+  path = /home/zyx/Public
+  available = yes
+  browseable = yes
+  public = yes
+  writable = yes
+  valida users = zyx
+  create mask = 0664
+  directory mask = 0775
+  force user = zyx
+  force group = zyx
+```
 
 <!-- ## gcc几个步骤
 gcc -E hello.c -o hello.i          #预处理

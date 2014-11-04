@@ -362,6 +362,48 @@ public class Program {
 ========
 zyxstar2013 at 163.com
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, const char* argv[]){
+    printf("%d : %s", argc, argv[1]);
+
+    int num ;
+    scanf("%d", &num);
+    printf("%d", num);
+
+    scanf("%d", &num);
+    printf("%d", num);
+
+    char buff[255];
+    FILE *fp;
+    fp = fopen("input.txt", "r");
+    if( fp != NULL ){
+      while ( !feof(fp ) ){
+         memset(buff, '\0', sizeof( buff) );
+         fgets(buff, 255, (FILE*)fp);
+         printf("%s", buff );
+      }
+      fclose(fp);
+   }
+   return 0;
+}
+
+/*
+$args: arg1 arg2
+$stdin: 12 13
+$inputs:
+this contents will fill in input.txt
+this is a new line
+end
+*/
+
+```
+
 <script>
 
 (function(){

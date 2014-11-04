@@ -287,20 +287,28 @@ Day03
 50道题
 =========
 ## 可重用函数
-下面的解题思路，使用了一些函数式的方式，将共用的函数提炼出来：
+下面的解题思路，使用了一些函数式的方式，将共用的函数提炼出来
 
-> 1. 代码更多从扩展性、重用性考虑，有些代码是牺牲了性能的，有没有坑，请自行判断
+> 1. 代码更多从扩展性、重用性考虑，有些代码是牺牲了性能的，有没有坑，请看官自行判断
 > 2. 迫不得已，不会在函数内部使用`printf`，`scanf`等函数：
 >
 >> - 方法之一，借由参数与返回值的方式来保持数据的获取与返回；
 >> - 方法之二，是使用`FILE*`来代替直接对`stdin`和`stdout`的操作
 
-```c
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
+形成的重用头文件`utils.h`：
 
-typedef int MAP_ELEM;
+```c
+#ifndef UTILS_H_INCLUEDE
+#  define UTILS_H_INCLUEDE
+
+#  ifndef REDUCE_CACHE
+#     define REDUCE_CACHE int
+#  endif
+
+#  ifndef MAP_ELEM
+#     define MAP_ELEM int
+#  endif
+
 MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
     MAP_ELEM* ret_arr = malloc(sizeof(MAP_ELEM) * size);
@@ -311,7 +319,6 @@ MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
     return ret_arr;
 }
 
-typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -341,7 +348,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     int new_size = 0;
     while(1){
         if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break; 
+        if(step < 0 && start <= end) break;
         arr[new_size++] = start;
         start += step;
     }
@@ -351,7 +358,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
 int take_while(int(*predicate)(int), int(*move_next)(int), int init){ /*reuse*/
     int data = init;
     while(!(predicate(data))){
-        data = move_next(data);         
+        data = move_next(data);
     }
     return data;
 }
@@ -365,6 +372,7 @@ void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     }
     fprintf(fp, "]\n");
 }
+#endif /*UTILS_H_INCLUEDE*/
 ```
 
 ## Exam01
@@ -400,8 +408,8 @@ int main(){
 
 ```c
 #include <stdio.h>
+#define REDUCE_CACHE int
 
-typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -418,7 +426,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     int new_size = 0;
     while(1){
         if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break; 
+        if(step < 0 && start <= end) break;
         arr[new_size++] = start;
         start += step;
     }
@@ -445,8 +453,8 @@ int main(){
 
 ```c
 #include <stdio.h>
+#define REDUCE_CACHE int
 
-typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -540,8 +548,8 @@ int main(){
 ```c
 #include <stdio.h>
 #include <math.h>
+#define REDUCE_CACHE int
 
-typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -558,7 +566,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     int new_size = 0;
     while(1){
         if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break; 
+        if(step < 0 && start <= end) break;
         arr[new_size++] = start;
         start += step;
     }
@@ -606,7 +614,7 @@ int main(){
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-typedef int MAP_ELEM;
+#define MAP_ELEM int
 
 MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
     int i;
@@ -635,7 +643,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     int new_size = 0;
     while(1){
         if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break; 
+        if(step < 0 && start <= end) break;
         arr[new_size++] = start;
         start += step;
     }
@@ -728,7 +736,7 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     int new_size = 0;
     while(1){
         if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break; 
+        if(step < 0 && start <= end) break;
         arr[new_size++] = start;
         start += step;
     }
@@ -766,8 +774,8 @@ int main(){
 ```c
 #include <stdio.h>
 #define MONTH_SIZE 12
+#define REDUCE_CACHE int
 
-typedef int REDUCE_CACHE;
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
     int i;
@@ -843,7 +851,7 @@ int check_positive(int a, int b, int c){
 }
 int check_general(int a, int b, int c){
     return (a + b > c) && (a + c > b) && (b + c > a);
-}   
+}
 int check_isosceles(int a, int b, int c){
     return (a==b || b==c || c==a);
 }
@@ -885,7 +893,8 @@ typedef struct{
     int zero;
     int positive;
     int negative;
-} REDUCE_CACHE;
+} REDUCE_CACHE_TYPE;
+#define REDUCE_CACHE REDUCE_CACHE_TYPE
 
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
                     int* arr, int size, REDUCE_CACHE init){
@@ -898,7 +907,7 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
 }
 
 /* app */
-REDUCE_CACHE callback(REDUCE_CACHE acc, int num){
+REDUCE_CACHE_TYPE callback(REDUCE_CACHE_TYPE acc, int num){
     if(num == 0) acc.zero++;
     else if(num > 0) acc.positive++;
     else acc.negative++;
@@ -906,7 +915,7 @@ REDUCE_CACHE callback(REDUCE_CACHE acc, int num){
 }
 int main(){
     int arr[] = {1,2,3,4,0,0,-5,-6,0,-7,-9};
-    REDUCE_CACHE status = {0,0,0};
+    REDUCE_CACHE_TYPE status = {0,0,0};
     status = reduce(callback, arr, sizeof(arr) / sizeof(int), status);
     printf("zero: %d; positive: %d; negative: %d\n",
         status.zero, status.positive, status.negative);
@@ -1009,7 +1018,7 @@ int main(){
 int take_while(int(*predicate)(int), int(*move_next)(int), int init){  /*reuse*/
     int data = init;
     while(!(predicate(data))){
-        data = move_next(data);         
+        data = move_next(data);
     }
     return data;
 }
