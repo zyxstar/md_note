@@ -72,7 +72,7 @@ char* my_strcat(char *str1, char *str2){
 }
 ```
 
-- 最好使用`char str1[ARR_SIZE] = "abcd"`，将字符串分配在栈中；如果分配在堆中，有可能覆盖后面的空间；如果分配在只读空间，将报错
+- 最好使用`char str1[ARR_SIZE] = "abcd"`，将字符串分配在栈中；如果使用`strdup()`分配在堆中，有可能覆盖后面的空间；如果分配在只读空间，将报错
 
 ## Test03
 - 写一个函数，能够将两个整型指针的指向交换
@@ -1053,6 +1053,8 @@ int main(){
 ## Exam49
 - 随机生成10道100以内的加减乘除数学题 回答正确的加10分错误不加分 然后显示成绩 。
 
+<!-- run -->
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -1064,7 +1066,6 @@ int divi(int a, int b){return a / b;}
 
 int rand_operate(int *operand1, int *operand2, char *operator){
     int(*fun)(int, int) = NULL;
-    srand(time(NULL));
     *operand1 = rand() % 100;
     *operand2 = rand() % 100;
     switch(rand() % 4){
@@ -1079,6 +1080,7 @@ int rand_operate(int *operand1, int *operand2, char *operator){
 int main(){
     int score = 0, i, operand1, operand2, guess, ret;
     char operator;
+    srand(time(NULL));
     for(i = 0; i < 10; i++){
         printf("\nquestion %d : ", i + 1);
         ret = rand_operate(&operand1, &operand2, &operator);

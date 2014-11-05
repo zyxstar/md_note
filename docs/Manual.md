@@ -25,7 +25,7 @@
     - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
 
 
-- [更多...](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FManual.md)
+- [更多...](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2FREADME.md)
 
 
 快速使用(只需2步)
@@ -362,9 +362,26 @@ public class Program {
 ========
 zyxstar2013 at 163.com
 
-<!-- run -->
 
-```c
+
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',6);
+})();
+
+</script>
+
+<!--
+    ┌─┬─┬─┬─┐
+    ├─┼─┼─┼─┤
+    │ │ │ │ │
+    ├─┼─┼─┼─┤
+    │ │ │ │ │
+    └─┴─┴─┴─┘
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -402,22 +419,5 @@ this is a new line
 end
 */
 
-```
 
-<script>
-
-(function(){
-    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
-    else expand_toc('md_toc',6);
-})();
-
-</script>
-
-<!--
-    ┌─┬─┬─┬─┐
-    ├─┼─┼─┼─┤
-    │ │ │ │ │
-    ├─┼─┼─┼─┤
-    │ │ │ │ │
-    └─┴─┴─┴─┘
 -->
