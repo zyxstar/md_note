@@ -526,10 +526,27 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+int main(){
+    int target = 500;
+    int i,j,k,m,count=0;
+    for(i = 1; i < target/50 + 1; i++){
+        for(j = 1; j < (target - i*50)/20 + 1; j++){
+            for(k = 1; k < (target - i*50 - j*20)/10 + 1; k++){
+                for(m = 1; m < (target - i*50 - j*20 - k*10)/5 + 1; m++){
+                    if(i*50 + j*20 + k*10 + m*5 == target){
+                        printf("%d %d %d %d\n", i, j, k, m);
+                        count++;
+                    }
+                }
+            }
+        }
+    }
+    printf("count: %d\n", count);
+    return 0;
+}
 ```
-
-
 
 ## Exam06
 - 求n以内（不包括n）同时能被3和7整除的所有自然数之和的平方根s，n从键盘输入。例如若n为1000时，函数值应为：s=153.909064。
@@ -839,7 +856,7 @@ void process(COUPLE *couples, int couples_size, int status_size){
 void print_couples(FILE *fp, COUPLE *couples, int couples_size){
     int i;
     for (i = 0; i < couples_size; i++){
-        if(couples[i].is_chosen == CHOSEN )
+        if(couples[i].is_chosen != ABANDON )
             fprintf(fp, "%c vs %c\n", couples[i].mem1, couples[i].mem2);
     }
 }
@@ -861,7 +878,7 @@ int main(){
 }
 ```
 
-
+- 利用`product`产生一个数组的数组，再强制转换为一个结构体数组，而结构体可以互相赋值，方便了子数组的操作
 
 ## Exam12
 - 有5个人坐在一起，问第五个人多少岁？他说比第4个人大2岁。问第4个人岁数，他说比第3个人大2岁。问第三个人，又说比第2人大两岁。问第2个人，说比第一个人大两岁。最后 问第一个人，他说是10岁。请问第五个人多大？
@@ -975,6 +992,32 @@ int main(){
 
 ## Exam15
 - 先随机产生N个三位自然数输出，然后再输出其中同时是3、5、7倍数的数。（设N为100）
+
+<!-- run -->
+
+```c
+#include <stdio.h>   
+#include <stdlib.h>   
+#define N 100
+#define FILTER_ELEM int
+
+//= require filter
+//= require print_arr
+
+int check_num(int num, int idx){return num%3==0 && num%5==0 && num%7==0;}
+
+int main(){
+    int arr[N], i, size;
+    srand(time(NULL));
+    for(i = 0; i < N; i++){
+        arr[i] = rand()%900 + 100;
+    }
+    print_arr(stdout, arr, N);    
+    size = filter(check_num, arr, N);
+    print_arr(stdout, arr, size);
+    return;
+}
+```
 
 ## Exam16
 - 用for编程找出100~200中的完全平方数。
