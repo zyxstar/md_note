@@ -297,6 +297,8 @@ Day03
 
 形成的重用头文件`utils.h`：
 
+<!-- utils -->
+
 ```c
 #ifndef UTILS_H_INCLUEDE
 #  define UTILS_H_INCLUEDE
@@ -305,34 +307,62 @@ Day03
 #     define REDUCE_CACHE int
 #  endif
 
-#  ifndef MAP_ELEM
-#     define MAP_ELEM int
+#  ifndef REDUCE_ELEM
+#     define REDUCE_ELEM int
 #  endif
 
-MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
-    int i;
-    MAP_ELEM* ret_arr = malloc(sizeof(MAP_ELEM) * size);
-    assert(ret_arr != NULL);
-    for(i = 0; i < size; i++){
-        ret_arr[i] = callback(arr[i]);
-    }
-    return ret_arr;
-}
+#  ifndef MAP_SRC_ELEM
+#     define MAP_SRC_ELEM int
+#  endif
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
+#  ifndef MAP_DEST_ELEM
+#     define MAP_DEST_ELEM int
+#  endif
+
+#  ifndef EACH_ELEM
+#     define EACH_ELEM int
+#  endif
+
+#  ifndef FILTER_ELEM
+#     define FILTER_ELEM int
+#  endif
+
+// reduce
+REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, REDUCE_ELEM, int),
+                    REDUCE_ELEM *arr, int size, REDUCE_CACHE init){
     int i;
     REDUCE_CACHE acc = init;
     for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
+        acc = callback(acc, arr[i], i);
     }
     return acc;
 }
 
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
+// map
+MAP_DEST_ELEM* map(MAP_DEST_ELEM(*callback)(MAP_SRC_ELEM, int), MAP_SRC_ELEM *arr, int size){
+    int i;
+    MAP_DEST_ELEM* ret_arr = malloc(sizeof(MAP_DEST_ELEM) * size);
+    assert(ret_arr != NULL);
     for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
+        ret_arr[i] = callback(arr[i], i);
+    }
+    return ret_arr;
+}
+
+// each
+void each(void(*callback)(EACH_ELEM*, int), EACH_ELEM *arr, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        callback(&arr[i], i);
+    }
+}
+
+// filter
+int filter(int(*predicate)(FILTER_ELEM, int), FILTER_ELEM *arr, int size){
+    int i, new_size = 0;
+    FILTER_ELEM temp;
+    for(i = 0; i < size; i++){
+        if(predicate(arr[i], i)){
             temp = arr[i];
             arr[new_size] = temp;
             new_size++;
@@ -341,7 +371,8 @@ int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
     return new_size;
 }
 
-int range(int start, int end, int step, int* arr){ /*reuse*/
+// range
+int range(int start, int end, int step, int* arr){
     if(step == 0) return 0;
     if(step > 0 && end < start) return 0;
     if(step < 0 && start < end) return 0;
@@ -355,7 +386,8 @@ int range(int start, int end, int step, int* arr){ /*reuse*/
     return new_size;
 }
 
-int take_while(int(*predicate)(int), int(*move_next)(int), int init){ /*reuse*/
+// take_while
+int take_while(int(*predicate)(int), int(*move_next)(int), int init){
     int data = init;
     while(!(predicate(data))){
         data = move_next(data);
@@ -363,7 +395,8 @@ int take_while(int(*predicate)(int), int(*move_next)(int), int init){ /*reuse*/
     return data;
 }
 
-void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
+// print_arr
+void print_arr(FILE *fp, int *arr, int size){
     fprintf(fp, "[");
     int i = 0;
     while(i < size){
@@ -372,6 +405,7 @@ void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
     }
     fprintf(fp, "]\n");
 }
+
 #endif /*UTILS_H_INCLUEDE*/
 ```
 
@@ -408,33 +442,14 @@ int main(){
 
 ```c
 #include <stdio.h>
+
+#define REDUCE_ELEM int
 #define REDUCE_CACHE int
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
-    int i;
-    REDUCE_CACHE acc = init;
-    for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
-    }
-    return acc;
-}
-int range(int start, int end, int step, int* arr){ /*reuse*/
-    if(step == 0) return 0;
-    if(step > 0 && end < start) return 0;
-    if(step < 0 && start < end) return 0;
-    int new_size = 0;
-    while(1){
-        if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break;
-        arr[new_size++] = start;
-        start += step;
-    }
-    return new_size;
-}
+//= require reduce
+//= require range
 
-/* app */
-int add(int a, int b){return a + b;}
+int add(int acc, int b, int idx){return acc + b;}
 int main(){
     int n = 50;
     int arr[n];
@@ -453,32 +468,16 @@ int main(){
 
 ```c
 #include <stdio.h>
+
+#define REDUCE_ELEM int
 #define REDUCE_CACHE int
+#define FILTER_ELEM int
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
-    int i;
-    REDUCE_CACHE acc = init;
-    for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
-    }
-    return acc;
-}
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
-    for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
-            temp = arr[i];
-            arr[new_size] = temp;
-            new_size++;
-        }
-    }
-    return new_size;
-}
+//= require reduce
+//= require filter
 
-/* app */
-int add(int a, int b){return a + b;}
-int is_positive(num){return num > 0;}
+int add(int acc, int num, int idx){return acc + num;}
+int is_positive(int num, int idx){return num > 0;}
 int main(){
     int arr[] = {1,2,3,4,5,6,-3,-4,-5,-6,11,12,13,14,15,16,-13,-14,-15,-16};
     int size = sizeof(arr) / sizeof(int);
@@ -501,15 +500,7 @@ int main(){
 
 #define ARR_SIZE 5
 
-void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "[");
-    int i = 0;
-    while(i < size){
-        fprintf(fp, "%6d ", arr[i++]);
-        if(i%8 == 0) fprintf(fp, "\n ");
-    }
-    fprintf(fp, "]\n");
-}
+//= require print_arr
 
 void reverse_arr(int *arr1, int *arr2, int size){
     int i;
@@ -548,45 +539,17 @@ int main(){
 ```c
 #include <stdio.h>
 #include <math.h>
+
+#define REDUCE_ELEM int
 #define REDUCE_CACHE int
+#define FILTER_ELEM int
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
-    int i;
-    REDUCE_CACHE acc = init;
-    for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
-    }
-    return acc;
-}
-int range(int start, int end, int step, int* arr){ /*reuse*/
-    if(step == 0) return 0;
-    if(step > 0 && end < start) return 0;
-    if(step < 0 && start < end) return 0;
-    int new_size = 0;
-    while(1){
-        if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break;
-        arr[new_size++] = start;
-        start += step;
-    }
-    return new_size;
-}
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
-    for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
-            temp = arr[i];
-            arr[new_size] = temp;
-            new_size++;
-        }
-    }
-    return new_size;
-}
+//= require reduce
+//= require filter
+//= require range
 
-/* app */
-int add(int a, int b){return a + b;}
-int check_num(int num){return (num % 3 == 0) && (num % 7 == 0);}
+int add(int acc, int num, int idx){return acc + num;}
+int check_num(int num, int idx){return (num % 3 == 0) && (num % 7 == 0);}
 int main(){
     int n = 1000;
     int arr[n];
@@ -614,54 +577,18 @@ int main(){
 #include <stdlib.h>
 #include <assert.h>
 #include <math.h>
-#define MAP_ELEM int
 
-MAP_ELEM* map(MAP_ELEM(*callback)(int), int *arr, int size){ /*reuse*/
-    int i;
-    MAP_ELEM* ret_arr = malloc(sizeof(MAP_ELEM) * size);
-    assert(ret_arr != NULL);
-    for(i = 0; i < size; i++){
-        ret_arr[i] = callback(arr[i]);
-    }
-    return ret_arr;
-}
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
-    for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
-            temp = arr[i];
-            arr[new_size] = temp;
-            new_size++;
-        }
-    }
-    return new_size;
-}
-int range(int start, int end, int step, int* arr){ /*reuse*/
-    if(step == 0) return 0;
-    if(step > 0 && end < start) return 0;
-    if(step < 0 && start < end) return 0;
-    int new_size = 0;
-    while(1){
-        if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break;
-        arr[new_size++] = start;
-        start += step;
-    }
-    return new_size;
-}
-void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "[");
-    int i = 0;
-    while(i < size){
-        fprintf(fp, "%6d ", arr[i++]);
-        if(i%8 == 0) fprintf(fp, "\n ");
-    }
-    fprintf(fp, "]\n");
-}
+#define MAP_SRC_ELEM int
+#define MAP_DEST_ELEM int
+#define FILTER_ELEM int
 
-/* app */
-int square_num(int num){return num * num;}
-int check_num(int num){
+//= require map
+//= require filter
+//= require range
+//= require print_arr
+
+int square_num(int num, int idx){return num * num;}
+int check_num(int num, int idx){
     int a = num % 10;
     int b = (num/10) % 10;
     int c = (num/100) % 10;
@@ -678,7 +605,6 @@ int main(){
 
     return 0;
 }
-
 ```
 
 - 需要引入`math.h`，并在gcc时，需要 `-lm`
@@ -718,42 +644,13 @@ int main(){
 #include <stdio.h>
 #include <stdlib.h>
 
-int filter(int(*predicate)(int), int* arr, int size){ /*reuse*/
-    int i, new_size = 0, temp;
-    for(i = 0; i < size; i++){
-        if(predicate(arr[i])){
-            temp = arr[i];
-            arr[new_size] = temp;
-            new_size++;
-        }
-    }
-    return new_size;
-}
-int range(int start, int end, int step, int* arr){ /*reuse*/
-    if(step == 0) return 0;
-    if(step > 0 && end < start) return 0;
-    if(step < 0 && start < end) return 0;
-    int new_size = 0;
-    while(1){
-        if(step > 0 && start >= end) break;
-        if(step < 0 && start <= end) break;
-        arr[new_size++] = start;
-        start += step;
-    }
-    return new_size;
-}
-void print_arr(FILE *fp, int *arr, int size){ /*reuse*/
-    fprintf(fp, "[");
-    int i = 0;
-    while(i < size){
-        fprintf(fp, "%6d ", arr[i++]);
-        if(i%8 == 0) fprintf(fp, "\n ");
-    }
-    fprintf(fp, "]\n");
-}
+#define FILTER_ELEM int
 
-/* app */
-int check_num(num){
+//= require filter
+//= require range
+//= require print_arr
+
+int check_num(int num, int idx){
     return (num%3 == 0) && (num%5 != 0) && (num%10 == 6);
 }
 int main(){
@@ -773,18 +670,13 @@ int main(){
 
 ```c
 #include <stdio.h>
+
 #define MONTH_SIZE 12
+#define REDUCE_ELEM int
 #define REDUCE_CACHE int
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
-    int i;
-    REDUCE_CACHE acc = init;
-    for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
-    }
-    return acc;
-}
+//= require reduce
+
 int is_leap_year(int year){
     if(year % 400 == 0)  return 1;
     if((year % 4 == 0) && (year % 100 != 0)) return 1;
@@ -798,7 +690,7 @@ void get_months(int year, int *month_days){
     copy_arr(s_month_days, month_days, MONTH_SIZE);
     month_days[1] = is_leap_year(year) ? 29 : 28;
 }
-int add(int a, int b){return a + b;}
+int add(int acc, int num, int idx){return acc + num;}
 int day_in_year(int year, int month, int day){
     int month_days[MONTH_SIZE];
     get_months(year, month_days);
@@ -821,8 +713,153 @@ int main(){
 ## Exam11
 - 两个乒乓球队进行比赛，各出三人。甲队为a,b,c三人，乙队为x,y,z三人。已抽签决定比赛名单。有人向队员打听比赛的名单。a说他不和x比，c说他不和x,z比，请编程序找出三队赛手的名单。
 
+<!-- run -->
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <assert.h>
 
+typedef enum{
+    ALTERNATIVE,
+    CHOSEN,
+    ABANDON
+} CHOSENTYPE;
+
+typedef struct{
+    int mem1;
+    int mem2;
+    CHOSENTYPE is_chosen;
+} COUPLE;
+
+typedef struct{
+    int name;
+    int count;
+    COUPLE *my_couples[3];
+} MEMBERSTATUS;
+
+#define FILTER_ELEM COUPLE
+#define REDUCE_ELEM COUPLE
+#define REDUCE_CACHE int
+
+//= require filter
+//= require reduce
+
+int* product(int *arr1, int size1, int *arr2, int size2){
+    int *ret = malloc((size1 * size2) * sizeof(int[3]));
+    assert(ret != NULL);
+    int size = 0, i, j;
+    for(i = 0; i < size1; i++){
+        for(j = 0; j < size2; j++){
+            ret[size++] = arr1[i]; //mem1
+            ret[size++] = arr2[j]; //mem2
+            ret[size++] = 0;       //is_chosen
+        }
+    }
+    return ret;
+}
+
+int check_rule(COUPLE couple, int idx){
+    if (couple.mem1 == 'a' && couple.mem2 == 'x') return 0;
+    if (couple.mem1 == 'c' && couple.mem2 == 'x') return 0;
+    if (couple.mem1 == 'c' && couple.mem2 == 'z') return 0;
+    return 1;
+}
+
+MEMBERSTATUS* init_status(int size){
+    MEMBERSTATUS *status = malloc(size * sizeof(MEMBERSTATUS));
+    while(size > 0){
+        size--;
+        status[size].name = 0;
+        status[size].count = 0;
+    }
+    return status;
+}
+
+MEMBERSTATUS* get_status_by_name(MEMBERSTATUS *status, int size, int name){
+    while(size > 0){
+        size--;
+        if(status[size].name == name) return &status[size];
+    }
+    return NULL;
+}
+
+void increase_my_couples(int name, COUPLE *couple,
+                         MEMBERSTATUS *status, int status_size){
+    MEMBERSTATUS *s = get_status_by_name(status, status_size, name);
+    if(s == NULL) {
+        s = get_status_by_name(status, status_size, 0);
+        s->name = name;
+    }
+    s->my_couples[s->count++] = couple;
+}
+
+void describe_status(MEMBERSTATUS *status, int status_size,
+                     COUPLE *couples, int couples_size){
+    while(couples_size > 0){
+        couples_size--;
+        COUPLE *c = &couples[couples_size];
+        if(c->is_chosen == ALTERNATIVE){
+            increase_my_couples(c->mem1, c, status, status_size);
+            increase_my_couples(c->mem2, c, status, status_size);
+        }
+    }
+}
+
+void process(COUPLE *couples, int couples_size, int status_size){
+    if(status_size == 0) return;
+    int is_redo = 0;
+
+    MEMBERSTATUS *status = init_status(status_size);
+    describe_status(status, status_size, couples, couples_size);
+
+    int i,j,new_status_size = status_size;
+    for(i = 0; i < status_size ; i++){
+        MEMBERSTATUS s = status[i];
+        if(s.count == 1){
+            is_redo = 1;
+            s.my_couples[0]->is_chosen = CHOSEN;
+            new_status_size -= 2;
+            int nm = s.my_couples[0]->mem1;
+            if(nm == s.name) nm = s.my_couples[0]->mem2;
+
+            MEMBERSTATUS *other = get_status_by_name(status, status_size, nm);
+            for(j = 0; j < other->count; j++){
+                if(other->my_couples[j]->mem1 == s.name || other->my_couples[j]->mem2 == s.name)
+                    continue;
+                other->my_couples[j]->is_chosen = ABANDON;
+            }
+        }
+    }
+    free(status);
+    if(is_redo) process(couples, couples_size, new_status_size);
+}
+
+void print_couples(FILE *fp, COUPLE *couples, int couples_size){
+    int i;
+    for (i = 0; i < couples_size; i++){
+        if(couples[i].is_chosen == CHOSEN )
+            fprintf(fp, "%c vs %c\n", couples[i].mem1, couples[i].mem2);
+    }
+}
+
+int main(){
+    int team_1[] = {'a','b','c'};
+    int team_2[] = {'x','y','z'};
+    int size_1 = sizeof(team_1) / sizeof(int);
+    int size_2 = sizeof(team_2) / sizeof(int);
+
+    // int(*couples)[3] = (int(*)[3])product(team_1, size_1, team_2, size_2);
+    COUPLE *couples = (COUPLE*)product(team_1, size_1, team_2, size_2);
+    int couples_size = filter(check_rule, couples, size_1 * size_2);
+    process(couples, couples_size, size_1 + size_2);
+    print_couples(stdout, couples, couples_size);
+
+    free(couples);
+    return 0;
+}
+```
 
 
 
@@ -913,30 +950,23 @@ typedef struct{
     int zero;
     int positive;
     int negative;
-} REDUCE_CACHE_TYPE;
-#define REDUCE_CACHE REDUCE_CACHE_TYPE
+} STATUS;
 
-REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, int), /*reuse*/
-                    int* arr, int size, REDUCE_CACHE init){
-    int i;
-    REDUCE_CACHE acc = init;
-    for(i = 0; i < size; i++){
-        acc = callback(acc, arr[i]);
-    }
-    return acc;
-}
+#define REDUCE_ELEM int
+#define REDUCE_CACHE STATUS*
 
-/* app */
-REDUCE_CACHE_TYPE callback(REDUCE_CACHE_TYPE acc, int num){
-    if(num == 0) acc.zero++;
-    else if(num > 0) acc.positive++;
-    else acc.negative++;
+//= require reduce
+
+STATUS* callback(STATUS *acc, int num, int idx){
+    if(num == 0) acc->zero++;
+    else if(num > 0) acc->positive++;
+    else acc->negative++;
     return acc;
 }
 int main(){
     int arr[] = {1,2,3,4,0,0,-5,-6,0,-7,-9};
-    REDUCE_CACHE_TYPE status = {0,0,0};
-    status = reduce(callback, arr, sizeof(arr) / sizeof(int), status);
+    STATUS status = {0,0,0};
+    reduce(callback, arr, sizeof(arr) / sizeof(int), &status);
     printf("zero: %d; positive: %d; negative: %d\n",
         status.zero, status.positive, status.negative);
     return 0;
@@ -1035,14 +1065,8 @@ int main(){
 ```c
 #include <stdio.h>
 
-int take_while(int(*predicate)(int), int(*move_next)(int), int init){  /*reuse*/
-    int data = init;
-    while(!(predicate(data))){
-        data = move_next(data);
-    }
-    return data;
-}
-/* app */
+//= require take_while
+
 int move_next(int num){ return num + 7;}
 int check_num(int num){ return num%2==1 && num%3==2 && num%5==4 && num%6==5;}
 int main(){
@@ -1120,3 +1144,8 @@ int main(){
 
 ## Exam50
 - 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱）
+
+
+
+
+
