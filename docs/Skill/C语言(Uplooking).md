@@ -459,8 +459,6 @@ int main(){
 }
 ```
 
-- 如果加变成乘，只需新写一个`multi`函数
-
 ## Exam03
 - 从终端（键盘）读入20个数据到数组中，统计其中正数的个数，并计算这些正数之和。
 
@@ -487,7 +485,6 @@ int main(){
 }
 ```
 
-- 重用了Exam03的累加，新增了过滤函数，但过滤条件是可以指定的
 
 ## Exam04
 - 从终端（键盘）将5个整数输入到数组a中，然后将a逆序复制到数组b中，并输出b中各元素的值。
@@ -832,11 +829,13 @@ void process(COUPLE *couples, int couples_size, int status_size){
     describe_status(status, status_size, couples, couples_size);
 
     int i,j,new_status_size = status_size;
+    printf("Process:\n");
     for(i = 0; i < status_size ; i++){
         MEMBERSTATUS s = status[i];
-        if(s.count == 1){
+        if(s.count == 1 && s.my_couples[0]->is_chosen != CHOSEN){
             is_redo = 1;
             s.my_couples[0]->is_chosen = CHOSEN;
+            printf("  %c vs %c CHOSEN\n", s.my_couples[0]->mem1, s.my_couples[0]->mem2);
             new_status_size -= 2;
             int nm = s.my_couples[0]->mem1;
             if(nm == s.name) nm = s.my_couples[0]->mem2;
@@ -846,6 +845,7 @@ void process(COUPLE *couples, int couples_size, int status_size){
                 if(other->my_couples[j]->mem1 == s.name || other->my_couples[j]->mem2 == s.name)
                     continue;
                 other->my_couples[j]->is_chosen = ABANDON;
+                printf("  %c vs %c ABANDON\n", other->my_couples[j]->mem1, other->my_couples[j]->mem2);
             }
         }
     }
@@ -855,9 +855,10 @@ void process(COUPLE *couples, int couples_size, int status_size){
 
 void print_couples(FILE *fp, COUPLE *couples, int couples_size){
     int i;
+    fprintf(fp,"Result: \n");
     for (i = 0; i < couples_size; i++){
         if(couples[i].is_chosen != ABANDON )
-            fprintf(fp, "%c vs %c\n", couples[i].mem1, couples[i].mem2);
+            fprintf(fp, "  %c vs %c\n", couples[i].mem1, couples[i].mem2);
     }
 }
 
@@ -886,7 +887,7 @@ int main(){
 <!-- run -->
 
 ```c
-#include <stdio.h>   
+#include <stdio.h>
 
 int fac(int n){
     if(n == 1) return 10;
@@ -996,8 +997,8 @@ int main(){
 <!-- run -->
 
 ```c
-#include <stdio.h>   
-#include <stdlib.h>   
+#include <stdio.h>
+#include <stdlib.h>
 #define N 100
 #define FILTER_ELEM int
 
@@ -1012,7 +1013,7 @@ int main(){
     for(i = 0; i < N; i++){
         arr[i] = rand()%900 + 100;
     }
-    print_arr(stdout, arr, N);    
+    print_arr(stdout, arr, N);
     size = filter(check_num, arr, N);
     print_arr(stdout, arr, size);
     return;
@@ -1022,17 +1023,161 @@ int main(){
 ## Exam16
 - 用for编程找出100~200中的完全平方数。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <malloc.h>
+#include <assert.h>
+
+#define MAP_SRC_ELEM int
+#define MAP_DEST_ELEM int
+
+//= require range
+//= require map
+//= require print_arr
+
+int square(int num, int idx){return num * num;}
+int main(){
+    int arr[10];
+    int size = range(sqrt(100), sqrt(200)+1, 1, arr);
+    int *ret = map(square, arr, size);
+    print_arr(stdout, ret, size);
+    return 0;
+}
+```
+
 ## Exam17
 - 从终端输入三个正实数，判断这三个数能否构成直角三角形。
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+int check(int a, int b, int c){
+    int square_a = a * a;
+    int square_b = b * b;
+    int square_c = c * c;
+    if(square_a == square_b + square_c) return 1;
+    if(square_b == square_a + square_c) return 1;
+    if(square_c == square_a + square_b) return 1;
+    return 0;
+}
+
+int main(){
+    printf("%d\n", check(3,4,5));
+    printf("%d\n", check(4,5,6));
+    printf("%d\n", check(6,7,8));
+    printf("%d\n", check(30,40,50));
+    return 0;
+}
+```
 
 ## Exam18
 - 输入一行字符，分别统计出其中英文字母、空格、数字和其它字符的个数。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+typedef struct{
+    int alpha;
+    int digit;
+    int space;
+    int other;
+} STAT;
+
+#define REDUCE_CACHE STAT*
+#define REDUCE_ELEM char
+
+//= require reduce
+
+STAT* statistics(STAT* acc,  char ch, int idx){
+    if(isalpha(ch)) acc->alpha++;
+    else if(isdigit(ch)) acc->digit++;
+    else if(ch == ' ') acc->space++;
+    else acc->other++;
+    return acc;
+}
+
+int main(){
+    STAT stat = {0,0,0,0};
+    char* str = "this is test, 1237 !";
+    reduce(statistics, str, strlen(str), &stat);
+    printf("alpha: %d\ndigit: %d\nspace: %d\nother: %d\n",
+            stat.alpha, stat.digit, stat.space, stat.other);
+    return 0;
+}
+```
+
 ## Exam19
 - 输入一个字串，判断它是否是对称串。如”abcdcba”是对称串，”123456789”不是。
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <string.h>
+
+int check(char *str){
+    int len = strlen(str);
+    int i = 0;
+    while(i < len/2){
+        if(str[i] != str[len-1-i]) return 0;
+        i++;
+    }
+    return 1;
+}
+int main(){
+    printf("%d\n", check("abcdcba"));
+    printf("%d\n", check("123456789"));
+    printf("%d\n", check("abccba"));
+    printf("%d\n", check("abbccbba"));
+    return 0;
+}
+```
+
 ## Exam20
 - 随机产生N个大写字母输出，然后统计其中共有多少个元音字符。（设N为50）
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#define N 50
+#define REDUCE_CACHE int
+#define REDUCE_ELEM char
+
+//= require reduce
+
+void gen_alpha(char *arr, int size){
+    srand(time(NULL));
+    int i;
+    for(i = 0; i < size; i++){
+        arr[i] = rand()%26 + 'A';
+    }
+}
+
+int count(int acc, char ch, int idx){
+    return acc + (ch == 'A' || ch == 'E' ||
+            ch == 'I' || ch == 'O' || ch == 'U');
+}
+
+int main(){
+    char str[N+1];
+    gen_alpha(str, N);
+    str[N] = '\0';
+    printf("%s\n", str);
+    printf("%d\n", reduce(count,str,N,0));
+    return 0;
+}
+```
 
 ## Exam21
 - 找出三位自然数中的所有素数，要求判断x素数用自定义函数data(x)实现。
@@ -1149,16 +1294,14 @@ int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
 int rand_operate(int *operand1, int *operand2, char *operator){
-    int(*fun)(int, int) = NULL;
+    static int(*funs[])(int, int) = {add, minus, multi, divi};
+    static char operators[]       = {'+', '-',   '*',   '/'};
+    int fun_count = sizeof(funs) / sizeof(int(*)(int, int));
     *operand1 = rand() % 100;
     *operand2 = rand() % 100;
-    switch(rand() % 4){
-        case 0: {fun = add; *operator = '+'; break;}
-        case 1: {fun = minus; *operator = '-'; break;}
-        case 2: {fun = multi; *operator = '*'; break;}
-        default: {fun = divi; *operator = '/';}
-    }
-    return fun(*operand1, *operand2);
+    int choice = rand() % fun_count;
+    *operator = operators[choice];
+    return funs[choice](*operand1, *operand2);
 }
 
 int main(){
@@ -1175,13 +1318,12 @@ int main(){
             score += 10;
         }
         else{
-            printf(" [error] right result is %d", ret);
+            printf(" [error] correct is %d", ret);
         }
     }
     printf("\nscore is %d\n", score);
     return 0;
 }
-
 ```
 
 
