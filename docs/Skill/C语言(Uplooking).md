@@ -291,7 +291,7 @@ Day03
 ## 可重用函数
 下面的解题思路，使用了一些函数式的方式，将共用的函数提炼出来
 
-> 1. 代码更多从扩展性、重用性考虑，有些代码是牺牲了性能的，有没有坑，请看官自行判断
+> 1. 代码更多从扩展性、重用性考虑，有些代码是牺牲了性能的
 > 2. 迫不得已，不会在函数内部使用`printf`，`scanf`等函数：
 >
 >> - 方法之一，借由参数与返回值的方式来保持数据的获取与返回；
@@ -331,6 +331,10 @@ Day03
  
 #  ifndef TAKE_ELEM
 #     define TAKE_ELEM int
+#  endif
+
+#  ifndef Q_SORT_ELEM
+#     define Q_SORT_ELEM int
 #  endif
 
 // reduce
@@ -403,6 +407,35 @@ int range(int start, int end, int step, int* arr){
         start += step;
     }
     return new_size;
+}
+
+// q_sort
+    void swap(Q_SORT_ELEM *a, Q_SORT_ELEM *b){
+        Q_SORT_ELEM temp = *a;
+        *a = *b;
+        *b = temp;
+    }
+
+    int partition(int(*cmp)(Q_SORT_ELEM, Q_SORT_ELEM), 
+                  Q_SORT_ELEM *arr, int size, int pivoit_idx){
+        int i, left_idx = 0;
+        Q_SORT_ELEM pivot = arr[pivoit_idx];
+        swap(&arr[pivoit_idx], &arr[size - 1]);
+        for(i = 0; i < size; i++){
+            if(cmp(arr[i], pivot) == -1){
+                swap(&arr[i], &arr[left_idx]);
+                left_idx++;
+            }
+        }
+        swap(&arr[size - 1], &arr[left_idx]);    
+        return left_idx;
+    }
+
+void q_sort(int(*cmp)(Q_SORT_ELEM, Q_SORT_ELEM), Q_SORT_ELEM *arr, int size){
+    if(size <=1 ) return;
+    int left_idx = partition(cmp, arr, size, 0);
+    q_sort(cmp, arr, left_idx);
+    q_sort(cmp, &arr[left_idx+1], size - left_idx -1);
 }
 
 // print_arr
@@ -1301,7 +1334,25 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <math.h>
 
+int calc_x(double a, double b, double c, double *result){
+    if (a == 0) return 0;
+    double delta = b * b - 4 * a *c;
+    if(delta < 0) return 0;
+    double temp = sqrt(delta);
+    result[0] = (-1 * b + temp) / (2 * a);
+    result[1] = (-1 * b - temp) / (2 * a);
+    return 1;
+}
+
+int main(){
+    double a = 2, b = -20, c = 5;
+    double result[2];
+    if(calc_x(a,b,c,result))
+        printf("%.2f %.2f", result[0], result[1]);
+}
 ```
 
 ## Exam24
@@ -1395,7 +1446,32 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+#define Q_SORT_ELEM int
+
+//= require q_sort
+//= require print_arr
+
+int my_cmp(int a, int b){
+    return a == b ? 0 : (a > b ? -1 : 1);
+}
+
+void fill_data(int *arr, int size){
+    srand(time(NULL));
+    while(size > 0) arr[--size] = rand()%90 + 10;
+}
+
+int main(void) {
+    int n = 10;
+    int arr[n];
+    fill_data(arr, n);
+    q_sort(my_cmp, arr, n);
+    print_arr(stdout, arr, n);
+
+    return 0;
+}
 ```
 
 ## Exam29
@@ -1578,7 +1654,8 @@ int main(){
 <!-- run -->
 
 ```c
-
+表面积公式v=（ab+ah+bh)*2
+体积公式v=abh
 ```
 
 ## Exam36
@@ -1614,7 +1691,26 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+#define Q_SORT_ELEM int
+
+//= require q_sort
+//= require print_arr
+
+int my_cmp(int a, int b){
+    return a == b ? 0 : (a > b ? -1 : 1);
+}
+
+int main(void) {
+    int arr[] = {1,4,80,23,47,76,14,52};
+    int count = sizeof(arr) / sizeof(int);
+    q_sort(my_cmp, arr, count);
+    print_arr(stdout, arr, count);
+
+    return 0;
+}
 ```
 
 ## Exam40
@@ -1671,7 +1767,23 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <string.h>
 
+#define Q_SORT_ELEM char
+
+//= require q_sort
+
+int my_cmp(char a, char b){
+    return a == b ? 0 : (a > b ? -1 : 1);
+}
+
+int main(void) {
+    char str[] = "abefdcbgdf";    
+    q_sort(my_cmp, str, strlen(str));
+    printf("%s", str);
+    return 0;
+}
 ```
 
 ## Exam45
@@ -1680,7 +1792,29 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
+#define MAP_SRC_ELEM char
+#define MAP_DEST_ELEM char
+
+//= require map
+
+char change(char ch, int idx){
+    if(isupper(ch)) return ch + ('a' - 'A');
+    if(islower(ch)) return ch - ('a' - 'A');
+    return ch;
+}
+
+int main(){
+    char *str = "abc123 67EFD a!";
+    char *str2 = map(change, str, strlen(str));
+    printf("%s\n", str2);
+    free(str2);
+    return 0;
+}
 ```
 
 ## Exam46
@@ -1689,7 +1823,29 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
+#define MAP_SRC_ELEM char
+#define MAP_DEST_ELEM char
+
+//= require map
+
+char change(char ch, int idx){
+    if(isupper(ch)) return (ch - 'A' + 2) % 26 + 'A';
+    if(islower(ch)) return (ch - 'a' + 2) % 26 + 'a';
+    return ch;
+}
+
+int main(){
+    char *str = "abc123 67EFD axyz XYZ!";
+    char *str2 = map(change, str, strlen(str));
+    printf("%s\n", str2);
+    free(str2);
+    return 0;
+}
 ```
 
 ## Exam47
