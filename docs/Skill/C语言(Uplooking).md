@@ -281,6 +281,8 @@ int main(){
 
 Day03
 =========
+编码时，要考虑数据的普遍情况，将能过滤掉大量无效数据的条件前置，可有效提高程序效率
+
 
 
 
@@ -326,6 +328,10 @@ Day03
 #  ifndef FILTER_ELEM
 #     define FILTER_ELEM int
 #  endif
+ 
+#  ifndef TAKE_ELEM
+#     define TAKE_ELEM int
+#  endif
 
 // reduce
 REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, REDUCE_ELEM, int),
@@ -339,7 +345,8 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, REDUCE_ELEM, int),
 }
 
 // map
-MAP_DEST_ELEM* map(MAP_DEST_ELEM(*callback)(MAP_SRC_ELEM, int), MAP_SRC_ELEM *arr, int size){
+MAP_DEST_ELEM* map(MAP_DEST_ELEM(*callback)(MAP_SRC_ELEM, int), 
+                   MAP_SRC_ELEM *arr, int size){
     int i;
     MAP_DEST_ELEM* ret_arr = malloc(sizeof(MAP_DEST_ELEM) * size);
     assert(ret_arr != NULL);
@@ -370,6 +377,18 @@ int filter(int(*predicate)(FILTER_ELEM, int), FILTER_ELEM *arr, int size){
     }
     return new_size;
 }
+ 
+// take_while
+TAKE_ELEM take_while(TAKE_ELEM(*predicate)(TAKE_ELEM, int), 
+                     TAKE_ELEM(*move_next)(TAKE_ELEM, int), TAKE_ELEM init){
+    TAKE_ELEM data = init;
+    int i = 0;
+    while(!(predicate(data, i))){
+        data = move_next(data, i);
+        i++;
+    }
+    return data;
+}
 
 // range
 int range(int start, int end, int step, int* arr){
@@ -386,15 +405,6 @@ int range(int start, int end, int step, int* arr){
     return new_size;
 }
 
-// take_while
-int take_while(int(*predicate)(int), int(*move_next)(int), int init){
-    int data = init;
-    while(!(predicate(data))){
-        data = move_next(data);
-    }
-    return data;
-}
-
 // print_arr
 void print_arr(FILE *fp, int *arr, int size){
     fprintf(fp, "[");
@@ -404,6 +414,36 @@ void print_arr(FILE *fp, int *arr, int size){
         if(i%8 == 0) fprintf(fp, "\n ");
     }
     fprintf(fp, "]\n");
+}
+
+// my_strcmp
+int my_strcmp(const char *str1, const char *str2){
+    const char *p1 = str1, *p2 = str2;
+    while(*p1 != '\0' && *p2 != '\0' && *p1 == *p2){
+        p1++; p2++;
+    }
+    if(*p1 == '\0' && *p2 == '\0') return 0;
+    return *p1 > *p2 ? 1 : -1;
+}
+
+// my_strlen
+int my_strlen(const char *str){
+    const char *p = str;
+    while(*p != '\0') p++;
+    return p - str;
+}
+
+// my_strcat
+char* my_strcat(char *str1, const char *str2){
+    char* p = str1, *q = str2;
+    while(*p != '\0') p++;
+    while(*q != '\0'){
+        *p = *q;
+        p++;
+        q++;
+    }
+    *p = '\0';
+    return str1;
 }
 
 #endif /*UTILS_H_INCLUEDE*/
@@ -732,7 +772,6 @@ int main(){
 ```c
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <assert.h>
 
 typedef enum{
@@ -1030,7 +1069,6 @@ int main(){
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <malloc.h>
 #include <assert.h>
 
 #define MAP_SRC_ELEM int
@@ -1101,7 +1139,7 @@ typedef struct{
 STAT* statistics(STAT* acc,  char ch, int idx){
     if(isalpha(ch)) acc->alpha++;
     else if(isdigit(ch)) acc->digit++;
-    else if(ch == ' ') acc->space++;
+    else if(isspace(ch)) acc->space++;
     else acc->other++;
     return acc;
 }
@@ -1227,7 +1265,6 @@ int main(){
 ```c
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <assert.h>
 
 #define MAP_SRC_ELEM int
@@ -1273,7 +1310,19 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+//= require my_strcmp
+
+int main(){
+    printf("%d\n", my_strcmp("abc",""));
+    printf("%d\n", my_strcmp("","abc"));
+    printf("%d\n", my_strcmp("abc","ab"));
+    printf("%d\n", my_strcmp("ab","abc"));
+    printf("%d\n", my_strcmp("abc","abd"));
+    printf("%d\n", my_strcmp("abc","abc"));
+    return 0;
+}
 ```
 
 ## Exam25
@@ -1282,7 +1331,18 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+//= require my_strlen
+
+int main(){
+    char *str1 = "abcd";
+    char *str2 = "abcdef";
+    int len1 = my_strlen(str1);
+    int len2 = my_strlen(str2);
+    printf("%d %d %s\n", len1, len2, len1 <= len2 ? str1 : str2);
+    return 0;
+}
 ```
 
 ## Exam26
@@ -1291,7 +1351,20 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+//= require my_strlen
+//= require my_strcat
+
+int main(){
+    char str1[20] = "abcd";
+    char str2[20] = "123";
+    int len1 = my_strlen(str1);
+    int len2 = my_strlen(str2);
+    printf("%d %d %s\n", len1, len2, 
+        len1 <= len2 ? my_strcat(str1, str2) : my_strcat(str2,str1));
+    return 0;
+}
 ```
 
 ## Exam27
@@ -1300,7 +1373,20 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+//= require my_strlen
+//= require my_strcat
+
+int main(){
+    char str1[20] = "abcd";
+    char str2[20] = "123";
+    int len1 = my_strlen(str1);
+    int len2 = my_strlen(str2);
+    printf("%d %d %s\n", len1, len2, 
+        len1 <= len2 ? my_strcat(str2, str1) : my_strcat(str1,str2));
+    return 0;
+}
 ```
 
 ## Exam28
@@ -1318,7 +1404,18 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+//= require my_strlen
+
+int main(){
+    char *str1 = "abcd";
+    char *str2 = "abcdef";
+    int len1 = my_strlen(str1);
+    int len2 = my_strlen(str2);
+    printf("%d %d %s\n", len1, len2, len1 <= len2 ? str2 : str1);
+    return 0;
+}
 ```
 
 ## Exam30
@@ -1327,7 +1424,31 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+#define REDUCE_CACHE int
+#define REDUCE_ELEM int
+#define FILTER_ELEM int
+
+//= require reduce
+//= require filter
+//= require print_arr
+
+int avg = 0;
+int add(int acc, int num, int idx){return acc + num;} 
+int check(int num, int idx){return num < avg;}
+
+int main(){
+    int soldiers[] = {171, 172, 173, 174, 181, 183, 190, 190, 176, 168};
+    int count = sizeof(soldiers) / sizeof(int);
+    avg = reduce(add, soldiers, count, 0) / count;
+    count = filter(check, soldiers, count);
+    printf("average: %d", avg);
+    print_arr(stdout, soldiers, count);
+
+    return 0;
+}
 ```
 
 ## Exam31
@@ -1336,7 +1457,31 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+#define REDUCE_CACHE int
+#define REDUCE_ELEM int
+#define FILTER_ELEM int
+
+//= require reduce
+//= require filter
+//= require print_arr
+
+int avg = 0;
+int add(int acc, int num, int idx){return acc + num;} 
+int check(int num, int idx){return num > avg;}
+
+int main(){
+    int soldiers[] = {171, 172, 173, 174, 181, 183, 190, 190, 176, 168};
+    int count = sizeof(soldiers) / sizeof(int);
+    avg = reduce(add, soldiers, count, 0) / count;
+    count = filter(check, soldiers, count);
+    printf("average: %d", avg);
+    print_arr(stdout, soldiers, count);
+
+    return 0;
+}
 ```
 
 ## Exam32
@@ -1345,7 +1490,33 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+typedef struct{
+    int min;
+    int max;    
+} STAT;
+
+#define REDUCE_CACHE STAT*
+#define REDUCE_ELEM int
+
+//= require reduce
+
+STAT* pipe(STAT* acc, int num, int idx){
+    if(num < acc->min) acc -> min = num; 
+    else if(num > acc->max) acc -> max = num; 
+    return acc;
+} 
+
+int main(){
+    int soldiers[] = {171, 172, 173, 174, 181, 183, 190, 190, 176, 168};
+    int count = sizeof(soldiers) / sizeof(int);
+    STAT stat = {soldiers[0], soldiers[0]};
+    reduce(pipe, soldiers, count, &stat);
+    printf("min: %d; max: %d\n", stat.min, stat.max);
+
+    return 0;
+}
 ```
 
 ## Exam33
@@ -1354,7 +1525,36 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+typedef struct{
+    int count;
+    int value;
+} CHICKEN;
+
+int main(){
+    CHICKEN a = {1, 3};
+    CHICKEN b = {1, 2};
+    CHICKEN c = {3, 1};
+
+    int target_count = 100;
+    int target_value = 100;
+
+    int i, j, k;
+    for(i = 0; i < target_value/a.value + 1; i++){
+      for(j = 0; j < (target_value-i*a.value)/b.value + 1; j++){
+        for(k = 0; k < (target_value-i*a.value-j*b.value)/c.value + 1; k++){
+          if(i * a.value + j * b.value + k * c.value == target_value &&
+            i * a.count + j * b.count + k * c.count == target_count){
+            printf("%3d %3d %3d\n", i * a.count, j * b.count, k * c.count);
+            break;
+          }
+        }
+      }
+    } 
+    return 0;
+}
 ```
 
 ## Exam34
@@ -1363,7 +1563,13 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+int main(){
+    int age = (39 - 6) / 3;
+    printf("%d %d %d\n", age, age+2, age+4);
+    return 0;
+}
 ```
 
 ## Exam35
@@ -1446,10 +1652,12 @@ int main(){
 ```c
 #include <stdio.h>
 
+#define TAKE_ELEM int
+
 //= require take_while
 
-int move_next(int num){ return num + 7;}
-int check_num(int num){ return num%2==1 && num%3==2 && num%5==4 && num%6==5;}
+int move_next(int num, int idx){ return num + 7;}
+int check_num(int num, int idx){ return num%2==1 && num%3==2 && num%5==4 && num%6==5;}
 int main(){
     printf("%d", take_while(check_num, move_next, 0));
     return 0;
