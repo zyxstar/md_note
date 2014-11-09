@@ -283,6 +283,28 @@ Day03
 =========
 编码时，要考虑数据的普遍情况，将能过滤掉大量无效数据的条件前置，可有效提高程序效率
 
+Day04
+=========
+- `int *p = &a;`, 定义变量`p`，`*`说明`p`是一个指针，`int`说明`p`可以控制内存的范围
+- `*p = 10;`, `*`是寻址操作，该地址可读可写
+- 指针定义时 __必须初始化__，或初始化`NULL`，或初始化某个具体地址
+
+
+```c
+int a = 100;
+int *p = &a;
+int **pp = &p;
+
+assert(pp == &p);
+assert(*pp == p && p == &a);
+assert(**pp == *p && *p == a);
+```
+
+- `int d[100] = {0};`第一个元素初始化了，后面所有元素初始化为0
+
+
+
+
 
 
 
@@ -1654,8 +1676,19 @@ int main(){
 <!-- run -->
 
 ```c
-表面积公式v=（ab+ah+bh)*2
-体积公式v=abh
+#include <stdio.h>
+
+void calc(double l, double w, double h, double *result){
+    result[0] = (l * w + l * h + w * h) * 2;
+    result[1] = l * w * h;
+}
+
+int main(){
+    double result[2];
+    calc(2,3,4,result);
+    printf("%.2f %.2f\n", result[0], result[1]);
+    return 0;
+}
 ```
 
 ## Exam36
@@ -1664,7 +1697,24 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+#define REDUCE_ELEM int
+#define REDUCE_CACHE double
+
+//= require reduce
+//= require range
+
+double calc(double acc, int num, int idx){return acc + 1.0/num;}
+
+int main(){
+    int n = 6;
+    int arr[n];
+    int count = range(2, n+1, 2, arr);
+    double ret = reduce(calc, arr, count, 0.0);
+    printf("%.8f\n", ret);
+    return 0;
+}
 ```
 
 ## Exam37
@@ -1673,7 +1723,24 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+#define REDUCE_ELEM int
+#define REDUCE_CACHE double
+
+//= require reduce
+//= require range
+
+double calc(double acc, int num, int idx){return acc + 1.0/num;}
+
+int main(){
+    int n = 6;
+    int arr[n];
+    int count = range(1, n+1, 2, arr);
+    double ret = reduce(calc, arr, count, 0.0);
+    printf("%.8f\n", ret);
+    return 0;
+}
 ```
 
 ## Exam38
@@ -1682,7 +1749,27 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+#define REDUCE_ELEM int
+#define REDUCE_CACHE double
+
+//= require reduce
+//= require range
+
+double calc(double acc, int num, int idx){
+    if(num%2 == 1) return acc + num/(num+1.0); 
+    return acc - num/(num+1.0);
+}
+
+int main(){
+    int n = 100;
+    int arr[n];
+    int count = range(1, n+1, 1, arr);
+    double ret = reduce(calc, arr, count, 0.0);
+    printf("%.8f\n", ret);
+    return 0;
+}
 ```
 
 ## Exam39
@@ -1728,7 +1815,37 @@ int main(void) {
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+typedef struct{
+    int num;
+    long last;
+    long sum;
+}STAT;
+
+#define REDUCE_ELEM int
+#define REDUCE_CACHE STAT
+
+//= require range
+//= require reduce
+
+STAT calc(STAT acc, int num, int idx){
+    acc.last = acc.last * 10 + acc.num;
+    acc.sum = acc.sum + acc.last;
+    // printf("=%d %d %d\n", acc.last, acc.sum, acc.num);
+    return acc;
+}
+
+int main(){
+    int num = 5;
+    int times = 5;
+    int arr[times];
+    range(0, times, 1, arr);
+    STAT stat = {num,0,0};
+    stat = reduce(calc, arr, times, stat);
+    printf("%d\n",stat.sum);
+    return 0;
+}
 ```
 
 ## Exam42
@@ -1737,7 +1854,35 @@ int main(void) {
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+#define FILTER_ELEM int
+
+//= require range
+//= require filter
+//= require print_arr
+
+int reverse(int num){
+    int ret = 0;
+    while(num > 0){
+        ret = ret * 10 + num % 10;
+        num /= 10;
+    }
+    return ret;
+}
+
+int check(int num, int idx){
+    return num * 9 == reverse(num);
+}
+
+int main(){
+    int arr[2000];
+    int count = range(1000, 9999/9 + 1, 1, arr);
+    count = filter(check, arr, count);
+    print_arr(stdout, arr, count);
+    return 0;
+}
 ```
 
 ## Exam43
@@ -1810,7 +1955,7 @@ char change(char ch, int idx){
 
 int main(){
     char *str = "abc123 67EFD a!";
-    char *str2 = map(change, str, strlen(str));
+    char *str2 = map(change, str, strlen(str) + 1);
     printf("%s\n", str2);
     free(str2);
     return 0;
@@ -1841,7 +1986,7 @@ char change(char ch, int idx){
 
 int main(){
     char *str = "abc123 67EFD axyz XYZ!";
-    char *str2 = map(change, str, strlen(str));
+    char *str2 = map(change, str, strlen(str) + 1);
     printf("%s\n", str2);
     free(str2);
     return 0;
@@ -1854,7 +1999,39 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <string.h>
 
+typedef struct{
+    int count;
+    int before_is_space;
+} STAT;
+
+#define REDUCE_ELEM char
+#define REDUCE_CACHE STAT* 
+
+//= require reduce
+
+STAT* calc(STAT* acc, char ch, int idx){
+    if(isspace(ch)){
+        acc->before_is_space = 1;
+        return acc;
+    }
+    else{
+        if(acc->before_is_space)
+            acc->count++;
+        acc->before_is_space = 0;
+        return acc;
+    }
+}
+
+int main(){
+    char *str = "this is new  line. with  some num:  123!";
+    STAT stat = {0,1};
+    reduce(calc, str, strlen(str), &stat);
+    printf("%s\ncount: %d\n",str, stat.count);
+    return 0;
+}
 ```
 
 ## Exam48
@@ -1863,7 +2040,35 @@ int main(){
 <!-- run -->
 
 ```c
+#include <stdio.h>
 
+typedef struct{
+    long last;
+    long sum;
+}STAT;
+
+#define REDUCE_ELEM int
+#define REDUCE_CACHE STAT
+
+//= require range
+//= require reduce
+
+STAT calc(STAT acc, int num, int idx){
+    acc.last = acc.last * 10 + num;
+    acc.sum = acc.sum + acc.last;
+    // printf("%d %d\n", acc.last, acc.sum);
+    return acc;
+}
+
+int main(){
+    int n = 5;
+    int arr[n];
+    range(1, n+1, 1, arr);
+    STAT stat = {0,0};
+    stat = reduce(calc, arr, n, stat);
+    printf("%d\n",stat.sum);
+    return 0;
+}
 ```
 
 ## Exam49
@@ -1917,10 +2122,80 @@ int main(){
 ## Exam50
 - 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱）
 
+> 可理解为，1000之内任意数可被N个箱子组合出来
+
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
+//= require print_arr
+
+int* fill_box(int total, int *size){
+    *size = log2(total) + 1;
+    int *arr = malloc(sizeof(int) * (*size));
+    int i, sum = 0, tmp;
+    for(i = 0; i < *size; i++){
+        if (i == 0) tmp = 1; 
+        else tmp = arr[i - 1] * 2;
+        if(sum + tmp > total)
+            tmp = total - sum;
+        arr[i] = tmp;
+        sum += tmp;
+    }
+    return arr;
+}
+
+int get_nearest_idx(int *arr, int size, int num){
+    int i;
+    for(i = 0; i < size; i++){
+        if(arr[i] > num) return i-1;
+    }
+    return size-1;
+}
+
+void want(int *arr, int box_count, int want_num){
+    int give, idx;
+    printf("%d: ", want_num);
+    while(want_num > 0){
+        idx = get_nearest_idx(arr, box_count, want_num);
+        give = arr[idx];
+        printf("[%d](%3d) ", idx, give);
+        want_num -= give;        
+    }
+    printf("\n");
+}
+
+void want_2(int want_num){
+    int n, give;
+    printf("%d: ", want_num);    
+    while(want_num > 0){
+        n = log2(want_num);
+        give = pow(2, n);
+        printf("[%d](%3d) ", n, give);
+        want_num -= give;
+    }
+    printf("\n");
+}
+
+int main(){
+    int box_count;
+    int *arr =  fill_box(1000, &box_count);
+    print_arr(stdout, arr, box_count);
+
+    want(arr, box_count, 800);
+    want_2(800);
+    want(arr, box_count, 700);
+    want(arr, box_count, 500);
+    want(arr, box_count, 300);
+    want_2(300);
+    want(arr, box_count, 117);
+
+    free(arr);
+    return 0;
+}
 ```
 
 
