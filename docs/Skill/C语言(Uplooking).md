@@ -350,7 +350,7 @@ assert(**pp == *p && *p == a);
 #  ifndef FILTER_ELEM
 #     define FILTER_ELEM int
 #  endif
- 
+
 #  ifndef TAKE_ELEM
 #     define TAKE_ELEM int
 #  endif
@@ -371,7 +371,7 @@ REDUCE_CACHE reduce(REDUCE_CACHE(*callback)(REDUCE_CACHE, REDUCE_ELEM, int),
 }
 
 // map
-MAP_DEST_ELEM* map(MAP_DEST_ELEM(*callback)(MAP_SRC_ELEM, int), 
+MAP_DEST_ELEM* map(MAP_DEST_ELEM(*callback)(MAP_SRC_ELEM, int),
                    MAP_SRC_ELEM *arr, int size){
     int i;
     MAP_DEST_ELEM* ret_arr = malloc(sizeof(MAP_DEST_ELEM) * size);
@@ -403,9 +403,9 @@ int filter(int(*predicate)(FILTER_ELEM, int), FILTER_ELEM *arr, int size){
     }
     return new_size;
 }
- 
+
 // take_while
-TAKE_ELEM take_while(TAKE_ELEM(*predicate)(TAKE_ELEM, int), 
+TAKE_ELEM take_while(TAKE_ELEM(*predicate)(TAKE_ELEM, int),
                      TAKE_ELEM(*move_next)(TAKE_ELEM, int), TAKE_ELEM init){
     TAKE_ELEM data = init;
     int i = 0;
@@ -438,7 +438,7 @@ int range(int start, int end, int step, int* arr){
         *b = temp;
     }
 
-    int partition(int(*cmp)(Q_SORT_ELEM, Q_SORT_ELEM), 
+    int partition(int(*cmp)(Q_SORT_ELEM, Q_SORT_ELEM),
                   Q_SORT_ELEM *arr, int size, int pivoit_idx){
         int i, left_idx = 0;
         Q_SORT_ELEM pivot = arr[pivoit_idx];
@@ -449,7 +449,7 @@ int range(int start, int end, int step, int* arr){
                 left_idx++;
             }
         }
-        swap(&arr[size - 1], &arr[left_idx]);    
+        swap(&arr[size - 1], &arr[left_idx]);
         return left_idx;
     }
 
@@ -1434,7 +1434,7 @@ int main(){
     char str2[20] = "123";
     int len1 = my_strlen(str1);
     int len2 = my_strlen(str2);
-    printf("%d %d %s\n", len1, len2, 
+    printf("%d %d %s\n", len1, len2,
         len1 <= len2 ? my_strcat(str1, str2) : my_strcat(str2,str1));
     return 0;
 }
@@ -1456,7 +1456,7 @@ int main(){
     char str2[20] = "123";
     int len1 = my_strlen(str1);
     int len2 = my_strlen(str2);
-    printf("%d %d %s\n", len1, len2, 
+    printf("%d %d %s\n", len1, len2,
         len1 <= len2 ? my_strcat(str2, str1) : my_strcat(str1,str2));
     return 0;
 }
@@ -1534,7 +1534,7 @@ int main(){
 //= require print_arr
 
 int avg = 0;
-int add(int acc, int num, int idx){return acc + num;} 
+int add(int acc, int num, int idx){return acc + num;}
 int check(int num, int idx){return num < avg;}
 
 int main(){
@@ -1567,7 +1567,7 @@ int main(){
 //= require print_arr
 
 int avg = 0;
-int add(int acc, int num, int idx){return acc + num;} 
+int add(int acc, int num, int idx){return acc + num;}
 int check(int num, int idx){return num > avg;}
 
 int main(){
@@ -1592,7 +1592,7 @@ int main(){
 
 typedef struct{
     int min;
-    int max;    
+    int max;
 } STAT;
 
 #define REDUCE_CACHE STAT*
@@ -1601,10 +1601,10 @@ typedef struct{
 //= require reduce
 
 STAT* pipe(STAT* acc, int num, int idx){
-    if(num < acc->min) acc -> min = num; 
-    else if(num > acc->max) acc -> max = num; 
+    if(num < acc->min) acc -> min = num;
+    else if(num > acc->max) acc -> max = num;
     return acc;
-} 
+}
 
 int main(){
     int soldiers[] = {171, 172, 173, 174, 181, 183, 190, 190, 176, 168};
@@ -1650,10 +1650,40 @@ int main(){
           }
         }
       }
-    } 
+    }
     return 0;
 }
 ```
+
+使用python实现的递归版本，达到不限制循环次数，可增加任意规则
+
+<!-- run -->
+
+```python
+rules = [{'count':1,'value':3},{'count':1,'value':2},{'count':3,'value':1}]
+target_count = 100
+target_value = 100
+acc = {'count':0, 'value': 0, 'has':[0,0,0]}
+result = []
+
+import copy
+def product(acc, idx):
+    if idx == len(rules): return
+    rule = rules[idx]
+    while(acc['count'] + rule['count'] <= target_count):
+        product(copy.deepcopy(acc), idx + 1)
+        acc['count'] += rule['count']
+        acc['value'] += rule['value']
+        acc['has'][idx] += 1
+        if(acc['count'] == target_count and acc['value'] == target_value):
+            result.append(acc['has'])
+
+product(acc, 0)
+
+for item in result:
+    print item[0], item[1], item[2] * 3
+```
+
 
 ## Exam34
 - 有三个小孩，一个比一个大2岁，已知其年龄之和为39，问这三个小孩各几岁？
@@ -1758,7 +1788,7 @@ int main(){
 //= require range
 
 double calc(double acc, int num, int idx){
-    if(num%2 == 1) return acc + num/(num+1.0); 
+    if(num%2 == 1) return acc + num/(num+1.0);
     return acc - num/(num+1.0);
 }
 
@@ -1924,7 +1954,7 @@ int my_cmp(char a, char b){
 }
 
 int main(void) {
-    char str[] = "abefdcbgdf";    
+    char str[] = "abefdcbgdf";
     q_sort(my_cmp, str, strlen(str));
     printf("%s", str);
     return 0;
@@ -2008,7 +2038,7 @@ typedef struct{
 } STAT;
 
 #define REDUCE_ELEM char
-#define REDUCE_CACHE STAT* 
+#define REDUCE_CACHE STAT*
 
 //= require reduce
 
@@ -2118,7 +2148,6 @@ int main(){
 }
 ```
 
-
 ## Exam50
 - 有1000发子弹 要提前装道10箱子里面，接收键盘输入，要取多少颗子弹数，只能显示整箱的个数，问这10个箱子怎么装（定义一个数组10个元素，分别装子弹的个数，比如取走100发子弹 程序运行结果，比如2箱）
 
@@ -2138,7 +2167,7 @@ int* fill_box(int total, int *size){
     int *arr = malloc(sizeof(int) * (*size));
     int i, sum = 0, tmp;
     for(i = 0; i < *size; i++){
-        if (i == 0) tmp = 1; 
+        if (i == 0) tmp = 1;
         else tmp = arr[i - 1] * 2;
         if(sum + tmp > total)
             tmp = total - sum;
@@ -2163,14 +2192,14 @@ void want(int *arr, int box_count, int want_num){
         idx = get_nearest_idx(arr, box_count, want_num);
         give = arr[idx];
         printf("[%d](%3d) ", idx, give);
-        want_num -= give;        
+        want_num -= give;
     }
     printf("\n");
 }
 
 void want_2(int want_num){
     int n, give;
-    printf("%d: ", want_num);    
+    printf("%d: ", want_num);
     while(want_num > 0){
         n = log2(want_num);
         give = pow(2, n);
