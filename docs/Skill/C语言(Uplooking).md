@@ -462,13 +462,16 @@ void q_sort(int(*cmp)(Q_SORT_ELEM, Q_SORT_ELEM), Q_SORT_ELEM *arr, int size){
 
 // print_arr
 void print_arr(FILE *fp, int *arr, int size){
-    fprintf(fp, "[");
+    fprintf(fp, "[ ");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%6d ", arr[i++]);
-        if(i%8 == 0) fprintf(fp, "\n ");
+        fprintf(fp, "%6d ", arr[i++]);        
+        if(i == size){
+            fprintf(fp, " ]\n");
+            return;
+        }
+        if(i%10 == 0) fprintf(fp, "\n");
     }
-    fprintf(fp, "]\n");
 }
 
 // my_strcmp
