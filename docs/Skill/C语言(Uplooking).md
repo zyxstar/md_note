@@ -640,6 +640,84 @@ int main(){
 }
 ```
 
+使用递归，能支持更多面值，只需修改`STAT`定义，同时增加相应的面值到`rules`中即可：
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int TARGET = 500;
+int COUNT = 0;
+
+typedef struct{
+    int cnt_50;
+    int cnt_20;
+    int cnt_10;
+    int cnt_5;
+}STAT;
+
+int rules[] = {50, 20, 10, 5};
+
+int _get_total(STAT stat){
+    int i = 0, ret = 0, size = sizeof(rules) / sizeof(int);
+    while(i < size){
+        ret += ((int*)&stat)[i] * rules[i];
+        i++;
+    }
+    return ret;
+}
+
+int _all_count_than_zero(STAT stat){
+    int i = 0, ret = 0, size = sizeof(rules) / sizeof(int);
+    while(i < size){
+        if (((int*)&stat)[i] == 0) return 0;
+        i++;
+    }
+    return 1;
+}
+
+int check_is_done(STAT stat){
+    return _get_total(stat) > TARGET;
+}
+
+int check_accord(STAT stat){
+    return _get_total(stat) == TARGET && _all_count_than_zero(stat);
+}
+
+void push_result(STAT stat){
+    printf("[%4d](", ++COUNT);
+    int i = 0, size = sizeof(rules) / sizeof(int);
+    while(i < size){
+        printf("%4d", ((int*)&stat)[i]);
+        i++;
+    }
+    printf(")\n");
+}
+
+void product(int size, int idx, STAT stat){
+    if (idx == size) return;
+    while(!check_is_done(stat)){
+        product(size, idx + 1, stat);
+        ((int*)&stat)[idx] += 1;
+        if(check_accord(stat))
+            push_result(stat);
+    }
+}
+
+int main(){
+    int size = sizeof(rules) / sizeof(int);
+    int stat[size];
+    int i = 0;
+    while(i < size) stat[i++] = 0;
+    product(size, 0, *((STAT*)stat));
+    return 0;
+}
+```
+
+- `((int*)&stat)[idx] += 1`利用了结构体地址强制转换成数组指针，达到对结构体元素按索引操作，同时又利用了结构体能相互赋值，方便值传递
+
 ## Exam06
 - 求n以内（不包括n）同时能被3和7整除的所有自然数之和的平方根s，n从键盘输入。例如若n为1000时，函数值应为：s=153.909064。
 
@@ -1655,35 +1733,84 @@ int main(){
 }
 ```
 
-使用python实现的递归版本，达到不限制循环次数，可增加任意规则
+- 递归版本，达到不限制循环次数，可增加任意规则
 
 <!-- run -->
 
-```python
-rules = [{'count':1,'value':3},{'count':1,'value':2},{'count':3,'value':1}]
-target_count = 100
-target_value = 100
-acc = {'count':0, 'value': 0, 'has':[0,0,0]}
-result = []
+```c
+#include <stdio.h>
+#include <stdlib.h>
 
-import copy
-def product(acc, idx):
-    if idx == len(rules): return
-    rule = rules[idx]
-    while(acc['count'] + rule['count'] <= target_count):
-        product(copy.deepcopy(acc), idx + 1)
-        acc['count'] += rule['count']
-        acc['value'] += rule['value']
-        acc['has'][idx] += 1
-        if(acc['count'] == target_count and acc['value'] == target_value):
-            result.append(acc['has'])
+int TARGET_COUNT = 100;
+int TARGET_VALUE = 100;
+int COUNT = 0;
 
-product(acc, 0)
+typedef struct{
+    int cnt_male;
+    int cnt_female;
+    int cnt_children;
+}STAT;
 
-for item in result:
-    print item[0], item[1], item[2] * 3
+typedef struct
+{
+    int count;
+    int value;
+}RULE;
+
+RULE rules[] = {{1,3}, {1,2}, {3,1}};
+
+void _get_total(STAT stat, int *total){
+    int i = 0, size = sizeof(rules) / sizeof(RULE);
+    while(i < size){
+        total[0] += ((int*)&stat)[i] * rules[i].count;
+        total[1] += ((int*)&stat)[i] * rules[i].value;
+        i++;
+    }
+}
+
+int check_is_done(STAT stat){
+    int total[] = {0,0};
+    _get_total(stat, total);
+    return total[0] > TARGET_COUNT || total[1] > TARGET_VALUE;
+}
+
+int check_accord(STAT stat){
+    int total[] = {0,0};
+    _get_total(stat, total);
+    return total[0] == TARGET_COUNT && total[1] == TARGET_VALUE;
+}
+
+void push_result(STAT stat){
+    printf("[%4d](", ++COUNT);
+    int i = 0, size = sizeof(rules) / sizeof(RULE);
+    while(i < size){
+        printf("%4d", ((int*)&stat)[i] * rules[i].count);
+        i++;
+    }
+    printf(")\n");
+}
+
+void product(int size, int idx, STAT stat){
+    if (idx == size) return;
+    while(!check_is_done(stat)){
+        product(size, idx + 1, stat);
+        ((int*)&stat)[idx] += 1;
+        if(check_accord(stat))
+            push_result(stat);
+    }
+}
+
+int main(){
+    int size = sizeof(rules) / sizeof(RULE);
+    int stat[size];
+    int i = 0;
+    while(i < size) stat[i++] = 0;
+    product(size, 0, *((STAT*)stat));
+    return 0;
+}
 ```
 
+- 利用了结构体与数组互相指代，与Exam05有许多可重用部分，只是判定规则不同
 
 ## Exam34
 - 有三个小孩，一个比一个大2岁，已知其年龄之和为39，问这三个小孩各几岁？
