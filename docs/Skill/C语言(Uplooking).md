@@ -465,7 +465,7 @@ void print_arr(FILE *fp, int *arr, int size){
     fprintf(fp, "[ ");
     int i = 0;
     while(i < size){
-        fprintf(fp, "%6d ", arr[i++]);        
+        fprintf(fp, "%6d ", arr[i++]);
         if(i == size){
             fprintf(fp, " ]\n");
             return;
@@ -1966,7 +1966,42 @@ int main(void) {
 <!-- run -->
 
 ```c
+#include <stdio.h>
+#include <stdlib.h>
 
+typedef struct{
+
+
+}
+
+void reverse(int *arr, int size){
+    int i;
+    for(i = 0; i < size; i++){
+        if(arr[i] == 1) arr[i] = 0;
+        else if(arr[i] == 0) arr[i] = 1;
+    }
+}
+
+int check_is_thief(int person, int *say){
+    int i;
+    for(i=0; i<4; i++){
+        if(say[person] == 1)
+    }
+}
+
+int main(){
+    int says[][4] = {{-1,  0, -1,  1}, {-1,  0,  1, -1},
+                     { 0,  1, -1, -1}, {-1, -1, -1,  0}};
+
+    int person, int says_idx;
+    for(person = 0; person < 4; person++){
+        for(says_idx = 0; says_idx < 4; says_idx++){
+            if(check_not_thief(person, says[says_idx]))
+                continue;
+        }
+    }
+    return 0;
+}
 ```
 
 ## Exam41
