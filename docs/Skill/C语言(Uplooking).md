@@ -2275,15 +2275,17 @@ int main(){
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef int(*FUN)(int, int);
+
 int add(int a, int b){return a + b;}
 int minus(int a, int b){return a - b;}
 int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
 int rand_operate(int *operand1, int *operand2, char *operator){
-    static int(*funs[])(int, int) = {add, minus, multi, divi};
+    static FUN funs[] = {add, minus, multi, divi};
     static char operators[]       = {'+', '-',   '*',   '/'};
-    int fun_count = sizeof(funs) / sizeof(int(*)(int, int));
+    int fun_count = sizeof(funs) / sizeof(FUN);
     *operand1 = rand() % 100;
     *operand2 = rand() % 100;
     int choice = rand() % fun_count;
