@@ -1969,63 +1969,35 @@ int main(void) {
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef enum{
-    IS_THIEF = -1,
-    NOT_SURE = 0,
-    NOT_THIEF = 1
-} DESCRIBE;
-
 typedef struct{
-    DESCRIBE jia;
-    DESCRIBE yi;
-    DESCRIBE bing;
-    DESCRIBE ding;
-} SAY;
 
-SAY _reverse(SAY say){
-    SAY ret = say;
+
+}
+
+void reverse(int *arr, int size){
     int i;
-    for(i = 0; i < 4; i++) ((int*)&ret)[i] *= -1;
-    return ret;
+    for(i = 0; i < size; i++){
+        if(arr[i] == 1) arr[i] = 0;
+        else if(arr[i] == 0) arr[i] = 1;
+    }
 }
 
-int _check_rule(SAY say){    
-    int i, count=0;
+int check_is_thief(int person, int *say){
+    int i;
     for(i=0; i<4; i++){
-        if(((int*)&say)[i] == IS_THIEF) count++;
-    } 
-    return count == 1; // only one thief
+        if(say[person] == 1)
+    }
 }
-
-int check_said_if_person_is_thief(int person, SAY say){
-    SAY say_if_real = say;
-    ((int*)&say_if_real)[person] = IS_THIEF; //set thief
-
-    SAY say_if_lie =  _reverse(say); // all real or all lies, so use reverse
-    ((int*)&say_if_lie)[person] = IS_THIEF;
-
-    return _check_rule(say_if_real) || _check_rule(say_if_lie);
-}
-
-const char* get_person_name(int person){
-    const char *str[] = {"jia", "yi", "bing", "ding"};
-    return str[person];
-} 
 
 int main(){
-    SAY says[] = {{NOT_SURE,NOT_THIEF,NOT_SURE,IS_THIEF}, {NOT_SURE,NOT_THIEF,IS_THIEF,NOT_SURE}, 
-                 {NOT_THIEF,IS_THIEF,NOT_SURE,NOT_SURE}, {NOT_SURE,NOT_SURE,NOT_SURE,NOT_THIEF}};
-    int says_count = sizeof(says) / sizeof(SAY);
-    int person_count = 4;
-    int person, says_idx;
+    int says[][4] = {{-1,  0, -1,  1}, {-1,  0,  1, -1},
+                     { 0,  1, -1, -1}, {-1, -1, -1,  0}};
 
-    for(person = 0; person < person_count; person++){
-        for(says_idx = 0; says_idx < says_count; says_idx++){
-            if(!check_said_if_person_is_thief(person, says[says_idx]))
-                break;
-            if(says_idx == says_count-1)
-                printf("%s\n", get_person_name(person));
-            continue;
+    int person, int says_idx;
+    for(person = 0; person < 4; person++){
+        for(says_idx = 0; says_idx < 4; says_idx++){
+            if(check_not_thief(person, says[says_idx]))
+                continue;
         }
     }
     return 0;
@@ -2311,8 +2283,9 @@ int multi(int a, int b){return a * b;}
 int divi(int a, int b){return a / b;}
 
 int rand_operate(int *operand1, int *operand2, char *operator){
+    //static int(*funs[])(int, int) = {add, minus, multi, divi};
     static FUN funs[] = {add, minus, multi, divi};
-    static char operators[]       = {'+', '-',   '*',   '/'};
+    static char operators[] = {'+', '-',   '*',   '/'};
     int fun_count = sizeof(funs) / sizeof(FUN);
     *operand1 = rand() % 100;
     *operand2 = rand() % 100;
