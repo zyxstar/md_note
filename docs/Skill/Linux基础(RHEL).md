@@ -227,8 +227,13 @@ getfacl   #查看文件权限
 grep "<key>" <path/to/file>
     --color  #高亮
     -n       #显示行号
-    -P       #使用正则匹配
 
+    -E, --extended-regexp     PATTERN is an extended regular expression (ERE)
+    -F, --fixed-strings       PATTERN is a set of newline-separated fixed strings
+    -G, --basic-regexp        PATTERN is a basic regular expression (BRE)
+    -P, --perl-regexp         PATTERN is a Perl regular expression
+
+    -v, --invert-match        select non-matching lines
     #将配置文件中注释行和空行去掉显示
     cat /etc/dhcpd/dhcpd.conf | grep -v "^#" | grep -v "^$"
 

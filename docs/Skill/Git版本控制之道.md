@@ -337,6 +337,7 @@ git log --pretty=oneline
 ```shell
 git archive --format=tar --prefix=mysite-1.0/ 1.0 | gzip > mysite-1.0.tar.gz
 git archive --format=zip --prefix=mysite-1.0/ 1.0 > mysite-1.0.zip
+git archive --format=zip --prefix=mysite-release/ HEAD > mysite-release.zip
 ```
 
 Git日常用法
@@ -809,24 +810,73 @@ Switched to a new branch 'contacts'
 
 `git push --dry-run`查看推入哪些提交
 
-如果需要指定推入的版本库
+如果需要指定推入的版本库`git push <repository> <refspec>`，`<repository>`可以是任意有效的版本库名称，`<refspec>`可以是标签、分支、或HEAD这样的关键字，如`git push origin mybranch:master`将本地分支mybranch上的提交推入远程版本的master分支上
+
+## 添加新的远程版本库
+只有相应权限，可以跟任意远程版本库打交道，进行推入和拖入操作。
+
+在本地版本库中，远程版本库的别名默认是`origin`，它是克隆远程版本库时自动生成的。手动添加远程版本库别名：
+
+```shell
+git remote add erin git://..git
+git pull erin HEAD
+```
+
+> 先在本地`git init`创建的版本库，后来又必须推送到远程版本库里，就可以用这个方法
+>
+> 也可以`.git/config`文件中直接添加
 
 
+```shell
+git remote               #查看所有远程版本库
+git remote -v            #查看所有远程版本库对应的fetch与push源
+git remote show <name>   #查看指定远程版本库详细信息
+```
+
+`git remote rm <name>`删除别名
 
 
+管理本地版本库
+===============
+## 使用标签标记里程碑
+版本库里标签就像书签，常用于给项目代码的发布版本做标识，以便以后在需要修正或功能变更时，可以通过标签回到该发布代码上
 
+git中 __不能__ 像修改分支一样修改标签内容，确保在任意时刻取出标签对应的代码，都与创建标签时一样
 
+```shell
+git tag                        #查看标签
+git tag <tagname> [<commit>]   #创建标签，不写第二个参数，默认使用检出分支的末端版本
+```
 
+> `git constacts/1.1 contact`在contact分支上创建标签
 
+```shell
+git checkout 1.0               #检出标签，但不能修改，没法提交
+```
 
+> 可在当前tag下创建分支`git checkout -b from-1.0 1.0`，用于修改与提交
 
+## 发布分支的处理
+发布分支即将要发布代码的地方，开发团队一般用它来隔离即将要发布的代码，发布分支指当一个项目的所有功能都 __已__ 开发完成，__但尚未__ 达到发布的质量标准时创建的分支(侧重BUG与逻辑修正，无新功能添加)
 
+有了发布分支，在主分支上继续开发新功能就很方便，发布分支上不会将并新开发的代码包含进来
 
+发布分支持续时间不长，通常只用于发布代码的最终测试期间，一旦该版本发布，应该使用标签 __标记__ 项目，然后就可以 __删除__ 该发布分支了
 
+如何修正发布版本中的BUG，如果当前发布后做了标签1.0
 
+```shell
+git branch RB_1.0.1 1.0
+git checkout RB_1.0.1
+```
 
+进行bug修复后：
 
-
+```shell
+git tag 1.0.1
+git checkout master
+git branch -D RB_1.0.1
+```
 
 
 
