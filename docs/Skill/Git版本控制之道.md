@@ -695,40 +695,121 @@ gig reset --soft HEAD^  #要复位的两个提交
 `git rebase -i`交互式命令，完成改写历史的工作
 
 #### 重新排序提交
+```shell
+git rebase -i HEAD~3
+```
 
+```
+pick 2fc9c8c commit for original text file
+pick 425f6d8 add link to twitter
+pick b99c984 copy three lines
 
+# Rebase 0bb3dfb..425f6d8 onto 0bb3dfb
+#
+# Commands:
+#  p, pick = use commit
+#  r, reword = use commit, but edit the commit message
+#  e, edit = use commit, but stop for amending
+#  s, squash = use commit, but meld into previous commit
+#  f, fixup = like "squash", but discard this commit's log message
+#  x, exec = run command (the rest of the line) using shell
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+# However, if you remove everything, the rebase will be aborted.
+#
+```
 
+可通过移动`pick`开头的行，保存退出后就完成了变基操作
+
+#### 将多个提交压合成一个提交
+将上述命令出现的文本编辑内的`pick`开头，换成`squash`，将压合上下两条为一个提交
+
+与远程版本库协作
+================
+## 网络协议
+- ssh
+- git
+- http/https
 
 ## 克隆远程版本库
 ```shell
-apt-get good
-git clone git://github.com/tswicegood/mysite.git mysite-remote
+git clone git://github.com/tswicegood/mysite-chp6.git mysite-chp6
 ```
 
 ```
-Cloning into 'mysite-remote'...
-remote: Counting objects: 12, done.
-remote: Total 12 (delta 0), reused 0 (delta 0)
-Receiving objects: 100% (12/12), done.
-Resolving deltas: 100% (2/2), done.
+Cloning into 'mysite-chp6'...
+remote: Counting objects: 53, done.
+remote: Total 53 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (53/53), 5.72 KiB, done.
+Resolving deltas: 100% (19/19), done.
 ```
 
 `git clone`有两个参数，远程版本库位置和存放该版本库的本地目录，第二个是可选的
 
+## 版本库同步
+`clone`可获得远程版本库中直到克隆时的全部历史，然而，在克隆远程版本库之后，还须用`fetch`远程版本库的改动到本地版本库
 
+取来的操作能够更新本地版本库中的远程分支
 
+```shell
+git branch -r  #-r显示远程分支
+```
 
+```
+  origin/HEAD -> origin/master
+  origin/about
+  origin/alternate
+  origin/contacts
+  origin/master
+  origin/new
+```
 
+可以像检出普通分支一样检出远程分支，但不应该修改远程分支上的内容
 
+```shell
+git checkout origin/about
+```
 
+```
+Note: checking out 'origin/about'.
 
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
 
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
 
+  git checkout -b new_branch_name
 
+HEAD is now at f846762... Merge branch 'about2' into about
+```
 
+确实需要修改时，应该先从远程分支创建一个本地分支，再进行修改
 
+```shell
+git checkout contacts  #直接使用不带origin/的远程分支名，将依据该分支创建本地分支
+```
 
+```
+Branch contacts set up to track remote branch contacts from origin.
+Switched to a new branch 'contacts'
+```
 
+`git fetch`更新远程分支，但不会把远程分支上修改合并到本地分支上，使用`git pull`可顺序完成`fetch`和`merge`
+
+`git pull`参数，一是远程版本库名称，另一个是须拖入的远程分支名(无须在分支前指定origin/)
+
+前缀`origin/`表示远程版本库上的分支名称，用于区别本地分支名称，`origin`是默认的远程版本库 __别名__，即`clone`时指定的远程版本库
+
+## 推入改动
+把本地改动，也是就本地提交，推入到另一个版本库中
+
+`git push`不带调用参数，会推入默认版本库的`origin`中，并把本地版本库中 __当前所在分支__ 变更推入远程版本库 __对应的分支__ 上
+
+`git push --dry-run`查看推入哪些提交
+
+如果需要指定推入的版本库
 
 
 
