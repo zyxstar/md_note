@@ -1,9 +1,5 @@
 > 2014-10-29
 
-[Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
-
-[Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
-
 Git版本控制之道
 ===============
 ## 版本库
@@ -1024,13 +1020,27 @@ git commit -m "update commit to track in submoduel"
 一旦子模块中提交修改，必须确保改动push到子模块的远程版本库中
 
 
+GitHub
+======
+- [Generating SSH keys](https://help.github.com/articles/generating-ssh-keys/)
+- [Github Flow](http://scottchacon.com/2011/08/31/github-flow.html)是Github内部使用git的原则：
+>    - master分支上的代码保证是deployable。
+>    - 每个功能创建一个特性分支，起一个描述性的分支名（比如：new-oauth2-scopes），并且push到远程。
+>    - 本地commit到这个分支，并且经常push到远程同名分支。
+>    - 需要反馈或功能完成时，发pull request。相关人员review之后合并回master。新merge之后deploy master代码。
+>    - master分支随时可以deploy这时Github Flow的核心。就是说所有merge到master分支的代码都需要测试和构建通过。
+>    - 从master分支分出功能分支。描述性的分支名的好处是大家都可以很容易通过branch list知道其他人在做什么。
+>    - 经常把本地代码push到远程的好处是不但可以起到备份作用，也可以让其他了解你的工作进展状况。并且不会影响其他同事。
+>    - 在Github，Pull Request被当成issue系统和code review系统，基本上都是用pull request来沟通的。
+>    - Pull Request之后所有人看过之后并且签名并且通过CI测试，你的代码就可以merge回master分支，然后部署到线上。
 
 
-
-
-
-
-
+参考
+====
+- [Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
+- [Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
+- [理解Git的工作流程](http://kb.cnblogs.com/page/152176/)
+- [GIT分支管理是一门艺术](http://kb.cnblogs.com/page/132209/)
 
 
 
