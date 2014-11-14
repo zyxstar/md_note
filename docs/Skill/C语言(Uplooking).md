@@ -2055,7 +2055,7 @@ typedef struct{
 STAT calc(STAT acc, int num, int idx){
     acc.last = acc.last * 10 + acc.num;
     acc.sum = acc.sum + acc.last;
-    // printf("=%d %d %d\n", acc.last, acc.sum, acc.num);
+    // printf("=%ld %ld %d\n", acc.last, acc.sum, acc.num);
     return acc;
 }
 
@@ -2066,7 +2066,7 @@ int main(){
     range(0, times, 1, arr);
     STAT stat = {num,0,0};
     stat = reduce(calc, arr, times, stat);
-    printf("%d\n",stat.sum);
+    printf("%ld\n",stat.sum);
     return 0;
 }
 ```
@@ -2279,7 +2279,7 @@ typedef struct{
 STAT calc(STAT acc, int num, int idx){
     acc.last = acc.last * 10 + num;
     acc.sum = acc.sum + acc.last;
-    // printf("%d %d\n", acc.last, acc.sum);
+    // printf("%ld %ld\n", acc.last, acc.sum);
     return acc;
 }
 
@@ -2289,7 +2289,7 @@ int main(){
     range(1, n+1, 1, arr);
     STAT stat = {0,0};
     stat = reduce(calc, arr, n, stat);
-    printf("%d\n",stat.sum);
+    printf("%ld\n",stat.sum);
     return 0;
 }
 ```

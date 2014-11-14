@@ -136,6 +136,9 @@ Date:   Wed Oct 29 15:33:50 2014 +0800
 - 第三行是提交日期
 - 最后是提交留言
 
+> 漂亮的log，`git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --"`
+
+
 ## 在项目中工作
 在html文件中进行编辑，修改完毕，git可以检测到文件被修改，`git status`显示工作目录树的状态
 
@@ -303,7 +306,7 @@ To check out the original branch and stop rebasing run "git rebase --abort".
 
 > 在master分支上进行rebase一般来说应该是 __不对__ 的。master分支默认是公共分支，当有多人协同时，master分支在多个地方都有副本。一旦修改了master的commit hash id，而如果其他人已经基于之前的commit对象做了工作，那么当他拉取master的新的对象时，会需要在合并一次，这样反复下去，会把master分支搞得一团乱
 >
-> 所以`git rebase master [<branch>]`可成更常用
+> 所以`git rebase master [<branch>]`可能更常用，或者在需要的分支上，直接使用`git merge --no-ff [<branch>]`
 >
 > 用`git merge`的时候，merge之后的commit id是按照时间先后排列的；如果用`git rebase`，应该是将B的修改全都放到A最新的commit的后面
 
@@ -803,6 +806,16 @@ Switched to a new branch 'contacts'
 
 前缀`origin/`表示远程版本库上的分支名称，用于区别本地分支名称，`origin`是默认的远程版本库 __别名__，即`clone`时指定的远程版本库
 
+ ```shell
+git fetch origin            #取得远程更新，这里可以看做是准备要取了
+git fetch origin branch1    #取远程分支到FETCH_HEAD  (目前所在分支 .git/FETCH_HEAD中第一行)
+git fetch origin branch1:branch2   #取远程分支branch2到本地分支branch1
+git fetch origin :branch2   #等同git fetch origin master:branch2
+
+git merge origin/master     #把更新的内容合并到本地分支/master
+ ```
+
+
 ## 推入改动
 把本地改动，也是就本地提交，推入到另一个版本库中
 
@@ -811,6 +824,15 @@ Switched to a new branch 'contacts'
 `git push --dry-run`查看推入哪些提交
 
 如果需要指定推入的版本库`git push <repository> <refspec>`，`<repository>`可以是任意有效的版本库名称，`<refspec>`可以是标签、分支、或HEAD这样的关键字，如`git push origin mybranch:master`将本地分支mybranch上的提交推入远程版本的master分支上
+
+ ```shell
+git push -u origin master    #提交到主分支
+git push -u origin 1.1       #提交到tag
+git push origin RB_1_1       #提交到分支
+git push origin test:master  #提交本地test分支作为远程的master分支
+git push origin test:test    #提交本地test分支作为远程的test分支
+git push origin :test        #刚提交到远程的test将被删除，但是本地还会保存的
+ ```
 
 ## 添加新的远程版本库
 只有相应权限，可以跟任意远程版本库打交道，进行推入和拖入操作。
@@ -878,33 +900,128 @@ git checkout master
 git branch -D RB_1.0.1
 ```
 
+## 使用子模块跟踪外部版本库
+git的sub-module可以跟踪外部版本库，和svn:externals差不多
 
+> 现在推荐使用subtree
 
+### 添加新子模块
+```shell
+git submodule add git://github.com/tswicegood/hocus.git hocus  #创建
+git submodule  #查询
+```
 
+```
+ 20cc9ddc65b5f3ea3b871480c1e6d8085db48457 hocus (heads/master)
+```
 
+> 在`.git/config`中增加了`[submodule "hocus"]`
 
+```shell
+git submodule init hocus  #子模块初始化
+```
 
+```
+Submodule 'hocus' () registered for path 'hocus'
+```
 
+```shell
+git status
+```
 
+```
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#       new file:   .gitmodules
+#       new file:   hocus
+#
+```
 
+`.gitmodules`是一个存储用户所有模块信息的纯文本文件，当别人共享你的版本库时，git就根据它来部署子模块
 
+接下来`git commit`它
 
+### 克隆含子模块的版本库
+在克隆版本库后，还需要一些额外步骤，来设置好子模块
 
+```
+git submodule
+```
 
+```
+-20cc9ddc65b5f3ea3b871480c1e6d8085db48457 hocus
+```
 
+前面`-`代表还未初始化，需要
 
+```shell
+git submodule init hocus
+```
 
+```
+Submodule 'hocus' (git://github.com/tswicegood/hocus.git) registered for path 'hocus'
+```
 
+运行完，hocus目录还是空的，需要
 
+```shell
+git submodule update hocus
+```
 
+```
+Cloning into 'hocus'...
+remote: Counting objects: 7, done.
+remote: Total 7 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (7/7), done.
+Submodule path 'hocus': checked out '20cc9ddc65b5f3ea3b871480c1e6d8085db48457'
+```
 
+hocus目录包含了提交名称为`20cc9dd`版本对应的全部文件
 
+### 改变子模块的版本
+子模块不会自动引用版本库中最新提交，__利于保持版本的稳定__，它只反映某个提交对应的版本，这一点刚好与subversion相反
 
+当用户第一次创建子模块时，git记录所引用的提交，之后，它与该版本库间，不会有"偷偷的"通信与同步
 
+事实上，子模块了对检出某个特定提交的版本库的完整克隆，可以看`git branch`,`git log`,甚至`git checkout`
 
+```shell
+git checkout HEAD^
+```
 
+```
+cd ..
+git submodule
+```
 
+```
++7901f67feaadeeef755734a92febbc7214fb7871 hocus (7901f67)
+```
 
+`+`表示不是容器版本库所记录的该子模块应该在的版本，使用`git status`也可看出hocus目录被改动了
+
+可以添加到暂存区，并提交，表示希望引用子模块的这个版本
+
+```shell
+git add hocus
+git commit -m "update commit to track in submoduel"
+```
+
+再使用`git submodule`将看到引用了这个版本
+
+### 使用子模块时注意
+`git add`时不要加`\`，否则将把源版本库中全部文件添加到当前版本库，而不是更新子模块引用
+
+`git submodule update`有可能 __会覆盖__ 本地子模块中所有没有提交的内容，在使用前请确认必要的提交
+
+子模块和容器模块里的分支是分开的，需要分别使用`git checkout`来切换
+
+一旦子模块中提交修改，必须确保改动push到子模块的远程版本库中
 
 
 
