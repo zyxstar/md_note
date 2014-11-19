@@ -301,6 +301,8 @@ assert(**pp == *p && *p == a);
 ```
 
 - `int d[100] = {0};`第一个元素初始化了，后面所有元素初始化为0，二维数组也适用
+- `a`相当于二级指针，`a[0]`是一个指针，`a[0]..a[2]`组成一个指针数组
+- 与一般的二级指针不一样，`a`是只读的，甚至`a[0]..a[2]`也是只读的
 
 
 Day05
@@ -330,13 +332,12 @@ int main(){
 }
 ```
 
-- `a`相当于二级指针，`a[0]`是一个指针，`a[0]..a[2]`组成一个指针数组
-- 与一般的二级指针不一样，`a`是只读的，甚至`a[0]..a[2]`也是只读的
-
-
 Day06
 =========
-
+- 如果在常数区存在同一字符串，那么可以根据编译器不同有可能 __复用__(基本上来讲，常数区有一份可以利用的字符数组，就会复用)
+- 数组vs指针
+    - c语言不允许数组首地址转向，所以数组名是一种特殊的指针，只能取值，不能赋值
+    - `sizeof`运算，如果是数组，得到的是数组的长度，而指针得到是指针类型的长度（32是4字节，64位8字节）
 
 
 
@@ -2087,7 +2088,7 @@ typedef struct{
 STAT calc(STAT acc, int num, int idx){
     acc.last = acc.last * 10 + acc.num;
     acc.sum = acc.sum + acc.last;
-    // printf("=%d %d %d\n", acc.last, acc.sum, acc.num);
+    // printf("=%ld %ld %d\n", acc.last, acc.sum, acc.num);
     return acc;
 }
 
@@ -2098,7 +2099,7 @@ int main(){
     range(0, times, 1, arr);
     STAT stat = {num,0,0};
     stat = reduce(calc, arr, times, stat);
-    printf("%d\n",stat.sum);
+    printf("%ld\n",stat.sum);
     return 0;
 }
 ```
@@ -2311,7 +2312,7 @@ typedef struct{
 STAT calc(STAT acc, int num, int idx){
     acc.last = acc.last * 10 + num;
     acc.sum = acc.sum + acc.last;
-    // printf("%d %d\n", acc.last, acc.sum);
+    // printf("%ld %ld\n", acc.last, acc.sum);
     return acc;
 }
 
@@ -2321,7 +2322,7 @@ int main(){
     range(1, n+1, 1, arr);
     STAT stat = {0,0};
     stat = reduce(calc, arr, n, stat);
-    printf("%d\n",stat.sum);
+    printf("%ld\n",stat.sum);
     return 0;
 }
 ```

@@ -1,9 +1,5 @@
 > 2014-10-29
 
-[Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
-
-[Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
-
 Git版本控制之道
 ===============
 ## 版本库
@@ -135,6 +131,9 @@ Date:   Wed Oct 29 15:33:50 2014 +0800
 - 第二行是提交者的信息
 - 第三行是提交日期
 - 最后是提交留言
+
+> 漂亮的log，`git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit --"`
+
 
 ## 在项目中工作
 在html文件中进行编辑，修改完毕，git可以检测到文件被修改，`git status`显示工作目录树的状态
@@ -303,7 +302,7 @@ To check out the original branch and stop rebasing run "git rebase --abort".
 
 > 在master分支上进行rebase一般来说应该是 __不对__ 的。master分支默认是公共分支，当有多人协同时，master分支在多个地方都有副本。一旦修改了master的commit hash id，而如果其他人已经基于之前的commit对象做了工作，那么当他拉取master的新的对象时，会需要在合并一次，这样反复下去，会把master分支搞得一团乱
 >
-> 所以`git rebase master [<branch>]`可成更常用
+> 所以`git rebase master [<branch>]`可能更常用，或者在需要的分支上，直接使用`git merge --no-ff [<branch>]`
 >
 > 用`git merge`的时候，merge之后的commit id是按照时间先后排列的；如果用`git rebase`，应该是将B的修改全都放到A最新的commit的后面
 
@@ -337,6 +336,7 @@ git log --pretty=oneline
 ```shell
 git archive --format=tar --prefix=mysite-1.0/ 1.0 | gzip > mysite-1.0.tar.gz
 git archive --format=zip --prefix=mysite-1.0/ 1.0 > mysite-1.0.zip
+git archive --format=zip --prefix=mysite-release/ HEAD > mysite-release.zip
 ```
 
 Git日常用法
@@ -695,314 +695,352 @@ gig reset --soft HEAD^  #要复位的两个提交
 `git rebase -i`交互式命令，完成改写历史的工作
 
 #### 重新排序提交
+```shell
+git rebase -i HEAD~3
+```
 
+```
+pick 2fc9c8c commit for original text file
+pick 425f6d8 add link to twitter
+pick b99c984 copy three lines
 
+# Rebase 0bb3dfb..425f6d8 onto 0bb3dfb
+#
+# Commands:
+#  p, pick = use commit
+#  r, reword = use commit, but edit the commit message
+#  e, edit = use commit, but stop for amending
+#  s, squash = use commit, but meld into previous commit
+#  f, fixup = like "squash", but discard this commit's log message
+#  x, exec = run command (the rest of the line) using shell
+#
+# If you remove a line here THAT COMMIT WILL BE LOST.
+# However, if you remove everything, the rebase will be aborted.
+#
+```
 
+可通过移动`pick`开头的行，保存退出后就完成了变基操作
+
+#### 将多个提交压合成一个提交
+将上述命令出现的文本编辑内的`pick`开头，换成`squash`，将压合上下两条为一个提交
+
+与远程版本库协作
+================
+## 网络协议
+- ssh
+- git
+- http/https
 
 ## 克隆远程版本库
 ```shell
-apt-get good
-git clone git://github.com/tswicegood/mysite.git mysite-remote
+git clone git://github.com/tswicegood/mysite-chp6.git mysite-chp6
 ```
 
 ```
-Cloning into 'mysite-remote'...
-remote: Counting objects: 12, done.
-remote: Total 12 (delta 0), reused 0 (delta 0)
-Receiving objects: 100% (12/12), done.
-Resolving deltas: 100% (2/2), done.
+Cloning into 'mysite-chp6'...
+remote: Counting objects: 53, done.
+remote: Total 53 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (53/53), 5.72 KiB, done.
+Resolving deltas: 100% (19/19), done.
 ```
 
 `git clone`有两个参数，远程版本库位置和存放该版本库的本地目录，第二个是可选的
 
+## 版本库同步
+`clone`可获得远程版本库中直到克隆时的全部历史，然而，在克隆远程版本库之后，还须用`fetch`远程版本库的改动到本地版本库
 
+取来的操作能够更新本地版本库中的远程分支
 
+```shell
+git branch -r  #-r显示远程分支
+```
 
+```
+  origin/HEAD -> origin/master
+  origin/about
+  origin/alternate
+  origin/contacts
+  origin/master
+  origin/new
+```
 
+可以像检出普通分支一样检出远程分支，但不应该修改远程分支上的内容
 
+```shell
+git checkout origin/about
+```
 
+```
+Note: checking out 'origin/about'.
 
+You are in 'detached HEAD' state. You can look around, make experimental
+changes and commit them, and you can discard any commits you make in this
+state without impacting any branches by performing another checkout.
 
+If you want to create a new branch to retain commits you create, you may
+do so (now or later) by using -b with the checkout command again. Example:
 
+  git checkout -b new_branch_name
 
+HEAD is now at f846762... Merge branch 'about2' into about
+```
 
+确实需要修改时，应该先从远程分支创建一个本地分支，再进行修改
 
+```shell
+git checkout contacts  #直接使用不带origin/的远程分支名，将依据该分支创建本地分支
+```
 
+```
+Branch contacts set up to track remote branch contacts from origin.
+Switched to a new branch 'contacts'
+```
 
+`git fetch`更新远程分支，但不会把远程分支上修改合并到本地分支上，使用`git pull`可顺序完成`fetch`和`merge`
 
+`git pull`参数，一是远程版本库名称，另一个是须拖入的远程分支名(无须在分支前指定origin/)
 
+前缀`origin/`表示远程版本库上的分支名称，用于区别本地分支名称，`origin`是默认的远程版本库 __别名__，即`clone`时指定的远程版本库
 
+ ```shell
+git fetch origin            #取得远程更新，这里可以看做是准备要取了
+git fetch origin branch1    #取远程分支到FETCH_HEAD  (目前所在分支 .git/FETCH_HEAD中第一行)
+git fetch origin branch1:branch2   #取远程分支branch2到本地分支branch1
+git fetch origin :branch2   #等同git fetch origin master:branch2
 
+git merge origin/master     #把更新的内容合并到本地分支/master
+ ```
 
 
+## 推入改动
+把本地改动，也是就本地提交，推入到另一个版本库中
 
+`git push`不带调用参数，会推入默认版本库的`origin`中，并把本地版本库中 __当前所在分支__ 变更推入远程版本库 __对应的分支__ 上
 
+`git push --dry-run`查看推入哪些提交
 
+如果需要指定推入的版本库`git push <repository> <refspec>`，`<repository>`可以是任意有效的版本库名称，`<refspec>`可以是标签、分支、或HEAD这样的关键字，如`git push origin mybranch:master`将本地分支mybranch上的提交推入远程版本的master分支上
 
+ ```shell
+git push -u origin master    #提交到主分支
+git push -u origin 1.1       #提交到tag
+git push origin RB_1_1       #提交到分支
+git push origin test:master  #提交本地test分支作为远程的master分支
+git push origin test:test    #提交本地test分支作为远程的test分支
+git push origin :test        #刚提交到远程的test将被删除，但是本地还会保存的
+ ```
 
+## 添加新的远程版本库
+只有相应权限，可以跟任意远程版本库打交道，进行推入和拖入操作。
 
+在本地版本库中，远程版本库的别名默认是`origin`，它是克隆远程版本库时自动生成的。手动添加远程版本库别名：
 
+```shell
+git remote add erin git://..git
+git pull erin HEAD
+```
 
+> 先在本地`git init`创建的版本库，后来又必须推送到远程版本库里，就可以用这个方法
+>
+> 也可以`.git/config`文件中直接添加
 
 
+```shell
+git remote               #查看所有远程版本库
+git remote -v            #查看所有远程版本库对应的fetch与push源
+git remote show <name>   #查看指定远程版本库详细信息
+```
 
+`git remote rm <name>`删除别名
 
 
+管理本地版本库
+===============
+## 使用标签标记里程碑
+版本库里标签就像书签，常用于给项目代码的发布版本做标识，以便以后在需要修正或功能变更时，可以通过标签回到该发布代码上
 
+git中 __不能__ 像修改分支一样修改标签内容，确保在任意时刻取出标签对应的代码，都与创建标签时一样
 
+```shell
+git tag                        #查看标签
+git tag <tagname> [<commit>]   #创建标签，不写第二个参数，默认使用检出分支的末端版本
+```
 
+> `git constacts/1.1 contact`在contact分支上创建标签
 
+```shell
+git checkout 1.0               #检出标签，但不能修改，没法提交
+```
 
+> 可在当前tag下创建分支`git checkout -b from-1.0 1.0`，用于修改与提交
 
+## 发布分支的处理
+发布分支即将要发布代码的地方，开发团队一般用它来隔离即将要发布的代码，发布分支指当一个项目的所有功能都 __已__ 开发完成，__但尚未__ 达到发布的质量标准时创建的分支(侧重BUG与逻辑修正，无新功能添加)
 
+有了发布分支，在主分支上继续开发新功能就很方便，发布分支上不会将并新开发的代码包含进来
 
+发布分支持续时间不长，通常只用于发布代码的最终测试期间，一旦该版本发布，应该使用标签 __标记__ 项目，然后就可以 __删除__ 该发布分支了
 
+如何修正发布版本中的BUG，如果当前发布后做了标签1.0
 
+```shell
+git branch RB_1.0.1 1.0
+git checkout RB_1.0.1
+```
 
+进行bug修复后：
 
+```shell
+git tag 1.0.1
+git checkout master
+git branch -D RB_1.0.1
+```
 
+## 使用子模块跟踪外部版本库
+git的sub-module可以跟踪外部版本库，和svn:externals差不多
 
+> 现在推荐使用subtree
 
+### 添加新子模块
+```shell
+git submodule add git://github.com/tswicegood/hocus.git hocus  #创建
+git submodule  #查询
+```
 
+```
+ 20cc9ddc65b5f3ea3b871480c1e6d8085db48457 hocus (heads/master)
+```
 
+> 在`.git/config`中增加了`[submodule "hocus"]`
 
+```shell
+git submodule init hocus  #子模块初始化
+```
 
+```
+Submodule 'hocus' () registered for path 'hocus'
+```
 
+```shell
+git status
+```
 
+```
+# On branch master
+#
+# Initial commit
+#
+# Changes to be committed:
+#   (use "git rm --cached <file>..." to unstage)
+#
+#       new file:   .gitmodules
+#       new file:   hocus
+#
+```
 
+`.gitmodules`是一个存储用户所有模块信息的纯文本文件，当别人共享你的版本库时，git就根据它来部署子模块
 
+接下来`git commit`它
 
+### 克隆含子模块的版本库
+在克隆版本库后，还需要一些额外步骤，来设置好子模块
 
+```
+git submodule
+```
 
+```
+-20cc9ddc65b5f3ea3b871480c1e6d8085db48457 hocus
+```
 
+前面`-`代表还未初始化，需要
 
+```shell
+git submodule init hocus
+```
 
+```
+Submodule 'hocus' (git://github.com/tswicegood/hocus.git) registered for path 'hocus'
+```
 
+运行完，hocus目录还是空的，需要
 
+```shell
+git submodule update hocus
+```
 
+```
+Cloning into 'hocus'...
+remote: Counting objects: 7, done.
+remote: Total 7 (delta 0), reused 0 (delta 0)
+Receiving objects: 100% (7/7), done.
+Submodule path 'hocus': checked out '20cc9ddc65b5f3ea3b871480c1e6d8085db48457'
+```
 
+hocus目录包含了提交名称为`20cc9dd`版本对应的全部文件
 
+### 改变子模块的版本
+子模块不会自动引用版本库中最新提交，__利于保持版本的稳定__，它只反映某个提交对应的版本，这一点刚好与subversion相反
 
+当用户第一次创建子模块时，git记录所引用的提交，之后，它与该版本库间，不会有"偷偷的"通信与同步
 
+事实上，子模块了对检出某个特定提交的版本库的完整克隆，可以看`git branch`,`git log`,甚至`git checkout`
 
+```shell
+git checkout HEAD^
+```
 
+```
+cd ..
+git submodule
+```
 
+```
++7901f67feaadeeef755734a92febbc7214fb7871 hocus (7901f67)
+```
 
+`+`表示不是容器版本库所记录的该子模块应该在的版本，使用`git status`也可看出hocus目录被改动了
 
+可以添加到暂存区，并提交，表示希望引用子模块的这个版本
 
+```shell
+git add hocus
+git commit -m "update commit to track in submoduel"
+```
 
+再使用`git submodule`将看到引用了这个版本
 
+### 使用子模块时注意
+`git add`时不要加`\`，否则将把源版本库中全部文件添加到当前版本库，而不是更新子模块引用
 
+`git submodule update`有可能 __会覆盖__ 本地子模块中所有没有提交的内容，在使用前请确认必要的提交
 
+子模块和容器模块里的分支是分开的，需要分别使用`git checkout`来切换
 
+一旦子模块中提交修改，必须确保改动push到子模块的远程版本库中
 
 
+GitHub
+======
+- [Generating SSH keys](https://help.github.com/articles/generating-ssh-keys/)
+- [Github Flow](http://scottchacon.com/2011/08/31/github-flow.html)是Github内部使用git的原则：
+>    - master分支上的代码保证是deployable。
+>    - 每个功能创建一个特性分支，起一个描述性的分支名（比如：new-oauth2-scopes），并且push到远程。
+>    - 本地commit到这个分支，并且经常push到远程同名分支。
+>    - 需要反馈或功能完成时，发pull request。相关人员review之后合并回master。新merge之后deploy master代码。
+>    - master分支随时可以deploy这时Github Flow的核心。就是说所有merge到master分支的代码都需要测试和构建通过。
+>    - 从master分支分出功能分支。描述性的分支名的好处是大家都可以很容易通过branch list知道其他人在做什么。
+>    - 经常把本地代码push到远程的好处是不但可以起到备份作用，也可以让其他了解你的工作进展状况。并且不会影响其他同事。
+>    - 在Github，Pull Request被当成issue系统和code review系统，基本上都是用pull request来沟通的。
+>    - Pull Request之后所有人看过之后并且签名并且通过CI测试，你的代码就可以merge回master分支，然后部署到线上。
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+参考
+====
+- [Git分支管理策略](http://www.ruanyifeng.com/blog/2012/07/git.html)
+- [Git远程操作详解](http://www.ruanyifeng.com/blog/2014/06/git_remote.html)
+- [理解Git的工作流程](http://kb.cnblogs.com/page/152176/)
+- [GIT分支管理是一门艺术](http://kb.cnblogs.com/page/132209/)
 
 
 
