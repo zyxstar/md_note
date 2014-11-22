@@ -16,7 +16,6 @@
 cache
 =========
 
-<<<<<<< HEAD
 <!--
 
 #include <stdio.h>
@@ -190,9 +189,10 @@ void print_block(const BLOCK *b){
 
 
  -->
-=======
+
+
 <!-- 周鸿真 13381031637 -->
->>>>>>> ae54e07e66030133a28f6a515b949c0aa06f3084
+
 
 
 

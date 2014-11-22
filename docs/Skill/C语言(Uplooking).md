@@ -87,7 +87,7 @@ int main(){
     int a = 10, b = 20;
     int *p1 = &a, *p2 = &b;
     swap(p1, p2);
-    printf("a=%d; b=%d", a, b);
+    printf("a=%d; b=%d\n", a, b);
     return 0;
 }
 
@@ -338,6 +338,52 @@ Day06
 - 数组vs指针
     - c语言不允许数组首地址转向，所以数组名是一种特殊的指针，只能取值，不能赋值
     - `sizeof`运算，如果是数组，得到的是数组的长度，而指针得到是指针类型的长度（32是4字节，64位8字节）
+- 内存划分
+    1. 代码区
+    1. 全局区
+    1. 栈区
+    1. 堆区
+    1. 常数区
+
+- 在堆中分配二维数组，除`pp`在栈中，其余都在堆中
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+
+int main(){
+    int rows = 2, cols = 4;
+    int **pp = NULL;
+    pp = malloc(sizeof(int*) * rows);
+    printf("pp: %p\n", pp);
+    int i, j;
+    for(i = 0; i < rows; i++){
+        // *(pp+i) = malloc(sizeof(int) * cols);
+        pp[i] = malloc(sizeof(int) * cols);
+        printf("pp[%d]: %p\n",i, pp[i]);
+        for(j = 0; j < cols; j++){
+            *(*(pp+i)+j) = i * 10 + j;
+            printf("pp[%d][%d]: %2d\n", i, j, pp[i][j]);
+        }
+    }
+
+    for(i = 0; i < rows; i++) free(*(pp+i)); 
+    free(pp);
+
+    return 0;
+}
+```
+
+
+
+
+Day07
+=========
+
+
+
+
+
 
 
 
