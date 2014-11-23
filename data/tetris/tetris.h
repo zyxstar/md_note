@@ -30,16 +30,30 @@ typedef struct{
 
 typedef struct{
     char type;
-    char status;
+    int turn_count;
     POS_SET pos_set;
 } BLOCK;
 
 typedef int (*PANEL)[COLS];
 
+typedef struct{
+    int score;
+    PANEL panel;
+    BLOCK cur_block;
+    BLOCK next_block;
+    (void)(*draw_view)(GAME);
+} GAME;
 
+// begin srand
+
+
+void resiger_view((void)(*draw_view)(GAME));
+
+void begin_game(GAME *game);
 
 PANEL init_panel();
 BLOCK init_block(char type); //type in "TOILJSZ"
+
 
 BOOL move_left(PANEL panel, BLOCK *b);
 BOOL move_right(PANEL panel, BLOCK *b);

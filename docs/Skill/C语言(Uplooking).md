@@ -281,15 +281,17 @@ int main(){
 
 Day03
 =========
+## 效率tip
 编码时，要考虑数据的普遍情况，将能过滤掉大量无效数据的条件前置，可有效提高程序效率
 
 Day04
 =========
+## 指针初始化
 - `int *p = &a;`, 定义变量`p`，`*`说明`p`是一个指针，`int`说明`p`可以控制内存的范围
 - `*p = 10;`, `*`是寻址操作，该地址可读可写
 - 指针定义时 __必须初始化__，或初始化`NULL`，或初始化某个具体地址
 
-
+## 二级指针
 ```c
 int a = 100;
 int *p = &a;
@@ -299,7 +301,7 @@ assert(pp == &p);
 assert(*pp == p && p == &a);
 assert(**pp == *p && *p == a);
 ```
-
+## 数组是特殊的指针
 - `int d[100] = {0};`第一个元素初始化了，后面所有元素初始化为0，二维数组也适用
 - `a`相当于二级指针，`a[0]`是一个指针，`a[0]..a[2]`组成一个指针数组
 - 与一般的二级指针不一样，`a`是只读的，甚至`a[0]..a[2]`也是只读的
@@ -307,6 +309,7 @@ assert(**pp == *p && *p == a);
 
 Day05
 =========
+## 二维数组与二级指针
 
 <!-- run -->
 
@@ -334,20 +337,26 @@ int main(){
 
 Day06
 =========
+## 常数区字符串复用
 - 如果在常数区存在同一字符串，那么可以根据编译器不同有可能 __复用__(基本上来讲，常数区有一份可以利用的字符数组，就会复用)
-- 数组vs指针
-    - c语言不允许数组首地址转向，所以数组名是一种特殊的指针，只能取值，不能赋值
-    - `sizeof`运算，如果是数组，得到的是数组的长度，而指针得到是指针类型的长度（32是4字节，64位8字节）
-- 内存划分
-    1. 代码区
-    1. 全局区
-    1. 栈区
-    1. 堆区
-    1. 常数区
+
+## 数组vs指针
+- c语言不允许数组首地址转向，所以数组名是一种特殊的指针，只能取值，不能赋值
+- `sizeof`运算，如果是数组，得到的是数组的长度，而指针得到是指针类型的长度（32是4字节，64位8字节）
+
+## 内存划分
+1. 代码区
+1. 全局区
+1. 栈区
+1. 堆区
+1. 常数区
 
 Day07
 =========
-- 在堆中分配二维数组，除`pp`在栈中，其余都在堆中
+## 堆中分配二维数组
+- 除`pp`在栈中，其余都在堆中
+
+<!-- run -->
 
 ```c
 #include <stdio.h>
@@ -376,11 +385,128 @@ int main(){
 }
 ```
 
+Day08
+=========
+## 二维数组传参
 
+```c
+void fun1(int a[][5], int rows);
+void fun2(int **a, int rows, int cols);
+```
 
+## 示例(注册登录)
 
+<!-- run -->
 
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
+typedef enum{
+    FALSE,
+    TRUE
+} BOOL;
+
+typedef struct{
+    char *name;
+    char *passwd;
+} USER;
+
+typedef struct{
+    USER *users;
+    int size;
+    int alloc_size;
+} USER_LIST;
+
+#define ALLOC_LEN 8
+
+BOOL registe_user(USER_LIST *list, char *name, char *passwd){
+    int i;
+    for(i = 0; i < list->size; i++)
+        if(strcmp(list->users[i].name, name) == 0) return FALSE;
+
+    if(list->size == list->alloc_size){
+        if(list->alloc_size == 0)
+            list->alloc_size = ALLOC_LEN;
+        else
+            list->alloc_size *= 2;
+        list->users = realloc(list->users, sizeof(USER) * list->alloc_size);
+    }
+
+    // char *_name = malloc(sizeof(char) * (strlen(name) + 1));
+    // char *_passwd = malloc(sizeof(char) * (strlen(passwd) + 1));
+    // strcpy(_name, name);
+    // strcpy(_passwd, passwd);
+    // list->users[list->size].name = _name;
+    // list->users[list->size].passwd = _passwd;
+    
+    list->users[list->size].name = strdup(name);
+    list->users[list->size].passwd = strdup(passwd);
+
+    list->size++;
+    return TRUE;
+}
+
+void list_user(USER_LIST *list){
+    int i;
+    for(i = 0; i < list->size; i++)
+        printf("[%2d] name: %s; passwd: %s\n",
+              i, list->users[i].name, list->users[i].passwd);
+}
+
+BOOL validate_user(USER_LIST *list, char *name, char *passwd){
+    int i;
+    for(i = 0; i < list->size; i++)
+        if(strcmp(list->users[i].name, name) == 0 && 
+           strcmp(list->users[i].passwd, passwd) ==0) return TRUE;
+    return FALSE;
+}
+
+void free_list(USER_LIST *list){
+    int i;
+    for(i = 0; i < list->size; i++){
+        free(list->users[i].name);
+        free(list->users[i].passwd);
+    }
+    free(list->users);
+}
+
+int main(){
+    USER_LIST list = {0;
+    // list.users = NULL;
+    // list.size = 0;
+    // list.alloc_size = 0;
+
+    printf("registe: %d\n", registe_user(&list,"abc","123"));
+    printf("registe: %d\n", registe_user(&list,"def","345"));
+    printf("registe: %d\n", registe_user(&list,"def","345"));
+
+    list_user(&list);
+
+    printf("validate: %d\n", validate_user(&list,"def","345"));
+    printf("validate: %d\n", validate_user(&list,"def","344"));
+
+    free_list(&list);
+
+    return 0;
+}
+```
+
+## 数组名不能做左值
+
+```c
+char name[10];
+name = "abc"; //ERROR
+strcpy(name, "abc"); //RIGHT
+// or
+char *name;
+name = strdup("abc");
+free(name);
+```
+
+## 共用体
+- 当参数类型不确定时，可以使用共用体来传递
 
 50道题
 =========
@@ -667,8 +793,6 @@ int main(){
 #include <stdio.h>
 #include <stdlib.h>
 
-#define ARR_SIZE 5
-
 //= require print_arr
 
 void reverse_arr(int *arr1, int *arr2, int size){
@@ -680,10 +804,11 @@ void reverse_arr(int *arr1, int *arr2, int size){
 
 int main(){
     int arr1[] = {1,2,3,4,5};
-    int arr2[ARR_SIZE];
+    int size = sizeof(arr1) / sizeof(int);
+    int arr2[size];
 
-    reverse_arr(arr1, arr2, ARR_SIZE);
-    print_arr(stdout, arr2, ARR_SIZE);
+    reverse_arr(arr1, arr2, size);
+    print_arr(stdout, arr2, size);
     return 0;
 }
 
