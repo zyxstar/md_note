@@ -1689,7 +1689,7 @@ char *slogan[7];
         int i;
         if(c->free_fn != NULL){
             for(i = 0; i < c->used_len; i++){
-                c->free_fn(c->buffer + i * c->elem_size);
+                c->free_fn((char)c->buffer + i * c->elem_size);
             }
         }
         #ifdef DEBUG
