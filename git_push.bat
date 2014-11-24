@@ -3,7 +3,7 @@
 
 git status
 git add *
-git commit -a -m "edit docs" 
+git commit -a
 git status
 git push origin master:master
 
