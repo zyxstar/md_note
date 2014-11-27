@@ -937,7 +937,7 @@ Lecture 7
     }
 
     int main(){
-        const char *friends[] = {"Al", "Bob", "Carl"};
+        const char friends[][5] = {"Al", "Bob", "Carl"};
         stack stringStack;
         int i;
         StackNew(&stringStack, sizeof(char*), stringFree);
@@ -1072,6 +1072,8 @@ Lecture 7
 
 - 栈(stack segment)的管理一般由硬件来完成，而堆(heap segment)的管理由程序来控制
 
+
+- 参考[C迭代器库libcstl](http://libcstl.org/)
 
 Lecture 8
 ==========
