@@ -186,7 +186,7 @@ void print_block(const BLOCK *b){
 }
 
 
-
+void vs ()
 
  -->
 
