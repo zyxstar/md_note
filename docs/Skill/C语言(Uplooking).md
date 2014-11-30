@@ -82,21 +82,22 @@ char* my_strcat(char *str1, char *str2){
 ```c
 #include <stdio.h>
 
-void swap(int*, int*);
+void swap(int**, int**);
 int main(){
     int a = 10, b = 20;
     int *p1 = &a, *p2 = &b;
-    swap(p1, p2);
-    printf("a=%d; b=%d\n", a, b);
+    swap(&p1, &p2);
+    printf("*p1=%d; *p2=%d\n", *p1, *p2);
     return 0;
 }
 
-void swap(int* p1, int* p2){
-    int temp = *p1;
+void swap(int **p1, int **p2){
+    int *temp = *p1;
     *p1 = *p2;
     *p2 = temp;
 }
 ```
+
 
 ## Test04
 - 书写四个函数，分别计算两个整数 + - * /，书写第五个函数，使用参数型函数指针完成对以上四个函数的调用。
@@ -320,7 +321,7 @@ Day05
 int main(){
     int a[3][4] = {{1,2,3,4},{5,6,7,8},{9,10,11,12}};
     // int a[3][4] = {1,2,3,4,5,6,7,8,9,10,11,12};  //same as above
-    
+
     printf("a           = %p\n", a);
     printf("*a          = %p\n", *a);
     printf("** a        = %d\n", **a);
@@ -378,7 +379,7 @@ int main(){
         }
     }
 
-    for(i = 0; i < rows; i++) free(*(pp+i)); 
+    for(i = 0; i < rows; i++) free(*(pp+i));
     free(pp);
 
     return 0;
@@ -440,7 +441,7 @@ BOOL registe_user(USER_LIST *list, char *name, char *passwd){
     // strcpy(_passwd, passwd);
     // list->users[list->size].name = _name;
     // list->users[list->size].passwd = _passwd;
-    
+
     list->users[list->size].name = strdup(name);
     list->users[list->size].passwd = strdup(passwd);
 
@@ -458,7 +459,7 @@ void list_user(USER_LIST *list){
 BOOL validate_user(USER_LIST *list, char *name, char *passwd){
     int i;
     for(i = 0; i < list->size; i++)
-        if(strcmp(list->users[i].name, name) == 0 && 
+        if(strcmp(list->users[i].name, name) == 0 &&
            strcmp(list->users[i].passwd, passwd) ==0) return TRUE;
     return FALSE;
 }
@@ -473,7 +474,7 @@ void free_list(USER_LIST *list){
 }
 
 int main(){
-    USER_LIST list = {0;
+    USER_LIST list = {0};
     // list.users = NULL;
     // list.size = 0;
     // list.alloc_size = 0;
@@ -2622,7 +2623,35 @@ int main(){
 }
 ```
 
+火车订票系统
+==========
+1. 用户注册功能
+    - 注册新用户，输入用户名密码。
+        - 用户名检测，用户名重复，重新注册。
+        - 用户注册成功。
+2. 用户登录
+    - 检测用户名和密码是否正确，正确，登录成功，否则失败。
+3. 后台管理
+    - 列车信息录入
+4. 列车时刻表查询
+    - 车次查询: 输入车次，列出本次车所有到站及价格
+    - 发到站查询: 输入发站 输入到站，列出所有车次及价格
+5. 订票功能
+    - 输入发车站，输入到站，列出所有车次，同时显示车上是否有票
+    - 订票： 显示座位号，订票成功，订票信息记入个人账户
+
+
+[Code in Github](https://github.com/zyxstar/exam_c/tree/master/train)
 
 
 
 
+
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',1);
+})();
+
+</script>
