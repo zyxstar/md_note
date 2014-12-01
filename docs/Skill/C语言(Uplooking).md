@@ -514,6 +514,8 @@ Day09
 ## 函数指针
 - 定义的函数名就是一个只读的函数指针
 
+<!-- run -->
+
 ```c
 void fun1(){}
 
@@ -522,7 +524,63 @@ int main(){
 }
 ```
 
-- 函数指针就成为一种类型了，可作为参数、变量、返回值、结构体成员等的类型，达到接口契约的功能
+- 函数指针就成为一种类型了，可作为参数、变量、返回值、结构体成员等的类型，达到 __接口契约__ 的功能
+- 函数指针作为返回值:
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <assert.h>
+
+int add(int a, int b){return a + b;}
+int minus(int a, int b){return a - b;}
+int multi(int a, int b){return a * b;}
+int divi(int a, int b){return a / b;}
+
+int(*route_fn(char operator))(int, int){
+    static int(*funs[])(int, int) = {add, minus, multi, divi};
+    static char operators[] = {'+', '-',   '*',   '/'};
+    int i = 0;
+    while(operators[i] != operator) i++;
+    assert(i<4);
+    return funs[i];
+}
+int main(){
+    printf("%d\n", route_fn('+')(10,20));
+    return 0;
+}
+```
+
+或者定义`typedef`一个类型`FUN`来表示函数指针，增加可读性
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <assert.h>
+
+int add(int a, int b){return a + b;}
+int minus(int a, int b){return a - b;}
+int multi(int a, int b){return a * b;}
+int divi(int a, int b){return a / b;}
+
+typedef int(*FUN)(int, int);
+
+FUN route_fn(char operator){
+    static FUN funs[] = {add, minus, multi, divi};
+    static char operators[] = {'+', '-',   '*',   '/'};
+    int i = 0;
+    while(operators[i] != operator) i++;
+    assert(i<4);
+    return funs[i];
+}
+int main(){
+    printf("%d\n", route_fn('+')(10,20));
+    return 0;
+}
+```
+
 
 ## 指针函数
 - 即返回指针的函数，需要注意返回的不能是无效的地址，如函数内部栈中定义的地址
