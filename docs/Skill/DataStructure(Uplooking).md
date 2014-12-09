@@ -6,6 +6,6 @@
 
 > 参考
 >
-> - [课件](../../DataStructure/ppt)
-> - [源代码](../../DataStructure/source)
+> - [课件](https://github.com/zyxstar/md_note/tree/master/data/DataStructure/ppt)
+> - [源代码](https://github.com/zyxstar/md_note/tree/master/data/DataStructure/source)
 
