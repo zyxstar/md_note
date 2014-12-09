@@ -1,0 +1,41 @@
+
+/* ==================Program Description================== */
+/* 程序名称：query.c                                       */
+/* 程序目的：在顺序表中查找值为x个数据元素                 */
+/* Written By Yang yonghu                                  */
+/* ========================================================*/
+# include "stdio.h"
+#define Maxsize  10
+typedef struct
+  {int v[10]; /*存放线性表元素的数组，关系隐含*/
+   int len;       /*表示线性表的长度*/
+   }sqlist;
+int locate(sqlist *L,int x)
+{int i;
+ for (i=0;i<(*L).len;i++)                /*在线性表中循环查找*/
+   if (x==(*L).v[i]) 
+       break;
+if (i<(*L).len) 
+return (i+1);
+else 
+return(0);
+ }
+
+ main()
+ {
+ int i,value,location;
+ sqlist a;
+ a.len=5;
+ for(i=0;i<5;i++)
+    a.v[i]=i+2;
+ for(i=0;i<a.len;i++)
+   printf("%d",a.v[i]);
+ printf("\nplease input the value to query:");
+scanf("%d",&value); 
+location=locate(&a,value);
+ if(location==0)
+  printf("No found!");
+ else
+  printf("the location of the value is %d",location);
+ }
+ 

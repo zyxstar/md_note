@@ -1,0 +1,24 @@
+ /* ==============Program Description ================= */
+ /* 程序名称: Strlen	                        */
+ /* 程序目的: 字符串的长度              		*/
+ /* Written By :Yang yonghu		*/
+ /* =================================================== */
+
+int Strlen(char *s)
+{
+	int i;
+	for(i=0;s[i]!='\0';)/*用循环来计算字符串的长度*/
+		i++;
+	return i;           /*将累加的i值返回给Strlen()*/
+}
+
+void main()
+{
+	char string[50];/*声明长度为50的字符串数组*/
+	int length;     /*字符串长度*/
+
+	printf("\n Please input string:");
+	gets(string);         /*读取字符串存到变量string*/
+	length=Strlen(string);/*计算字符串string的长度*/
+	printf("\n The input string length is %d ",length);
+}

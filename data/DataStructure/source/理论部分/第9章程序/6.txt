@@ -1,0 +1,51 @@
+/* ==============Program Description ================= */
+/* 程序名称: Index_BF.c	                              */
+/* 程序目的: BF模式匹配               	                  */
+/* Written By :Yang yonghu	                          */
+/* =================================================== */
+#include <stdio.h>
+#include <string.h>
+#define Maxsize 50
+typedef struct{
+  char ch[Maxsize];
+  int len;
+}Str;
+
+int Index_BF(Str *s,Str *p)
+{
+
+	int i=0,j=0;
+	while((i<=s->len)&&(j<=p->len-1)){
+	   if(s->ch[i]==p->ch[j])
+	   {
+		 i++;
+		 j++;
+	   }
+	   else
+	   {
+	     i=i-j+1;
+	     j=0;
+	   }
+	}
+	if(j>p->len-1)
+		return i-p->len+1;
+	else
+		return -1;
+}
+
+void main()
+{
+    Str string;    /*声明主字符串*/
+	Str pstring; /*声明模式字符串*/
+    int index;
+	printf("\nPlease input string:");
+	gets(string.ch);
+	string.len=strlen(string.ch);
+	printf("\nPlease input patern string :");
+	gets(pstring.ch);
+	pstring.len=strlen(pstring.ch);
+
+	index=Index_BF(&string,&pstring);
+	printf("\nThe Index is '%d' \n",index);
+
+}

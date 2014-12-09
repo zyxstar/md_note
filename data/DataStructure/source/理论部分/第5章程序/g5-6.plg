@@ -1,0 +1,35 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: g5-6 - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP2E.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/g5-6.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\数据结构\编写教材\统搞\光盘\图源程序\g5-6.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP2E.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP2F.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/g5-6.pdb" /debug /machine:I386 /out:"Debug/g5-6.exe" /pdbtype:sept 
+".\Debug\g5-6.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP2F.tmp"
+<h3>Output Window</h3>
+Compiling...
+g5-6.c
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-6.c(20) : warning C4013: 'strcmp' undefined; assuming extern returning int
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-6.c(49) : warning C4047: 'return' : 'int ' differs in levels of indirection from 'void *'
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-6.c(22) : warning C4715: 'Locate' : not all control paths return a value
+Linking...
+
+
+
+<h3>Results</h3>
+g5-6.exe - 0 error(s), 3 warning(s)
+</pre>
+</body>
+</html>

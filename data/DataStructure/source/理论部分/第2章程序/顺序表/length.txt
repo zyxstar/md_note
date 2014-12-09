@@ -1,0 +1,30 @@
+/* ==================Program Description================== */
+/* 程序名称：length.c                                      */
+/* 程序目的：求线性表长度                                  */
+/* Written By Yang yonghu                                  */
+/* ========================================================*/
+
+# include "stdio.h"
+#define Maxsize  10
+typedef struct
+  {int v[Maxsize]; /*存放线性表元素的数组，关系隐含*/
+   int len;       /*表示线性表的长度*/
+   }sqlist;
+
+int lenth(sqlist *L) /*L指向要求的顺序表*/
+{
+  int  lenth;
+  lenth=(*L).len;
+  return(lenth); /*返回线性表的长度*/
+}
+main()
+{
+  int l,i,b=4,c=6,d;
+  sqlist a;    /*定义一个顺序表*/
+  a.len=5;
+  for(i=0;i<5;i++)
+    a.v[i]=i+2;
+  l=lenth(&a);
+  printf("the length is %d",l);
+}
+ 

@@ -623,6 +623,8 @@ Day10
 - 没有数据类型，方便公用代码提炼
 - 只是替换，没有栈空间分配与函数调用，速度上优于函数
 
+
+
 ### GCC
 ```shell
 gcc -E hello.c -o hello.i          #预处理
@@ -631,6 +633,11 @@ gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
 gcc -o hello.out hello.o           #链接
 ```
 
+### GDB
+- [linux下GDB教程.pdf](../../data/linux下GDB教程.pdf)
+
+### Make
+- [什么是makefile.doc](../../data/什么是makefile.doc)
 
 
 50道题

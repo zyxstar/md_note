@@ -1,0 +1,38 @@
+/* ==============Program Description ================= */
+/* 程序名称: Strcat.c	                       */
+/* 程序目的: 字符串的结合               	       */
+/* Written By :Yang yonghu	       */
+/* =================================================== */
+#define Maxsize 50
+typedef struct{
+  char ch[Maxsize];
+  int len;
+}Str;
+char *Strcat(char *s1,char *s2)
+{
+	int i,j;
+	
+	for(i=0;s1[i]!='\0';i++);/*寻找s1的结合位置*/
+	for(j=0;s2[j]!='\0';j++) /*复制字符串的内容*/
+		s1[i+j]=s2[j];
+	s1[i+j]='\0';/*设置合并后的字符串结束*/
+	return s1;   /*将s1返回给Strcat()*/
+}
+
+void main()
+{
+	Str string1;/*声明字符数组1*/
+	Str string2; /*声明字符数组2*/
+	
+	printf("\n Please input string (1):");
+	gets(string1.ch);/*读取字符串1存到变量string1*/
+	printf("\n Please input string (2):");
+	gets(string2.ch);/*读取字符串2存到变量string2*/
+
+	printf("\n String1:%s",string1.ch);
+	printf("\n String2:%s",string2.ch);
+
+	Strcat(string1.ch,string2.ch);/*结合两字符串*/
+
+	printf("\nThe merge string is : %s ",string1.ch);/*输出合并后的字符串*/
+}

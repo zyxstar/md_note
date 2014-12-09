@@ -1,0 +1,118 @@
+/* ==================Program Description================== */
+/* 程序名称：query1.c                                      */
+/* 程序目的：按值在单链表中查找某一个数据元素              */
+/* Written By Yang yonghu                                  */
+/* ========================================================*/  
+#include <stdio.h>
+#define Max 10                /*定义符号常量Max*/
+typedef struct stu            /*结点结构声明*/
+{
+    int    Number;            /*学生学号*/ 
+    char   Name[Max];         /*学生姓名*/
+    struct stu  *Next;       /*指向后继节点的指针*/
+}student;
+
+/*---------------------------------------------------------*/
+/*输出链表数据                                             */
+/*---------------------------------------------------------*/
+void  print(student* Head)
+{
+     student* Pointer;           /*节点声明*/
+
+     Pointer=Head;           /*将Pointer指针设为首节点*/
+     while(Pointer!=NULL)    /*判断链表是否结束，如果结束则结束循环*/
+     {
+          printf("##Input Data##\n");
+          printf("Data Number :%d\n",Pointer->Number);/*向终端输出Pointer节点数据编号数据项的值*/
+          printf("Data Name: %s\n",Pointer->Name);    /*向终端输出Pointer节点数据名称数据项的值*/
+          Pointer=Pointer->Next;                      /*将Pointer指针指向后继节点*/
+     }
+}
+/*---------------------------------------------------------*/
+/*查找数据                                             */
+/*---------------------------------------------------------*/
+int query(student *Head,char *qname)
+{
+  student* p;           /*节点声明*/
+  p=Head;            /*Pointer指针设为首节点*/
+  while(p!=NULL)     /*如果链表结束，则结束循环*/
+  {
+   if(!strcmp(p->Name,qname)) /*判断节点中的数据编号是否与待查值匹配*/
+   {
+    printf("The Student Number :%d\n",p->Number); /*输出节点的Number项的值*/
+    printf("The Student Name :%s\n",p->Name);   /*输出节点的Name项的值*/
+    return 1;         /*查找了待查数据，函数返回值为1*/
+    }
+    p=p->Next;    /*p指针指向下一个节点*/
+  }
+    return 0;                         /*没有找到待查数据，函数返回值为0*/
+
+}
+
+
+/*-----------------------------------------------------------------*/
+/*建立数据                                                         */
+/*-----------------------------------------------------------------*/
+student * create()
+{
+     student * Head;
+     int   DataNum;                   /*数据编号*/
+     char  DataName[Max];             /*数据名称*/
+     student *  New;                       /*节点声明*/
+     student *  Pointer;                   /*节点声明*/ 
+     int   i;                  
+
+     Head=(student*)malloc(sizeof(student)); /*为首节点分配内存空间*/
+
+     if(Head==NULL)
+         printf("Memory allocate  failure!!\n"); /*内存配置失败*/
+     else
+     {
+         DataNum=1;                  /*初始数据编号*/
+         printf("Please input the data name(Input 0 to Exit): ");
+         scanf("%s",DataName);       /*从终端输入数据名称*/ 
+                                
+         Head->Number=DataNum;       /*给首节点数据编号数据项赋值*/ 
+         for(i=0;i<=Max;i++)             
+             Head->Name[i]=DataName[i]; /*给首节点数据名称数据项赋值*/
+         Head->Next=NULL;               
+        
+     Pointer=Head;               /*Pointer指针设为首节点*/
+
+         while(1)
+         {
+           DataNum++;           /*数据编号递增*/
+           New=(student*)malloc(sizeof(student)); /*为新节点分配内存*/
+           printf("Please input the data name(Input 0 to Exit): ");
+           scanf("%s",DataName);  /*从终端输入数据名称*/ 
+           if(DataName[0]=='0')   
+             break;              /*输入0结束输入*/
+           New->Number=DataNum;   /*给新节点数据编号数据项赋值*/
+           for(i=0;i<=Max;i++)
+               New->Name[i]=DataName[i]; /*给新节点数据名称数据项赋值*/
+           New->Next=NULL;
+           Pointer->Next=New;        /*将新节点串联在已有链表的尾端*/
+           Pointer=New;          /*将Pointer指针指向新节点，即链表尾端节点为新节点*/
+         }  
+    
+     }
+     return Head; 
+}
+/*---------------------------------------------------------*/
+/*主程序                                                   */
+/*---------------------------------------------------------*/
+main()
+{
+    student *  H;               /*节点声明*/
+    char qname[Max];
+    H=create();           /*调用链表创建函数创建链表*/
+                       
+    if(H!=NULL)
+        print(H);     /*调用链表输出函数输出链表数据*/
+    getchar();
+   printf("please input the name that you want to query:");
+   gets(qname);
+   if(!query(H,qname))
+     printf("NO found!");
+}
+

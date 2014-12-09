@@ -1,0 +1,32 @@
+/* ==============Program Description ============ */
+/* 程序名称: Strcpy.c                            */
+/* 程序目的: 字符串的复制               	     */
+/* Written By Yang yonghu        	            */
+/* ============================================ */
+#define Maxsize 50
+typedef struct{
+  char ch[Maxsize];
+  int len;
+}Str;
+
+char *Strcpy(char *s1,char *s2)
+{
+	int i;
+	for(i=0;s2[i]!='\0';i++)
+		s1[i]=s2[i];/*逐一复制字符串的内容*/
+	s1[i]='\0';         /*设置字符串结束*/
+	return s1;	    /*将字符串s1返回给Strcpy()*/		
+}
+
+void main()
+{
+	Str string;    /*声明原始字符串*/
+	Str copystring;/*声明复制字符串*/
+
+	printf("\n Please input string :");
+	gets(string.ch);             /*读取字符串到变量string*/
+	Strcpy(copystring.ch,string.ch);/*将字符串string复制到字符串copystring*/
+	
+	printf("\n String : %s",string.ch);        /*输出原始字符串*/
+	printf("\n Copystring : %s",copystring.ch);/*输出复制字符串*/
+}

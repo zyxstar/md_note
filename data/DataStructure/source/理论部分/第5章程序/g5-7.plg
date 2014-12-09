@@ -1,0 +1,37 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: g5-7 - Win32 Debug--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1E.tmp" with contents
+[
+/nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /Fp"Debug/g5-7.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
+"D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1E.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1F.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/g5-7.pdb" /debug /machine:I386 /out:"Debug/g5-7.exe" /pdbtype:sept 
+".\Debug\g5-7.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP1F.tmp"
+<h3>Output Window</h3>
+Compiling...
+g5-7.c
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c(27) : warning C4013: 'strcmp' undefined; assuming extern returning int
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c(51) : warning C4013: 'malloc' undefined; assuming extern returning int
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c(60) : warning C4101: 'j' : unreferenced local variable
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c(117) : warning C4101: 'i' : unreferenced local variable
+D:\数据结构\编写教材\统搞\光盘\图源程序\g5-7.c(29) : warning C4715: 'Locate' : not all control paths return a value
+Linking...
+
+
+
+<h3>Results</h3>
+g5-7.exe - 0 error(s), 5 warning(s)
+</pre>
+</body>
+</html>

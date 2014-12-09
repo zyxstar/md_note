@@ -1,0 +1,47 @@
+/* ==============Program Description ================= */
+/* 程序名称: Substr.c	                              */
+/* 程序目的: 求子串               	                  */
+/* Written By :Yang yonghu	                          */
+/* =================================================== */
+#include <stdio.h>
+#include <string.h>
+#define Maxsize 50
+typedef struct{
+  char ch[Maxsize];
+  int len;
+}Str;
+
+int Substr(Str *s,Str *sub,int pos,int len)
+{
+
+	int i,j,endpos;
+	if((pos>=0 && pos<s->len)&&(len>=0&&len<=s->len-pos))
+	{
+    	for(i=0;i<len;i++)
+	    	sub->ch[i]=s->ch[pos+i];
+		sub->len=len;
+	    sub->ch[len]='\0';/*设置子字符串的结束字符*/
+	    return 1;
+	}
+	return 0;
+}
+
+void main()
+{
+    Str string;/*声明字符串数组*/
+	Str substring; /*声明字符串指针*/
+	int position;    /*抽取起始位置*/
+	int length;      /*抽取的子字符串长度*/
+
+	printf("\nPlease input string:");
+	gets(string.ch);
+	string.len=strlen(string.ch);
+	printf("\nPlease input start position :");
+	scanf("%d",&position);
+	printf("\nPlease input substring length :");
+	scanf("%d",&length);
+
+	Substr(&string,&substring,position,length);
+	printf("\nThe substring is '%s' \n",substring.ch);
+
+}

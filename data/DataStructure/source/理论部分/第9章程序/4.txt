@@ -1,0 +1,52 @@
+/* ==============Program Description ================= */
+/* 程序名称: Strcmp.c	                              */
+/* 程序目的: 字符串的删除               	          */
+/* Written By :Yang yonghu	                          */
+/* =================================================== */
+#define Maxsize 50
+typedef struct{
+  char ch[Maxsize];
+  int len;
+}Str;
+
+int Strcmp(char *s1,char *s2)
+{
+	int i,j;
+
+	for(i=0;s1[i]==s2[i];i++)
+		if(s1[i]=='\0'&&s2[i]=='\0')
+			return 0;
+	if(s1[i]>s2[i])
+		return 1;
+	return -1;
+}
+
+void main()
+{
+	Str s1;
+	Str s2;
+	int compare;
+
+	printf("\nPlease input string (1) :");
+	gets(s1.ch);/*读取字符串String1*/
+	printf("\nPlease input string (2) :");
+	gets(s2.ch);/*读取字符串String2*/
+	compare=Strcmp(s1.ch,s2.ch);/*进行字符串的大小比较*/
+
+	printf("\nString(1):%s",s1.ch);
+	printf("\nString(2):%s",s2.ch);
+	printf("\nCompare result:");
+	switch(compare)
+	{
+		case 0:
+			printf("\nString(1)=String(2)\n");
+			break;
+		case 1:
+			printf("\nString(1)>String(2)\n");
+			break;
+		case -1:
+			printf("\nString(1)<String(2)\n");
+			break;
+	}
+
+}
