@@ -1984,6 +1984,8 @@ Polyline *polyline;
 polyline = malloc(sizeof(Polyline) + sizeof(Point) * (npoints - 1));
 ```
 
+> `Point point[1];`完全可以声明成`Point point[0];`，这样`Polyline`类型的大小仅是`int`的大小
+
 如果使用`polyline->point[3]`进行引用，会发生地址越界引用，好在大多数C处理环境不做数组范围检查，我们使用`malloc()`在`Polyline`后面追加分配必要的内存空间
 
 <!--language: plain-->
@@ -2006,7 +2008,7 @@ polyline = malloc(sizeof(Polyline) + sizeof(Point) * (npoints - 1));
 这种写法，结构体的 __*最后*__ 成员 __不使用指针__ 也可以直接保存 __可变长__ 数组
 > 一定是最后成员，否则会覆盖到其它成员
 >
-> ISO C99可变第结构体已被正式承认
+> ISO C99可变长结构体已被正式承认
 
 数据结构中的指针
 ===============

@@ -616,16 +616,16 @@ Day10
 
 > 静态变量和全局变量，不初始化时，系统会自动初始化，局部变量则不会
 
-### 头文件
+## 头文件
 一般将外部全局变量声明，函数声明放在此处，如必须要存在定义（struct,typedef）时，则需`#ifndef/#endif`
 
-### 宏
+## 宏
 - 没有数据类型，方便公用代码提炼
 - 只是替换，没有栈空间分配与函数调用，速度上优于函数
 
 
 
-### GCC
+## GCC
 ```shell
 gcc -E hello.c -o hello.i          #预处理
 gcc -S hello.i                     #编译，产行hello.s汇编文件
@@ -633,10 +633,10 @@ gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
 gcc -o hello.out hello.o           #链接
 ```
 
-### GDB
+## GDB
 - [linux下GDB教程.pdf](../../data/linux下GDB教程.pdf)
 
-### Make
+## Make
 - [什么是makefile.doc](../../data/什么是makefile.doc)
 
 
