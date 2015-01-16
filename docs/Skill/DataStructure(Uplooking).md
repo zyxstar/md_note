@@ -107,4 +107,18 @@ int llist_insert(LLIST *ptr, const void *data, int mode){
 }
 ```
 
+Day04
+=========
+- 宏的展开是在编写的地方，而不存在调用关系，所以 __能直接使用上下文__
+- 宏的本质是代码生成，但却解决了，函数参数不能是类型的问题（而宏的参数却可以是类型），所以能达到　__元语言__　编程的一些效果，如内核链表中的`#define container_of(ptr, type, member)`，充分的表达了语义
+- `typeof`关键字
+
+```c
+typeof(char []) charray = "hello";
+typeof(int [20]) intarr = {1,2,3,4};`
+```
+
+> - 把y定义成x指向的数据类型：`typeof(*x) y;`
+> - 把y定义成x指向数据类型的数组：`typeof(*x) y[4];`
+> - 把y定义成一个字符指针数组：`typeof(typeof(char *)[4]) y;`
 
