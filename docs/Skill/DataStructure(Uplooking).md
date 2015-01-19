@@ -122,3 +122,95 @@ typeof(int [20]) intarr = {1,2,3,4};`
 > - 把y定义成x指向数据类型的数组：`typeof(*x) y[4];`
 > - 把y定义成一个字符指针数组：`typeof(typeof(char *)[4]) y;`
 
+拾遗
+===========
+- 有关 __位枚举__
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+
+int bin(int num, char *data){
+    if (num == 0) return 0;
+    char c = num % 2 + '0';
+    int idx = bin(num / 2, data);
+    data[idx] = c;
+    return idx + 1;
+}
+
+void show_bin(int num){
+    char data[32] = {0};
+    bin(num, data);
+    printf("%3d : %8s\n", num, data);
+}
+
+#define set_flags(src, flags) ((src) | (flags))
+
+#define unset_flags(src, flags) ((src) & (~(flags)))
+
+#define has_flags(src, flags) (((src) & (flags)) == (flags))
+
+#define has_no_flags(src, flags) (((src) & (flags)) == 0)
+
+enum flags{
+    _A  = 1,
+    _B  = 1 << 1,
+    _C  = 1 << 2,
+    _D  = 1 << 3,
+    _E  = 1 << 4
+};
+
+#define my_print(foramt, data)\
+    printf("%s : ", #data);\
+    printf(foramt, data);
+
+void usage_of_flag(){
+    enum flags f = 0;
+    f = set_flags(f, _A | _B | _C | _D | _E);
+    show_bin(f);
+
+    f = unset_flags(f, _C | _B);
+    show_bin(f);
+
+    f = unset_flags(f, _E | _B | _A);
+    show_bin(f);
+
+    f = set_flags(f, _B | _C | _D);
+    show_bin(f);
+
+    my_print("%d\n", has_flags(f, _B));
+    my_print("%d\n", has_flags(f, _B | _D));
+    my_print("%d\n", has_flags(f, _B | _A));
+
+    my_print("%d\n", has_no_flags(f, _A | _B));
+    my_print("%d\n", has_no_flags(f, _A));
+    my_print("%d\n", has_no_flags(f, _A | _E));
+
+}
+
+int main(){
+    usage_of_flag();
+    return 0;
+}
+```
+
+- 也可使用 __位字段__
+
+```c
+#include <stdint.h>
+
+struct{
+    uint8_t is_keyword : 1;
+    uint8_t is_extern  : 1;
+    uint8_t is_static  : 1;
+} flags;
+
+int main(){
+    flags.is_extern = flags.is_static = 1;
+    if(flags.is_extern){
+        // to do ...
+    }
+    return 0;
+}
+```
