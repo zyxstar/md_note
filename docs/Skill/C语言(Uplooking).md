@@ -171,49 +171,38 @@ Day02
 #include <stdio.h>
 #include <string.h>
 
-void reverse(char *data){
-    int i = 0, len = strlen(data);
-
-    char temp;
-    while(i < len/2){
-        temp = data[i];
-        data[i] = data[len - i - 1];
-        data[len - i - 1] =  temp;
-        i++;
-    }
-}
 char alpha(int num){
-    if (num < 10) return 48 + num;/* 0~9 */
-    return (num - 10) + 65; /* A~F */
+    if (num < 10) return '0' + num;/* 0~9 */
+    return (num - 10) + 'A'; /* A~F */
 }
-void trans(int num, int radix, char *out_data){
-    int i = 0;
-    while(num > 0){
-        out_data[i++] = alpha(num % radix);
-        num /= radix;
-    }
-    out_data[i] = '\0';
-    reverse(out_data);
+
+int trans(int num, int radix, char *out_data){
+    if (num == 0) return 0;
+    int idx = trans(num / radix, radix, out_data);
+    out_data[idx] = alpha(num % radix);
+    return idx + 1;
 }
 
 int main(){
     int num = 78;
-    char data[100];
+    char data[100] = {0};
 
     trans(num, 2, data);
     printf("bin: %s\n", data);
 
+    memset(data, 0, 100);
     trans(num, 8, data);
     printf("oct: %s\n", data);
 
+    memset(data, 0, 100);
     trans(num, 16, data);
     printf("hex: %s\n", data);
 
+    memset(data, 0, 100);
     trans(num, 10, data);
     printf("den: %s\n", data);
     return 0;
 }
-
 ```
 
 - 任意进制转十进制

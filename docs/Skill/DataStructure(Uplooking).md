@@ -133,9 +133,8 @@ typeof(int [20]) intarr = {1,2,3,4};`
 
 int bin(int num, char *data){
     if (num == 0) return 0;
-    char c = num % 2 + '0';
     int idx = bin(num / 2, data);
-    data[idx] = c;
+    data[idx] = num % 2 + '0';
     return idx + 1;
 }
 
