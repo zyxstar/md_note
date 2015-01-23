@@ -1250,6 +1250,9 @@ void (*signal(int sig, void (*func)(int)))(int);
 11. 翻译成中文
 > signal是返回 "指向返回void参数为int的函数指针" 的函数，它有两个参数，一个是int，另一个是 "指向返回void参数为int的指针的函数的指针"
 
+
+> 一个有用的程序[`cdecl`](http://www.cdecl.org/)，用于解释相关声明，或`apt-get install cdecl`
+
 ### 简化声明
 此时用`typedef`可以让声明变得格外简洁：
 
