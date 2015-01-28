@@ -1034,6 +1034,47 @@ const char *src
 ```
 > 解释成 src is __pointer__ to read-only char
 
+
+### C语言声明的优先级规则
+1. 声明从它的名字开始读取，然后按照优先级顺序依次读取
+2. 优先级从高到低依次是：
+    1. 声明从被括号括起来的那部分
+    2. 后缀操作符：括号`()`表示这是一个函数；方括号`[]`表示这是一个数组
+    3. 前缀操作符：星号`*`表示 指向...的指针
+3. 如果`const`和(或)`volatile`关键字的后面紧跟类型说明符（如`int`,`long`等），那么它作用于类型说明符，在其他情况下，`const`和(或)`volatile`关键字作用于它左边紧邻的指针星号
+
+> 对于`char * const *(*next)();`的声明：
+>
+> - 首先，看变量`next`，适用规则1
+> - 它直接被括住，看成一个整体，得出`next是一个指向...的指针`，适用规则2.1
+> - 考虑括号外的东西，在星号前缀和括号后缀作出选择，适用规则2
+> - 规则2.2，告诉我们优先级较高的是右边的函数括号，得出`next是一个函数指针，指向一个返回...的函数`
+> - 然后根据规则2.3，处理前缀星号，得出指针所指的内容
+> - 最后，根据规则3，把`char * const`解释为指向字符的 常量指针
+> - 综合起来，这个声明表示`next是一个指针，它指向一个函数，该函数返回另一个指针，该指针指向一个类型为char的常量指针`
+
+
+
+```shell
+cdecl> explain char * const *(*next)()
+declare next as pointer to function returning pointer to const pointer to char
+
+cdecl> explain int(*fun())
+declare fun as function returning pointer to int
+
+cdecl> explain int(*fun())()  #返回函数指针的 一个函数
+declare fun as function returning pointer to function returning int
+
+cdecl> explain int(*foo())[]  #返回指向int数组的指针的 一个函数
+declare foo as function returning pointer to array of int
+
+cdecl> explain int(*foo[])()  #函数指针数组
+declare foo as array of pointer to function returning int
+```
+
+
+
+
 ### 如何使用const
 ```c
 void search_point(char const *name, double *x, double *y);
