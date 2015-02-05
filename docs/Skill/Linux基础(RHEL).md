@@ -1479,7 +1479,45 @@ f7                     #运行
 
 ```
 
+Xcode快捷键
+=============
+## 编辑
+```shell
+cmd [|]                #左右缩进
+cmd opt [|]            #当前行上下移动
 
+ctrl f                 #前移光标
+ctrl b                 #后移光标
+ctrl p                 #光标到上一行
+ctrl n                 #光标到下一行
+ctrl a                 #光标到行首
+ctrl e                 #光标到行尾
+opt left|right         #光标前进 后退一个单词
+#以上加上shift就会选择
+
+mouse three click      #选中当前行
+
+ctrl d                 #删除光标右侧字符 同 fn delete
+ctrl k                 #删除光标处到行尾
+cmd delete             #删除光标处到行首
+
+ctrl cmd space         #标准表情
+
+```
+
+## 代码相关
+```shell
+esc                    #当前单词重新补全
+cmd r                  #运行
+cmd /                  #注释
+cmd shift j            #转到定义
+cmd opt left|right     #折叠
+
+ctrl i                 #当前格式化
+cmd shift o            #显示open quikly
+opt mouse dclick       #文档
+
+```
 
 <script>
 
