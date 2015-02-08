@@ -1,0 +1,113 @@
+//14.5 adjacent_find、find、find_if、find_first_of、find_end 、
+//search、search_n、equal、mismatch和lexicographical_campare
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::adjacent_find;
+using std::find;
+using std::find_if;
+using std::find_first_of;
+using std::find_end;
+using std::search;
+using std::search_n;
+using std::equal;
+using std::mismatch;
+using std::lexicographical_compare;
+using std::greater;
+using std::less;
+using std::pair;
+
+void print(int* arr, int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+bool my_equal_to(int a,int b)
+{
+	return a%2==b%2;
+}
+bool is_even(int n)
+{
+	return n%2==0;
+}
+
+int main()
+{ 
+	int a[]={1,2,3,5,5,6,7,3,5,3};
+   int a1[]={9,6,8};
+	int a2[]={3,5};
+	int a3[]={1,2,3,7,5,6,7,6,5,3};
+	int i;
+	for(i=0;i<10;++i)
+		cout<<i<<" ";
+	cout<<endl;
+	cout<<"-------------------------"<<endl;
+	print(a,10,":a");
+
+	int *loc=find(a,a+10,5);
+	cout<<"a中的第一个5位于"<<loc-a<<"位"<<endl;
+	loc=find(a,a+10,4);
+	if(loc==a+10)
+		cout<<"在a中找不到4"<<endl;
+	loc=find_if(a,a+10,is_even);
+	cout<<"a中第一个偶数是"<<*loc<<",位于第"<<loc-a<<"位"<<endl;
+	loc=find_first_of(a,a+10,a1,a1+3);
+	cout<<"a中第一个等于a1中任意元素的元素是"<<*loc
+		<<",位于第"<<loc-a<<"位"<<endl;
+	loc=find_first_of(a,a+10,a1,a1+3,greater<int>());
+	cout<<"a中第一个大于a1中任意元素的元素是"<<*loc
+		<<",位于第"<<loc-a<<"位"<<endl;
+	loc=adjacent_find(a,a+10);
+	cout<<"a中第一对相等的相邻元素位于第"<<loc-a<<"位"<<endl;
+	loc=adjacent_find(a,a+10,my_equal_to);
+	cout<<"a中第一对奇偶性相同的相邻元素位于第"<<loc-a<<"位"<<endl;
+	cout<<"-------------------------"<<endl;
+
+	loc=search(a,a+10,a2,a2+2);
+	cout<<"a中第一个等于a2的子序列位于第"<<loc-a<<"位"<<endl;
+	loc=search(a,a+10,a2,a2+2,less<int>());
+	cout<<"a中第一个小于a2的子序列位于第"<<loc-a<<"位"<<endl;
+	loc=find_end(a,a+10,a2,a2+2);
+	cout<<"a中最后一个等于a2的子序列位于第"<<loc-a<<"位"<<endl;
+	loc=find_end(a,a+10,a2,a2+2,less<int>());
+	cout<<"a中最后一个小于a2的子序列位于第"<<loc-a<<"位"<<endl;
+	loc=search_n(a,a+10,2,5);
+	cout<<"a中第一组连续2个5的子序列位于第"<<loc-a<<"位"<<endl;
+	loc=search_n(a,a+10,4,5,my_equal_to);
+	cout<<"a中第一组连续4个与5奇偶性相同的子序列位于第"
+		<<loc-a<<"位"<<endl;
+	cout<<"-------------------------"<<endl;
+
+	for(i=0;i<10;++i)
+		cout<<i<<" ";
+	cout<<endl;
+	cout<<"-------------------------"<<endl;
+	print(a,10,":a");
+	print(a3,10,":a3");
+	pair<int*,int*> p;
+	p=mismatch(a,a+10,a3);
+	cout<<"在第"<<p.first-a<<"位上a中的"<<*p.first<<"不等于a3中的"
+		<<*p.second<<endl;
+	p=mismatch(a,a+10,a3,my_equal_to);
+	cout<<"在第"<<p.first-a<<"位上a中的"<<*p.first
+		<<"的奇偶性不同于a3中的"<<*p.second<<endl;
+	bool flag=equal(a+2,a+5,a+6);
+	if(!flag)
+		cout<<"a中第2、3、4个元素与第6、7、8个元素不等"<<endl;
+	flag=equal(a+2,a+5,a+6,my_equal_to);
+	if(flag)
+		cout<<"a中第2、3、4个元素与第6、7、8个元素的奇偶性相同"<<endl;
+	flag=lexicographical_compare(a,a+10,a3,a3+10);
+	if(flag)
+		cout<<"a小于a3"<<endl;
+	flag=lexicographical_compare(a,a+10,a3,a3+10,greater<int>() );
+	if(!flag)
+		cout<<"a不大于a3"<<endl;
+	cout<<"-------------------------"<<endl;
+
+	return 0;
+}

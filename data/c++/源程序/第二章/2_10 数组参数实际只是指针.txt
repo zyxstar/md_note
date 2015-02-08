@@ -1,0 +1,36 @@
+//2.10 数组参数实际只是指针
+#include<iostream.h>
+void pass_array1(double [5]);
+void pass_array2(double []);
+void pass_array3(double *);
+int main()
+{   
+	double array[5]={1.1,2.2,3.3,4.4,5.5};
+
+	pass_array1(array);
+	    pass_array2(array);
+	pass_array3(array);
+    
+    return 0;
+} 
+void pass_array1(double a[5])
+{
+	cout<<"参数写成定长数组时输出数组元素："<<endl;
+	for(int i=0;i<sizeof(a);++i)
+		cout<<a[i]<<"    ";
+	cout<<endl;
+}
+void pass_array2(double b[])
+{
+	cout<<"参数写成变长数组时输出数组元素："<<endl;
+	for(int i=0;i<sizeof(b);++i)
+		cout<<b[i]<<"    ";
+	cout<<endl;
+}
+void pass_array3(double *p)
+{
+	cout<<"参数写成指针时输出数组元素："<<endl;
+	for(int i=0;i<sizeof(p);++i)
+		cout<<p[i]<<"    ";
+	cout<<endl;
+}

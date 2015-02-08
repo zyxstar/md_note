@@ -1,0 +1,40 @@
+//3.7 #define代替函数时的漏洞
+#include<iostream.h>
+
+#define max1(a,b)  a>b?a:b
+#define max2(a,b)  (a)>(b)?(a):(b)
+#define max3(a,b)  ((a)>(b)?(a):(b))
+
+int main()
+{   
+	int x=0;
+ 	int y=2;
+	int result;
+    
+	cout<<"正确结果："<<endl;
+	result=max1(x,y);
+	cout<<"max1(0,2):\t\t"<<result<<endl;
+
+	cout<<"错误结果："<<endl;
+	result=max1(x&&y,x||y);
+	cout<<"max1(0&&2,0||2):\t"<<result<<endl;
+
+	cout<<"正确结果："<<endl;
+	result=max2(x&&y,x||y);
+	cout<<"max2(0&&2,0||2):\t"<<result<<endl;
+
+	cout<<"错误结果："<<endl;
+	result=max2(y,x)+5;
+	cout<<"max2(2,0)+5:\t\t"<<result<<endl;
+    
+	cout<<"正确结果："<<endl;
+	result=max3(y,x)+5;
+	cout<<"max3(2,0)+5:\t\t"<<result<<endl;
+
+    cout<<"错误结果："<<endl;
+	result=max3(x,--y);
+	cout<<"max3(0,--2):\t\t"<<result<<endl;
+	cout<<"y:\t\t\t"<<y<<endl;
+	
+	return 0;
+}

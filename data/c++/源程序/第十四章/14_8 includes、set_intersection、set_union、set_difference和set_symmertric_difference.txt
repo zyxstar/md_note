@@ -1,0 +1,58 @@
+//14.8 includes、set_intersection、set_union、set_difference和set_symmertric_difference
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::includes;
+using std::set_intersection;
+using std::set_union;
+using std::set_difference;
+using std::set_symmetric_difference;
+using std::greater;
+using std::sort;
+
+void print(int* arr, int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+
+int main()
+{ 
+	int a1[]={1,2,3,5};
+	int a2[]={1,2,5,6,7,8};
+	int a[10]={0};
+	print(a1,4,":a1");
+	print(a2,6,":a2");
+	cout<<"-----------------------"<<endl;
+
+	if(!includes(a2,a2+6,a1,a1+4))
+		cout<<"数组a2不包含数组a1的全部元素"<<endl;
+	if(includes(a2,a2+6,a1,a1+2))
+		cout<<"数组a2包含数组a1的前2个元素"<<endl;
+	int*loc=set_intersection(a1,a1+4,a2,a2+6,a);
+	print(a,loc-a,":数组a1和a2的交集");
+	loc=set_union(a1,a1+4,a2,a2+6,a);
+	print(a,loc-a,":数组a1和a2的并集");
+	loc=set_difference(a1,a1+4,a2,a2+6,a);
+	print(a,loc-a,":数组a1和a2的差集");
+	loc=set_symmetric_difference(a1,a1+4,a2,a2+6,a);
+	print(a,loc-a,":数组a1和a2的对称差集");
+	cout<<"-------------------------------------------"<<endl;
+
+	sort(a1,a1+4,greater<int>());
+	sort(a2,a2+6,greater<int>());
+	print(a1,4,":a1");
+	print(a2,6,":a2");
+	cout<<"-----------------------"<<endl;
+	if(!includes(a2,a2+6,a1,a1+4,greater<int>()))
+		cout<<"数组a2不包含数组a1的全部元素"<<endl;
+	loc=set_intersection(a1,a1+4,a2,a2+6,a,greater<int>());
+	print(a,loc-a,":数组a1和a2的交集");
+	cout<<"-------------------------------------------"<<endl;
+
+	return 0;
+}

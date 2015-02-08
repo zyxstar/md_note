@@ -1,0 +1,57 @@
+//5.1 友元全局函数
+#include<iostream>
+
+using std::cout;
+using std::endl;
+
+int gcd(int a,int b)//求两个整数的最大公约数
+{
+	while(b!=0)
+	{
+		    int t=a;
+		a=b;
+		b=t%b;
+	}
+	return a;
+}
+
+class Fraction
+{
+	friend void output(const Fraction&);//友元函数
+	friend Fraction plus(const Fraction&,const Fraction&);//友元函数
+public:
+	Fraction(int m=0,int d=1)
+	{
+		molecular=m;
+		denominator=d?d:1;
+	}
+private:
+	int molecular;//分子
+	int denominator;//分母
+};
+
+void output(const Fraction& fraction)
+{
+	if(fraction.molecular*1.0/fraction.denominator<0)
+		cout<<"-";
+	cout<<abs(fraction.molecular);
+	if(fraction.molecular!=0&&fraction.denominator!=1)
+		cout<<"/"<<abs(fraction.denominator);
+}
+Fraction plus(const Fraction& a,const Fraction& b)
+{
+	int m=a.molecular*b.denominator+b.molecular*a.denominator;
+	int d=a.denominator*b.denominator;
+	int t=gcd(m,d);
+	Fraction tmp;
+	tmp.molecular=m/t;
+	tmp.denominator=d/t;
+	return tmp;
+}
+
+int main()
+{
+	Fraction a(2,3),b(-4,3);
+	output(plus(a,b));
+	return 0;
+}

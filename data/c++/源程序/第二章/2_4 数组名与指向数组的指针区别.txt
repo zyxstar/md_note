@@ -1,0 +1,19 @@
+//2.4 数组名与指向数组的指针区别
+#include <iostream.h>
+int main()
+{ 
+    int a[5]={65,66,67};
+	int *p=a;
+	
+	cout<<"a:\t"<<a<<endl;
+	cout<<"p:\t"<<p<<endl;
+	cout<<"&a:\t"<<&a<<endl;
+	cout<<"&p:\t"<<&p<<endl;
+	
+	cout<<"sizeof a:\t"<<sizeof a<<endl;
+    cout<<"sizeof p:\t"<<sizeof p<<endl;
+	
+    cout<<"++p:\t"<<++p<<endl;
+	//++a;错误a不能作左值
+	return 0;
+}

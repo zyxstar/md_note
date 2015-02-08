@@ -1,0 +1,36 @@
+//11.4 字符串的查找
+#include<iostream>
+#include<string>
+using std::cout;
+using std::endl;
+using std::string;
+
+int main()
+{
+	string str("abcddcbae");
+	
+	cout<<"str.find('d')="<<str.find('d')<<endl;
+	cout<<"str.find('d',4)="<<str.find('d',4)<<endl;
+	cout<<"str.find(\"cdd\")="<<str.find("cdd")<<endl;
+	if(str.find("cdd",6)==str.npos)
+		cout<<"str.find(\"cdd\")没找到cdd"<<endl;
+	cout<<"---------------------------"<<endl;
+	
+	cout<<"str.rfind('d')="<<str.rfind('d')<<endl;
+	cout<<"str.rfind(\"ae\")="<<str.rfind("ae")<<endl;
+	if(str.rfind("ea")==str.npos)
+	cout<<"str.rfind(\"ea\")没找到ea"<<endl;
+	cout<<"---------------------------"<<endl;
+
+	cout<<"str.find_first_of(\"dcb\")="
+		<<str.find_first_of("dcb")<<endl;
+	cout<<"str.find_last_of(\"dcb\")="
+		<<str.find_last_of("dcb")<<endl;
+	cout<<"str.find_first_not_of(\"dcb\")="
+		<<str.find_first_not_of("dcb")<<endl;
+	cout<<"str.find_last_not_of(\"dcb\")="
+		<<str.find_last_not_of("dcb")<<endl;
+	cout<<"---------------------------"<<endl;	
+
+	return 0;
+}

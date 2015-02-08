@@ -1,0 +1,32 @@
+//4.5 成员函数的实现
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	void f1()
+	{
+		    cout<<"f1是内联函数（隐式的）。"<<endl;
+	}
+	void f2();
+	void f3();
+};
+void A::f2()
+{
+	cout<<"f2不是内联函数。"<<endl;
+}
+inline void A::f3()
+{
+	cout<<"f3是内联函数（显式的）。"<<endl;
+}
+
+int main()
+{
+   A a;
+   a.f1();
+   a.f2();
+   a.f3();
+   return 0;
+}

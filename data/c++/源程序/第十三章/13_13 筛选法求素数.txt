@@ -1,0 +1,38 @@
+//13.13 筛选法求素数
+ #include<iostream>
+ #include<bitset>
+ #include<cmath>
+ using std::cout;
+ using std::endl;
+ using std::bitset;
+ 
+ template<size_t N>
+ void prime()
+ {
+ 	bitset<N> b;
+ 	if(N<2)
+ 		return;
+ 	b.set(0);
+ 	b.set(1);
+ 	size_t i;
+ 	for(i=2;i<=sqrt(N);++i)
+ 		if(!b.test(i))
+ 			for(size_t j=2*i;j<N;j+=i)
+ 				b.set(j);
+ 
+ 	int j=1;
+ 	for(i=2;i<N;++i)
+ 		if(!b.test(i))
+ 		{	
+ 			cout<<i<<" ";
+ 			if(j++%5==0)
+ 				cout<<endl;
+ 		}
+ 	cout<<endl;
+ }
+ 
+ int main()
+ { 
+ 	prime<256>();	
+ 	return 0;
+ }

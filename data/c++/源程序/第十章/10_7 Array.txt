@@ -1,0 +1,117 @@
+//10.7 Array
+#include<iostream>
+using std::cout;
+using std::endl;
+using std::out_of_range;
+
+template<class T>
+class Array
+{
+public:	
+   explicit Array(size_t s=0):size(s)//构造函数建立数组
+   {
+		ptr=new T[size];
+	}
+	Array(const Array<T> &);//拷贝构造函数
+	~Array()
+	{
+		delete []ptr;
+	}
+	Array<T> & operator=(const Array<T> &);//赋值函数
+	size_t get_size()const
+	{
+		return size;
+	}
+	T& operator[](size_t index) 
+	{
+		if(index>=size)
+			throw out_of_range("数组下标越界");
+		return ptr[index];
+	}
+	const T& operator[](size_t index)const 
+	{
+		if(index>=size)
+			throw out_of_range("数组下标越界");
+		return ptr[index];
+	}
+private:
+	size_t size;
+	T *ptr;//动态内存的指针
+};
+
+template<class T>
+Array<T>::Array(const Array<T> &other)
+{
+	size=other.size;
+	ptr=new T[size];
+	for(size_t i=0;i<size;++i)
+		ptr[i]=other.ptr[i];
+}
+template<class T>
+Array<T>& Array<T>::operator=(const Array<T> &other)
+{
+	if(this!=&other)
+	{
+		delete []ptr;
+		size=other.size;
+	    ptr=new T[size];
+	    for(size_t i=0;i<size;++i)
+		    ptr[i]=other.ptr[i];
+	}
+	return *this;
+}
+
+template <class T>
+void print(const Array<T>& arr)
+{
+	if(arr.get_size()==0)
+	{
+		cout<<"空数组"<<endl;
+		return;
+	}
+	for(size_t i=0;i<arr.get_size();++i)
+		cout<<arr[i]<<"  ";
+	cout<<endl;
+}
+
+int main()
+{
+	Array<int> int_arr1(3);
+	Array<double> double_arr1(6);
+
+	for(size_t i=0;i<int_arr1.get_size();++i)
+	{
+		int_arr1[i]=i+1;
+		double_arr1[i]=(i+1)*1.1;
+		double_arr1[i+3]=(i+1)*1.1+3.3;
+	}
+	print(int_arr1);
+	print(double_arr1);	
+	cout<<"-----------------"<<endl;
+
+	const Array<int> int_arr2(int_arr1);
+	print(int_arr2);
+	Array<int> int_arr3;
+	print(int_arr3);
+	int_arr3=int_arr2;
+	print(int_arr3);
+    cout<<"-----------------"<<endl;
+
+	//Array<char> char_arr1(int_arr1);编译错误
+	//double_arr1=int_arr1;编译错误
+	cout<<"int_arr1的类型："<<typeid(int_arr1).name()<<endl;
+	cout<<"double_arr1的类型："<<typeid(double_arr1).name()<<endl;
+	cout<<"-----------------"<<endl;
+
+	try
+	{
+		cout<<int_arr1[100];
+	}
+	catch(out_of_range e)
+	{
+		cout<<e.what()<<endl;
+	}
+	cout<<"-----------------"<<endl;
+
+   return 0;
+}

@@ -1,0 +1,14 @@
+//2.15 改进求第ｎ项Fibonacci数列的值
+#include <iostream.h>
+unsigned Fibonacci(unsigned n,unsigned a,unsigned b);
+int main()
+{ 
+	cout<<"Fibonacci(5)="<<Fibonacci(5,0,1)<<endl;  
+	cout<<"Fibonacci(40)="<<Fibonacci(40,0,1)<<endl;
+	return 0;
+}
+unsigned Fibonacci(unsigned n,unsigned a,unsigned b)
+{
+	if(n==0) return a;
+	return Fibonacci(n-1,b,a+b);
+}

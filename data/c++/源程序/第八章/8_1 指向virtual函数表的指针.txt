@@ -1,0 +1,58 @@
+//8.1 指向virtual函数表的指针
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+	int x;
+    virtual void f1()
+	{}
+    virtual void f2(int)
+	{}
+};
+class B:public A
+{
+	int y;
+};
+class C:public B
+{
+	int z;
+public:
+    virtual int f3()
+	{
+		return 0;
+	}
+};
+
+int main()
+{
+	A a;
+	B b;
+	C c;
+	cout<<"sizeof(a)="<<sizeof(a)<<endl;
+	cout<<"sizeof(b)="<<sizeof(b)<<endl;
+	cout<<"sizeof(c)="<<sizeof(c)<<endl;
+	cout<<"---------------"<<endl;
+
+	cout<<"&a="<<&a<<endl;
+	cout<<"&a.x="<<&a.x<<endl;
+	cout<<"&b="<<&b<<endl;
+	cout<<"&b.x="<<&b.x<<endl;
+	cout<<"&c="<<&c<<endl;
+	cout<<"&c.x="<<&c.x<<endl;
+	cout<<"---------------"<<endl;
+
+	A a1;
+	B b1;
+	C c1;
+	cout<<"A类型virtual函数表的地址："<<*((void **)&a)<<endl;
+	cout<<"A类型virtual函数表的地址："<<*((void **)&a1)<<endl;
+	cout<<"B类型virtual函数表的地址："<<*((void **)&b)<<endl;
+	cout<<"B类型virtual函数表的地址："<<*((void **)&b1)<<endl;
+	cout<<"C类型virtual函数表的地址："<<*((void **)&c)<<endl;
+	cout<<"C类型virtual函数表的地址："<<*((void **)&c1)<<endl;
+	cout<<"---------------"<<endl;
+
+	return 0;
+}

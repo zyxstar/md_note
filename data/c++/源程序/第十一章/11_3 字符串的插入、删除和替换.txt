@@ -1,0 +1,38 @@
+//11.3 ×Ö·û´®µÄ²åÈë¡¢É¾³ıºÍÌæ»»
+#include<iostream>
+#include<string>
+using std::cout;
+using std::endl;
+using std::string;
+
+int main()
+{
+	string str1(4,'a'),str2;
+
+	str2.assign(str1);
+	cout<<"str2="<<str2<<endl;
+	str2.append("bbbb");
+	cout<<"str2="<<str2<<endl;
+
+	str2.insert(6,str1);
+	cout<<"str2="<<str2<<endl;
+	str1.insert(1,str2,4,8);
+	cout<<"str1="<<str1<<endl;
+	cout<<"-------------------"<<endl;
+
+	str1.erase(7,2);
+	cout<<"str1="<<str1<<endl;
+	str1.erase(3);
+	cout<<"str1="<<str1<<endl;
+	str1.erase();
+	cout<<"str1="<<str1<<endl;
+	cout<<"-------------------"<<endl;
+
+	str2.replace(4,2,"ccc");
+	cout<<"str2="<<str2<<endl;
+	str2.replace(4,3,4,'d');
+	cout<<"str2="<<str2<<endl;
+	cout<<"-------------------"<<endl;
+
+	return 0;
+}

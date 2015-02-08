@@ -1,0 +1,40 @@
+//8.10 多继承结构中使用virtual析构函数
+#include<iostream>
+using std::cout;
+using std::endl;
+class A1
+{
+public:
+	virtual ~A1()
+	{
+		cout<<"~A1()被执行"<<endl;
+ 	}
+};
+class A2
+{
+public:
+	virtual ~A2()
+	{
+		cout<<"~A2()被执行"<<endl;
+	}
+};
+class B:public A1,public A2
+{
+public:
+	~B()
+	{
+		cout<<"~B()被执行"<<endl;
+	}
+};
+
+int main()
+{
+	A1* p1=new B;
+	delete p1;
+	cout<<"-------------"<<endl;
+	A2* p2=new B;
+	delete p2;	
+	cout<<"-------------"<<endl;
+
+	return 0;
+}

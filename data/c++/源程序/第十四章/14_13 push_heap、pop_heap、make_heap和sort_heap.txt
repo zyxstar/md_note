@@ -1,0 +1,64 @@
+//14.13 push_heap¡¢pop_heap¡¢make_heapºÍsort_heap
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::push_heap;
+using std::pop_heap;
+using std::make_heap;
+using std::sort_heap;
+using std::greater;
+
+void print(const int * arr,int len,int loc,const char* str)
+{
+	cout<<str;
+	for(int i=0;i<len;++i)
+	{
+		cout<<arr[i];
+		if(i==loc)
+			cout<<"|";
+		else
+			cout<<" ";
+	}
+	cout<<endl;
+}
+
+int main()
+{ 
+	int a1[]={1,8,4,5,6,0,7,9,3,2};
+	int a2[]={1,8,4,5,6,0,7,9,3,2};
+	int a3[]={1,8,4,5,6,0,7,9,3,2};
+	int i;
+	print(a1,10,0,"a1:");
+	for(i=1;i<10;++i)
+	{
+		push_heap(a1,a1+i+1);
+		print(a1,10,i,"a1:");
+	}
+	cout<<"---------------------------------------------"<<endl;
+
+	print(a1,10,9,"a1:");
+	for(i=10;i>1;--i)
+	{
+		pop_heap(a1,a1+i);
+		print(a1,10,i-2,"a1:");
+	}
+	cout<<"---------------------------------------------"<<endl;
+
+	print(a2,10,0,"a2:");
+    make_heap(a2,a2+10);
+	print(a2,10,9,"a2:");
+	sort_heap(a2,a2+10);
+	print(a2,10,0,"a2:");
+	cout<<"---------------------------------------------"<<endl;
+
+	print(a3,10,0,"a3:");
+    make_heap(a3,a3+10,greater<int>());
+	print(a3,10,9,"a3:");
+	sort_heap(a3,a3+10,greater<int>());
+	print(a3,10,0,"a3:");
+	cout<<"---------------------------------------------"<<endl;
+
+	return 0;
+}

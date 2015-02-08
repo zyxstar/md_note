@@ -1,0 +1,32 @@
+//4.22 mutable成员变量
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+	mutable int x;
+public:
+	mutable int y;
+	    A()
+	{
+		x=y=0;
+	}
+	void set_x(int x1)const
+	{
+		x=x1;
+	}
+	void print()const
+	{
+		cout<<"x="<<x<<",y="<<y<<endl;
+	}
+};
+int main()
+{
+	const A a;
+	a.print();
+	a.y=1;
+	a.set_x(1);
+	a.print();
+	return 0;
+}

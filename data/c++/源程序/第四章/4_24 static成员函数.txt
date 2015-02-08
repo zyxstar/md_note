@@ -1,0 +1,45 @@
+//4.24 static成员函数
+#include<iostream>
+#include<cstring>
+using std::cout;
+using std::endl;
+
+class Student
+{
+	char name[10];
+	static int count;//私有的static成员变量
+public:	
+	Student(const char* n)
+	{
+		strcpy(name,n);
+		cout<<name<<"被构造"<<endl;
+		++count;
+	}
+	~Student()
+	{
+		cout<<name<<"被析构"<<endl;
+		--count;
+	}
+	static int get_count()
+	{
+		return count;
+	}
+};
+int Student::count=0;//全局域初始
+
+int main()
+{
+	cout<<"Student::get_count()返回"<<Student::get_count()<<endl;
+	{
+		Student Y("姚明");
+		cout<<"Student::get_count()返回"<<Student::get_count()<<endl;
+		cout<<"Y.get_count()返回"<<Y.get_count()<<endl;
+
+		Student L("刘翔");
+		cout<<"Student::get_count()返回"<<Student::get_count()<<endl;
+		cout<<"Y.get_count()返回"<<Y.get_count()<<endl;
+		cout<<"L.get_count()返回"<<L.get_count()<<endl;		
+	}
+	cout<<"Student::get_count()返回"<<Student::get_count()<<endl;
+	return 0;
+}

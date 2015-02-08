@@ -1,0 +1,20 @@
+//3.6 函数重载错误--数据类型隐式转换
+#include<iostream.h>
+void f(int);
+void f(float);
+int main()
+{   
+	f(1);//正确，提供int型参数调用第一个f
+    f(1.1f);//正确，提供float型参数调用第二个f
+	//f(1.1);错误，提供double型参数，模棱两可的函数调用
+	return 0;
+}
+void f(int a)
+{
+	cout<<"调用int型参数函数,int型参数a="<<a<<endl;
+}
+void f(float a)
+{
+	cout<<"调用float型参数函数,float型参数a="<<a<<endl;
+}
+

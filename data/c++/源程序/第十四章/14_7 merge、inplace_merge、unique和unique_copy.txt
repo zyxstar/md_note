@@ -1,0 +1,82 @@
+//14.7 merge、inplace_merge、unique和unique_copy
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::merge;
+using std::inplace_merge;
+using std::unique;
+using std::unique_copy;
+using std::greater;
+using std::sort;
+
+void print(int* arr, int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+bool my_equal_to(int a,int b)
+{
+	return a%2==b%2;
+}
+
+int main()
+{ 
+	int a[11];
+	int a1[]={1,3,5,7,9};
+    int a2[]={2,4,6,7,8,9};
+	int a3[]={1,3,5,7,9,2,4,6,7,8,9};
+	int a4[]={9,7,5,3,1,9,8,7,6,4,2};
+	int a5[]={2,4,6,7};
+	int a6[]={2,3,5,8};
+    print(a1,5,":a1");
+	print(a2,6,":a2");
+
+	merge(a1,a1+5,a2,a2+6,a);
+	print(a,11,":a");
+	inplace_merge(a3,a3+5,a3+11);
+	print(a3,11,":a3");
+	cout<<"----------------------"<<endl;
+
+	sort(a1,a1+5,greater<int>());
+	sort(a2,a2+6,greater<int>());
+	print(a1,5,":a1");
+	print(a2,6,":a2");
+	merge(a1,a1+5,a2,a2+6,a,greater<int>());
+	print(a,11,":a");
+	inplace_merge(a4,a4+5,a4+11,greater<int>());
+	print(a4,11,":a4");
+	cout<<"----------------------"<<endl;
+
+	sort(a,a+11);
+	print(a,11,":a");
+	int* loc=unique(a,a+11);
+	print(a,loc-a,":a中从位置a到位置loc间的元素");
+	print(a,11,":a");
+	cout<<"----------------------"<<endl;
+
+	print(a3,11,":a3");
+	print(a4,11,":a4");
+	loc=unique_copy(a3,a3+11,a4);
+	print(a4,loc-a4,":a4中从位置a4到位置loc间的元素");
+	print(a4,11,":a4");
+	cout<<"----------------------"<<endl;
+
+	print(a5,4,":a5");
+	loc=unique(a5,a5+4,my_equal_to);
+	print(a5,loc-a5,":a5中从位置a5到位置loc间的元素");
+	print(a5,4,":a5");
+	cout<<"----------------------"<<endl;
+
+	print(a5,4,":a5");
+	print(a6,4,":a6");
+	loc=unique_copy(a6,a6+4,a5,my_equal_to);
+	print(a5,loc-a5,":a5中从位置a5到位置loc间的元素");
+	print(a5,4,":a5");
+	cout<<"----------------------"<<endl;
+
+	return 0;
+}

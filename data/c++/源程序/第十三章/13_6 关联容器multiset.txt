@@ -1,0 +1,83 @@
+//13.6 关联容器multiset
+#include<iostream>
+#include<algorithm>
+#include<iterator>
+#include<set>
+using std::cout;
+using std::endl;
+using std::multiset;
+using std::ostream_iterator;
+using std::copy;
+using std::pair;
+
+template<class T>
+void print_set(const T& s,const char* str)
+{
+	ostream_iterator<T::value_type> out(cout," ");
+	cout<<str;
+	copy(s.begin(),s.end(),out);
+	cout<<endl;
+}
+
+int main()
+{ 	
+	typedef multiset<int> MSI;
+	MSI s;
+	s.insert(4);
+	s.insert(4);
+	s.insert(2);
+	s.insert(0);
+	s.insert(2);
+	s.insert(7);
+	s.insert(4);
+	print_set(s,"s:");
+	cout<<"------------------------"<<endl;
+
+	cout<<"s.count(4)="<<s.count(4)<<endl;
+	cout<<"s.count(1)="<<s.count(7)<<endl;
+	cout<<"-------------------"<<endl;
+
+	MSI::const_iterator p=s.find(4);
+	cout<<"p=s.find(4)"<<endl;
+	cout<<"*p="<<*p<<endl;
+	cout<<"*(--p)="<<*(--p)<<endl;
+	cout<<"-------------------"<<endl;
+	cout<<"p=s.find(1)"<<endl;
+	p=s.find(1);
+	if(p==s.end())
+	    cout<<"s中不存在1"<<endl;
+	cout<<"-------------------"<<endl;
+
+    cout<<"p=s.lower_bound(4)"<<endl;
+	p=s.lower_bound(4);
+	cout<<"*p="<<*p<<endl;
+	cout<<"*(--p)="<<*(--p)<<endl;
+	cout<<"-------------------"<<endl;
+
+	cout<<"p=s.lower_bound(1)"<<endl;
+	p=s.lower_bound(1);
+	cout<<"*p="<<*p<<endl;
+	cout<<"*(--p)="<<*(--p)<<endl;
+	cout<<"-------------------"<<endl;
+
+	cout<<"p=s.upper_bound(4)"<<endl;
+	p=s.upper_bound(4);
+	cout<<"*p="<<*p<<endl;
+	cout<<"*(--p)="<<*(--p)<<endl;
+	cout<<"-------------------"<<endl;
+
+	cout<<"p=s.upper_bound(1)"<<endl;
+	p=s.upper_bound(1);
+	cout<<"*p="<<*p<<endl;
+	cout<<"*(--p)="<<*(--p)<<endl;
+	cout<<"-------------------"<<endl;
+	
+	pair<MSI::const_iterator,MSI::const_iterator> pa;
+	cout<<"pa=s.equal_range(4)"<<endl;
+	pa=s.equal_range(4);
+	cout<<"*(pa.first)="<<*(pa.first)<<endl;
+	cout<<"*(pa.second)="<<*(pa.second)<<endl;
+	cout<<"-------------------"<<endl;
+
+	return 0;
+}

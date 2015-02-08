@@ -1,0 +1,46 @@
+//4.11 默认构造函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{};
+class B
+{
+public :
+ 	B()
+	{
+		cout<<"B类对象被构造"<<endl;
+	}
+};
+class C
+{
+public :
+	C(int i=0,int j=1)
+	{
+		cout<<"C类对象被构造，参数i="<<i<<"，参数j="<<j<<endl;
+	}
+};
+class D
+{
+public:
+	D(int i)
+	{
+       cout<<"D类对象被构造，参数i="<<i<<endl;
+	}
+};
+
+int main()
+{
+	A  a;
+	B  b;
+	C  c1;
+	C  c2(10,100);
+	//D d;编译错误
+    D d(1);
+	cout<<endl;
+
+	//D arr_d[4];编译错误
+	C arr_c[4];
+	return 0;
+}

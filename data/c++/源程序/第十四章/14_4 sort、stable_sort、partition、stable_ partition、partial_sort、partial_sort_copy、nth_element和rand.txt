@@ -1,0 +1,92 @@
+//14.4 sort、stable_sort、partition、stable_ partition、
+//partial_sort、partial_sort_copy、nth_element才random_shaffle
+#include<iostream>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::sort;
+using std::stable_sort;
+using std::partition;
+using std::stable_partition;
+using std::partial_sort;
+using std::partial_sort_copy;
+using std::nth_element;
+using std::random_shuffle;
+
+void print(int* arr, int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+bool my_less(int a,int b)
+{
+	return a/10<b/10;
+}
+
+bool is_even(int n)
+{
+	return n%2==0;
+}
+
+int main()
+{ 
+	int a[]={11,12,23,24,35,36,47,58,59,50};
+    random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	nth_element(a,a+3,a+10);
+	print(a,10,":nth_element(a,a+3,a+10)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	partition(a,a+10,is_even);
+	print(a,10,":partition(a,a+10,is_even)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	stable_partition(a,a+10,is_even);
+	print(a,10,":stable_partition(a,a+10,is_even)");
+	cout<<"---------------------------------"<<endl;
+		
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	partial_sort(a,a+4,a+10);
+	print(a,10,":partial_sort(a,a+4,a+10)");
+	cout<<"---------------------------------"<<endl;
+
+	int a1[4];
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	partial_sort_copy(a,a+10,a1,a1+4);
+	print(a1,4,":partial_sort_copy(a,a+10,a1,a1+4)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	sort(a,a+10);
+	print(a,10,":sort(a,a+10)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	stable_sort(a,a+10);
+	print(a,10,":stable_sort(a,a+10)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	sort(a,a+10,my_less);
+	print(a,10,":sort(a,a+10,my_less)");
+	cout<<"---------------------------------"<<endl;
+
+	random_shuffle(a,a+10);
+	print(a,10,":random_shuffle(a,a+10)");
+	stable_sort(a,a+10,my_less);
+	print(a,10,":stable_sort(a,a+10,my_less)");
+	cout<<"---------------------------------"<<endl;
+
+	return 0;
+}

@@ -1,0 +1,40 @@
+//13.7 ¹ØÁªÈÝÆ÷map
+#include<iostream>
+#include<fstream>
+#include<sstream>
+#include<map>
+#include<string>
+using std::cout;
+using std::endl;
+using std::map;
+using std::string;
+using std::ifstream;
+using std::stringstream;
+
+template <class T>
+void print_map(const T& m)
+{
+	T::const_iterator p=m.begin();
+	for(;p!=m.end();++p)
+		cout<<(p->first)<<":"<<(p->second)<<endl;
+}
+
+int main()
+{ 
+	ifstream in("c:\\tongue.txt");
+	stringstream ss;
+	char c;
+	while((c=in.get())!=-1)
+	{
+		if(!(c>='A'&&c<='Z'||c>='a'&&c<='z'))
+			c=' ';
+		ss.put(c);
+	}
+	string word;
+	map<string,int> words;
+	while(ss>>word)
+		++words[word];
+	print_map(words);
+
+	return 0;
+}

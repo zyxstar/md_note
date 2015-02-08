@@ -1,0 +1,68 @@
+//7.8 继承结构中成员变量的隐藏
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+	int x;
+	int y;
+	char z;
+	    int w;
+	A():x(0),y(0),z(0),w(0)
+	{}
+};
+class B:public A
+{
+public:
+	int x;
+private:
+	int y;
+public:
+	double z;
+	const int w;
+	B():A(),x(0),y(0),z(0),w(0)
+	{}
+	void set_x(int x1,int x2)
+	{
+        A::x=x1;
+		x=x2;
+	}
+};
+
+int main()
+{
+	B b;
+	b.set_x(1,2);
+	cout<<"b.A::x="<<b.A::x<<endl;
+	cout<<"b.x="<<b.x<<endl;
+	//b.y=1;编译错误
+	b.z='A';
+	//b.w=1;编译错误
+	cout<<"b.z="<<b.z<<endl;
+	cout<<"-------------"<<endl;
+
+	A* p=&b;
+	p->x=10;
+	p->y=11;
+	p->z='A';
+	p->w=12;
+	cout<<"p->x="<<p->x<<endl;
+	cout<<"p->y="<<p->y<<endl;
+	cout<<"p->z="<<p->z<<endl;
+	cout<<"p->w="<<p->w<<endl;
+	cout<<"-------------"<<endl;
+
+	A& r=b;
+	r.x=100;
+	r.y=101;
+	r.z='Z';
+	r.w=102;
+	cout<<"r.x="<<r.x<<endl;
+	cout<<"r.y="<<r.y<<endl;
+	cout<<"r.z="<<r.z<<endl;
+	cout<<"r.w="<<r.w<<endl;
+	cout<<"-------------"<<endl;
+
+	return 0;	 
+}

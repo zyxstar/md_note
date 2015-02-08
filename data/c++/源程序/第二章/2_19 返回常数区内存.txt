@@ -1,0 +1,13 @@
+//2.19  返回常数区内存
+#include <iostream.h>
+char* return_str();
+int main()
+{ 
+    cout<<return_str();
+	return 0;
+}
+char* return_str()
+{
+ 	char *p="hello";
+	return p;
+}

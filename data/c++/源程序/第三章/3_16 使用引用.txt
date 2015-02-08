@@ -1,0 +1,26 @@
+//3.16 使用引用
+#include<iostream>
+using std::cout;
+using std::endl;
+int main()
+{
+	int a=0;
+	int &b=a;//b是a的引用
+	const int &c=a;//c是a的常引用
+
+	    cout<<"a="<<a<<endl;
+	cout<<"b="<<b<<endl;
+	cout<<"c="<<c<<endl;
+
+    cout<<"&a="<<&a<<endl;
+	cout<<"&b="<<&b<<endl;
+	cout<<"&c="<<&c<<endl;
+
+	b=1;
+	//c=1;常引用不能作左值
+
+    cout<<"a="<<a<<endl;
+	cout<<"b="<<b<<endl;
+	cout<<"c="<<c<<endl;
+	return 0;
+}

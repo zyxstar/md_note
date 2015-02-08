@@ -1,0 +1,27 @@
+//9.7 标准异常类的使用
+#include<iostream>
+#include<stdexcept>
+using std::cout;
+using std::endl;
+using std::out_of_range;
+
+void f(const int * p,int index,int len)
+{
+	if(index>=0&&index<len)
+		    cout<<"数组的第"<<index<<"元素是："<<p[index]<<endl;
+	else
+		throw out_of_range("数组下表越界");
+}
+int main()
+{
+	int a[5]={1,2,3,4,5};
+	try
+	{
+		f(a,100,5);
+	}
+	catch (out_of_range& e)
+	{
+		cout<<e.what()<<endl;
+	}
+	return 0;	
+}

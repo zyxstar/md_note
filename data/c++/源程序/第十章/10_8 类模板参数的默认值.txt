@@ -1,0 +1,28 @@
+//10.8 类模板参数的默认值
+#include<iostream>
+using std::cout;
+using std::endl;
+
+//void f(int a=0,int b=a);编译错误
+template<class>
+class A
+{};
+template <class P1=int,int P2=100,template<class>class P3=A,
+        class P4=P1,class P5=P3<P4>  >
+class B
+{
+public:
+	static void f()
+	{
+		cout<<"P1是："<<typeid(P1).name()<<endl;
+		cout<<"P2="<<P2<<endl;
+		cout<<"P3是："<<typeid(P3).name()<<endl;
+		cout<<"P4是："<<typeid(P4).name()<<endl;
+		cout<<"P5是："<<typeid(P5).name()<<endl;
+	}
+};
+int main()
+{
+	B<>::f();
+	return 0;
+}

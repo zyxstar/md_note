@@ -1,0 +1,70 @@
+//4.19 圆类复合点类
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Point
+{
+public:
+	Point(double x1,double y1)
+	{
+		    set(x1,y1);
+	}
+	void set(double x1,double y1)
+	{
+		x=x1;
+		y=y1;
+	}
+	void print()
+	{
+		cout<<"["<<x<<","<<y<<"]"<<endl;
+	}
+private:
+	double x,y;
+};
+
+class Circle
+{
+public:
+	/*错误的做法
+	Circle(double x1,double y1,double r1)
+	{
+		center.set(x1,y1);
+		radius=r1;
+	}
+	*/
+	//正确的做法
+	Circle(double x1,double y1,double r1)
+		:center(x1,y1)//显式调用Point类的构造函数
+	{
+		radius=r1;
+	}
+	Circle(Point p1,double r1)
+		:center(p1)//显式调用Point类的拷贝构造函数
+	{
+		radius=r1;
+	}
+	void print()
+	{
+		cout<<"圆心：";
+		center.print();
+		cout<<"半径："<<radius<<endl;
+	}
+private:
+	Point center;
+	double radius;
+};
+
+int main()
+{
+	Circle c1(1.1,2.2,3.3);
+	cout<<"c1"<<endl;
+	c1.print();
+
+	Point p(4.4,5.5);
+	Circle c2(p,6.6);
+	cout<<"c2"<<endl;
+	c2.print();
+
+    return 0;
+}

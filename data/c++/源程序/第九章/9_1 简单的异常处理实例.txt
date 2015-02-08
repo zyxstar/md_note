@@ -1,0 +1,33 @@
+//9.1 简单的异常处理实例
+#include<iostream>
+using std::cout;
+using std::cin;
+using std::endl;
+
+double f(double a,double b)
+{
+	if(b==0)
+		throw a;
+	    else
+		return a/b;
+}
+
+int main()
+{
+	try
+	{
+		while(1)
+		{
+			cout<<"输入被除数和除数："<<endl;
+		    double a,b;
+		    cin>>a>>b;
+		    cout<<"结果为："<<f(a,b)<<endl;
+		 }
+	}
+	catch (double e)
+	{
+		cout<<e<<"为被除数时，0不能作为除数"<<endl;
+	}	
+	cout<<"异常处理之后"<<endl;
+    return 0;
+}

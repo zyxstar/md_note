@@ -1,0 +1,20 @@
+//3.2 bool¿‡–Õ
+#include<iostream.h>
+int main()
+{   
+    bool b[5]={0,1,false,true};
+
+	for(int i=0;i<5;++i)
+		cout<<"b["<<i<<"]="<<b[i]<<"  ";
+	cout<<endl;
+	
+	    cout<<"sizeof bool:\t"<<sizeof bool<<endl;
+	cout<<"sizeof b:\t"<<sizeof b<<endl;
+    
+	b[0]=100;
+	cout<<"b[0]="<<b[0]<<endl;
+
+	cout<<"(bool)100+9:\t"<<(bool)100+9<<endl;
+	return 0;
+}
+ 

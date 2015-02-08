@@ -1,0 +1,42 @@
+//9.6 调用异常对象的virtual函数
+ #include<iostream>
+ using std::cout;
+ using std::endl;
+ 
+ class A
+ {
+ public:
+ 	virtual void f()const
+ 	{
+ 		cout<<"A::f()被执行"<<endl;
+ 	}
+ };
+ class B:public A
+ {
+ public:
+ 	virtual void f()const
+ 	{
+ 		cout<<"B::f()被执行"<<endl;
+ 	}
+ };
+ 
+ int main()
+ {
+ 	try
+ 	{
+ 		throw B();
+ 	}
+ 	catch (A a)
+ 	{
+ 		a.f();
+ 	}
+ 	try
+ 	{
+ 		throw B();
+ 	}
+ 	catch (A& a)
+ 	{
+ 		a.f();
+ 	}
+ 	return 0;
+ }

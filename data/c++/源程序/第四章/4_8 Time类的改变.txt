@@ -1,0 +1,38 @@
+//4.8 Time类的改变
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Time
+{
+private:
+	int second;
+public:
+	    Time()
+	{
+		second=0;
+	}
+	void set_time(int h,int m,int s)
+	{
+		h=(h>=0&&h<=23?h:0);
+		m=(m>=0&&m<=59?m:0);
+		s=(s>=0&&s<=59?s:0);
+		second=h*3600+m*60+s;
+	}
+	void print()
+	{
+		cout<<second/3600<<"时"<<second%3600/60
+                <<"分"<<second%60<<"秒"<<endl;
+	}
+
+};
+int main()
+{
+	Time t;
+    t.print();
+    t.set_time(10,10,10);
+    t.print();
+    t.set_time(100,100,100);
+	t.print();
+    return 0;
+}

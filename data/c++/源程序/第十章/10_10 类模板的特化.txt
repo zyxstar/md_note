@@ -1,0 +1,62 @@
+//10.10 类模板的特化
+#include<iostream>
+using std::cout;
+using std::endl;
+
+template<class T,int i>
+class A
+{
+public:
+	static void f()
+	    {
+		cout<<"主模板A<T,i>"<<endl;
+	}
+};
+template<class T,int i>
+class A<T*,i>
+{
+public:
+	static void f()
+	{
+		cout<<"部分特化A<T*,i>"<<endl;
+	}
+};
+template<class T>
+class A<T,10>
+{
+public:
+	static void f()
+	{
+		cout<<"部分特化A<T,10>"<<endl;
+	}
+};
+template<int i>
+class A<char*,i>
+{
+public:
+	static void f()
+	{
+		cout<<"部分特化A<char*,i>"<<endl;
+	}
+};
+template<>
+class A<char*,20>
+{
+public:
+	static void f()
+	{
+		cout<<"完全特化A<char*,20>"<<endl;
+	}
+};
+
+int main()
+{
+	A<int,2>::f();
+	A<int*,2>::f();
+	A<int,10>::f();
+	//A<int*,10>::f();模棱两可
+	A<char*,2>::f();
+	A<char*,20>::f();
+
+	return 0;
+};

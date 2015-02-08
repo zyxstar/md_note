@@ -1,0 +1,45 @@
+//3.10 名字空间
+#include<iostream.h>
+
+int x=1;
+void f();
+
+namespace namespace1
+{
+	int x=2;
+	void f();
+}
+
+namespace namespace2
+{
+	int x=3;
+	void f();
+}
+
+int main()
+{   
+	f();
+	cout<<"  x="<<x<<endl;
+
+	namespace1::f();
+	cout<<"  x="<<namespace1::x<<endl;
+
+	namespace2::f();
+	cout<<"  x="<<namespace2::x<<endl;
+	return 0;
+}
+
+void f()
+{
+	cout<<"名字空间外";
+}
+
+void namespace1::f()
+{
+	cout<<"名字空间namespace1";
+}
+
+void namespace2::f()
+{
+	cout<<"名字空间namespace2";
+}

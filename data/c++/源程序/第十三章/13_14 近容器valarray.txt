@@ -1,0 +1,47 @@
+//13.14 ½üÈÝÆ÷valarray
+#include<iostream>
+#include<valarray>
+using std::cout;
+using std::endl;
+using std::valarray;
+using std::slice;
+using std::sin;
+
+void print_valarray(const valarray<double>& v,const char* str)
+{
+	cout.precision(2);
+	for(int i=0;i<v.size();++i)
+		cout<<v[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+
+int main()
+{ 
+	const double pi=3.14159265358979323846264;
+	double arr[]={1,2,3,4,5,6,7,8};
+	valarray<double> v(arr,8);
+	print_valarray(v,":v");
+	v*=pi/6;
+	print_valarray(v,":v*=pi/6;");
+    v=sin(v);
+	print_valarray(v,":v=sin(v)");
+	cout<<"-----------------------------------------------"<<endl;
+
+	v=valarray<double>(arr,8);
+	print_valarray(v,":v");
+	v=v.cshift(3);
+	print_valarray(v,":v=v.cshift(3)");
+	v=v.cshift(-3);
+	print_valarray(v,":v=v.cshift(-3)");
+	v=v.shift(-3);
+	print_valarray(v,":v=v.shift(-3)");
+	cout<<"-----------------------------------------------"<<endl;
+
+	v[slice(1,3,2)]+=valarray<double>(v[slice(5,3,1)]);
+	print_valarray(v,
+    ":v[slice(1,3,2)]+=valarray<double>(v[slice(5,3,1)])");
+	cout<<"-----------------------------------------------"<<endl;
+	
+	return 0;
+}

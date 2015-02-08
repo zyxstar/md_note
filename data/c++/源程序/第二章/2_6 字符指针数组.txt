@@ -1,0 +1,16 @@
+//2.6 ×Ö·ûÖ¸ÕëÊı×é
+#include <iostream.h>
+int main()
+{ 
+    char *a[4]={"up","down","left","right"};
+	char **p=a;
+	int i;
+
+	for(i=0;i<4;++i)
+	   cout<<a[i]<<endl;
+
+	for(i=0;i<4;++i)
+	   cout<<p[i]<<endl;
+	      
+	return 0;
+}

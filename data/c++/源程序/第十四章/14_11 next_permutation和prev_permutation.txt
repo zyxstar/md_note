@@ -1,0 +1,51 @@
+//14.11 next_permutation和prev_permutation
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::prev_permutation;
+using std::next_permutation;
+using std::swap;
+using std::greater;
+
+void print(const int* arr,int len)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i];
+}
+
+int main()
+{ 
+	int a[]={1,2,3};
+	int a1[]={5,6,4};
+	int a2[]={5,6,4};
+	do
+	{
+		print(a,3);
+		cout<<" ";
+	}
+	while(next_permutation(a,a+3));
+	cout<<endl;
+	swap(a[0],a[2]);
+	do
+	{
+		print(a,3);
+		cout<<" ";
+	}
+	while(prev_permutation(a,a+3));
+	cout<<endl<<"----------------------------"<<endl;
+
+	print(a1,3);
+	next_permutation(a1,a1+3);
+	cout<<"使用next_permutation(a1,a1+3)所求出的后继是";
+	print(a1,3);
+	cout<<endl;
+	print(a2,3);
+	next_permutation(a2,a2+3,greater<int>());
+	cout<<"使用next_permutation(a1,a1+3,greater<int>())所求出的后继是";
+	print(a2,3);
+	cout<<endl<<"----------------------------"<<endl;
+	
+	return 0;
+}

@@ -1,0 +1,35 @@
+//4.12 拷贝构造函数与赋值函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public :
+	A()//用于生成对象的构造函数
+	{
+		cout<<"A类普通构造函数被调用"<<endl;
+	}
+	A(const A&)//拷贝构造函数
+	{
+		cout<<"A类拷贝构造函数被调用"<<endl;
+	}
+	A& operator=(const A &) //赋值函数
+	{
+		cout<<"A类赋值函数被调用"<<endl;
+		return *this;
+	}
+};
+A f(A a)
+{
+	return a;
+}
+int main()
+{
+	A a1;//调用普通构造函数生成a1
+	A a2(a1);//调用拷贝构造函数生成a2
+	A a3=a1;//调用拷贝构造函数生成a3
+	a1=a2=a3;//调用赋值函数
+	a1=f(a2);//调用函数f
+	return 0;
+}

@@ -1,0 +1,41 @@
+//4.23 static成员变量
+#include<iostream>
+#include<cstring>
+using std::cout;
+using std::endl;
+
+class Student
+{
+	char name[10];
+public:
+ 	static int count;
+	Student(const char* n)
+	{
+		strcpy(name,n);
+		cout<<name<<"被构造"<<endl;
+		++count;
+	}
+	~Student()
+	{
+		cout<<name<<"被析构"<<endl;
+		--count;
+	}	
+};
+int Student::count=0;//全局域初始
+
+int main()
+{
+	cout<<"Student::count="<<Student::count<<endl;
+	{
+		Student Y("姚明");
+		cout<<"Student::count="<<Student::count<<endl;
+		cout<<"Y.count="<<Y.count<<endl;
+
+		Student L("刘翔");
+		cout<<"Student::count="<<Student::count<<endl;
+		cout<<"Y.count="<<Y.count<<endl;
+		cout<<"L.count="<<L.count<<endl;		
+	}
+	cout<<"Student::count="<<Student::count<<endl;
+	return 0;
+}

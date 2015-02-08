@@ -1,0 +1,360 @@
+//10.11 链表模板
+//List.h
+#ifndef LIST_H
+#define LIST_H
+
+template<class T>
+class List
+{
+public:
+	typedef T value_type;
+	typedef T* pointer;
+	typedef T& reference;
+	typedef const T& const_reference;
+private:
+   class ListNode
+	{
+	public:
+	    ListNode(const_reference t):data(t),next(0)
+		{}
+   	value_type data;
+	    ListNode* next;
+	};
+public:
+	class Iterator
+	{
+		friend class List<value_type>;//声明友元
+		friend bool operator==(const Iterator& i1,const Iterator& i2)
+		{
+			return i1.p==i2.p;
+		}
+		friend bool operator!=(const Iterator& i1,const Iterator& i2)
+		{
+			return i1.p!=i2.p;
+		}
+	public:
+		Iterator(ListNode* p1=0):p(p1)
+		{}
+		Iterator& operator++()
+		{
+			if(p)
+				p=p->next;
+			return *this;
+		}
+		Iterator operator++(int)
+		{
+			Iterator tmp=*this;
+			if(p)
+				p=p->next;
+			return tmp;
+		}
+		reference operator*()const
+		{
+			return p->data;
+		}
+		pointer operator->()const
+		{
+			return &(p->data);
+		}
+		Iterator operator+(int n)const
+		{
+			Iterator tmp=*this;
+			for(int i=0;i<n;++i)
+				++tmp;
+			return tmp;
+		}
+	private:
+		ListNode* p;
+	};
+public:
+	List()//构造函数建立空链表
+		:head(0)
+	{}
+   List(const List<T>&);//拷贝构造函数
+	~List();//析构函数
+	List<T> & operator=(const List<T> &);//赋值函数
+	bool is_empty()const//测试链表是否为空
+	{
+	    return head==0;
+	}
+   Iterator begin()const//返回链表的头
+	{
+	    return Iterator(head);
+	}
+   Iterator end()const//返回链表的尾
+	{
+	    return Iterator(0);
+	}
+	void insert(const Iterator&,const_reference);//向链表中插入元素
+	void erase(const Iterator&);//从链表中删除指定位置的元素
+	void remove(const_reference);//从链表中删除指定值的元素
+private:	
+	ListNode* head;
+}; 
+template<class T>
+List<T>::List(const List<T> & other)
+{
+	head=0;
+ 	ListNode* tmp=other.head;
+   ListNode* prenode;
+	while(tmp)
+	{
+		ListNode* newnode=new ListNode(tmp->data);
+		if(head==0)
+			head=newnode;
+		else
+			prenode->next=newnode;
+		prenode=newnode;
+		tmp=tmp->next;
+	}
+} 
+template<class T>
+List<T>::~List()
+{	
+	while(head)
+	{
+		ListNode* delnode=head;
+		head=head->next;
+		delete delnode;
+	}
+}
+ 
+template<class T>
+List<T> & List<T>::operator=(const List<T> &other)
+{
+	if(this!=&other)
+	{
+		while(head)
+		{
+		    ListNode* delnode=head;
+		    head=head->next;
+		    delete delnode;
+		}
+		ListNode* tmp=other.head;
+       ListNode* prenode;
+	    while(tmp)
+		{
+		    ListNode* newnode=new ListNode(tmp->data);
+		    if(head==0)
+			    head=newnode;
+			else
+			    prenode->next=newnode;
+			prenode=newnode;
+		    tmp=tmp->next;
+		}
+	}
+	return *this;
+} 
+template<class T>
+void List<T>::insert(const Iterator& position,const_reference t)
+{
+	ListNode* newnode=new ListNode(t);
+	if(position==head)
+	{
+		newnode->next=head;
+    	head=newnode;
+		return;
+	}
+	ListNode* pre=head;
+	while(position!=pre->next)	
+		pre=pre->next;
+	newnode->next=pre->next;
+	pre->next=newnode;
+} 
+template<class T>
+void List<T>::erase(const Iterator& position)
+{   
+	if(position==0)
+		return;
+	ListNode* delnode= position.p;
+	if(position==head)
+	{	
+    	head=head->next;
+		delete delnode;
+		return;
+	}
+	ListNode* pre=head;
+	while(position!=pre->next)	
+		pre=pre->next;
+	pre->next=pre->next->next;
+	delete delnode;
+}
+template<class T>
+void List<T>::remove(const_reference t) 
+{
+	Iterator i=begin();
+	while(i!=end())
+		if(*i==t)
+		{
+			Iterator j=i++;
+			erase(j);			
+		}
+		else
+			++i;
+} 
+#endif
+
+//Stack.h
+#ifndef STACK_H
+#define STACK_H
+#include"List.h"
+template <class T>
+class Stack:private List<T>
+{
+public:
+	using List<T>::is_empty;
+	void push(const T & value)
+	{
+		insert(begin(),value);
+	}
+	bool top(T& value)const
+	{
+		if(is_empty())
+			return 0;
+		value=*begin();
+		return 1;
+	}
+	void pop()
+	{
+		erase(begin());
+	}
+};
+#endif
+
+//Queue.h
+#ifndef QUEUE_H
+#define QUEUE_H
+#include"List.h"
+template <class T>
+class Queue
+{
+public:
+	bool is_empty()const
+	{
+		return L.is_empty();
+	}
+	void push(const T & value)
+	{
+		L.insert(L.end(),value);
+	}
+	bool top(T& value)const
+	{
+		if(L.is_empty())
+			return 0;
+		value=*L.begin();
+		return 1;
+	}
+	void pop()
+	{
+		L.erase(L.begin());
+	}
+private:
+	List<T> L;
+};
+#endif
+
+//test.cpp
+#include"Stack.h"
+#include"Queue.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+using std::ostream;
+
+template<class T>
+void print_list(const List<T>& L)
+{
+	for(List<T>::Iterator i=L.begin();i!=L.end();++i)
+	{
+		cout<<*i;
+		if((i+1)!=L.end())
+			cout<<"->";
+	}
+	cout<<endl;
+}
+class Point
+{
+	friend bool operator==(const Point& p1,const Point& p2)
+	{
+		return p1.x==p2.x&&p1.y==p2.y;
+	}
+	friend ostream& operator<<(ostream& out,const Point& p)
+	{
+		return out<<"["<<p.x<<","<<p.y<<"]";
+	}
+	double x,y;
+public:
+	Point(double x1=0,double y1=0):x(x1),y(y1)
+	{}
+	void set(double x1,double y1)
+	{
+		x=x1;
+		y=y1;
+	}
+};
+int main()
+{
+	cout<<"测试链表-----------------------------------------------------------"<<endl;
+	List<Point> pointList;
+	//测试insert
+	pointList.insert(pointList.begin(),Point(6.6,6.6));
+	pointList.insert(pointList.begin(),Point(3.3,3.3));
+	pointList.insert(pointList.begin(),Point(2.2,2.2));
+	pointList.insert(pointList.begin(),Point(5.5,5.5));
+	pointList.insert(pointList.begin()+1,Point(4.4,4.4));
+	pointList.insert(pointList.begin()+3,Point(1.1,1.1));
+	print_list(pointList);
+	
+	//测试拷贝构造函数
+	List<Point> pointList1(pointList);
+	print_list(pointList1);
+
+	//测试Iterator中的*、->
+	for(List<Point>::Iterator p=pointList1.begin();p!=pointList1.end();++p)
+	{	
+		if(*p==Point(6.6,6.6))
+			p->set(4.4,4.4);
+	}
+	print_list(pointList1);
+	
+	//测试erase
+	pointList1.erase(pointList1.begin()+4);
+	pointList1.erase(pointList1.begin());
+	print_list(pointList1);
+ 
+    //测试remove
+	pointList1.remove(Point(4.4,4.4));
+	print_list(pointList1);
+
+	//测试赋值函数
+	pointList1=pointList;
+	print_list(pointList1);
+  
+	cout<<"测试栈-------------------------------------------------------------"<<endl;
+	Stack<int> intStack;
+	for(int i=0;i<10;++i)
+		intStack.push(i);
+	int int_tmp;
+	while(intStack.top(int_tmp))
+	{
+		cout<<int_tmp<<" ";
+		intStack.pop();
+	}
+	cout<<endl;
+
+	cout<<"测试对列-----------------------------------------------------------"<<endl;
+	Queue<double> doubleQueue;
+	for(int i=0;i<5;++i)
+		doubleQueue.push((i+1)*1.1);
+	double double_tmp;
+	while(doubleQueue.top(double_tmp))
+	{
+		cout<<double_tmp<<" ";
+		doubleQueue.pop();
+	}
+	cout<<endl;
+
+	cout<<"-------------------------------------------------------------------"<<endl;
+
+	return 0;
+}

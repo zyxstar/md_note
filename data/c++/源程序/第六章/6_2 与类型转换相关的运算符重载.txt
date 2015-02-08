@@ -1,0 +1,40 @@
+//6.2 与类型转换相关的运算符重载
+#include<iostream>
+#include"Fraction.h"
+
+using std::cout;
+using std::endl;
+
+void f1(double d)
+{
+	cout<<"我的参数是double型，d="<<d<<endl;
+}
+void f2(Fraction f)
+{
+	cout<<"我的参数是Fraction型，f="<<f<<endl;
+}
+
+int main()
+{  
+   	Fraction a(1,4);
+	f1(a);
+	f2(1.5);
+
+	Fraction c;
+	c=1.5-a;
+	cout<<"c="<<c<<endl;
+
+	//c=a-1.5;编译错误
+	c=a.operator -(1.5);
+	cout<<"c="<<c<<endl;
+
+	//c=a+1.5;编译错误
+	c=a+Fraction(1.5);
+	cout<<"c="<<c<<endl;
+
+	//c=1.5+a;编译错误
+	c=double(a)+1.5;
+	cout<<"c="<<c<<endl;
+
+	return 0;
+}

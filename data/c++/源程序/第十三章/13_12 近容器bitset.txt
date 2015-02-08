@@ -1,0 +1,54 @@
+//13.12 ½üÈİÆ÷bitset
+#include<iostream>
+#include<bitset>
+#include<string>
+using std::cout;
+using std::endl;
+using std::bitset;
+using std::string;
+using std::boolalpha;
+
+int main()
+{ 
+	bitset<10> b;
+	for(int i=9;i>=0;--i)
+		cout<<i;
+	cout<<endl;
+
+	cout<<b<<":³õÊ¼b"<<endl;
+	b.set(3);
+	cout<<b<<":b.set(3)"<<endl;
+	b.set();
+	cout<<b<<":b.set()"<<endl;
+
+	b.reset(3);
+	cout<<b<<":b.reset(3)"<<endl;
+	b.reset();
+	cout<<b<<":b.reset()"<<endl;
+
+	b.flip(3);
+	cout<<b<<":b.flip(3)"<<endl;
+	b.flip();
+	cout<<b<<":b.flip()"<<endl;
+
+	cout<<(b<<=2)<<":b<<=2"<<endl;
+	cout<<(b>>=2)<<":b>>=2"<<endl;
+	cout<<(b&=10)<<":b&=10"<<endl;
+	cout<<(b|=10)<<":b|=10"<<endl;
+	cout<<"---------------------"<<endl;
+
+	string str=b.to_string();
+	cout<<"str:"<<str<<endl;
+	unsigned long ul=b.to_ulong();
+	cout<<"ul:"<<ul<<endl;
+
+	cout<<"b[3]:"<<b[3]<<endl;
+	cout<<"b.at(3):"<<b.at(3)<<endl;
+	cout<<"b.test(3):"<<b.test(3)<<endl;
+	cout<<"b.count():"<<b.count()<<endl;
+	cout<<"b.any():"<<boolalpha<<b.any()<<endl;
+	cout<<"b.none():"<<b.none()<<endl;
+	cout<<"---------------------"<<endl;
+
+	return 0;
+}

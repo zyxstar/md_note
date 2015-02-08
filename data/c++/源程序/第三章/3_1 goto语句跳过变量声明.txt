@@ -1,0 +1,12 @@
+//3.1 goto语句跳过变量声明
+#include<iostream.h>
+int main()
+{
+	goto L1;
+	int a;//int a=0;直接初始化将出现编译错误
+	a=0;
+ L1:
+	a=1;
+	cout<<"a="<<a<<endl;
+  	return 0;
+}

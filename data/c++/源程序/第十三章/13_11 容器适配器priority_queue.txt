@@ -1,0 +1,22 @@
+//13.11 ÈİÆ÷ÊÊÅäÆ÷priority_queue
+#include<iostream>
+#include<queue>
+using std::cout;
+using std::endl;
+using std::priority_queue;
+
+int main()
+{ 
+	priority_queue<int> q;
+  	q.push(3);
+	q.push(5);
+	q.push(4);
+	while(!q.empty())
+	{
+		cout<<q.top()<<" ";
+		q.pop();
+	}
+	cout<<endl;
+
+	return 0;
+}

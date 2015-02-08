@@ -1,0 +1,72 @@
+//6.12 成员函数重载new、new[ ]和delete、delete[ ]运算符
+#include"stdio.h"
+#include"malloc.h"
+
+class Point
+{
+public:
+	double x,y;
+	Point()
+	{
+		printf("1个Point对象被创建\n");
+	}
+	~Point()
+	{
+		printf("1个Point对象被释放\n");
+	}
+	void* operator new(size_t n)
+	{
+	    void* p=malloc(n);
+	    printf("new：从%x开始%d个字节的内存被分配\n",p,n);
+	    return p;
+	}
+    void* operator new[ ](size_t n)
+	{
+	    void* p=malloc(n);
+	    printf("new[ ]：从%x开始%d个字节的内存被分配\n",p,n);
+	    return p;
+	}
+    void operator delete (void* p)
+	{
+	    free(p);
+	    printf("delete：从%x开始的内存被释放\n",p);
+	}
+    void operator delete [ ](void* p)
+	{
+	    free(p);
+	    printf("delete[ ]：从%x开始的内存被释放\n",p);
+	}
+};
+
+ 
+int main()
+{	
+	int *ip=new int;
+	printf("ip=%x\n",ip);
+	delete ip;
+	printf("--------------------------\n");
+	ip=new int[10];
+	printf("ip=%x\n",ip);
+	delete []ip;
+	printf("--------------------------\n");
+
+    Point *pp=new Point;
+	printf("pp=%x\n",pp);
+	delete pp;
+	printf("--------------------------\n");
+	pp=new Point[3];
+	printf("pp=%x\n",pp);
+	delete []pp;
+	printf("--------------------------\n");
+
+	pp=::new Point;
+	printf("pp=%x\n",pp);
+	::delete pp;
+	printf("--------------------------\n");
+	pp=::new Point[3];
+	printf("pp=%x\n",pp);
+	::delete []pp;
+	printf("--------------------------\n");
+	
+  	return 0;
+}

@@ -1,0 +1,19 @@
+//2.1 使用运算符"&"和"*"
+#include <iostream.h>
+int main()
+{ 
+    int a;
+	int *p;
+	a=2;
+	p=&a;
+	cout<<"a:\t"<<a<<endl;
+    cout<<"*p:\t"<<*p<<endl;
+	*p=3**p;//等价于*p=3*(*p);
+    cout<<"a:\t"<<a<<endl;
+    cout<<"*p:\t"<<*p<<endl;
+	cout<<"*&a:\t"<<*&a<<endl;
+	cout<<"&a:\t"<<&a<<endl;
+	cout<<"p:\t"<<p<<endl;
+	cout<<"&*p:\t"<<&*p<<endl;
+	return 0;
+}

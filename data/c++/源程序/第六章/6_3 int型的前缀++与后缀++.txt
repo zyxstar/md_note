@@ -1,0 +1,26 @@
+//6.3 intĞÍµÄÇ°×º++Óëºó×º++
+ #include<iostream>
+ 
+ using std::cout;
+ using std::endl;
+ 
+ int main()
+ {  
+    int i=0,j=0;
+    int x=++i;
+    int y=j++;
+    cout<<"i="<<i<<endl;
+    cout<<"j="<<j<<endl;
+    cout<<"x="<<x<<endl;
+    cout<<"y="<<y<<endl;
+ 
+    int k=0;
+    ++++k;
+    cout<<"k="<<k<<endl;
+    //k++++;±àÒë´íÎó
+    ++k=9;
+    cout<<"k="<<k<<endl;
+    //k++=9;±àÒë´íÎó
+    
+    return 0;
+ }

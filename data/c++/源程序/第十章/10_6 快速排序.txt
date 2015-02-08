@@ -1,0 +1,70 @@
+//10.6 øÏÀŸ≈≈–Ú
+ #include<iostream>
+ #include<functional>
+ using std::cout;
+ using std::endl;
+ using std::less;
+ using std::greater;
+ 
+ template <class T>
+ void swap(T& a,T& b)
+ {
+ 	T t=a;
+ 	a=b;
+ 	b=t;
+ }
+ template <class T,class C>
+ void sort(T* arr,size_t len,C compare)
+ {
+ 	if(len>1)
+ 	{
+ 		size_t low=0;
+ 		size_t high=len;
+ 		while(1)
+ 		{
+ 			while(low<len&&!compare(arr[0],arr[++low]));
+ 			while(high>0&&compare(arr[0],arr[--high]));
+ 			if(low<high)
+ 				swap(arr[low],arr[high]);
+ 			else
+ 				break;
+ 		}
+ 		swap(arr[0],arr[high]);
+ 		sort(arr,high,compare);
+ 		sort(arr+high+1,len-high-1,compare);
+ 	}
+ }
+ template <class T,size_t len>
+void print(const T (&arr)[len])
+ {
+ 	for(size_t i=0;i<len;++i)
+ 	{
+ 		cout<<arr[i]<<"   ";
+ 		if((i+1)%5==0)
+ 			cout<<endl;
+ 	}
+ }
+ 
+ int main()
+ {
+ 	const size_t N=10;
+ 	int int_arr[N];
+ 	for(size_t i=0;i<N;++i)
+ 		int_arr[i]=rand()%90+10;
+ 	print(int_arr);
+ 	cout<<"------------------------------"<<endl;
+ 	sort(int_arr,N,less<int>());
+ 	print(int_arr);
+ 	cout<<"--------------------------------------"<<endl;
+ 
+ 	double double_arr[N];
+ 	for(size_t i=0;i<N;++i)
+ 		double_arr[i]=rand()%100/100.0;
+ 	print(double_arr);
+ 	cout<<"------------------------------"<<endl;
+ 	sort(double_arr,N,greater<double>());
+ 	print(double_arr);
+ 	cout<<"--------------------------------------"<<endl;
+ 
+ 	return 0;
+ }

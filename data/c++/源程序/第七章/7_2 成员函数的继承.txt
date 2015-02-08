@@ -1,0 +1,73 @@
+//7.2 成员函数的继承
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{	
+public:
+	static int x;
+	int y;
+  	static void print_x()
+	{
+		cout<<"x="<<x<<endl;
+	}
+	void print_y()const
+	{
+		cout<<"this="<<this<<endl;
+		cout<<"sizeof(*this)="<<sizeof(*this)<<endl;
+		cout<<"y="<<y<<endl;
+	}
+};
+class B:public A
+{
+public:
+	int z;
+	void print_z()const
+	{
+		cout<<"this="<<this<<endl;
+		cout<<"sizeof(*this)="<<sizeof(*this)<<endl;
+		cout<<"z="<<z<<endl;
+	}
+};
+
+int A::x=0;
+
+int main()
+{	
+	A a;
+	B b;
+	a.y=1;
+	b.y=2;
+	b.z=3;
+
+  	if(A::print_y==B::print_y) 
+		cout<<"A::print_y与B::print_y是同一个函数"<<endl;
+	if(A::print_y!=B::print_z) 
+		cout<<"A::print_y与B::print_z是不同的函数"<<endl;
+	cout<<"--------------------"<<endl;
+
+	cout<<"&a="<<&a<<endl;
+	cout<<"sizeof(a)="<<sizeof(a)<<endl;
+	a.print_y();
+	cout<<"--------------------"<<endl;
+
+	cout<<"&b="<<&b<<endl;
+	cout<<"sizeof(b)="<<sizeof(b)<<endl;
+	b.print_y();
+	cout<<"--------------------"<<endl;
+
+	//a.print_z();编译错误
+	b.print_z();
+	cout<<"--------------------"<<endl;
+    
+	if(A::print_x==B::print_x) 
+		cout<<"A::print_x与B::print_x是同一个函数"<<endl;
+	A::print_x();
+	B::print_x();
+	a.print_x();
+	b.print_x();
+	cout<<"--------------------"<<endl;
+
+	return 0;
+}

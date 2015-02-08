@@ -1,0 +1,80 @@
+//8.9 RTTI
+#include"Line.h"
+#include"Circle.h"
+#include<iostream>
+#include<typeinfo>
+
+using std::cout;
+
+using std::endl;
+
+void print(Shape** arr,int len)
+{
+	for(int i=0;i<len;++i)
+	{
+		cout<<"----------------------------"<<endl;
+		cout<<"类型："<<typeid(*arr[i]).name()<<endl;
+		arr[i]->draw();
+		cout<<endl;
+		Circle* tmp=dynamic_cast<Circle*>(arr[i]);
+		if(tmp)
+			cout<<"面积为："<<tmp->area()<<endl;
+		else
+			cout<<"没有面积"<<endl;
+	}
+	
+	cout<<"---------------------------------------"<<endl;
+}
+
+void area_by_refer(Shape & s)
+{
+	try
+	{
+		cout<<typeid(s).name();
+		Circle& tmp=dynamic_cast<Circle&>(s);
+		cout<<"面积为："<<tmp.area()<<endl;
+	}
+	catch(exception e)
+	{
+		cout<<"转换class Circle异常"<<e.what()<<endl;
+	}	
+}
+
+int main()
+{
+	Shape* shapes[5]={0};
+	int shapes_len=0;
+
+	cout<<"1.4的类型为："<<typeid(1.4).name()<<endl;
+	cout<<"shapes_len的类型为："<<typeid(shapes_len).name()<<endl;
+	cout<<"shapes的类型为："<<typeid(shapes).name()<<endl;
+	cout<<"shapes[0]的类型为："<<typeid(shapes[0]).name()<<endl;
+	cout<<"Shape的类型为："<<typeid(Shape).name()<<endl;
+	cout<<"---------------------------------------"<<endl;
+
+	for(int i=0;i<5;++i)
+	{
+		int tmp=rand()%3;
+		switch (tmp)
+		{
+		case 0:
+			shapes[shapes_len++]=new Point(rand(),rand());
+			break;
+		case 1:
+			shapes[shapes_len++]=new Line(rand(),rand(),rand(),rand());
+			break;
+		case 2:
+			shapes[shapes_len++]=new Circle(rand(),rand(),rand());
+			break;
+		}
+	}
+
+	print(shapes,shapes_len);
+	area_by_refer(*shapes[0]);
+	area_by_refer(*shapes[4]);
+
+	for(i=0;i<shapes_len;++i)
+		delete shapes[i];	
+
+	return 0;
+}

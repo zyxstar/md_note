@@ -1,0 +1,217 @@
+//6.5 运算符重载--String类
+//String.h
+#ifndef STRING_H
+#define STRING_H
+#include<iostream>
+using std::istream;
+using std::ostream;
+
+class String
+{
+	friend istream& operator>>(istream&,String&);//全局函数重载>>
+   friend ostream& operator<<(ostream&,const String&);//全局函数重载<<
+   friend bool operator==(const String&,const String&);//全局函数重载==
+   friend bool operator<(const String&,const String&);//全局函数重载<
+	friend bool operator!=(const String&,const String&);//全局函数重载!=
+   friend bool operator>(const String&,const String&);//全局函数重载>
+	friend bool operator>=(const String&,const String&);//全局函数重载>=
+   friend bool operator<=(const String&,const String&);//全局函数重载<=
+public:
+	String(const char* const="");//默认构造函数
+   String(const String&);//拷贝构造函数
+	~String();//析构函数
+	int length()const;//求串长度
+	String& operator=(const String &);//成员函数重载=
+	String& operator+=(const String &);//成员函数重载+=
+	char& operator[](int);//成员函数重载[]（非const）
+	const char& operator[](int)const;//成员函数重载[]（const）
+	String operator()(int,int)const;//成员函数重载()
+private:
+	char* s;
+};
+#endif
+
+//String.cpp
+#include"String.h"
+#include<cstring>
+
+//全局函数重载>>
+istream& operator>>(istream& in,String& str)
+{
+	char arr[100]={0};
+	in>>arr;
+	str=arr;
+	return in;
+}
+//全局函数重载<<
+ostream& operator<<(ostream& out,const String& str)
+{
+	return out<<str.s;
+}
+//全局函数重载==
+bool operator==(const String& a,const String& b)
+{
+	return strcmp(a.s,b.s)==0;
+}
+//全局函数重载<
+bool operator<(const String& a,const String& b)
+{
+	return strcmp(a.s,b.s)<0;
+}
+//全局函数重载!=
+bool operator!=(const String& a,const String& b)
+{
+	return !(a==b);
+}
+//全局函数重载>
+bool operator>(const String& a,const String& b)
+{
+	return b<a;
+}
+//全局函数重载>=
+bool operator>=(const String& a,const String& b)
+{
+	return !(a<b);
+}
+//全局函数重载<=
+bool operator<=(const String& a,const String& b)
+{
+	return !(b<a);
+}
+
+//默认构造函数
+String::String(const char* const str)
+{
+	if(str==0)
+	{	
+		s=new char[1];
+		s[0]=0;
+	}
+	else
+	{
+		s=new char[strlen(str)+1];
+		strcpy(s,str);
+	}
+}
+//拷贝构造函数
+String::String(const String& other)
+{
+	s=new char[other.length()+1];
+	strcpy(s,other.s);
+}
+//析构函数
+String::~String()
+{
+	delete []s;
+}
+//求串长度
+int String::length()const
+{
+	return strlen(s);
+}
+//成员函数重载=
+String& String::operator=(const String &other)
+{
+	if(this!=&other)
+	{
+		delete []s;
+		s=new char[other.length()+1];
+	    strcpy(s,other.s);
+	}
+	return *this;
+}
+//成员函数重载+=
+String& String::operator+=(const String &other)
+{
+	char * newstr=new char[length()+1];
+	strcpy(newstr,s);
+	delete []s;
+	s=new char[strlen(newstr)+other.length()+1];
+   strcpy(s,newstr);
+	strcat(s,other.s);
+	delete []newstr;
+	return *this;
+}
+//成员函数重载[]（非const）
+char& String::operator[](int i)
+{
+	if(i<0||i>=length()) 
+		exit(0);
+	return s[i];
+}
+//成员函数重载[]（const）
+const char& String::operator[](int i)const
+{
+	if(i<0||i>=length()) 
+		exit(0);
+	return s[i];
+}
+//成员函数重载()
+String String::operator()(int index,int sublen)const
+{
+	if(index<0||index>=length()||sublen<=0)
+		return "";
+	int len=sublen+index>length()?length()-index:sublen;
+	char *newstr=new char[len+1];
+	strncpy(newstr,s+index,len);
+	newstr[len]=0;
+	String tmp(newstr);
+	delete newstr;
+	return tmp;
+}
+
+//test.cpp
+#include"String.h"
+#include<iostream>
+using std::cin;
+using std::cout;
+using std::endl;
+
+int main()
+{
+	//测试默认构造函数
+   String a;
+   cout<<"a="<<a<<endl;
+   //根据char*构造String的构造函数
+	String b("hello");
+   cout<<"b="<<b<<endl;
+	//测试拷贝构造函数
+	String c=b;
+	cout<<"c="<<c<<endl;
+	//测试length函数
+	cout<<"a.length="<<a.length()<<endl;
+	cout<<"b.length="<<b.length()<<endl;
+	//测试关系运算
+	cout<<"a==b is "<<(a==b)<<endl;
+	cout<<"a<b is "<<(a<b)<<endl;
+	cout<<"a!=b is "<<(a!=b)<<endl;
+	cout<<"a>b is "<<(a>b)<<endl;
+	cout<<"a>=b is "<<(a>=b)<<endl;
+	cout<<"a<=b is "<<(a<=b)<<endl;
+	//测试流提取运算符>>
+	cin>>a;
+	cout<<"a="<<a<<endl;
+	//测试赋值运算=、+=
+	a=b;
+	cout<<"a="<<a<<endl;
+	cout<<"a.length="<<a.length()<<endl;
+	a+=b+=c;
+	cout<<"a="<<a<<endl;
+	cout<<"a.length="<<a.length()<<endl;
+	cout<<"b="<<b<<endl;
+	cout<<"b.length="<<b.length()<<endl;
+	//测试[]运算符的非const版本
+	c[0]='H';
+	cout<<"c="<<c<<endl;
+	cout<<"c[0]="<<c[0]<<endl;
+	//测试[]运算符的非const版本
+	const String d("C++");
+	cout<<"d[0]="<<d[0]<<endl;
+	//d[0]='C';编译错误
+	//测试()运算符
+	cout<<"a="<<a<<endl;
+	cout<<"a(5,0)="<<a(5,0)<<endl;
+	cout<<"a(5,6)="<<a(5,6)<<endl;
+
+	return 0;
+}

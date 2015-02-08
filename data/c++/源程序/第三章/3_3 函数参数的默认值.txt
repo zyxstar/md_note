@@ -1,0 +1,24 @@
+//3.3 函数参数的默认值
+#include<iostream.h>
+void f(int,int=1,int=2,int=3);
+int main()
+{
+	//f();错误，函数f至少提供1个参数
+	
+	cout<<"提供1个参数："<<endl;
+	f(0);
+
+ 	cout<<"提供2个参数："<<endl;
+	f(0,10);
+
+	cout<<"提供3个参数："<<endl;
+	f(0,10,20);
+
+	cout<<"提供4个参数："<<endl;
+	f(0,10,20,30);
+	return 0;
+}
+void f(int a,int b,int c,int d)
+{
+	cout<<"a="<<a<<"  b="<<b<<"  c="<<c<<"  d="<<d<<endl;
+}

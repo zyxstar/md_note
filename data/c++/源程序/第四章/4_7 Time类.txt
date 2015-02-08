@@ -1,0 +1,38 @@
+//4.7 Time¿‡
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Time
+{
+private:
+	int hour;
+	int minute;
+  	int second;
+public:
+	Time()
+	{
+		hour=minute=second=0;
+	}
+	void set_time(int h,int m,int s)
+	{
+		hour=(h>=0&&h<=23?h:0);
+		minute=(m>=0&&m<=59?m:0);
+		second=(s>=0&&s<=59?s:0);
+	}
+	void print()
+	{
+		cout<<hour<<" ±"<<minute<<"∑÷"<<second<<"√Î"<<endl;
+	}
+
+};
+int main()
+{
+	Time t;
+    t.print();
+    t.set_time(10,10,10);
+    t.print();
+    t.set_time(100,100,100);
+	t.print();
+    return 0;
+}

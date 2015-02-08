@@ -1,0 +1,48 @@
+//4.20 成员变量存储和初始的顺序
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{	
+public:
+	int x;
+	A(int x1):x(x1)
+	{}
+};
+class B
+{	
+public:
+	int y;
+	int z;
+	A a1;
+	A a2;
+	B():z(y),y(0),a2(a1),a1(0)
+	{}
+	B(int z1,int x1):z(z1),y(z),a2(x1),a1(a2)
+	{}
+};
+
+int main()
+{
+	 B b1;
+	 cout<<"b1.y="<<b1.y<<endl;
+	 cout<<"b1.z="<<b1.z<<endl;
+	 cout<<"b1.a1.x="<<b1.a1.x<<endl;
+	 cout<<"b1.a2.x="<<b1.a2.x<<endl;
+	 cout<<"----------------"<<endl;
+
+	 B b2(1,2);
+	 cout<<"b2.y="<<b2.y<<endl;
+	 cout<<"b2.z="<<b2.z<<endl;
+	 cout<<"b2.a1.x="<<b2.a1.x<<endl;
+	 cout<<"b2.a2.x="<<b2.a2.x<<endl;
+	 cout<<"----------------"<<endl;
+
+	 cout<<"&b2.y="<<&b2.y<<endl;
+	 cout<<"&b2.z="<<&b2.z<<endl;
+	 cout<<"&b2.a1="<<&b2.a1<<endl;
+	 cout<<"&b2.a2="<<&b2.a2<<endl;
+	 cout<<"----------------"<<endl;
+
+	 return 0;	 
+}

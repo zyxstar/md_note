@@ -1,0 +1,52 @@
+//7.1 成员变量的继承
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	static int x;
+	int y;
+};
+class B:public A
+{
+public:
+	int z;
+};
+
+int A::x=10;
+
+int main()
+{	
+	A a;
+	B b;
+	cout<<"sizeof(A)="<<sizeof(A)<<endl;
+	cout<<"sizeof(B)="<<sizeof(B)<<endl;
+	cout<<"sizeof(a)="<<sizeof(a)<<endl;
+	cout<<"sizeof(b)="<<sizeof(b)<<endl;
+
+	a.y=0;
+	b.y=1;
+	cout<<"a.y="<<a.y<<endl;
+	cout<<"b.y="<<b.y<<endl;
+	cout<<"&a.y="<<&a.y<<endl;
+	cout<<"&b.y="<<&b.y<<endl;
+
+	cout<<"A::x="<<A::x<<endl;
+	cout<<"B::x="<<B::x<<endl;
+	A::x=11;
+	cout<<"A::x="<<A::x<<endl;
+	cout<<"B::x="<<B::x<<endl;
+	B::x=12;
+	cout<<"A::x="<<A::x<<endl;
+	cout<<"B::x="<<B::x<<endl;
+	cout<<"a.x="<<a.x<<endl;
+	cout<<"b.x="<<b.x<<endl;
+	cout<<"&A::x="<<&A::x<<endl;
+	cout<<"&B::x="<<&B::x<<endl;
+	cout<<"&a.x="<<&a.x<<endl;
+	cout<<"&b.x="<<&b.x<<endl;	
+
+	return 0;
+}

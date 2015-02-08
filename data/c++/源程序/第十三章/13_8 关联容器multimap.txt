@@ -1,0 +1,65 @@
+//13.8 ¹ØÁªÈÝÆ÷multimap
+#include<iostream>
+#include<fstream>
+#include<sstream>
+#include<map>
+#include<string>
+using std::cout;
+using std::endl;
+using std::map;
+using std::multimap;
+using std::string;
+using std::ifstream;
+using std::stringstream;
+using std::greater;
+using std::pair;
+
+template <class T>
+void print_map(const T& m)
+{
+	T::const_iterator p=m.begin();
+	for(;p!=m.end();++p)
+		cout<<(p->second)<<":"<<(p->first)<<endl;
+}
+
+class MyString:public string
+{
+	friend bool operator<(const MyString& ms1,const MyString& ms2)
+	{
+		int i;
+		string s1=ms1;
+		string s2=ms2;
+		for(i=0;i<s1.size();++i)
+			s1[i]=toupper(s1[i]);
+		for(i=0;i<s2.size();++i)
+			s2[i]=toupper(s2[i]);
+		return s1<s2;
+	}
+};
+
+int main()
+{ 
+	ifstream in("c:\\tongue.txt");
+	stringstream ss;
+	char c;
+	while((c=in.get())!=-1)
+	{
+		if(!(c>='A'&&c<='Z'||c>='a'&&c<='z'))
+			c=' ';
+		ss.put(c);
+	}
+	MyString word;
+	map<MyString,int> words;
+	while(ss>>word)
+		++words[word];
+
+	multimap<int,string,greater<int> > mwords;
+	for(map<MyString,int>::iterator p=words.begin();p!=words.end();++p)
+	{
+		pair<int,string> pa(p->second,p->first);
+		mwords.insert(pa);
+	}
+	print_map(mwords);
+
+	return 0;
+}

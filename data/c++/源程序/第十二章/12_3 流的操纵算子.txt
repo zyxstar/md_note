@@ -1,0 +1,52 @@
+//12.3 Á÷µÄ²Ù×ÝËã×Ó
+#include<iostream>
+#include<iomanip>
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ios;
+using std::noskipws;
+using std::skipws;
+using std::showbase;
+using std::uppercase;
+using std::hex;
+using std::internal;
+using std::setw;
+using std::setfill;
+using std::showpos;
+using std::dec;
+using std::scientific;
+using std::right;
+using std::setprecision;
+using std::ostream;
+
+ostream& right_boolalpha(ostream& out)
+{
+	out.setf(ios::boolalpha);
+	out.setf(ios::right,ios::adjustfield);
+	return out;
+}
+
+int main()
+{ 
+	char c;
+	cin>>noskipws>>c;
+	cout<<"(int)c="<<(int)c<<endl;
+	cin>>skipws;
+	cout<<"-----------------"<<endl;
+
+	cout<<showbase<<uppercase<<hex<<internal
+    <<setw(15)<<setfill('$')<<12<<endl;
+	cout<<"-----------------"<<endl;
+
+	cout<<showpos<<dec<<scientific<<right<<setprecision(2)<<setw(15)
+		<<setfill('*')<<12.5555555<<endl;
+	cout<<"-----------------"<<endl;
+
+	bool b=0;
+	
+	cout<<"b="<<setw(10)<<right_boolalpha<<b<<endl;
+	cout<<"-----------------"<<endl;
+    
+	return 0;
+}

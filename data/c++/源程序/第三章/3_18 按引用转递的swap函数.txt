@@ -1,0 +1,25 @@
+//3.18 按引用转递的swap函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+void swap(int&,int&);
+
+int main()
+{
+	int x=1;
+ 	int y=2;
+    cout<<"程序开始时"<<endl;
+	cout<<"x="<<x<<",y="<<y<<endl;
+
+	swap(x,y);
+	cout<<"x="<<x<<",y="<<y<<endl;
+	//swap(10,20);错误,常数不能作为引用参数的实参
+}
+void swap(int &a,int& b)
+{   	
+	int t=a;
+	a=b;
+	b=t;
+	cout<<"调用swap(int&,int&)后"<<endl;
+}

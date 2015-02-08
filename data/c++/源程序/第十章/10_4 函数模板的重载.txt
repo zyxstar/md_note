@@ -1,0 +1,53 @@
+//10.4 函数模板的重载
+#include<iostream>
+using std::cout;
+using std::endl;
+
+template <class T>
+void f(T& reference)
+{
+	cout<<"f(T& reference)被执行"<<endl;
+	reference=reference+1;
+}
+template <class T>
+void f(const T& reference)
+{
+	cout<<"f(const T& reference)被执行"<<endl;
+	cout<<"reference表示的常对象不能被修改"<<endl;
+}
+template <class T>
+void f(T* pointer)
+{
+	cout<<"f(T* pointer)被执行"<<endl;
+	*pointer=*pointer+1;
+}
+template <class T>
+void f(const T* pointer)
+{
+	cout<<"f(const T* pointer)被执行"<<endl;
+	cout<<"pointer表示常量指针，所指向的对象不能被修改"<<endl;
+}
+
+int main()
+{
+	int x=0;
+    const int y=0;
+    int *p=new int(10);
+	const int *q=new int(10);
+
+	f(x);
+	cout<<"x="<<x<<endl;
+	cout<<"-------------------"<<endl;
+	f(y);
+	cout<<"y="<<y<<endl;
+	cout<<"-------------------"<<endl;
+	f(p);
+	cout<<"*p="<<*p<<endl;
+	cout<<"-------------------"<<endl;
+	f(q);
+	cout<<"*q="<<*q<<endl;
+	cout<<"-------------------"<<endl;
+	delete p;
+	delete q;
+    return 0;
+}

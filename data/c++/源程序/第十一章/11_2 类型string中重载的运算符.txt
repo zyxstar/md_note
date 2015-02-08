@@ -1,0 +1,28 @@
+//11.2 类型string中重载的运算符
+#include<iostream>
+#include<string>
+using std::cin;
+using std::cout;
+using std::endl;
+using std::string;
+
+int main()
+{
+ 	string str1,str2;
+	
+	cin>>str1;
+	cout<<"str1="<<str1<<endl;
+
+	str2=str1+" c++";
+	cout<<"str2="<<str2<<endl;
+
+	str2+="!!!";
+	cout<<"str2="<<str2<<endl;
+
+	str2[0]='H';
+	cout<<"str2="<<str2<<endl;
+
+	if(str1>str2)
+		cout<<str1<<">"<<str2<<endl;
+	return 0;
+}

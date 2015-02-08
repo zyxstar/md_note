@@ -1,0 +1,16 @@
+//12.5 Êä³öº¯Êı
+#include<iostream>
+using std::cout;
+using std::endl;
+
+int main()
+{ 
+	char str[]="Hello\nC++!\n";
+	int i=0;
+	while(str[i])
+		    cout.put(str[i++]);
+	cout<<"--------------"<<endl;
+	cout.write(str,11);
+	cout<<"--------------"<<endl;
+	return 0;
+}

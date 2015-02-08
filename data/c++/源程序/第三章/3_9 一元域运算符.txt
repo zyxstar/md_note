@@ -1,0 +1,21 @@
+//3.9  一元域运算符::
+#include<iostream.h>
+
+int x=1;
+
+int main()
+{
+	int x=10;
+    
+	cout<<"赋值前："<<endl;
+	    cout<<"局部 x="<<x<<endl;
+	cout<<"全局 x="<<::x<<endl;
+
+	::x=100;
+	x=1000;
+
+    cout<<"赋值后："<<endl;
+    cout<<"局部 x="<<x<<endl;
+	cout<<"全局 x="<<::x<<endl;
+  	return 0;
+}

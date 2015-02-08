@@ -1,0 +1,52 @@
+//4.13 对象的构造和析构次序
+#include<iostream>
+using std::cout;
+using std::endl;
+
+int i=0;//全局变量,统计产生对象的个数
+
+class A
+{
+	int x;
+public :
+	A()//普通构造函数
+	{    
+		x=++i;
+		cout<<"第"<<x<<"个对象被构造"<<endl;
+	}
+	A(const A&)//拷贝构造函数
+	{
+		x=++i;
+		cout<<"第"<<x<<"个对象被拷贝构造"<<endl;
+	}
+	~A()//析构函数
+	{   
+		cout<<"第"<<x<<"个对象被析构"<<endl;
+	}
+};
+
+void f(A a7)
+{
+	cout<<"进入函数f......"<<endl;
+	A a8;
+	static A a9;
+	cout<<"退出函数f......"<<endl;
+}
+
+A a1;
+
+int main()
+{
+    cout<<"进入函数main......"<<endl;
+	A a2;
+	static A a3;
+	{
+		A a4;
+	    static A a5;
+	}
+	A a6;
+	f(a6);
+	cout<<"退出函数main......"<<endl;
+	
+	return 0;
+}

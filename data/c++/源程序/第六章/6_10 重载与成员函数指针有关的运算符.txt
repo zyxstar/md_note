@@ -1,0 +1,68 @@
+//6.10 重载运算符"->*"
+ //将下面代码补充到程序6.8的第107行之后
+ class FunctionObject
+ {
+ public:
+     FunctionObject(Time* tp1,void (Time::* fp1)(int))
+ 	    :tp(tp1),fp(fp1)
+ 	{}
+     void operator()(int n)const
+ 	{
+         (tp->*fp)(n);
+ 	}				
+ private:
+     Time* tp;
+     void (Time::* fp)(int);
+ };
+ FunctionObject operator->*(void (Time::* fp1)(int)) const
+ {
+ 	return FunctionObject(operator->(),fp1);
+ }
+ //----------------------------------------------------------------
+ //test.cpp
+ #include"TimeList.h"
+ using std::cout;
+ using std::endl;
+ 
+ void iterator_set(const TimeList::Iterator& iterator,int value,void (Time::*f)(int))
+ {
+ 	(iterator->*f)(value);
+ }
+ 
+ void print_list(const TimeList& L,const char* const str)
+ {
+ 	cout<<str<<endl;
+ 	for(TimeList::Iterator p=L.begin();p!=L.end();++p)
+ 	{	
+ 		cout<<*p<<endl;
+ 	}
+ 	cout<<"-------------------------------------"<<endl;
+ }
+ 
+ int main()
+ {
+ 	Time t1(1,2,3);
+ 	Time t2(4,5,6);
+ 	Time t3(7,8,9);
+ 	TimeList L;
+ 	L.insert(L.begin(),t1);
+ 	L.insert(L.begin(),t2);
+ 	L.insert(L.begin(),t3);
+  
+  	void (Time::*p)(int)=Time::set_hour;
+ 
+ 	print_list(L,"原始的链表");
+     TimeList::Iterator iterator=L.begin();
+ 	(iterator->*p)(0);
+ 	print_list(L,"将首个Time对象的小时设为0之后：");
+ 
+ 	for(iterator=L.begin();iterator!=L.end();++iterator)
+ 	{
+ 		iterator_set(iterator,21,Time::set_hour);
+ 	    iterator_set(iterator,22,Time::set_minute);
+ 	    iterator_set(iterator,23,Time::set_second);
+ 	}
+ 	print_list(L,"链表的每一个元素调用iterator_set之后：");
+ 
+ 	return 0;
+ }

@@ -1,0 +1,56 @@
+//13.1 容器中嵌套类型的使用
+#include<iostream>
+#include<iterator>
+#include<vector>
+#include<list>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::ostream_iterator;
+using std::vector;
+using std::list;
+using std::copy;
+
+template<class T>
+void swap_first_last(T& container)
+{
+	T::iterator first=container.begin();
+	T::iterator last=container.end();
+	if(first==last)
+		return;
+	--last;
+	T::value_type tmp=*first;
+	*first=*last;
+	*last=tmp;	
+}
+
+int main()
+{ 	
+	ostream_iterator<int> out1(cout," ");
+	vector<int> int_v(5);
+	for(int i=0;i<5;++i)
+		int_v[i]=i+1;
+	cout<<"int_v=";
+	copy(int_v.begin(),int_v.end(),out1);
+	cout<<endl;
+	swap_first_last(int_v);
+	cout<<"int_v=";
+	copy(int_v.begin(),int_v.end(),out1);
+	cout<<endl;
+
+	ostream_iterator<char> out2(cout);
+	typedef list<char> Lc;
+	Lc char_l(3);
+	char c='A';
+	for(Lc::iterator p=char_l.begin();p!=char_l.end();++p)
+		*p=c++;	
+	cout<<"char_l=";
+	copy(char_l.begin(),char_l.end(),out2);
+	cout<<endl;
+	swap_first_last(char_l);
+	cout<<"char_l=";
+	copy(char_l.begin(),char_l.end(),out2);
+	cout<<endl;
+	
+	return 0;
+}

@@ -1,0 +1,23 @@
+//10.2 函数模板的非类类型参数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+template <class T,size_t len>
+T min(const T(&arr)[len])
+{
+	size_t tmp=0;
+	for(size_t i=0;i<len;++i)
+		    if(arr[i]<arr[tmp])
+			tmp=i;
+	return arr[tmp];
+}
+int main()
+{
+	int i_a[5]={67,83,96,79,105};
+	double d_a[6]={1.7,0.3,5.6,9.7,5.5,8.8};
+	cout<<"min(i_a)="<<min(i_a)<<endl;
+	cout<<"min(d_a)="<<min(d_a)<<endl;
+		
+	return 0;
+}

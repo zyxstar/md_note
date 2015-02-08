@@ -1,0 +1,282 @@
+//6.8 TimeList时间对象的链表
+  //Time.h
+  #ifndef TIME_H
+  #define TIME_H
+  #include<iostream>
+  using std::ostream;
+  
+  class Time
+  {
+  	friend ostream& operator<<(ostream& out,const Time& t)
+  	{
+  		return out<<t.second/3600<<"："<<t.second%3600/60<<"："<<t.second%60;
+  	}
+  	friend bool operator==(const Time& t1,const Time& t2)
+  	{
+  		return t1.second==t2.second;
+  	}
+  private:
+  	int second;
+  public:
+  	Time(int h=0,int m=0,int s=0)
+  	{   
+  		second=0;
+  		set_hour(h);
+  		set_minute(m);
+  		set_second(s);
+  	}
+  	void set_hour(int h)
+  	{
+  		h=(h>=0&&h<=23?h:0);
+  		second=second%3600+h*3600;		
+  	}
+  	void set_minute(int m)
+  	{
+  		m=(m>=0&&m<=59?m:0);
+  		second=second/3600*3600+m*60+second%60;		
+  	}
+  	void set_second(int s)
+  	{
+  		s=(s>=0&&s<=59?s:0);
+  		second=second/60*60+s;		
+  	}	
+  };
+  #endif
+  
+  //TimeList.h
+  #include "Time.h"
+  
+  class TimeList
+  {
+  public:	
+  	class Iterator;
+  private:
+     class ListNode
+  	{
+  	    friend class TimeList;//声明友元类
+  		friend class Iterator;//声明友元类
+      public:
+  	    ListNode(Time t):data(t),next(0)
+  		{}
+      private:
+  	    Time data;
+  	    ListNode* next;
+  	};
+  public:
+  	class Iterator
+  	{
+  		friend class TimeList;//声明友元类
+  		friend bool operator==(const Iterator& i1,const Iterator& i2)
+  		{
+  			return i1.p==i2.p;
+  		}
+  		friend bool operator!=(const Iterator& i1,const Iterator& i2)
+  		{
+  			return i1.p!=i2.p;
+  		}
+  	public:
+  		Iterator(ListNode* p1=0):p(p1)
+  		{}
+  		Iterator& operator++()
+  		{
+  			if(p)
+  				p=p->next;
+  			return *this;
+  		}
+  		Iterator operator++(int)
+  		{
+  			Iterator tmp=*this;
+  			if(p)
+  				p=p->next;
+  			return tmp;
+  		}
+  		Time& operator*() const
+  		{
+  			return p->data;
+  		}
+  		Time* operator->() const
+  		{
+  			return &(p->data);
+  		}
+  		Iterator operator+(int n) const
+  		{
+  			Iterator tmp=*this;
+  			for(int i=0;i<n;++i)
+  				++tmp;
+  			return tmp;
+  		}
+  	private:
+  		ListNode* p;
+  	};
+  public:
+  	TimeList()//构造函数建立空链表
+  		:head(0)
+  	{}
+     TimeList(const TimeList&);//拷贝构造函数
+  	~TimeList();//析构函数
+  	TimeList & operator=(const TimeList &);//赋值函数
+  	bool is_empty()const//测试链表是否为空
+  	{
+  	    return head==0;
+  	}
+     Iterator begin()const//返回链表的头
+  	{
+  	    return Iterator(head);
+  	}
+     Iterator end()const//返回链表的尾
+  	{
+  	    return Iterator(0);
+  	}
+  	void insert(const Iterator&,const Time &);//向链表中插入元素
+  	void erase(const Iterator&);//从链表中删除指定位置的元素
+  	void remove(const Time &);//从链表中删除指定值的元素
+  private:	
+  	ListNode* head;
+  };
+  
+  //TimeList.cpp
+  #include "TimeList.h"
+  
+  TimeList::TimeList(const TimeList & other)
+  {
+  	head=0;
+   	ListNode* tmp=other.head;
+     ListNode* prenode;
+  	while(tmp)
+  	{
+  		ListNode* newnode=new ListNode(tmp->data);
+  		if(head==0)
+  			head=newnode;
+  		else
+  			prenode->next=newnode;
+  		prenode=newnode;
+  		tmp=tmp->next;
+  	}
+  }
+  TimeList::~TimeList()
+  {	
+  	while(head)
+  	{
+  		ListNode* delnode=head;
+  		head=head->next;
+  		delete delnode;
+  	}
+  }
+  TimeList & TimeList::operator=(const TimeList &other)
+  {
+  	if(this!=&other)
+  	{
+  		while(head)
+  		{
+  		    ListNode* delnode=head;
+  		    head=head->next;
+  		    delete delnode;
+  		}
+  		ListNode* tmp=other.head;
+         ListNode* prenode;
+  	    while(tmp)
+  		{
+  		    ListNode* newnode=new ListNode(tmp->data);
+  		    if(head==0)
+  			    head=newnode;
+  			else
+  			    prenode->next=newnode;
+  			prenode=newnode;
+  		    tmp=tmp->next;
+  		}
+  	}
+  	return *this;
+  }
+  void TimeList::insert(const Iterator& position,const Time & t)
+  {
+  	ListNode* newnode=new ListNode(t);
+  	if(position==head)
+  	{
+  		newnode->next=head;
+      	head=newnode;
+  		return;
+  	}
+  	ListNode* pre=head;
+  	while(position!=pre->next)	
+  		pre=pre->next;
+  	newnode->next=pre->next;
+  	pre->next=newnode;
+  }
+  void TimeList::erase(const Iterator& position)
+  {   
+  	if(position==0)
+  		return;
+  	ListNode* delnode= position.p;
+  	if(position==head)
+  	{	
+      	head=head->next;
+  		delete delnode;
+  		return;
+  	}
+  	ListNode* pre=head;
+  	while(position!=pre->next)	
+  		pre=pre->next;
+  	pre->next=pre->next->next;
+  	delete delnode;
+  }
+  void TimeList::remove(const Time & t) 
+  {
+  	Iterator i=begin();
+  	while(i!=end())
+  		if(*i==t)
+  		{
+  			Iterator j=i++;
+  			erase(j);			
+  		}
+  		else
+  			++i;
+  }
+  
+  //test.cpp
+  #include"TimeList.h"
+  using std::cout;
+  using std::endl;
+  
+  void print_list(const TimeList& L,const char* const str)
+  {
+  	cout<<str<<endl;
+  	for(TimeList::Iterator p=L.begin();p!=L.end();++p)
+  	{	
+  		cout<<*p<<endl;
+  	}
+  	cout<<"-------------------------------------"<<endl;
+  }
+  int main()
+  {
+  	Time t1(1,2,3);
+      Time t2(4,5,6);
+  	TimeList L;
+  
+  	//测试insert
+  	L.insert(L.begin(),t2);
+  	L.insert(L.begin(),t1);
+  	L.insert(L.begin(),t1);
+  	L.insert(L.begin(),t2);
+  	L.insert(L.begin()+1,t1);
+  	L.insert(L.begin()+3,t2);
+    	print_list(L,"链表插入6个元素之后：");
+  
+  	//测试Iterator中的*、->
+  	for(TimeList::Iterator p=L.begin();p!=L.end();++p)
+  	{	
+  		if(*p==t1)
+  			p->set_hour(10);
+  	}
+  	print_list(L,"将链表中等于t1的元素的小时设为10之后：");
+  
+  	//测试erase
+  	L.erase(L.begin()+4);
+  	L.erase(L.begin());
+  	print_list(L,"删除链表的第4个元素和第0个元素之后：");
+  
+     //测试remove
+  	L.remove(t2);
+  	print_list(L,"删除链表中等于t2的元素之后：");
+  
+  	return 0;
+  }

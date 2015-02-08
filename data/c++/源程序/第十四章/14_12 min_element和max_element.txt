@@ -1,0 +1,30 @@
+//14.12 min_element和max_element
+ #include<iostream>
+ #include<algorithm>
+ using std::cout;
+ using std::endl;
+ using std::min_element;
+ using std::max_element;
+ 
+ bool my_less(int a,int b)
+ {
+ 	return a%10<b%10;
+ }
+ int main()
+ { 
+ 	int a[]={31,15,28,15,31};
+ 	for(int i=0;i<5;++i)
+ 		cout<<a[i]<<" ";
+ 	cout<<endl<<"-----------------"<<endl;
+ 	int* loc =min_element(a,a+5);
+ 	cout<<"数组a中最小的元素是第"<<loc-a<<"位上的"<<*loc<<endl;
+     loc =max_element(a,a+5);
+ 	cout<<"数组a中最大的元素是第"<<loc-a<<"位上的"<<*loc<<endl;
+ 	loc =min_element(a,a+5,my_less);
+ 	cout<<"数组a中个位最小的元素是第"<<loc-a<<"位上的"<<*loc<<endl;
+     loc =max_element(a,a+5,my_less);
+ 	cout<<"数组a中个位最大的元素是第"<<loc-a<<"位上的"<<*loc<<endl;
+ 	cout<<"-----------------"<<endl;
+ 	
+ 	return 0;
+ }

@@ -1,0 +1,32 @@
+//4.15 使用new和delete动态创建和释放对象
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+	int x;
+public:	
+    A(int x1=0)//默认构造函数
+	    {
+		x=x1;
+		cout<<"x="<<x<<"的对象被构造"<<endl;
+	}
+    ~A()//析构函数
+	{
+		cout<<"x="<<x<<"的对象被析构"<<endl;
+	}	
+};
+
+int main()
+{
+	A *p=new A;//申请存放1个对象的内存，未提供参数调用默认构造
+	delete p;//释放p所指向的对象，并在释放前调用析构函数
+
+	p=new A(3);//申请存放1个对象的内存，提供1个参数3调用构造函数
+	delete p;//释放p所指向的对象，并在释放前调用析构函数
+
+	p=new A[3];//申请存放3个对象的内存，未提供参数调用默认构造
+	delete []p;//释放p所指向的对象数组，并在释放前调用析构函数
+  	return 0;
+}

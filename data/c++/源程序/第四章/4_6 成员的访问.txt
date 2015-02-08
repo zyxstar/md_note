@@ -1,0 +1,37 @@
+//4.6 成员的访问
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+	int w;
+private:
+	int x;
+protected:
+	int y;
+public:
+	int z;
+	void set(int w1,int x1,int y1,int z1)
+	{
+		w=w1;
+		x=x1;
+		y=y1;
+		z=z1;
+		cout<<"w="<<w<<endl;
+		cout<<"x="<<x<<endl;
+		cout<<"y="<<y<<endl;
+		cout<<"z="<<z<<endl;
+	}
+};
+int main()
+{
+	A  a;
+	//a.w=0;错误，在类的外部访问类A对象a的private成员
+	//a.x=0;错误，在类的外部访问类A对象a的private成员
+	//a.y=0;错误，在类的外部访问类A对象a的protected成员
+	a.set(1,2,3,4);
+	a.z=0;
+	cout<<"z="<<a.z<<endl;		
+	return 0;
+}

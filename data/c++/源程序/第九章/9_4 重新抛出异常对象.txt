@@ -1,0 +1,51 @@
+//9.4 重新抛出异常对象
+#include<iostream>
+using std::cout;
+using std::endl;
+
+void f1()
+{
+	throw 0;
+}
+void f2()
+{
+	try
+	{
+		f1();
+	}
+	catch (int a)
+	{
+		cout<<"f2捕获的a="<<a<<endl;
+		a=1;
+		cout<<"f2中将a修改后a="<<a<<endl;
+		throw;//重新抛出
+	}
+}
+void f3()
+{
+	try
+	{
+		f2();
+	}
+	catch (int& a)
+	{
+		cout<<"f3捕获的a="<<a<<endl;
+		a=2;
+		cout<<"f3中将a修改后a="<<a<<endl;
+		throw;//重新抛出
+	}
+}
+
+int main()
+{
+	try
+	{
+		f3();
+	}
+	catch(int a)
+	{
+		cout<<"main捕获的a="<<a<<endl;
+	}
+
+	return 0;
+}

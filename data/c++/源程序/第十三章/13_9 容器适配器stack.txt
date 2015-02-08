@@ -1,0 +1,40 @@
+//13.9 ÈİÆ÷ÊÊÅäÆ÷stack
+#include<iostream>
+#include<stack>
+#include<vector>
+#include<list>
+using std::cout;
+using std::endl;
+using std::vector;
+using std::list;
+using std::stack;
+using std::ios;
+
+template <class T>
+void push_pop_stack(T& s,const char* str)
+{
+	cout.setf(ios::fixed);
+	T::value_type seed=T::value_type();
+	for(int i=0;i<5;++i)
+		s.push(++seed+64);
+	cout<<str;
+	while(!s.empty())
+	{
+		cout<<s.top()<<" ";
+		s.pop();
+	}
+	cout<<endl;
+}
+int main()
+{ 
+	stack<int> s1;
+	push_pop_stack(s1,"s1:");
+
+	stack<double,vector<double> > s2;
+	push_pop_stack(s2,"s2:");
+
+	stack<char,list<char> > s3;
+	push_pop_stack(s3,"s3:");
+
+	return 0;
+}
