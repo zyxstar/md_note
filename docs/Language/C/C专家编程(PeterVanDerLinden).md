@@ -31,7 +31,7 @@ int main(void){
 
 正因为第二个条件，使得函数调用中实参`char *s`与实参`const char *p`是相容的
 > 左侧是指向有`const`限定符的`char`指针，右侧是一个指向没有限定符的`char`指针，`char`类型与`char`类型是相容的，左操作数所指向的类型具有右操作数所指向类型的限定符（此处是无），再加上自身的限定符（`const`）
-> 
+>
 > 并且在标准库中，所有字符串处理函数就是这样的
 
 而`const char **p`读成`p is pointer to read-only char*`，指向有`const`限定符的`char`类型的指针的指针，即为 __没有限定符的指类类型__，而`char **s`读成`s is pointer to char*`，__它们所指向的类型不一样__，因此它们是 __不__ 相容的，违反了约束条件，编译器产生警告
@@ -48,6 +48,5 @@ int main(void){
 
 > `sizeof()`返回类型是`unsigned int`，需要小心
 
-不是BUG，是语言特性
-=================
+
 
