@@ -1,0 +1,22 @@
+//3.15 const_cast实际用途
+#include <iostream>
+using std::cout;
+using std::endl;
+
+char * Strcpy(char *,char *);//应该写成char * Strcpy(char *,const char *);
+
+int main()
+{   
+	const char p[]="hello";
+ 	char q[10];
+	//cout<<Strcpy(q,p)<<endl;错误，常量p不能作为非常的实参使用
+    cout<<Strcpy(q,const_cast<char*>(p))<<endl;//类型转换后成功调用函数
+	return 0;
+}
+
+char * Strcpy(char *a,char *b)
+{
+	char* t=a;
+	while(*a++=*b++);
+	return t;
+}

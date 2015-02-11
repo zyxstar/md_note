@@ -1,0 +1,78 @@
+//5.2 友元成员函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Date;//提前声明Date
+class Student
+{
+public:
+	Student(const char*,int,int,int);
+	    ~Student();
+	int get_age(int)const;
+	void print()const;
+private:
+	char name[10];
+	Date* birthday;
+};
+
+class Date
+{
+	friend int Student::get_age(int) const;
+public:
+	Date(int=2000,int=1,int=1);
+	void set(int,int,int);
+    void print() const;
+private:
+	int year;
+	int month;
+	int day;
+	static int days[];
+};
+int Date::days[]={31,28,31,30,31,30,31,31,30,31,30,31};
+
+Student::Student(const char* n,int y,int m,int d)
+{
+	birthday=new Date(y,m,d);
+	strcpy(name,n);
+}
+Student::~Student()
+{
+	delete birthday;
+}
+int Student::get_age(int y) const
+{
+	return y-birthday->year;//访问birthday的private成员
+}
+void Student::print()const
+{
+	cout<<name;
+	birthday->print();
+	cout<<"出生"<<endl;
+}
+
+Date::Date(int y,int m,int d)
+{
+	set(y,m,d);
+}
+void Date::set(int y,int m,int d)
+{
+	year=y;
+	month=(m>=1&&m<=12?m:1);
+	if((year%400==0||year%4==0&&year%100!=0)&&month==2)
+		day=(d>=1&&d<=29?d:1);
+	else
+		day=(d>=1&&d<=days[month-1]?d:1);
+}
+void Date::print()const
+{
+	cout<<year<<"年"<<month<<"月"<<day<<"日";
+}
+
+int main()
+{
+	Student s("翠花",1988,8,8);
+	s.print();
+	cout<<"2008年"<<s.get_age(2008)<<"岁"<<endl;
+	return 0;
+}

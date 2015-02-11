@@ -1,0 +1,76 @@
+//6.9 运算符".*"和"->*"的使用
+#include"TimeList.h"
+using std::cout;
+using std::endl;
+
+void reference_set(Time& t,int value,void (Time::*f)(int))
+{
+	(t.*f)(value);
+}
+void pointer_set(Time* tp,int value,void (Time::*f)(int))
+{
+	(tp->*f)(value);
+}
+
+void print_list(const TimeList& L,const char* const str)
+{
+	cout<<str<<endl;
+	for(TimeList::Iterator p=L.begin();p!=L.end();++p)
+	{	
+		cout<<*p<<endl;
+	}
+	cout<<"-------------------------------------"<<endl;
+}
+
+int main()
+{
+	Time t1(1,2,3);
+	Time t2(4,5,6);
+	Time t3(7,8,9);
+	TimeList L;
+	L.insert(L.begin(),t1);
+	L.insert(L.begin(),t2);
+	L.insert(L.begin(),t3);
+ 
+ 	void (Time::*p)(int)=Time::set_hour;
+
+	cout<<"原始的t1和t2：\n"<<t1<<endl<<t2<<endl;
+	(t1.*p)(0);
+	((&t2)->*p)(0);
+	cout<<"修改后的t1和t2：\n"<<t1<<endl<<t2<<endl;
+
+	print_list(L,"原始的链表");
+    TimeList::Iterator iterator=L.begin();
+	((*iterator).*p)(0);
+	++iterator;
+	((iterator.operator ->())->*p)(0);
+	print_list(L,"将前面的两个Time对象的小时设为0之后：");
+
+	reference_set(t1,11,Time::set_hour);
+	reference_set(t1,12,Time::set_minute);
+	reference_set(t1,13,Time::set_second);
+	cout<<"使用t1做参数调用reference_set之后：\n"<<t1<<endl;
+
+	pointer_set(&t1,21,Time::set_hour);
+	pointer_set(&t1,22,Time::set_minute);
+	pointer_set(&t1,23,Time::set_second);
+	cout<<"使用t1的地址做参数调用pointer_set之后：\n"<<t1<<endl;
+
+	for(iterator=L.begin();iterator!=L.end();++iterator)
+	{
+		reference_set(*iterator,11,Time::set_hour);
+	    reference_set(*iterator,12,Time::set_minute);
+	    reference_set(*iterator,13,Time::set_second);
+	}
+	print_list(L,"链表的每一个元素调用reference_set之后：");
+
+	for(iterator=L.begin();iterator!=L.end();++iterator)
+	{
+		pointer_set(iterator.operator ->(),21,Time::set_hour);
+	    pointer_set(iterator.operator ->(),22,Time::set_minute);
+	    pointer_set(iterator.operator ->(),23,Time::set_second);
+	}
+	print_list(L,"链表的每一个元素调用pointer_set之后：");
+
+	return 0;
+}

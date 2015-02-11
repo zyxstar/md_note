@@ -1,0 +1,98 @@
+//4.28 IntStack的代理类
+//Proxy.h代理类的头文件
+#ifndef PROXY_H
+#define PROXY_H
+class IntStack;
+class Proxy
+{
+public:
+    explicit Proxy(unsigned=10);//构造函数建立空栈
+    Proxy(const Proxy &);//拷贝构造函数
+    ~Proxy();//析构函数
+	Proxy & operator=(const Proxy &);//赋值函数
+	bool is_empty()const;//测试栈是否为空
+	void push(int);//入栈
+	bool pop();//退栈
+	bool get_top(int &)const;//读取栈顶元素
+private:
+	IntStack* s;
+};
+#endif
+
+//Proxy.cpp代理类的源文件
+#include"Proxy.h"
+#include"intstack.h"
+
+Proxy::Proxy(unsigned n)
+{
+	s=new IntStack(n);
+}
+Proxy::Proxy(const Proxy & other)//拷贝构造函数
+{
+	s=new IntStack(*(other.s));
+}
+Proxy::~Proxy()//析构函数
+{
+	delete s;
+}
+Proxy & Proxy::operator=(const Proxy &other)//赋值函数
+{
+	*s=(*(other.s));
+	return *this;
+}
+bool Proxy::is_empty()const//测试栈是否为空
+{
+	return s->is_empty();
+}
+void Proxy::push(int value)//入栈
+{
+	s->push(value);
+}
+bool Proxy::pop()//退栈
+{
+	return s->pop();
+}
+bool Proxy::get_top(int &value)const//读取栈顶元素
+{
+	return s->get_top(value);
+}
+
+//test.cpp文件
+#include"Proxy.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+int main()
+{
+    Proxy s1(4);
+	for(int i=1;i<=6;++i)
+		s1.push(i);
+	Proxy s2(s1);//测试拷贝构造函数
+	Proxy s3;
+	s3=s1;//测试赋值函数
+
+	int value;
+	while(s1.get_top(value))
+	{	
+		s1.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s1已清空"<<endl;
+
+	while(s2.get_top(value))
+	{	
+		s2.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s2已清空"<<endl;
+
+	while(s3.get_top(value))
+	{	
+		s3.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s3已清空"<<endl;
+
+	return 0;
+}

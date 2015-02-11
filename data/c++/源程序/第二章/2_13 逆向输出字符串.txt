@@ -1,0 +1,16 @@
+//2.13 ÄæÏòÊä³ö×Ö·û´®
+#include <iostream.h>
+void reverse_string(char *p);
+int main()
+{ 
+	reverse_string("abcd");    
+	return 0;
+}
+void reverse_string(char *p)
+{
+ 	if(*p)
+	{
+		reverse_string(p+1);
+		cout<<*p;
+	}
+}

@@ -1,0 +1,18 @@
+//12.6 为程序加行号
+#include<iostream>
+#include<string>
+#include<fstream>
+#include<iomanip>
+using std::cout;
+using std::ifstream;
+using std::setw;
+
+int main()
+{
+    ifstream in("为程序加行号.cpp");
+    char str[100];
+    int i=0;
+    while(in.getline(str,99))
+        cout<<setw(2)<<++i<<"  "<<str<<'\n';
+    return 0;
+}

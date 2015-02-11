@@ -1,0 +1,180 @@
+//7.7派生类对象的复制与赋值
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+	int x;
+	A(int x1=0):x(x1)
+	{}
+};
+class B:public A
+{	
+public:
+	int y;
+	B(int x1,int y1):A(x1),y(y1)
+	{}
+};
+class C:public A
+{
+public:
+	int y;
+	C(int x1,int y1):A(x1),y(y1)
+	{}
+	C(const C & c):A(c)
+	{
+		cout<<"执行C的拷贝构造函数"<<endl;
+		y=c.y*100;
+	}
+	C& operator=(const C& c)
+	{
+		cout<<"执行C的赋值函数"<<endl;
+		y=c.y*100;
+		return *this;
+	}
+};
+
+class D
+{
+public:
+	int x;
+	D(int x1):x(x1)
+	{}
+	D(const D & d)
+	{
+		cout<<"执行D的拷贝构造函数"<<endl;
+		x=d.x*100;
+	}
+	D& operator=(const D& d)
+	{
+		cout<<"执行D的赋值函数"<<endl;
+		x=d.x*100;
+		return *this;
+	}
+};
+class E:public D
+{
+public:
+	int y;
+	E(int x1,int y1):D(x1),y(y1)
+	{}
+};
+class F:public D
+{
+public:
+	int y;
+	F(int x1,int y1):D(x1),y(y1)
+	{}
+	F(const F & f):D(f)
+	{
+		cout<<"执行F的拷贝构造函数"<<endl;
+		y=f.y*100;
+	}
+	F& operator=(const F& f)
+	{
+		cout<<"执行F的赋值函数"<<endl;
+		y=f.y*100;
+		return *this;
+	}
+};
+
+class G
+{
+public:
+	int x;
+	G(int x1):x(x1)
+	{}
+private:
+	G(const G & g)
+	{
+		cout<<"执行G的拷贝构造函数"<<endl;
+		x=g.x*100;
+	}
+	G& operator=(const G& g)
+	{
+		cout<<"执行G的赋值函数"<<endl;
+		x=g.x*100;
+		return *this;
+	}
+};
+class H:public G
+{
+public:
+	int y;
+	H(int x1,int y1):G(x1),y(y1)
+	{}
+};
+class I:public G
+{
+public:
+	int y;
+	I(int x1,int y1):G(x1),y(y1)
+	{}
+	I(const I & i):G(i.x)
+	{
+		cout<<"执行I的拷贝构造函数"<<endl;
+		y=i.y*100;
+	}
+	I& operator=(const I& i)
+	{
+		cout<<"执行I的赋值函数"<<endl;
+		y=i.y*100;
+		return *this;
+	}
+};
+
+int main()
+{
+	 B b1(1,2);
+	 B b2(b1);
+	 B b3(10,10);
+	 b3=b1;
+	 cout<<"b1.x="<<b1.x<<",b1.y="<<b1.y<<endl;
+	 cout<<"b2.x="<<b2.x<<",b2.y="<<b2.y<<endl;
+	 cout<<"b3.x="<<b3.x<<",b3.y="<<b3.y<<endl;
+	 cout<<"-------------------"<<endl;
+
+	 C c1(1,2);
+	 C c2(c1);
+	 C c3(10,10);
+	 c3=c1;
+	 cout<<"c1.x="<<c1.x<<",c1.y="<<c1.y<<endl;
+	 cout<<"c2.x="<<c2.x<<",c2.y="<<c2.y<<endl;
+	 cout<<"c3.x="<<c3.x<<",c3.y="<<c3.y<<endl;
+	 cout<<"-------------------"<<endl;
+
+	 E e1(1,2);
+	 E e2(e1);
+	 E e3(10,10);
+	 e3=e1;
+	 cout<<"e1.x="<<e1.x<<",e1.y="<<e1.y<<endl;
+	 cout<<"e2.x="<<e2.x<<",e2.y="<<e2.y<<endl;
+	 cout<<"e3.x="<<e3.x<<",e3.y="<<e3.y<<endl;
+	 cout<<"-------------------"<<endl;
+
+	 F f1(1,2);
+	 F f2(f1);
+	 F f3(10,10);
+	 f3=f1;
+	 cout<<"f1.x="<<f1.x<<",f1.y="<<f1.y<<endl;
+	 cout<<"f2.x="<<f2.x<<",f2.y="<<f2.y<<endl;
+	 cout<<"f3.x="<<f3.x<<",f3.y="<<f3.y<<endl;
+	 cout<<"-------------------"<<endl;
+
+	 H h1(1,2);
+	 //H h2(h1);
+	 H h3(10,10);
+	 //h3=h1;
+	 cout<<"-------------------"<<endl;
+
+	 I i1(1,2);
+	 I i2(i1);
+	 I i3(10,10);
+	 i3=i1;
+	 cout<<"i1.x="<<i1.x<<",i1.y="<<i1.y<<endl;
+	 cout<<"i2.x="<<i2.x<<",i2.y="<<i2.y<<endl;
+	 cout<<"i3.x="<<i3.x<<",i3.y="<<i3.y<<endl;
+	 cout<<"-------------------"<<endl;
+	 return 0;	 
+}

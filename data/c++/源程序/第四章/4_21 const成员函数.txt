@@ -1,0 +1,67 @@
+//4.21 const成员函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Time
+{
+public:
+	Time(int h=0,int m=0,int s=0)
+	{
+		    set_hour(h);
+		set_minute(m);
+		set_second(s);		
+	}
+	void set_hour(int h)//非const成员函数
+	{
+		hour=h>=0&&h<=23?h:0;
+	}
+	void set_minute(int m)//非const成员函数
+	{
+		minute=m>=0&&m<=59?m:0;
+	}
+	void set_second(int s)//非const成员函数
+	{
+		second=s>=0&&s<=59?s:0;
+	}
+	int get_hour()const  //const成员函数
+	{
+		return hour;
+	}
+	int get_minute()  //有资格成为const成员函数，但不是const成员函数
+	{
+		return minute;
+	}
+	int get_second()const  //const成员函数
+	{
+		cout<<"const成员函数get_second()const被调用"<<endl;
+		return second;
+	}
+	int get_second()  //非const成员函数
+	{
+		cout<<"非const成员函数get_second()被调用"<<endl;
+		return second;
+	}
+private:
+	int hour;
+	int minute;
+	int second;
+};
+int main()
+{
+	Time afternoon(14,0,0);//非const对象
+	int h=afternoon.get_hour();//非const对象调用const成员函数
+    int m=afternoon.get_minute();//非const对象调用非const成员函数
+	int s=afternoon.get_second();//非const对象调用非const成员函数
+	cout<<"afternoon="<<h<<":"<<m<<":"<<s<<endl;
+	afternoon.set_hour(15);//修改非const对象
+	cout<<"afternoon.hour="<<afternoon.get_hour()<<endl;
+    
+	const Time noon(12,0,0);//const对象
+	h=noon.get_hour();//const对象调用const成员函数
+	//m=noon.get_minute();错误，const对象调用非const成员函数
+	s=noon.get_second();//const对象调用const成员函数
+   	cout<<"noon="<<h<<":XX:"<<s<<endl;
+
+	return 0;
+}

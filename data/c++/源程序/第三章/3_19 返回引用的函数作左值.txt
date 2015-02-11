@@ -1,0 +1,26 @@
+//3.19 返回引用的函数作左值
+#include<iostream>
+using std::cout;
+using std::endl;
+
+int bad_at(int *,int);
+int& good_at(int *,int);
+int main()
+{
+	int array[4]={1,2,3,4};
+	    cout<<"bad_at(array,0)"<<bad_at(array,0)<<endl;
+	cout<<"good_at(array,1)"<<good_at(array,1)<<endl;
+    
+	//bad_at(array,2)=30;错误，返回一个值时，函数不能作左值
+	good_at(array,3)=40;//正确，返回一个引用时，函数可以作左值
+	cout<<"good_at(array,3)"<<good_at(array,3)<<endl;
+	return 0;
+}
+int bad_at(int *p,int i)
+{
+	return p[i];
+}
+int& good_at(int *p,int i)
+{
+	return p[i];
+}

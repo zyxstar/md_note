@@ -1,0 +1,78 @@
+//9.3 异常对象的抛出和捕获
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{	
+public:
+	char str[40];
+	A(const char* const s)
+	    {
+		strcpy(str,s);
+		cout<<str<<"被构造"<<endl;
+	}
+	A(const A& other)
+	{
+		strcpy(str,other.str);
+		strcat(str,"的副本");
+		cout<<str<<"被拷贝构造"<<endl;
+	}
+    ~A()
+	{
+		cout<<str<<"被析构"<<endl;
+	}
+};
+	
+void f1()
+{
+	A a1("栈变量a1");
+	throw a1;
+}
+
+void f2()
+{
+	A *a2=new A("堆变量*a2");
+	throw *a2;
+}
+
+void f3()
+{
+	static A a3("静态变量a3");
+	throw a3;	
+}
+
+int main()
+{
+	try
+	{
+		f1();
+	}
+	catch(A& a)
+	{
+		cout<<"a是"<<a.str<<endl;
+	}
+	cout<<"-----------------------------------"<<endl;
+
+	try
+	{
+		f2();
+	}
+	catch(A a)
+	{
+		cout<<"a是"<<a.str<<endl;
+	}
+	cout<<"-----------------------------------"<<endl;	
+
+	try
+	{		
+	    f3();	
+	}
+	catch(A& a)
+	{
+		cout<<"a是"<<a.str<<endl;
+	}	
+	cout<<"-----------------------------------"<<endl;
+
+	return 0;
+}

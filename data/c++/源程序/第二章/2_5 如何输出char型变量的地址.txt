@@ -1,0 +1,24 @@
+//2.5 如何输出char型变量的地址
+#include <iostream.h>
+int main()
+{ 
+    char a[5]={65,66,67};
+	char *p=a;
+	
+    cout<<"&a[0]:\t\t"<<&a[0]<<endl;
+	cout<<"a:\t\t"<<a<<endl;
+	cout<<"p:\t\t"<<p<<endl;
+
+	cout<<"(void*)(&a[0]):\t"<<(void*)(&a[0])<<endl;
+	cout<<"(void*)a:\t"<<(void*)a<<endl;
+    cout<<"(void*)p:\t"<<(void*)p<<endl;
+    
+    //cout<<"&(&a[0]):\t\t"<<&(&a[0])<<endl;语法错误
+	cout<<"&a:\t\t"<<&a<<endl;
+	cout<<"&p:\t\t"<<&p<<endl;
+
+	a[3]=68;
+	a[4]=69;
+	cout<<"a占满以后:\t"<<a<<endl;
+	return 0;
+}

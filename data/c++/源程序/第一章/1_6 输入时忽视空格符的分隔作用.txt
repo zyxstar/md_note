@@ -1,0 +1,14 @@
+//1.6 输入时忽视空格符的分隔作用
+#include<iostream.h>
+#include<string.h>
+int main()
+{  
+   char c;
+   char str[20];
+   cin>>c;
+   cin>>str;
+   cout<<"c:"<<c<<endl;
+   cout<<"str:"<<str<<endl;
+   cout<<"str's len:"<<strlen(str)<<endl;
+   return 0;
+}

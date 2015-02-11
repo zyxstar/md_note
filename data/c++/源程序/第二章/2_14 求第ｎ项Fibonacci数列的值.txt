@@ -1,0 +1,15 @@
+//2.14 求第ｎ项Fibonacci数列的值
+#include <iostream.h>
+unsigned Fibonacci(unsigned n);
+int main()
+{ 
+	cout<<"Fibonacci(5)="<<Fibonacci(5)<<endl;  
+	cout<<"Fibonacci(40)="<<Fibonacci(40)<<endl;
+	return 0;
+}
+unsigned Fibonacci(unsigned n)
+{
+	if(n==0||n==1) return n;
+	return Fibonacci(n-1)+Fibonacci(n-2);
+}
+

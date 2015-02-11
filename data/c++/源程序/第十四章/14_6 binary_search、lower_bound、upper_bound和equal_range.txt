@@ -1,0 +1,84 @@
+//14.6 binary_search、lower_bound、upper_bound和equal_range
+#include<iostream>
+#include<algorithm>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::binary_search;
+using std::lower_bound;
+using std::upper_bound;
+using std::equal_range;
+using std::greater;
+using std::sort;
+using std::pair;
+
+void print(int* arr, int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+
+int main()
+{ 
+	int a[]={1,1,2,2,2,2,3,3,5,5};
+    int i;
+	for(i=0;i<10;++i)
+		cout<<i<<" ";
+	cout<<endl;
+	cout<<"-------------------------"<<endl;
+	print(a,10,":a");
+
+	bool flag=binary_search(a,a+10,3);
+	if(flag)
+		cout<<"数组a中存在等于3的元素"<<endl;
+	flag=binary_search(a,a+10,4);
+	if(!flag)
+		cout<<"数组a中不存在等于4的元素"<<endl;
+	sort(a,a+10,greater<int>());
+	print(a,10,":a");
+	flag=binary_search(a,a+10,4,greater<int>());
+	if(!flag)
+		cout<<"数组a中不存在等于4的元素"<<endl;
+	cout<<"-------------------------"<<endl;
+
+	for(i=0;i<10;++i)
+		cout<<i<<" ";
+	cout<<endl;
+	cout<<"-------------------------"<<endl;
+	sort(a,a+10);
+	print(a,10,":a");
+	int *loc=lower_bound(a,a+10,2);
+	cout<<"a中值为2的元素的下界是第"<<loc-a<<"位"<<endl;
+	loc=upper_bound(a,a+10,2);
+	cout<<"a中值为2的元素的上界是第"<<loc-a<<"位"<<endl;
+	pair<int*,int*> p=equal_range(a,a+10,2);
+	cout<<"a中值为2的元素的范围从第"<<p.first-a
+		<<"到第"<<p.second-a<<"位"<<endl;
+	loc=lower_bound(a,a+10,4);
+	cout<<"a中值为4的元素的下界是第"<<loc-a<<"位"<<endl;
+	loc=upper_bound(a,a+10,4);
+	cout<<"a中值为4的元素的上界是第"<<loc-a<<"位"<<endl;
+	p=equal_range(a,a+10,4);
+	cout<<"a中值为4的元素的范围从第"<<p.first-a
+		<<"到第"<<p.second-a<<"位"<<endl;
+
+	cout<<"-------------------------"<<endl;
+	for(i=0;i<10;++i)
+		cout<<i<<" ";
+	cout<<endl;
+	cout<<"-------------------------"<<endl;
+	sort(a,a+10,greater<int>());
+	print(a,10,":a");
+	loc=lower_bound(a,a+10,2,greater<int>());
+	cout<<"a中值为2的元素的下界是第"<<loc-a<<"位"<<endl;
+	loc=upper_bound(a,a+10,2,greater<int>());
+	cout<<"a中值为2的元素的上界是第"<<loc-a<<"位"<<endl;
+	p=equal_range(a,a+10,2,greater<int>());
+	cout<<"a中值为2的元素的范围从第"<<p.first-a<<"到第"
+		<<p.second-a<<"位"<<endl;
+	cout<<"-------------------------"<<endl;
+
+	return 0;
+}

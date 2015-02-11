@@ -1,0 +1,94 @@
+//8.3 区分隐藏和覆盖
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+    virtual void f1()
+	{
+		cout<<"void A::f1()被执行"<<endl;
+ 	}
+    virtual void f2()
+	{
+		cout<<"void A::f2()被执行"<<endl;
+	}
+	void f3()
+	{
+		cout<<"void A::f3()被执行"<<endl;
+	}
+	virtual void f4()const
+	{
+		cout<<"void A::f4()被执行"<<endl;
+	}
+	virtual void f5()
+	{
+		cout<<"void A::f5()被执行"<<endl;
+	}
+	virtual void f6(int)
+	{
+		cout<<"void A::f6(int)被执行"<<endl;
+	}
+	virtual void f7(int=0)
+	{
+		cout<<"void A::f7(int)被执行"<<endl;
+	}
+	virtual void f8()
+	{
+		cout<<"void A::f8()被执行"<<endl;
+	}
+};
+class B:public A
+{
+public:
+    virtual void f1()
+	{
+		cout<<"void B::f1()被执行"<<endl;
+	}
+    void f2()
+	{
+		cout<<"void B::f2()被执行"<<endl;
+	}
+	virtual void f3()
+	{
+		cout<<"void B::f3()被执行"<<endl;
+	}
+	virtual void f4()
+	{
+		cout<<"void B::f4()被执行"<<endl;
+	}
+	virtual void f5()const
+	{
+		cout<<"void B::f5()被执行"<<endl;
+	}
+	virtual void f6(char)
+	{
+		cout<<"void B::f6(char)被执行"<<endl;
+	}
+	virtual void f7()
+	{
+		cout<<"void B::f7()被执行"<<endl;
+	}
+	/*编译错误
+	virtual int f8()
+	{
+		cout<<"void B::f8()被执行"<<endl;
+		return 0;
+	}
+	*/
+};
+
+int main()
+{
+	A* p=new B;
+	p->f1();
+	p->f2();
+	p->f3();
+	p->f4();
+	p->f5();
+	p->f6('A');
+	p->f7();
+	p->f8();
+	delete p;
+	return 0;
+}

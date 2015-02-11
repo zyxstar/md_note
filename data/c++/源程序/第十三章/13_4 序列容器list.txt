@@ -1,0 +1,64 @@
+//13.4 ĞòÁĞÈİÆ÷list
+#include<iostream>
+#include<algorithm>
+#include<iterator>
+#include<list>
+using std::cout;
+using std::endl;
+using std::list;
+using std::ostream_iterator;
+using std::copy;
+
+void print_list(const list<int>& l,const char* str)
+{
+	ostream_iterator<int> out(cout," ");
+	cout<<str;
+	copy(l.begin(),l.end(),out);
+	cout<<endl;
+}
+bool less_3(int n)
+{
+	return n<3;
+}
+int main()
+{ 	
+	int a1[]={1,5,5,8,7,8,3,9,7};
+	int a2[]={0,1,2,4,8,5,6};
+	list<int> l1(a1,a1+9);
+	print_list(l1,"l1:");
+	list<int> l2(a2,a2+7);
+	print_list(l2,"l2:");
+	cout<<"------------------------------"<<endl;
+
+	l1.remove(8);
+	print_list(l1,"l1:");
+	l2.remove_if(less_3);
+	print_list(l2,"l2:");
+	cout<<"------------------------------"<<endl;
+	
+	l1.reverse();
+	print_list(l1,"l1:");
+	cout<<"------------------------------"<<endl;
+
+	l1.sort();
+	print_list(l1,"l1:");
+	l2.sort();
+	print_list(l2,"l2:");
+	l1.merge(l2);
+	print_list(l1,"l1:");
+	print_list(l2,"l2:");
+	cout<<"------------------------------"<<endl;
+
+	l1.unique();
+	print_list(l1,"l1:");
+	l2.insert(l2.begin(),a2,a2+4);
+	print_list(l2,"l2:");
+	cout<<"------------------------------"<<endl;
+
+	l2.splice(l2.end(),l1);
+	print_list(l1,"l1:");
+	print_list(l2,"l2:");
+	cout<<"------------------------------"<<endl;
+
+	return 0;
+}

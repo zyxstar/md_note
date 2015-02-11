@@ -1,0 +1,35 @@
+//3.17 按值传递的swap函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+void swap(int,int);
+void swap(int*,int*);
+int main()
+{
+	int x=1;
+    int y=2;
+    cout<<"程序开始时"<<endl;
+	cout<<"x="<<x<<",y="<<y<<endl;
+
+	swap(x,y);
+	cout<<"x="<<x<<",y="<<y<<endl;
+
+	swap(&x,&y);
+	cout<<"x="<<x<<",y="<<y<<endl;
+	return 0;
+}
+void swap(int a,int b)
+{   	
+	int t=a;
+	a=b;
+	b=t;
+	cout<<"调用swap(int,int)后"<<endl;
+}
+void swap(int *p,int *q)
+{	
+	int t=*p;
+	*p=*q;
+	*q=t;
+	cout<<"调用swap(int*,int*)后"<<endl;
+}

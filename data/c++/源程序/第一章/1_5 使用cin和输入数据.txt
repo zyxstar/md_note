@@ -1,0 +1,13 @@
+//1.5 使用cin和">>"输入数据
+#include<iostream.h>
+int main()
+{  
+   char c;
+   int i;
+   double d;
+   cin>>c>>i>>d;
+   cout<<"c:"<<c<<endl<<"i:"<<i<<endl<<"d:"<<d<<endl;
+   return 0;
+}
+
+

@@ -1,0 +1,85 @@
+//14.9 remove、remove_if、remove_copy、remove_copy_if、
+//replace、replace_if、replace_copy和replace_copy_if
+#include<iostream>
+#include<vector>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::vector;
+using std::remove;
+using std::remove_if;
+using std::remove_copy;
+using std::remove_copy_if;
+using std::replace;
+using std::replace_if;
+using std::replace_copy;
+using std::replace_copy_if;
+
+typedef vector<int>::iterator VI;
+void print(VI f,VI l,const char* str)
+{	
+	for(;f!=l;++f)
+		cout<<*f<<" ";
+	cout<<str;
+	cout<<endl;
+}
+bool less_10(int n)
+{
+	return n<10;
+}
+
+int main()
+{ 
+	int a[]={1,10,23,10,45,10,3,4,10,3};
+
+	vector<int> v1(a,a+10);
+	print(v1.begin(),v1.end(),":v1中全部元素");
+	VI loc=remove(v1.begin(),v1.end(),10);
+	print(v1.begin(),loc,":v1中从位置begin()到loc的元素");
+	print(v1.begin(),v1.end(),":v1中全部元素");
+	v1.erase(loc,v1.end());
+	print(v1.begin(),v1.end(),":erase后v1中全部元素");
+	cout<<"--------------------------------------------"<<endl;
+
+	vector<int> v2(a,a+10);
+	print(v2.begin(),v2.end(),":v2中全部元素");
+	loc=remove_if(v2.begin(),v2.end(),less_10);
+	print(v2.begin(),loc,":v2中从位置begin()到loc的元素");
+	print(v2.begin(),v2.end(),":v2中全部元素");
+	v2.erase(loc,v2.end());
+	print(v2.begin(),v2.end(),":erase后v2中全部元素");
+	cout<<"--------------------------------------------"<<endl;
+
+	vector<int> v3(a,a+10);
+	vector<int> v4(10);
+	vector<int> v5(10);
+	print(v3.begin(),v3.end(),":v3中全部元素");
+	loc=remove_copy(v3.begin(),v3.end(),v4.begin(),10);
+	print(v4.begin(),loc,":v4中从位置begin()到loc的元素");
+	print(v4.begin(),v4.end(),":v4中全部元素");
+	loc=remove_copy_if(v3.begin(),v3.end(),v5.begin(),less_10);
+	print(v5.begin(),loc,":v5中从位置begin()到loc的元素");
+	print(v5.begin(),v5.end(),":v5中全部元素");
+	cout<<"--------------------------------------------"<<endl;
+
+	vector<int> v6(a,a+10);
+	vector<int> v7(a,a+10);
+	vector<int> v8(10);
+	vector<int> v9(10);	
+	print(v6.begin(),v6.end(),":v6中全部元素");
+	replace(v6.begin(),v6.end(),10,20);
+	print(v6.begin(),v6.end(),":替换后v6中全部元素");
+	print(v7.begin(),v7.end(),":v7中全部元素");
+	replace_if(v7.begin(),v7.end(),less_10,0);
+	print(v7.begin(),v7.end(),":替换后v7中全部元素");
+	cout<<"--------------------------------------------"<<endl;
+
+	print(v3.begin(),v3.end(),":v3中全部元素");
+	replace_copy(v3.begin(),v3.end(),v8.begin(),10,20);
+	print(v8.begin(),v8.end(),":v8中全部元素");
+	replace_copy_if(v3.begin(),v3.end(),v9.begin(),less_10,0);
+	print(v9.begin(),v9.end(),":v9中全部元素");
+	cout<<"--------------------------------------------"<<endl;	
+
+	return 0;
+}

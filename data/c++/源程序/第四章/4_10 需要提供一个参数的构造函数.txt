@@ -1,0 +1,31 @@
+//4.10 需要提供一个参数的构造函数
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+	int x;	
+public:
+	A(int x1)
+ 	{
+		x=x1*2;
+	}
+	int get_x()
+	{
+		return x;
+	}
+};
+
+void print(A a)
+{
+	cout<<"类型A对象的x="<<a.get_x()<<endl;
+}
+
+int main()
+{  
+   int i=1;
+   print(i);
+   print(static_cast<A>(2));
+   return 0;
+}

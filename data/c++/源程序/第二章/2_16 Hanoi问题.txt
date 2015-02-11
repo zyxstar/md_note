@@ -1,0 +1,17 @@
+//2.16 HanoiÎÊÌâ
+#include<iostream.h>
+void Hanoi(unsigned n,char first,char second,char third);
+int main()
+{   
+    Hanoi(4,'1','2','3');
+    return 0;
+} 
+void Hanoi(unsigned n,char first,char second,char third)
+{
+ 	if(n>0)
+	{
+		Hanoi(n-1,first,third,second);
+		cout<<first<<"->"<<third<<endl;
+		Hanoi(n-1,second,first,third);
+	}
+}

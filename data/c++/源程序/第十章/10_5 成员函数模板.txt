@@ -1,0 +1,23 @@
+//10.5 成员函数模板
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	template <class T>
+	void f(T t) const
+	    {
+		cout<<"参数的类型是："<<typeid(t).name()<<endl;
+	}
+};
+
+int main()
+{
+	A a;
+	a.f(2);
+	a.f(a);
+	a.f<double>(2);
+	return 0;
+}

@@ -1,0 +1,51 @@
+//4.25 单件模式
+#include<iostream>
+#include<cstring>
+using std::cout;
+using std::endl;
+
+class Boss
+{
+	char name[10];
+	double salary;
+	    static Boss b;//私有的static成员变量
+    Boss(const char* n,double s)//私有的构造函数
+	{
+		set_name(n);
+		set_salary(s);
+		cout<<name<<"被构造"<<endl;
+	}
+	Boss(const Boss&);//私有的拷贝构造函数
+public:	
+	static Boss& init()
+	{
+		return b;
+	}
+	void set_name(const char* n)
+	{
+		strcpy(name,n);
+	}
+	void set_salary(double s)
+	{
+		salary=s>=0.0?s:0.0;
+	}
+	void print()const
+	{
+		cout<<"Boss:"<<name<<"赚"<<salary<<endl;
+	}
+};
+Boss Boss::b("刘老板",600.718);//全局域初始唯一的对象b
+
+int main()
+{
+	Boss& L1=Boss::init();
+	L1.print();
+
+	Boss& L2=Boss::init();
+	L2.set_name("刘积仁");
+	L2.set_salary(600718.0);
+	L1.print();
+	L2.print();
+
+	return 0;
+}

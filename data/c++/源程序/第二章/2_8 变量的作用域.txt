@@ -1,0 +1,53 @@
+//2.8  变量的作用域
+#include <iostream.h>
+void auto_local ();
+void static_local ();
+void global ();
+int a=0;//全局变量
+
+int main()
+{   
+    int a=10;
+	    cout<<a<<endl;
+	
+	{
+		int a=100;
+		cout<<a<<endl;
+	}
+
+    cout<<a<<endl;
+
+	auto_local ();
+	auto_local ();
+
+	static_local ();
+    static_local ();
+    
+	global ();
+	global ();
+	
+ 	return 0;
+}
+
+void auto_local()
+{
+	int a=1000;
+    cout<<a<<endl;
+	a++;
+	cout<<a<<endl;
+}
+
+void static_local()
+{
+	static int a=10000;
+    cout<<a<<endl;
+	a++;
+	cout<<a<<endl;
+}
+
+void global()
+{
+	cout<<a<<endl;
+	a++;
+	cout<<a<<endl;
+}

@@ -1,0 +1,29 @@
+//12.7 stringÁ÷¶ÔÏó
+#include<iostream>
+#include<sstream>
+using std::cout;
+using std::endl;
+using std::istringstream;
+using std::ostringstream;
+using std::string;
+
+int main()
+{ 
+	string str("12.34 56");
+	double d;
+	int i;
+
+	istringstream iss(str);	
+	iss>>d>>i;
+	cout<<"d="<<d<<endl;
+	cout<<"i="<<i<<endl;
+	
+	d*=2;
+	i*=2;
+	ostringstream oss;
+	oss<<d<<' '<<i;
+	str=oss.str();
+	cout<<"str="<<str<<endl;
+	
+	return 0;
+}

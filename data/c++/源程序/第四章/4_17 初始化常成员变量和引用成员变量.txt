@@ -1,0 +1,28 @@
+//4.17 初始化常成员变量和引用成员变量
+#include<iostream>
+using std::cout;
+using std::endl;
+
+double pi=3.14;
+class A
+{
+private:
+	const int x;
+ 	double & r_pi;
+public:
+	A(int x1):x(x1),r_pi(pi)
+	{}
+	void  print()
+	{
+		cout<<"x="<<x<<",r_pi="<<r_pi<<endl;
+	}
+};
+int main()
+{
+	A a(10);
+	a.print();
+	pi=3.14159;
+	a.print();
+	
+    return 0;
+}

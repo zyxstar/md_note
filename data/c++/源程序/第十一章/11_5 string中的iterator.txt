@@ -1,0 +1,27 @@
+//11.5 stringÖĞµÄiterator
+#include<iostream>
+#include<string>
+using std::cout;
+using std::endl;
+using std::string;
+
+int main()
+{
+	string str("hello");
+	    string::iterator p=str.begin();
+	for(;p!=str.end();++p)
+	{
+		*p-=32;
+		cout<<*p;
+	}
+	cout<<endl;
+	for(;--p!=str.begin();)
+	{
+		*p+=32;
+		cout<<*p;
+	}
+	*p+=32;
+	cout<<*p<<endl;
+
+	return 0;
+}

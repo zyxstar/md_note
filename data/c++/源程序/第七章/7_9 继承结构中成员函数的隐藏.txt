@@ -1,0 +1,78 @@
+//7.9 继承结构中成员函数的隐藏
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+	void f1()
+	{
+		cout<<"void A::f1()"<<endl;
+ 	}
+	char f2()
+	{
+		cout<<"char A::f2()"<<endl;
+		return 'A';
+	}
+	void f3(float)
+	{
+		cout<<"void A::f3(float)"<<endl;
+	}
+	void f3(float,float)
+	{
+		cout<<"void A::f3(float,float)"<<endl;
+	}
+	void f4() const
+	{
+		cout<<"void A::f4() const"<<endl;
+	}
+};
+class B:public A
+{
+public:
+	void f1()
+	{
+		cout<<"void B::f1()"<<endl;
+	}
+	double f2()
+	{
+		cout<<"double B::f2()"<<endl;
+		return 97.9;
+	}
+	void f3(int)
+	{
+		cout<<"void B::f3(int)"<<endl;
+	}
+	void f4()
+	{
+		cout<<"void B::f4()"<<endl;
+	}
+};
+
+int main()
+{
+	B b;
+	b.A::f1();
+	b.f1();
+	cout<<"---------------"<<endl;
+
+	char c=b.f2();
+	cout<<"c="<<c<<endl;
+	b.f3(12.5f);
+	//b.f3(1.1,2.2);编译错误
+	const B const_b;
+	//const_b.f4();编译错误
+	cout<<"---------------"<<endl;
+
+	A* p=&b;
+	p->f1();
+	c=p->f2();
+	cout<<"c="<<c<<endl;
+	p->f3(1);
+	p->f3(1,1);
+	const A* const_p=&const_b;
+	const_p->f4();
+	cout<<"---------------"<<endl;
+
+	return 0;	 
+}

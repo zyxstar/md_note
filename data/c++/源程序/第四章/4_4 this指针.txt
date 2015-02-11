@@ -1,0 +1,27 @@
+//4.4 thisÖ¸Õë
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	void dis_address()
+	{   
+		    cout<<this<<endl;
+	}
+};
+
+int main()
+{
+   A a,b; 
+   
+   cout<<"&a="<<&a<<endl;
+   cout<<"a'this=";
+   a.dis_address(); 
+   
+   cout<<"&b="<<&b<<endl;
+   cout<<"b'this=";
+   b.dis_address(); 
+   return 0;
+}

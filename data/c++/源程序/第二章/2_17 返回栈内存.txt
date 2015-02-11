@@ -1,0 +1,13 @@
+//2.17 ·µ»ØÕ»ÄÚ´æ
+#include <iostream.h>
+char* return_str();
+int main()
+{ 
+    cout<<return_str();
+	return 0;
+}
+char* return_str()
+{
+	    char p[]="hello";
+	return p;
+}

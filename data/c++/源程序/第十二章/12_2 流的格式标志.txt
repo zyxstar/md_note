@@ -1,0 +1,34 @@
+//12.2 流的格式标志
+#include<iostream>
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ios;
+
+int main()
+{ 
+	char c;
+  	cin.unsetf(ios::skipws);
+	cin>>c;
+	cout<<"(int)c="<<(int)c<<endl;
+	cin.setf(ios::skipws);
+	cout<<"-----------------"<<endl;
+
+	cout.flags(ios::showbase|ios::uppercase|ios::hex|ios::internal);
+	cout.width(15);
+	cout.fill('$');
+	cout<<12<<endl;
+	cout<<"-----------------"<<endl;
+
+	cout.setf(ios::showpos);
+	cout.setf(ios::dec,ios::basefield);
+	cout.setf(ios::scientific,ios::floatfield);
+	cout.setf(ios::right,ios::adjustfield);
+	cout.precision(2);
+	cout.width(15);
+	cout.fill('*');
+	cout<<12.5555555<<endl;
+	cout<<"-----------------"<<endl;
+    
+	return 0;
+}

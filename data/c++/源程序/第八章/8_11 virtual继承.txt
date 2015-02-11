@@ -1,0 +1,90 @@
+//8.11 virtual继承
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A1
+{
+public:
+	char s[16];
+	A1(const char* const str)
+	    {
+		strcpy(s,str);
+		cout<<"A1类的构造函数"<<s<<endl;
+	}	
+};
+class A2
+{
+public:
+	char s[16];
+	A2(const char* const str)
+	{
+		strcpy(s,str);
+		cout<<"A2类的构造函数"<<s<<endl;
+	}	
+};
+class B1:virtual public A1
+{
+public:
+	char s[16];
+	B1(const char* const str1,const char* const str2):A1(str1)
+	{
+		strcpy(s,str2);
+		cout<<"B1类的构造函数"<<s<<endl;
+	}	
+};
+class B2: public virtual A1 
+{
+public:
+	char s[16];
+	B2(const char* const str1,const char* const str2):A1(str1)
+	{
+		strcpy(s,str2);
+		cout<<"B2类的构造函数"<<s<<endl;
+	}	
+};
+class C:public B1,public A2,public B2
+{
+public:
+	char s[16];
+	C(const char* const str1,const char* const str2,
+	   const char* const str3,const char* const str4,const char* const str5)
+	   :B1(str2,str2),B2(str3,str3),A1(str1),A2(str5)
+	{
+		strcpy(s,str4);
+		cout<<"C类的构造函数"<<s<<endl;
+	}
+};
+
+int main()
+{
+	cout<<"sizeof(A1)="<<sizeof(A1)<<endl;
+	cout<<"sizeof(A2)="<<sizeof(A2)<<endl;
+	cout<<"sizeof(B1)="<<sizeof(B1)<<endl;
+	cout<<"sizeof(B2)="<<sizeof(B2)<<endl;
+	cout<<"sizeof(C)="<<sizeof(C)<<endl;
+	cout<<"------------------"<<endl;
+
+	B1 b1("A1","B1");
+	cout<<"------------------"<<endl;
+
+	cout<<"&b1="<<&b1<<endl;;
+	cout<<"&b1.A1::s="<<&b1.A1::s<<endl;
+	cout<<"&b1.s="<<&b1.s<<endl;
+	cout<<"------------------"<<endl;
+
+	C c("A1","B1","B2","C","A2");
+	cout<<"c.A1::s="<<c.A1::s<<endl;
+	cout<<"------------------"<<endl;
+
+	cout<<"&c="<<&c<<endl;	
+	cout<<"&c.B1::s="<<&c.B1::s<<endl;
+	cout<<"&c.A2::s="<<&c.A2::s<<endl;
+	cout<<"&c.B2::s="<<&c.B2::s<<endl;
+	cout<<"&c.s="<<&c.s<<endl;
+	cout<<"&c.A1::s="<<&c.A1::s<<endl;
+	
+	cout<<"------------------"<<endl;
+
+	return 0;
+}

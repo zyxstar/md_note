@@ -1,0 +1,40 @@
+//8.6 ´¿virtualº¯ÊıÓë³éÏóÀà
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	virtual void f()const =0;//´¿virtualº¯Êı
+};
+
+class B1:public A
+{
+	virtual void f()
+	{
+		cout<<"B1::f()±»Ö´ĞĞ"<<endl;
+	}
+};
+
+class B2:public A
+{
+public:
+	virtual void f()const
+	{
+		cout<<"B2::f()±»Ö´ĞĞ"<<endl;
+	}
+};
+
+int main()
+{
+	//A a;±àÒë´íÎó
+	//B1 b1;±àÒë´íÎó
+	A* p=0;
+	//p=new A;±àÒë´íÎó
+	//p=new B1;±àÒë´íÎó
+	p=new B2;
+	p->f();
+	delete p;
+	return 0;
+}

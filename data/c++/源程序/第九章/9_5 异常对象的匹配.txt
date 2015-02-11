@@ -1,0 +1,161 @@
+//9.5 异常对象的匹配
+#include<iostream>
+using std::cout;
+using std::endl;
+
+void f1()
+{
+	try
+	{
+		throw 0;
+	}
+	catch(double)
+	{
+		cout<<"被catch(double)捕获"<<endl;
+	}
+	catch(int)
+	{
+		cout<<"被catch(int)捕获"<<endl;
+	}
+}
+
+class A
+{};
+class B
+{
+public:
+	B(const A&)
+	{};
+};
+
+void f2()
+{
+	try
+	{
+		throw A();
+	}
+	catch(B)
+	{
+		cout<<"被catch(B)捕获"<<endl;
+	}
+	catch(A)
+	{
+		cout<<"被catch(A)捕获"<<endl;
+	}
+}
+
+void f3()
+{
+	try
+	{
+		int *p=0;
+		throw p;
+	}
+	catch(void*)
+	{
+		cout<<"被catch(void*)捕获"<<endl;
+	}
+}
+
+void f4()
+{
+	try
+	{
+		int *p=0;
+		throw p;
+	}
+	catch(const int* const)
+	{
+		cout<<"被catch(const int* const)捕获"<<endl;
+	}
+}
+
+class C
+{
+public:
+	int x;
+	C(int x1):x(x1)
+	{}
+};
+class D:public C
+{
+public:
+	int y;
+	D(int x1,int y1):C(x1),y(y1)
+	{}
+};
+
+void f5()
+{
+	try
+	{
+		D *p=0;
+		throw p;
+	}
+	catch(C*)
+	{
+		cout<<"被catch(C*)捕获"<<endl;
+	}
+}
+
+void f6()
+{
+	try
+	{
+		D d(1,2);
+		throw d;
+	}
+	catch(C c)
+	{
+		cout<<"被catch(C)捕获"<<endl;
+		cout<<"c.x="<<c.x++<<endl;
+		throw;
+	}
+}
+
+void f7()
+{
+	try
+	{
+		D d(1,2);
+		throw d;
+	}
+	catch(C& c)
+	{
+		cout<<"被catch(C&)捕获"<<endl;
+		cout<<"c.x="<<c.x++<<endl;
+		throw;
+	}
+}
+
+int main()
+{
+	f1();
+	f2();
+	f3();
+	f4();
+	f5();
+	cout<<"--------------------------"<<endl;
+
+	try
+	{
+	    f6();
+	}
+	catch(D& d)
+	{
+		cout<<"d.x="<<d.x<<",d.y="<<d.y<<endl;		
+	}
+	cout<<"--------------------------"<<endl;
+
+	try
+	{
+	    f7();
+	}
+	catch(D& d)
+	{
+		cout<<"d.x="<<d.x<<",d.y="<<d.y<<endl;		
+	}
+	cout<<"--------------------------"<<endl;
+
+	return 0;
+}

@@ -1,0 +1,44 @@
+//10.3 函数模板的显式特化
+#include<iostream>
+using std::cout;
+using std::endl;
+
+template <class T>
+T min1(T a,T b)
+{
+	return a<b?a:b;
+}
+
+template <class T>
+T min2(T a,T b)
+{
+	return a<b?a:b;
+}
+template <>
+const char*  min2(const char* a,const char* b)
+{
+	return strcmp(a,b)<0?a:b;
+}
+
+template <class T>
+T min3(T a,T b)
+{
+	return a<b?a:b;
+}
+const char* min3(const char* a,const char* b)
+{
+	return strcmp(a,b)<0?a:b;
+}
+
+int main()
+{
+	cout<<"min1(\"c++\",\"hello\")="<<min1("c++","hello")<<endl;
+	cout<<"min2(\"c++\",\"hello\")="<<min2("c++","hello")<<endl;	
+	cout<<"min3(\"c++\",\"hello\")="<<min3("c++","hello")<<endl;
+	cout<<"---------------"<<endl;
+	cout<<"min2<const char*>(\"c++\",\"hello\")="
+		<<min2<const char*>("c++","hello")<<endl;	
+	cout<<"min3<const char*>((\"c++\",\"hello\")="
+		<<min3<const char*>("c++","hello")<<endl;
+	return 0;
+}

@@ -1,0 +1,27 @@
+//12.8 流的iterator
+#include<iostream>
+#include<iterator>
+using std::cin;
+using std::cout;
+using std::endl;
+using std::istream_iterator;
+using std::ostream_iterator;
+
+int main()
+{ 
+	int a,b;
+	cout<<"请输入两个整数："<<endl;
+	istream_iterator<int> in_iterator(cin);	
+	a=*in_iterator++;
+	b=*in_iterator;
+	
+	ostream_iterator<int> out_iterator(cout);
+	cout<<"a+b=";
+	*out_iterator=a+b;
+	cout<<endl;
+    cout<<"a-b=";
+	*out_iterator=a-b;
+	cout<<endl;
+	
+	return 0;
+}  

@@ -1,0 +1,53 @@
+//14.14 for_eachºÍtransform
+#include<iostream>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::for_each;
+using std::transform;
+
+void print_int(int i)
+{
+	    cout<<i<<" ";
+}
+void print_bool(bool b)
+{
+	if(b)
+		cout<<"T  ";
+	else
+		cout<<"F  ";
+}
+void print_char(char c)
+{
+	cout<<c<<"  ";
+}
+bool is_even(int n)
+{
+	return n%2==0;
+}
+char to_char(int n,bool f)
+{
+	if(f)
+		n+=32;
+	return n;		
+}
+
+int main()
+{ 
+	int i_a[]={65,66,67,68,69};
+	bool b_a[5];
+	char c_a[5];
+
+	for_each(i_a,i_a+5,print_int);
+	cout<<":i_a"<<endl;
+
+	transform(i_a,i_a+5,b_a,is_even);
+	for_each(b_a,b_a+5,print_bool);
+	cout<<":b_a"<<endl;
+
+	transform(i_a,i_a+5,b_a,c_a,to_char);
+	for_each(c_a,c_a+5,print_char);
+	cout<<":c_a"<<endl;
+
+	return 0;
+}

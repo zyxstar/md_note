@@ -1,0 +1,71 @@
+//4.27 代理类的使用
+//Implementation.h被代理的类
+#ifndef IMPLEMENTATION_H
+#define IMPLEMENTATION_H
+class Implementation
+{
+	int value;
+public:
+	Implementation(int v):value(v)
+	{}
+ 	void set(int v)
+	{
+		value=v;
+	}
+	int get()const
+	{
+		return value;
+	}
+};
+#endif
+
+//Proxy.h代理类的头文件
+#ifndef PROXY_H
+#define PROXY_H
+class Implementation;
+class Proxy
+{
+	Implementation* p;
+public:
+	Proxy(int);
+	~Proxy();
+	void set(int);
+	int get()const;	
+};
+#endif
+
+//Proxy.cpp代理类的源文件
+#include"Implementation.h"
+#include"Proxy.h"
+
+Proxy::Proxy(int v)
+{
+	p=new Implementation(v);
+}
+Proxy::~Proxy()
+{
+	delete p;
+}
+void Proxy::set(int v)
+{
+	p->set(v);
+}
+int Proxy::get()const
+{
+	return p->get();
+}
+
+//test.cpp测试程序源文件
+#include"Proxy.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+int main()
+{
+	Proxy i(1);
+	cout<<"i.get()返回"<<i.get()<<endl;
+	i.set(10);
+	cout<<"i.get()返回"<<i.get()<<endl;
+	return 0;
+}

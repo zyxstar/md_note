@@ -1,0 +1,38 @@
+//6.4 全局函数模仿int型的前缀++与后缀++
+#include<iostream>
+
+using std::cout;
+using std::endl;
+
+int& pre(int & a)
+{
+	a=a+1;
+	return a;
+}
+int post(int & a)
+{
+	int t=a;
+	a=a+1;
+	return t;
+}
+
+int main()
+{  
+   int i=0,j=0;
+   int x=pre(i);
+   int y=post(j);
+   cout<<"i="<<i<<endl;
+   cout<<"j="<<j<<endl;
+   cout<<"x="<<x<<endl;
+   cout<<"y="<<y<<endl;
+
+   int k=0;
+   pre(pre(k));
+   cout<<"k="<<k<<endl;
+   //post(post(k));编译错误
+   pre(k)=9;
+   cout<<"k="<<k<<endl;
+   //post(k)=9;编译错误
+   
+   return 0;
+}

@@ -1,0 +1,55 @@
+ //7.6 派生类中不能访问基类对象的protected成员
+  #include<iostream>
+  using std::cout;
+  using std::endl;
+  
+  class A
+  {
+  protected:
+  	int x;
+  	void f()const
+  	    {
+  		cout<<"A::f()是protected成员函数"<<endl;
+  	}
+  };
+  class B:public A
+  {
+  	friend test()
+  	{
+  		cout<<"友元函数test:"<<endl;
+  		A a;
+  		//a.x=1;//编译错误
+  		//cout<<"a.x="<<a.x<<endl;//编译错误
+      	//a.f();//编译错误
+  
+  		B b;
+  		b.x=1;
+  		cout<<"b.x="<<b.x<<endl;//编译错误
+      	b.f();
+  	}
+  public:
+  	void test()
+  	{
+  		cout<<"成员函数test:"<<endl;
+  		A a;
+  		//a.x=1;//编译错误
+  		//cout<<"a.x="<<a.x<<endl;//编译错误
+      	//a.f();//编译错误
+  		
+  		x=2;
+  		cout<<"x="<<x<<endl;//编译错误
+      	f();
+  	}
+  };
+  
+  int main()
+  {
+  	test();
+  	cout<<"----------------"<<endl;
+  
+  	B b;
+  	b.test();
+  	cout<<"----------------"<<endl;	
+  
+      return 0;
+  }

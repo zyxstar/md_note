@@ -1,0 +1,15 @@
+//2.18  ·µ»Ø¾²Ì¬ÄÚ´æ
+#include <iostream.h>
+char* return_str();
+int main()
+{ 
+    cout<<return_str();
+	return 0;
+}
+char* return_str()
+{
+ 	static char p[]="hello";
+	return p;
+}
+ 
+ 

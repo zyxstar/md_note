@@ -1,0 +1,51 @@
+//14.3 count、count_if、fill、fill_n、generate才generate_n
+#include<iostream>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::count;
+using std::count_if;
+using std::fill;
+using std::fill_n;
+using std::generate;
+using std::generate_n;
+
+void print(int* arr, int len,const char* str)
+{
+	cout<<str;
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<endl;
+}
+bool  less_3(int n)
+{
+	return n<3;
+}
+int gen()
+{
+	static int a=0;
+	return ++a;
+}
+
+int main()
+{ 
+	int a[]={1,2,3,2,2};
+	print(a,5,"a:");
+	cout<<"count(a,a+5,2):"<<count(a,a+5,2)<<endl;
+	cout<<"count_if(a,a+5,less_3):"<<count_if(a,a+5,less_3)<<endl;
+	cout<<"-------------------------"<<endl;
+
+	fill(a,a+5,10);
+	print(a,5,"a:");
+	fill_n(a+2,3,20);
+	print(a,5,"a:");
+	cout<<"-------------------------"<<endl;
+
+	generate(a,a+5,gen);
+	print(a,5,"a:");
+	generate_n(a+2,3,gen);
+	print(a,5,"a:");
+	cout<<"-------------------------"<<endl;
+	
+	return 0;
+}

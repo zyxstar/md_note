@@ -1,0 +1,21 @@
+//13.10 ÈİÆ÷ÊÊÅäÆ÷queue
+ #include<iostream>
+ #include<queue>
+ using std::cout;
+ using std::endl;
+ using std::queue;
+ 
+ int main()
+ { 
+ 	queue<int> q;
+ 	    for(int i=1;i<=5;++i)
+ 		q.push(i);
+ 	while(!q.empty())
+ 	{
+ 		cout<<q.front()<<" ";
+ 		q.pop();
+ 	}
+ 	cout<<endl;
+ 
+ 	return 0;
+ }

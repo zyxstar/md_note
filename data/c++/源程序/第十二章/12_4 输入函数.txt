@@ -1,0 +1,49 @@
+//12.4 ÊäÈëº¯Êı
+#include<iostream>
+#include<fstream>
+using std::cout;
+using std::endl;
+using std::ifstream;
+
+int main()
+{ 
+	ifstream in1("c://hello.txt");
+ 	int i;
+	while((i=in1.get())!=-1)
+		cout<<(char)i;
+	in1.close();
+	cout<<"-----------------"<<endl;
+
+	ifstream in2("c://hello.txt");
+	char c;
+	while(in2.get(c))
+		cout<<c;
+	in2.close();
+	cout<<"-----------------"<<endl;
+
+	ifstream in3("c://hello.txt");
+	char str[10];
+	while(in3.get(str,10))
+	{
+		cout<<str<<'\n';
+		in3.get();
+	}
+	in3.close();
+	cout<<"-----------------"<<endl;
+	
+	ifstream in4("c://hello.txt");
+	while(in4.getline(str,10))
+		cout<<str<<'\n';	
+	in4.close();
+	cout<<"-----------------"<<endl;
+
+
+	ifstream in5("c://hello.txt");
+	str[9]='\0';
+	in5.read(str,9);
+	cout<<str<<endl;	
+	in5.close();
+	cout<<"-----------------"<<endl;
+	
+	return 0;
+}

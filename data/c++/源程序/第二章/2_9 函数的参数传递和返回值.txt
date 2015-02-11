@@ -1,0 +1,29 @@
+//2.9 函数的参数传递和返回值
+#include <iostream.h>
+int f(int,int*);
+
+int main()
+{   
+    int x=1,y=1,z=0;
+	cout<<"调用f前："<<endl;
+	cout<<"x="<<x<<endl;
+	cout<<"y="<<y<<endl;
+	    cout<<"z="<<z<<endl;
+
+	z=f(x,&y);
+	
+	cout<<"调用f后："<<endl;
+	cout<<"x="<<x<<endl;
+	cout<<"y="<<y<<endl;
+	cout<<"z="<<z<<endl;
+
+	//f(x,&y)=z;错误，C语言函数不能作左值	
+ 	return 0;
+}
+
+int f(int a,int *p)
+{
+	a=10;
+	*p=10;
+	return *p;
+}

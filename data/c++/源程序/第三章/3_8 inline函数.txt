@@ -1,0 +1,16 @@
+//3.8 inlineº¯Êı
+#include<iostream.h>
+
+inline int max(int a,int b)
+{
+	return a>b?a:b;
+}
+
+int main()
+{   
+ 	int x=0;
+	int y=2;
+	cout<<"max(0,--2):\t"<<max(x,--y)<<endl;
+	cout<<"y:\t\t"<<y<<endl;
+	return 0;
+}

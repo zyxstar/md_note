@@ -1,0 +1,106 @@
+//4.26 接口和实现分离
+//IntStack.h文件
+#ifndef INTSTACK_H
+#define INTSTACK_H
+
+class IntStack
+{
+public:	
+    explicit IntStack(unsigned=10);//构造函数建立空栈
+    IntStack(const IntStack &);//拷贝构造函数
+    ~IntStack()//析构函数
+	{
+	    delete []ptr;
+	}
+	IntStack & operator=(const IntStack &);//赋值函数
+	bool is_empty()const //测试栈是否为空
+	{
+		return top==0;
+	}
+	void push(int);//入栈
+	bool pop();//退栈
+	bool get_top(int &) const; //读取栈顶元素
+private:
+	unsigned size;//栈的容积
+	unsigned top;//栈顶位置
+	int *ptr;//动态内存的指针
+};
+#endif
+
+//IntStack.cpp文件
+#include"intStack.h"
+
+IntStack::IntStack(unsigned n)
+{
+	size=n>0?n:10;
+	top=0;
+	ptr=new int[size];
+}
+IntStack::IntStack(const IntStack &other)
+{
+	size=other.size;
+	top=other.top;
+	ptr=new int[size];
+	for(unsigned i=0;i<top;++i)
+		ptr[i]=other.ptr[i];
+}
+
+IntStack & IntStack::operator=(const IntStack &other)
+{
+	if(this!=&other)
+	{
+		delete []ptr;
+		size=other.size;
+	    top=other.top;
+	    ptr=new int[size];
+	    for(unsigned i=0;i<top;++i)
+		    ptr[i]=other.ptr[i];
+	}
+	return *this;
+}
+void IntStack::push(int value)
+{
+	if(top==size)//栈已满，需要增加空间
+	{
+		int *newptr=new int[2*size];//申请2倍的空间
+		for(unsigned i=0;i<top;++i)
+		    newptr[i]=ptr[i];
+		size*=2;
+		delete []ptr;
+		ptr=newptr;
+	}
+	ptr[top++]=value;
+}
+bool IntStack::pop()
+{
+	if(is_empty()) 
+		return false;
+	--top;
+	return true;
+}
+bool IntStack::get_top(int & value)const
+{
+	if(is_empty()) 
+		return false;
+	value=ptr[top-1];
+	return true;
+}
+
+//test.cpp文件
+#include"intStack.h"
+#include<iostream>
+using std::cout;
+
+int main()
+{
+   IntStack s1(4);
+	for(int i=1;i<=6;++i)
+		s1.push(i);
+	int value;
+	while(s1.get_top(value))
+	{	
+		s1.pop();
+		cout<<value<<" ";
+	}
+	return 0;
+}

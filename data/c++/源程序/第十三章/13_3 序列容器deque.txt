@@ -1,0 +1,49 @@
+//13.3 序列容器deque
+#include<iostream>
+#include<vector>
+#include<deque>
+using std::cout;
+using std::endl;
+using std::vector;
+using std::deque;
+
+class A
+{
+	int count;
+public:
+	A()
+	{
+		static int x=0;
+		count=++x;
+		cout<<"count＝"<<count<<"的A类型对象被构造"<<endl;
+	}
+	A(const A& other)
+	{
+		count=other.count;
+		cout<<"count＝"<<count<<"的A类型对象发生拷贝构造"<<endl;
+	}
+	~A()
+	{
+		cout<<"count＝"<<count<<"的A类型对象发生析构"<<endl;
+	}
+};
+int main()
+{ 	
+	{
+		vector<A> v(2);
+	    cout<<"------------------------"<<endl;
+	    v.push_back(A());
+		cout<<"------------------------"<<endl;
+	}	
+	cout<<"------------------------------------------------"<<endl;
+
+	{
+		deque<A> d(2);
+	    cout<<"------------------------"<<endl;
+	    d.push_back(A());
+		cout<<"------------------------"<<endl;
+	}	
+	cout<<"------------------------------------------------"<<endl;
+
+	return 0;
+}

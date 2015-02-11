@@ -1,0 +1,196 @@
+//8.8 画图程序
+//Shape.h
+#ifndef SHAPE_H
+#define SHAPE_H
+class Shape
+{
+public:
+	virtual void draw()const=0;//纯virtual函数
+	virtual ~Shape()//virtual析构函数
+	{}
+};
+#endif
+
+//Point.h
+#ifndef POINT_H
+#define POINT_H
+#include"Shape.h"
+
+class Point:public Shape
+{	
+public:
+	Point(double=0,double=0);
+	void draw()const;
+private:
+	double x,y;
+};
+#endif;
+
+//Line.h
+#ifndef LINE_H
+#define LINE_H
+#include"Point.h"
+
+class Line:public Shape
+{
+public:
+	Line(double=0,double=0,double=0,double=0);
+	Line(Point,Point);
+	~Line();
+	void draw()const;
+private:
+	Point *begin,*end;
+	Line(const Line&);
+	Line& operator=(const Line&);
+};
+#endif;
+
+//Circle.h
+#ifndef CIRCLE_H
+#define CIRCLE_H
+#include"Point.h"
+
+class Circle:public Shape
+{
+public:
+	Circle(double=0,double=0,double=0);
+	Circle(Point,double);
+	~Circle();
+	void draw()const;
+	double area()const;
+private:
+	Point *center;
+	double radius;
+	Circle(const Circle&);
+	Circle& operator=(const Circle&);
+};
+#endif;
+
+//Point.cpp
+#include"Point.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+Point::Point(double x1,double y1):x(x1),y(y1)
+{}
+void Point::draw()const
+{
+	cout<<"点：["<<x<<","<<y<<"]";
+}
+
+//Line.cpp
+#include"Line.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+Line::Line(double x1,double y1,double x2,double y2)
+    :begin(new Point(x1,y1)),end(new Point(x2,y2))
+{}
+Line::Line(Point p1,Point p2)
+    :begin(new Point(p1)),end(new Point(p2))
+{}
+Line::~Line()
+{
+	delete begin;
+	delete end;
+}
+void Line::draw()const
+{
+	cout<<"直线：从";
+	begin->draw();
+	cout<<"到";
+	end->draw();
+}
+
+//Circle.cpp
+#include"Circle.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+Circle::Circle(double x,double y,double r)
+    :center(new Point(x,y)),radius(r)
+{}
+Circle::Circle(Point p,double r)
+    :center(new Point(p)),radius(r)
+{}
+Circle::~Circle()
+{
+	delete center;
+}
+void Circle::draw()const
+{
+	cout<<"圆：圆心位于";
+	center->draw();
+	cout<<"半径为"<<radius;
+}
+double Circle::area()const
+{
+	return radius*radius*3.14;
+}
+
+//test.cpp
+#include"Line.h"
+#include"Circle.h"
+#include<iostream>
+
+using std::cout;
+using std::cin;
+using std::endl;
+
+void print(Shape** arr,int len)
+{
+	cout<<"----------------------------"<<endl;
+	for(int i=0;i<len;++i)
+	{
+		arr[i]->draw();
+		cout<<endl;
+	}
+	cout<<"----------------------------"<<endl;
+}
+int main()
+{
+	Shape* shapes[10]={0};
+	int shapes_len=0;
+	char c;
+	double d1,d2,d3,d4;
+	do
+	{
+		cout<<"按1点，按2直线，按3圆，按4显示，按其它键退出"<<endl;
+		cin>>c;
+		cin.sync();
+		switch (c)
+		{
+		case '1':
+			cout<<"输入2个double数作为点的横纵坐标"<<endl;
+			cin>>d1>>d2;
+			cin.sync();
+			shapes[shapes_len++]=new Point(d1,d2);
+			break;
+		case '2':
+			cout<<"输入4个double数作为直线起点和终点的横纵坐标"<<endl;
+			cin>>d1>>d2>>d3>>d4;
+			cin.sync();
+			shapes[shapes_len++]=new Line(d1,d2,d3,d4);
+			break;
+		case '3':
+			cout<<"输入3个double数作为圆心的横纵坐标和圆半径"<<endl;
+			cin>>d1>>d2>>d3;
+			cin.sync();
+			shapes[shapes_len++]=new Circle(d1,d2,d3);
+			break;
+		case '4':
+			print(shapes,shapes_len);
+			break;
+		default: c=0;
+		}
+	}
+	while(c!=0);
+
+	for(int i=0;i<shapes_len;++i)
+		delete shapes[i];	
+
+	return 0;
+}

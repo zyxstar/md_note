@@ -1,0 +1,19 @@
+//3.14 const_cast
+#include <iostream>
+using std::cout;
+using std::endl;
+int main()
+{
+	const int a[1]={0};
+	
+	//错误，static_cast< >不能将const int[ ]型转换为int* 型
+	//int *p=static_cast<int*>(a);
+    
+	//错误，reinterpret_cast< >不能将const int[ ]型转换为int* 型
+	//int *p=reinterpret_cast<int*>(a);
+ 	
+	int *p=const_cast<int*>(a);
+ 	*p=1;
+ 	cout<<"a[0]="<<a[0]<<endl;	
+    return 0;
+}

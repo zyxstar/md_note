@@ -1,0 +1,59 @@
+//14.1 accumulate¡¢inner_product¡¢partial_sumºÍadjacent_difference
+#include<iostream>
+#include<numeric>
+#include<functional>
+using std::cout;
+using std::endl;
+using std::accumulate;
+using std::inner_product;
+using std::partial_sum;
+using std::adjacent_difference;
+using std::minus;
+using std::divides;
+
+void print(int* arr, int len,const char* str)
+{
+	cout<<str;
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<endl;
+}
+int f1(int a,int b)
+{
+	if(b%2)
+		a+=b;
+	return a;
+}
+int f2(int a,int b)
+{	
+	return a*b;
+}
+
+int main()
+{ 
+	int a1[]={1,2,3,4,5};
+    print(a1,5,"a1:");
+	cout<<"accumulate(a1,a1+5,100)="<<accumulate(a1,a1+5,100)<<endl;
+	cout<<"accumulate(a1,a1+5,0,f1)="<<accumulate(a1,a1+5,0,f1)<<endl;
+	cout<<"-----------------------------------"<<endl;
+
+	cout<<"inner_product(a1,a1+5,a1,0)="<<inner_product(a1,a1+5,a1,0)<<endl;
+	cout<<"inner_product(a1,a1+5,a1,0,minus<int>(),divides<int>())="
+		<<inner_product(a1,a1+5,a1,0,minus<int>(),divides<int>())<<endl;
+	cout<<"-----------------------------------"<<endl;
+
+	int a2[5];
+    partial_sum(a1,a1+5,a2);
+	print(a2,5,"a2:");
+	partial_sum(a1,a1+5,a2,f2);
+	print(a2,5,"a2:");
+	cout<<"-----------------------------------"<<endl;
+
+	adjacent_difference(a1,a1+5,a2);
+	print(a2,5,"a2:");
+	adjacent_difference(a1,a1+5,a2,f2);
+	print(a2,5,"a2:");
+	cout<<"-----------------------------------"<<endl;
+	
+	return 0;
+}

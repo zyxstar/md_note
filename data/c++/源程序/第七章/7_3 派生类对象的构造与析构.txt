@@ -1,0 +1,54 @@
+//7.3 派生类对象的构造与析构
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	int x;
+	A(int x1=0)
+ 	{
+		x=x1;
+		cout<<"类A的构造函数被调用"<<endl;
+	}
+	~A()
+	{
+		cout<<"类A的析构函数被调用"<<endl;
+	}
+};
+
+class B:public A
+{
+public:
+	int y;
+	B(int y1)//隐式构造基类部分
+	{
+		y=y1;
+		cout<<"类B的1个参数的构造函数被调用"<<endl;
+	}
+	B(int x1,int y1):A(x1)//显式构造基类部分
+	{
+		y=y1;
+		cout<<"类B的2个参数的构造函数被调用"<<endl;
+	}
+	~B()
+	{
+		cout<<"类B的析构函数被调用"<<endl;
+	}
+};
+
+int main()
+{
+	{
+		B b1(1);
+	    cout<<"b1.x="<<b1.x<<",b1.y="<<b1.y<<endl;
+	}
+	cout<<"-------------------------"<<endl;
+	{  
+		B b2(10,20);
+		cout<<"b2.x="<<b2.x<<",b2.y="<<b2.y<<endl;
+	}
+	cout<<"-------------------------"<<endl;
+    return 0;
+}

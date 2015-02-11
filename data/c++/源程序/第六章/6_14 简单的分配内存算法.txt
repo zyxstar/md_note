@@ -1,0 +1,133 @@
+//6.14 简单的分配内存算法
+#include"malloc.h"
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class Point
+{
+	class Pool
+	{
+	public:
+		int *flag;
+	    Point* mem;
+		const int len;
+		Pool(int n):len(n)
+		{
+			flag=(int*)malloc(sizeof(int)*n);
+			mem=(Point*)malloc(sizeof(Point)*n);
+			for(int i=0;i<n;++i)
+				flag[i]=n-i;
+		}
+		~Pool()
+		{
+			free(flag);
+			free(mem);
+		}
+		void set(int index,int sublen)
+		{
+			for(int i=index-1,j=0;i>=0;--i)
+				if(flag[i]>0)
+					flag[i]=++j;
+				else 
+					break;
+			for(i=index;i<index+sublen;++i)
+				flag[i]=-sublen;
+		}
+		void reset(int index,int sublen)
+		{
+			int tmp;
+			if(index+sublen==len||flag[index+sublen]<0)
+				tmp=0;
+			else
+				tmp=flag[index+sublen];
+			for(int i=index+sublen-1;i>=index;--i)
+				flag[i]=++tmp;
+			for(i=index-1;i>=0;--i)
+				if(flag[i]>0)
+					flag[i]+=tmp;
+				else
+					break;
+		}
+	};
+	static Pool myPool;
+public:	
+	double x,y;
+	Point()
+	{
+		cout<<"1个Point对象被创建"<<endl;
+	}
+	void print()
+	{
+		cout<<"["<<x<<","<<y<<"]";
+	}
+	void* operator new(size_t n)
+	{
+		for(int i=0;i<myPool.len;++i)
+			if(myPool.flag[i]>0)
+				break;
+		if(i==myPool.len) 
+			return 0;
+		myPool.set(i,1);
+		cout<<"从"<<myPool.mem+i<<"分配1个Point"<<endl;
+	    return myPool.mem+i;
+	}
+   void* operator new[ ](size_t n)
+	{
+	    for(int i=0;i<myPool.len;++i)
+			if(myPool.flag[i]>=(int)(n/sizeof(Point)))
+				break;
+		if(i==myPool.len) 
+			return 0;
+		myPool.set(i,n/sizeof(Point));
+		cout<<"从"<<myPool.mem+i<<"分配"<<n/sizeof(Point)
+                <<"个Point"<<endl;
+	    return myPool.mem+i;
+	}
+   void operator delete (void* p)
+	{	
+		cout<<"从"<<p<<"释放1个Point"<<endl;
+		int tmp=(Point*)p-myPool.mem;
+		myPool.reset(tmp,1);
+	}
+   void operator delete [ ](void* p)
+	{   
+       int tmp=(Point*)p-myPool.mem;
+		cout<<"从"<<p<<"释放"<<-myPool.flag[tmp]<<"个Point"<<endl;
+		myPool.reset(tmp,-myPool.flag[tmp]);
+	}
+	static void print_pool()
+	{
+		for(int i=0;i<myPool.len;++i)
+			cout<<myPool.flag[i]<<" ";
+		cout<<endl<<"------------------"<<endl;
+	}
+};
+
+Point::Pool Point::myPool(10);
+
+int main()
+{
+	Point *pp1=new Point;
+	cout<<"pp1="<<pp1<<endl;
+	Point::print_pool();
+		
+	Point *pp2=new Point[4];
+	cout<<"pp2="<<pp2<<endl;
+	Point::print_pool();
+	
+	Point *pp3=new Point[5];
+	cout<<"pp3="<<pp3<<endl;
+	Point::print_pool();
+	
+	delete []pp2;
+	Point::print_pool();
+    
+	delete pp1;
+	Point::print_pool();
+
+	delete []pp3;
+	Point::print_pool();
+
+	return 0;
+}

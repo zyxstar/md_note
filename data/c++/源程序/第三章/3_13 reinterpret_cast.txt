@@ -1,0 +1,23 @@
+//3.13 reinterpret_cast
+#include <iostream>
+using std::cout;
+using std::endl;
+using std::hex;
+int main()
+{   
+    char *p="hello";
+    int a;
+    //a=p;错误，不能隐式将char * 型转换为int型
+    //a=static_cast<int>(p);错误，static_cast< >不能将char * 型转换为int型
+    a=reinterpret_cast<int>(p);
+    cout<<"int a="<<hex<<a<<endl;//以16进制输出a
+	
+    char *q;
+    //q=a;错误，不能隐式将int型转换为char * 型
+    //q=static_cast<char * >(a);错误，static_cast< >不能将int型转换为char * 型
+    q=reinterpret_cast<char * >(a);
+    cout<<"char *q="<<q<<endl;
+    cout<<"void *q="<<static_cast<void*>(q)<<endl;
+    return 0;
+}
+

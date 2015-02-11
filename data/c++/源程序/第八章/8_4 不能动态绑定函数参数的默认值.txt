@@ -1,0 +1,31 @@
+ //8.4 不能动态绑定函数参数的默认值
+  #include<iostream>
+  using std::cout;
+  using std::endl;
+  class A
+  {
+  public:
+      virtual void f(int n=0) const
+  	{
+  		cout<<"n="<<n<<endl;
+  		    cout<<"void A::f(int n=0)被执行"<<endl;
+  	}
+      
+  };
+  class B:public A
+  {
+  public:
+      virtual void f(int n=10) const
+  	{
+  		cout<<"n="<<n<<endl;
+  		cout<<"void B::f(int n=10)被执行"<<endl;
+  	}
+  };
+  
+  int main()
+  {
+  	A* p=new B;
+  	p->f();
+  	delete p;
+  	return 0;
+  }

@@ -1,0 +1,152 @@
+//5.3 友元类
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class ListStack;//提前声明
+class ListNode
+{
+	friend class ListStack;//声明友元类
+public:
+	ListNode(int value):data(value),next(0)
+	{}
+private:
+	int data;
+	ListNode* next;
+};
+
+class ListStack
+{
+public:
+	ListStack()//构造函数建立空栈
+		:top(0)
+	{}
+    ListStack(const ListStack&);//拷贝构造函数
+	~ListStack();//析构函数
+	ListStack & operator=(const ListStack &);//赋值函数
+	bool is_empty()const;//测试栈是否为空
+	void push(int);//入栈
+	bool pop();//退栈
+	bool get_top(int &)const;//读取栈顶元素
+private:
+	ListNode* top;	
+};
+
+ListStack::ListStack(const ListStack & other)
+{
+	top=0;
+ 	ListNode* tmp=other.top;
+   ListNode* prenode;
+	while(tmp)
+	{
+		ListNode* newnode=new ListNode(tmp->data);
+		if(top==0)
+		{ 
+			top=newnode;
+		}
+		else
+		{
+			prenode->next=newnode;
+		}
+		prenode=newnode;
+		tmp=tmp->next;
+	}
+}
+ListStack::~ListStack()
+{	
+	while(top)
+	{
+		ListNode* delnode=top;
+		top=top->next;
+		delete delnode;
+	}
+}
+ListStack & ListStack::operator=(const ListStack &other)
+{
+	if(this!=&other)
+	{
+		while(top)
+		{
+		    ListNode* delnode=top;
+		    top=top->next;
+		    delete delnode;
+		}
+		ListNode* tmp=other.top;
+       ListNode* prenode;
+	    while(tmp)
+		{
+		    ListNode* newnode=new ListNode(tmp->data);
+		    if(top==0)
+			{ 
+			    top=newnode;
+			}
+		    else
+			{
+			    prenode->next=newnode;
+			}
+		    prenode=newnode;
+		    tmp=tmp->next;
+		}
+	}
+	return *this;
+}
+bool ListStack::is_empty()const
+{
+	return top==0;
+}
+void ListStack::push(int value)
+{
+	ListNode* newnode=new ListNode(value);
+	newnode->next=top;
+	top=newnode;
+}
+bool ListStack::pop()
+{
+	if(is_empty()) 
+		return false;
+	ListNode* delnode=top;
+	top=top->next;
+	delete delnode;
+	return true;
+}
+bool ListStack::get_top(int &value)const
+{
+	if(is_empty()) 
+		return false;
+	value=top->data;
+	return true;
+}
+
+int main()
+{
+	ListStack s1;
+	for(int i=1;i<=6;++i)
+		s1.push(i);
+	ListStack s2(s1);//测试拷贝构造
+	ListStack s3;
+	s3=s1;//测试赋值函数
+
+	int value;
+	while(s1.get_top(value))
+	{	
+		s1.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s1已清空"<<endl;
+
+	while(s2.get_top(value))
+	{	
+		s2.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s2已清空"<<endl;
+
+	while(s3.get_top(value))
+	{	
+		s3.pop();
+		cout<<value<<" ";
+	}
+	cout<<endl<<"s3已清空"<<endl;
+
+	return 0;
+}

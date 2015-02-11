@@ -1,0 +1,97 @@
+//10.12 智能指针auto_ptr
+#include<iostream>
+#include<memory>
+using std::cout;
+using std::endl;
+using std::auto_ptr;
+
+template <class T>
+class My_ptr
+{ 
+public:
+	explicit My_ptr(T* p1=0):p(p1)
+	{}
+	template<class U>
+	My_ptr(My_ptr<U>& other):p(other.clear())
+	{}
+	My_ptr<T>& operator=(My_ptr<T>& other)
+	{
+		if(this!=&other) 
+		{
+			set(other.clear());
+		}
+		return *this;
+	}
+	~My_ptr()
+	{
+		delete p;
+	}
+	T& operator*() const 
+	{
+		return *p;
+	}
+	T* operator->() const 
+	{
+		return p;
+	}
+	T* clear()
+	{
+		T* old=p;
+	    p=0;
+	    return old;
+	}
+	void set(T* p1=0)
+	{
+		if(p!=p1)
+		{	
+			delete p;
+			p=p1;
+		}
+	}
+	T* get() const 
+	{
+		return p;
+	}
+private:
+	T* p;    
+};
+
+class A
+{	
+public:
+	int x;
+	A(int x1):x(x1)
+	{}
+	~A()
+	{
+		cout<<"x="<<x<<"的A类型对象被释放"<<endl;
+	}
+};
+
+template <template<class> class T>
+void test()
+{
+	T<A> p1(new A(1));
+	T<A> p2(new A(2));
+	cout<<"p1->x="<<p1->x<<endl;
+	cout<<"p2->x="<<p2->x<<endl;
+	p1=p2;
+	cout<<"由于p1=p2的赋值操作，造成p1指向的对象被释放，p2指向0"<<endl;
+	cout<<"p1->x="<<p1->x<<endl;
+	cout<<"p2="<<p2.get()<<endl;
+	T<A> p3=p1;
+	cout<<"由于使用p1拷贝构造p3，造成p1指向0"<<endl;
+	cout<<"p3->x="<<p3->x<<endl;
+	cout<<"p1="<<p1.get()<<endl;
+	cout<<"test结束"<<endl;
+}
+
+int main()
+{
+	test<auto_ptr>();
+	cout<<"---------------------------------------------------"<<endl;
+	test<My_ptr>();
+	cout<<"---------------------------------------------------"<<endl;	
+	
+	return 0;
+}

@@ -1,0 +1,28 @@
+//13.2 ÐòÁÐÈÝÆ÷vector
+#include<iostream>
+#include<vector>
+using std::cout;
+using std::endl;
+using std::vector;
+
+template<class T>
+void print_vector(const vector<T>& v)
+{
+    cout<<"v.size()="<<v.size()<<endl;
+	cout<<"v.capacity()="<<v.capacity()<<endl;
+	for(int i=0;i<v.size();++i)
+	    cout<<v[i]<<"  ";
+	cout<<"\n------------------------"<<endl;
+} 
+int main()
+{ 	
+	vector<int> v;
+	for(int i=1;i<=5;++i)
+	{
+		v.push_back(i);
+		print_vector(v);
+	}
+	v.insert(v.begin()+2,6);
+	print_vector(v);
+	return 0;
+}

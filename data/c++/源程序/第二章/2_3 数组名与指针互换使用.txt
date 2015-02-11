@@ -1,0 +1,26 @@
+//2.3  数组名与指针互换使用
+#include <iostream.h>
+int main()
+{   
+	int a[4]={1,2,3,4};
+	int *p=a;
+	int i;
+
+	for(i=0;i<4;i++)
+		cout<<"a["<<i<<"]:"<<a[i]<<endl;
+
+	for(i=0;i<4;i++)
+		cout<<"p["<<i<<"]:"<<p[i]<<endl;
+
+	a[0]=5;
+	p[1]=6;
+    *(a+2)=7;
+	*(p+3)=8;
+
+	for(i=0;i<4;i++)
+		cout<<"*(a+"<<i<<"):"<<*(a+i)<<endl;
+
+	for(i=0;i<4;i++)
+		cout<<"*(p+"<<i<<"):"<<*(p+i)<<endl;
+    return 0;
+}

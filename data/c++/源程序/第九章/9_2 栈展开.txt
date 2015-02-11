@@ -1,0 +1,50 @@
+//9.2 栈展开
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+	int x;
+public:
+	A(int x1):x(x1)
+	    {
+		cout<<"a"<<x<<"被创建"<<endl;
+	}
+	~A()
+	{
+		cout<<"a"<<x<<"被释放"<<endl;
+	}
+};
+
+void f1()
+{
+	A a1(1);
+	throw 0;
+}
+
+void f2()
+{
+	A a2(2);
+	f1();
+}
+
+void f3()
+{
+	A a3(3);
+	try
+	{
+		f2();
+	}
+	catch (int)
+	{
+		cout<<"异常被处理"<<endl;
+	}
+	A a4(4);
+}
+
+int main()
+{ 
+	f3();
+	return 0;
+}

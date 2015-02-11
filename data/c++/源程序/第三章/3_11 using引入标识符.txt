@@ -1,0 +1,38 @@
+//3.11 using引入标识符
+#include<iostream.h>
+
+namespace namespace1
+{
+	int x=1;
+	void f();
+}
+
+namespace namespace2
+{
+	int x=2;
+	void f();
+}
+
+using namespace1::x;
+using namespace2::f;
+//int x;错误，与16行引入的变量重名
+int main()
+{   
+	cout<<"引入 x="<<x<<endl;//引入namespace1::x
+ 	f();//引入namespace2::f
+    cout<<" x="<<namespace2::x<<endl;//未引入
+
+	int x=10;//局部x隐藏namespace1::x
+    cout<<"局部 x="<<x<<endl;//输出局部x
+	return 0;
+}
+
+void namespace1::f()
+{
+	cout<<"名字空间namespace1";
+}
+
+void namespace2::f()
+{
+	cout<<"名字空间namespace2";
+}

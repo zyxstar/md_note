@@ -1,0 +1,30 @@
+//4.2 成员变量
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+public:
+	int x;
+};
+int main()
+{
+   A a,b;
+   a.x=1;
+   b.x=2;
+   cout<<"a.x="<<a.x<<endl;
+   cout<<"b.x="<<b.x<<endl;
+   
+   A &ra=a;
+   A*pa=&a;
+
+   ra.x=10;
+   cout<<"ra.x="<<ra.x<<endl;
+   cout<<"pa->x="<<pa->x<<endl;
+
+   pa->x=100;
+   cout<<"ra.x="<<ra.x<<endl;
+   cout<<"pa->x="<<pa->x<<endl;
+   return 0;
+}

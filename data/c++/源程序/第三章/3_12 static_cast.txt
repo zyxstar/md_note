@@ -1,0 +1,9 @@
+//3.12 static_cast
+#include <iostream>
+using std::cout;
+using std::endl;
+int main()
+{   
+	cout<<"static_cast<int>(1.5)="<<static_cast<int>(1.5)<<endl;
+	return 0;
+}

@@ -1,0 +1,67 @@
+//2.12 函数指针作参数的排序函数
+#include <iostream.h>
+#include <math.h>
+void swap(int *,int *);
+void sort(int *,int,int (*)(int,int));
+int less1(int,int);
+int greater1(int,int);
+int less2(int,int);
+int greater2(int,int);
+void print(int *,int);
+
+int main()
+{ 
+    int array[10]={15,3,-1,7,9,4,-7,433,38,9};
+
+	cout<<"排升序："<<endl;
+	sort(array,10,less1);
+	print(array,10);
+
+	cout<<"排降序："<<endl;
+	sort(array,10,greater1);
+	print(array,10);
+
+	cout<<"按%10结果排升序："<<endl;
+	sort(array,10,less2);
+	print(array,10);
+
+	cout<<"按绝对值排降序："<<endl;
+	sort(array,10,greater2);
+	print(array,10);
+	return 0;
+}
+void swap(int * a,int * b)
+{
+	int temp=*a;
+	*a=*b;
+	*b=temp;
+}
+void sort(int *arr,int len,int (*compare)(int,int))
+{
+	for(int i=0;i<len-1;++i)
+		for(int j=0;j<len-i-1;++j)
+			if(compare(arr[j+1],arr[j]))
+				swap(&arr[j+1],&arr[j]);
+}
+int less1(int a,int b)
+{
+	return a<b;
+}
+int greater1(int a,int b)
+{
+	return a>b;
+}
+int less2(int a,int b)
+{
+	return a%10<b%10;
+}
+int greater2(int a,int b)
+{
+	return abs(a)>abs(b);
+}
+void print(int *arr,int len)
+{
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<"    ";
+	cout<<endl;
+}

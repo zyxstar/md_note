@@ -1,0 +1,47 @@
+//12.1 流的状态标志
+#include<iostream>
+#include<fstream>
+#include<string>
+using std::cin;
+using std::cout;
+using std::endl;
+using std::ios;
+using std::istream;
+using std::ifstream;
+using std::string;
+
+void f(const istream& in)
+{
+	cout<<"in.good()="<<in.good()<<endl;
+	cout<<"in.eof()="<<in.eof()<<endl;
+	cout<<"in.fail()="<<in.fail()<<endl;
+	cout<<"in.bad()="<<in.bad()<<endl;
+	cout<<"in.rdstate()="<<in.rdstate()<<endl;
+	cout<<"-----------------------------"<<endl;
+}
+int main()
+{ 	
+	ifstream in("c:\\hello.txt");
+	f(in);
+
+	int a;
+	in>>a;
+	cout<<"a="<<a<<endl;
+	f(in);
+
+	in.clear();
+	f(in);
+
+	string str;
+	in>>str;
+	cout<<"str="<<str<<endl;
+	f(in);
+
+	in.clear(ios::failbit|ios::badbit);
+	f(in);
+
+	in.setstate(ios::eofbit);
+	f(in);
+
+	return 0;
+}

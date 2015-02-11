@@ -1,0 +1,19 @@
+//3.5 函数重载错误--参数默认值
+#include<iostream.h>
+void f(int);
+void f(int=0,int=1);
+int main()
+{   
+	f();//正确，不提供参数调用第二个f
+    f(10,11);//正确，提供两个参数调用第二个f
+	//f(100);错误，提供一个参数，模棱两可的函数调用
+	return 0;
+}
+void f(int a)
+{
+	cout<<"调用一个参数的函数,参数a="<<a<<endl;
+}
+void f(int a,int b)
+{
+	cout<<"调用两个参数的函数,参数a="<<a<<",参数b="<<b<<endl;
+}

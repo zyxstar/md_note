@@ -1,0 +1,27 @@
+//14.2 copyºÍcopy_backword
+ #include<iostream>
+ #include<algorithm>
+ using std::cout;
+ using std::endl;
+ using std::copy;
+ using std::copy_backward;
+ 
+ void print(int* arr, int len,const char* str)
+ {
+  	cout<<str;
+ 	for(int i=0;i<len;++i)
+ 		cout<<arr[i]<<" ";
+ 	cout<<endl;
+ }
+ 
+ int main()
+ { 
+ 	int a1[]={1,2,3,4,5};
+ 	int a2[5],a3[5];
+ 	copy(a1,a1+5,a2);
+ 	copy_backward(a1,a1+5,a3+5);
+ 	print(a2,5,"a2:");
+ 	print(a3,5,"a3:");
+ 	
+ 	return 0;
+ }

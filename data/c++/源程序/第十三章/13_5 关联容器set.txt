@@ -1,0 +1,52 @@
+//13.5 关联容器set
+#include<iostream>
+#include<algorithm>
+#include<iterator>
+#include<set>
+using std::cout;
+using std::endl;
+using std::set;
+using std::ostream_iterator;
+using std::copy;
+using std::pair;
+using std::greater;
+
+template<class T>
+void print_set(const T& s,const char* str)
+{
+	ostream_iterator<T::value_type> out(cout," ");
+	cout<<str;
+	copy(s.begin(),s.end(),out);
+	cout<<endl;
+}
+
+int main()
+{ 	
+	typedef set<int> SI;
+	SI s1;
+	pair<SI::const_iterator,bool> p1;
+	for(int i=3;i>0;--i)
+	{
+		p1=s1.insert(i);
+	    if(p1.second)
+		    cout<<"为s1插入"<<*(p1.first)<<"成功"<<endl;
+	}
+	p1=s1.insert(2);
+    if(!p1.second)
+	    cout<<"为s1插入"<<*(p1.first)<<"失败"<<endl;
+	print_set(s1,"s1:");
+	cout<<"--------------------------"<<endl;
+
+	typedef set<double,greater<int> > SD;
+	SD s2;
+	for(i=0;i<10;++i)
+		s2.insert(i*0.3);
+	print_set(s2,"s2:");
+	if(s2.find(1.5)!=s2.end())
+		cout<<"s2中存在"<<*s2.find(1.5)<<endl;
+    if(s2.find(3.5)==s2.end())
+		cout<<"s2中不存在"<<3.5<<endl;
+	cout<<"--------------------------"<<endl;
+	
+	return 0;
+}

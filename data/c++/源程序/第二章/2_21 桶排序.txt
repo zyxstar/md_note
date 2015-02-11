@@ -1,0 +1,77 @@
+//2.21 桶排序
+#include<iostream.h>
+#include<iomanip.h>
+#include<stdlib.h>
+
+#define SIZE 100
+
+void bucket_sort(unsigned *,int);//桶排序函数的原型
+void print(unsigned *,int);//打印函数的原型
+
+int main()
+{
+	unsigned array[SIZE];
+
+	//为数组元素随机赋值
+	for(int i=0;i<SIZE;++i)
+		array[i]=rand();
+
+	cout<<"排序前："<<endl;
+	print(array,SIZE);
+    
+	//排序
+    bucket_sort(array,SIZE);
+
+	cout<<"排序后："<<endl;
+	print(array,SIZE);
+  	return 0;
+}
+void bucket_sort(unsigned * arr,int len)
+{
+	unsigned *buckets[10];//指针数组
+	unsigned n=1;//用于取整数各位上的值
+	int index;//数组下标计数索引
+	int indexs[10];//各个桶下标计数索引
+
+	//分配动态内存作为桶
+	for(int i=0;i<10;++i)
+		buckets[i]=(unsigned *)malloc(sizeof(unsigned)*len);
+
+	while(1)
+	{
+		//计数索引清零
+		index=0;
+		for(int i=0;i<10;++i)
+			indexs[i]=0;
+
+		//数组至桶
+		for(i=0;i<len;++i)
+			buckets[arr[i]/n%10][indexs[arr[i]/n%10]++]=arr[i];
+
+		//桶至数组
+		for(i=0;i<10;++i)
+			for(int j=0;j<indexs[i];++j)
+				arr[index++]=buckets[i][j];
+
+		//为取元素的下一位做准备
+		n*=10;
+
+		//判断是否该结束
+		for(i=0;arr[i]<n&&i<len;++i);
+		if(i==len) break;
+	}
+
+	//释放动态内存
+	for(i=0;i<10;++i)
+		free(buckets[i]);
+}
+void print(unsigned * arr,int len)
+{
+	for(int i=0;i<len;++i)
+	{
+		cout<<setw(8)<<arr[i];
+		//5个元素一行
+		if((i+1)%5==0)
+			cout<<endl;
+	}
+}

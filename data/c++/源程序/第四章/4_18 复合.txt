@@ -1,0 +1,64 @@
+//4.18 复合
+#include<iostream>
+using std::cout;
+using std::endl;
+
+class A
+{
+private:
+	 int x;	
+public:
+	    A(int x1=0)//默认构造函数
+	{
+		x=x1;
+		cout<<"类A的构造函数被调用"<<endl;
+	}
+	~A()
+	{
+		cout<<"类A的析构函数被调用"<<endl;
+	}
+ 	int get_x()
+	{
+		return x;
+	}	
+};
+
+class B
+{
+private:
+	A a;
+	int y;
+public:
+	B(int y1)//隐式构造a
+	{
+		y=y1;
+		cout<<"类B的1个参数的构造函数被调用"<<endl;
+	}
+	B(int x1,int y1):a(x1)//显式构造a
+	{
+		y=y1;
+		cout<<"类B的2个参数的构造函数被调用"<<endl;
+	}
+	~B()
+	{
+		cout<<"类B的析构函数被调用"<<endl;
+	}
+	void print()
+	{
+		//cout<<a.x;错误，不能访问a的private成员
+		cout<<"x="<<a.get_x();//只能访问a的public成员
+		cout<<",y="<<y<<endl;
+	}
+};
+
+int main()
+{
+	B b1(1);
+	cout<<"b1:";
+    b1.print();
+
+    B b2(10,20);
+	cout<<"b2:";
+    b2.print();
+    return 0;
+}

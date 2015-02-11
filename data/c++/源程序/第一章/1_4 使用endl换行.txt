@@ -1,0 +1,8 @@
+//1.4  π”√endlªª––
+#include<iostream.h>
+int main()
+{  
+   cout<<1<<endl;
+   cout<<2;	
+   return 0;
+}

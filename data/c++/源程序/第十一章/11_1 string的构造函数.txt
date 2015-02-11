@@ -1,0 +1,34 @@
+//11.1 string的构造函数
+#include<iostream>
+#include<string>
+using std::cout;
+using std::endl;
+using std::string;
+
+int main()
+{
+	string str1;
+ 	cout<<"str1.size()="<<str1.size()<<endl;
+
+	string str2("hello");
+	cout<<"str2="<<str2<<endl;
+	cout<<"str2.size()="<<str2.size()<<endl;
+
+	string str3("hello",4);
+	cout<<"str3="<<str3<<endl;
+	cout<<"str3.size()="<<str3.size()<<endl;
+
+	string str4("hello",8);
+	cout<<"str4="<<str4<<endl;
+	cout<<"str4.size()="<<str4.size()<<endl;
+
+	string str5(10,'a');
+	cout<<"str5="<<str5<<endl;
+	cout<<"str5.size()="<<str5.size()<<endl;
+    
+	string str6(str5);
+	cout<<"str6="<<str6<<endl;
+	cout<<"str6.size()="<<str6.size()<<endl;
+
+	return 0;
+}

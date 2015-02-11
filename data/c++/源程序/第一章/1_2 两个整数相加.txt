@@ -1,0 +1,13 @@
+//1.2 两个整数相加
+#include<iostream.h>
+int main()
+{
+    int a,b,sum;
+    cout<<"输入第一个整数\n";
+    cin>>a;
+    cout<<"输入第二个整数\n";
+    cin>>b;
+    sum=a+b;
+    cout<<"两个整数之和："<<sum<< '\n';
+    return 0;
+}

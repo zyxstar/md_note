@@ -1,0 +1,51 @@
+//2.2  区分指针类型
+#include <iostream.h>
+int main()
+{   
+    double d;
+    int i;
+    char c;
+
+    double *dp=&d;
+    int *ip=&i;
+    char *cp=&c;
+
+	cout<<"(sizeof dp):\t"<<(sizeof dp)<<endl;
+	cout<<"(sizeof ip):\t"<<(sizeof ip)<<endl;
+	cout<<"(sizeof cp):\t"<<(sizeof cp)<<endl;
+
+	cout<<"sizeof(double *):\t"<<sizeof(double *)<<endl;
+	cout<<"sizeof(int *):\t\t"<<sizeof(int *)<<endl;
+	cout<<"sizeof(char *):\t\t"<<sizeof(char *)<<endl;
+
+	cout<<"(sizeof d):\t"<<(sizeof d)<<endl;
+	cout<<"(sizeof i):\t"<<(sizeof i)<<endl;
+	cout<<"(sizeof c):\t"<<(sizeof c)<<endl;
+
+	cout<<"sizeof(double):\t"<<sizeof(double)<<endl;
+	cout<<"sizeof(int):\t"<<sizeof(int)<<endl;
+	cout<<"sizeof(char):\t"<<sizeof(char)<<endl;
+
+	cout<<"(int)(dp+1)-(int)dp:\t"<<(int)(dp+1)-(int)dp<<endl;
+	cout<<"(int)(ip+1)-(int)ip:\t"<<(int)(ip+1)-(int)ip<<endl;   
+	cout<<"(int)(cp+1)-(int)cp:\t"<<(int)(cp+1)-(int)cp<<endl;
+
+    d=123.456;
+	i=(int)d;
+	ip=(int *)dp;//等价于ip=(int *)&d;
+
+	cout<<"赋值之后-----------------------------------"<<endl;
+	cout<<"d:\t"<<d<<endl;
+	cout<<"i:\t"<<i<<endl;
+
+	cout<<"dp:\t"<<dp<<endl;
+	cout<<"ip:\t"<<ip<<endl;
+	cout<<"&d:\t"<<&d<<endl;
+
+	cout<<"*dp:\t"<<*dp<<endl;
+	cout<<"*ip:\t"<<*ip<<endl;
+
+	//void * vp=(void *)cp+1;
+	//cout<<*vp;
+	return 0;
+}

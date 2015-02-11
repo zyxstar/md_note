@@ -1,0 +1,30 @@
+//4.1 Time结构体的缺陷
+#include<iostream>
+using std::cout;
+using std::endl;
+
+struct Time
+{
+	int hour;
+	int minute;
+	int second;
+};
+void printTime(const Time &);
+int main()
+{
+   Time noon={12};
+   printTime(noon);
+   Time t;//没有初始化
+   printTime(t);
+   t.hour=8;
+   t.minute=0;
+   t.second=0;
+   printTime(t);
+   t.hour=28;//与现实不符
+   printTime(t);
+   return 0;
+}
+void printTime(const Time &t )
+{
+	cout<<t.hour<<":"<<t.minute<<":"<<t.second<<endl;
+}

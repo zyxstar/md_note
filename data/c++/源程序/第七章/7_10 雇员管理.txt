@@ -1,0 +1,187 @@
+//7.10 雇员管理
+//Employee.h
+#ifndef EMPLOYEE_H
+#define EMPLOYEE_H
+#include<iostream>
+using std::cout;
+using std::endl;
+class Employee
+{
+public:
+	Employee(const char* const n1=0,double b1=0)
+	{
+		strcpy(id,generator());
+		name[0]=0;			
+		if(n1!=0&&strlen(n1)<=9)
+			strcpy(name,n1);
+		baseSalary=b1>=0?b1:0;
+	}
+	const char* const get_id() const
+	{
+		return id;
+	}
+	const char* const get_name() const
+	{
+		return name;
+	}
+	void set_name(const char* const n1)
+	{
+		if(n1!=0&&strlen(n1)<=9)
+			strcpy(name,n1);
+	}
+	double get_baseSalary() const
+	{
+		return baseSalary;
+	}
+	void set_baseSalary(double b1)
+	{
+		baseSalary=b1>=0?b1:baseSalary;
+	}
+	void print()const
+	{
+		cout<<"编号："<<id<<endl;
+		cout<<"姓名："<<name<<endl;
+		cout<<"底薪："<<baseSalary<<endl;
+	}	
+protected:
+	char id[10];
+	char name[10];
+	double baseSalary;	
+private:
+	static char* generator()
+	{
+		static int n=0;
+		static char newid[10]={0};
+		newid[0]='E';
+		int m=1;
+		for(int i=8;i>0;--i)
+		{
+			int tmp=n/m%10;
+			m*=10;
+			newid[i]='0'+tmp;
+		}
+		++n;
+		return newid;
+	}
+	Employee(const Employee&);//禁止拷贝构造
+	Employee& operator=(const Employee&);//禁止同类赋值
+};
+#endif
+
+//HourlyEmp.h
+#include"Employee.h"
+#ifndef HOURLYEMP_H
+#define HOURLYEMP_H
+class HourlyEmp:public Employee
+{
+public:
+	HourlyEmp(const char* const n1,double b1,int h1,double w1)
+		:Employee(n1,b1)
+	{
+		hour=h1>=0?h1:0;
+		wage=w1>=0?w1:0;
+		id[0]='H';
+	}
+	int get_hour()const
+	{
+		return hour;
+	}
+	int set_hour(int h1)
+	{
+		hour=h1>=0?h1:0;
+	}
+	int get_wage()const
+	{
+		return wage;
+	}
+	int set_wage(int w1)
+	{
+		wage=w1>=0?w1:0;
+	}
+	void print()const
+	{
+		cout<<"小时工："<<endl;
+		Employee::print();
+	}
+	double earnings()const
+	{
+		if(hour<=40)
+			return get_baseSalary()+hour*wage;
+		return get_baseSalary()+40*wage+(hour-40)*2*wage;
+	}
+private:
+	int hour;
+	double wage;
+};
+#endif
+
+//PieceEmp.h
+#include"Employee.h"
+#ifndef PIECEEMP_H
+#define PIECEEMP_H
+class PieceEmp:public Employee
+{
+public:
+	PieceEmp(const char* const n1,double b1,int q1,double w1)
+		:Employee(n1,b1)
+	{
+		quantity=q1>=0?q1:0;
+		wagePerPeice=w1>=0?w1:0;
+		id[0]='P';
+	}
+	int get_quantity()const
+	{
+		return quantity;
+	}
+	int set_quantity(int q1)
+	{
+		quantity=q1>=0?q1:0;
+	}
+	int get_wagePerPeice()const
+	{
+		return wagePerPeice;
+	}
+	int set_wagePerPeice(int w1)
+	{
+		wagePerPeice=w1>=0?w1:0;
+	}
+	void print()const
+	{
+		cout<<"计件工："<<endl;
+		Employee::print();
+	}
+	double earnings()const
+	{
+		return get_baseSalary()+quantity*wagePerPeice;
+	}
+private:
+	int quantity;
+	double wagePerPeice;
+};
+#endif
+
+//test.cpp
+#include "HourlyEmp.h"
+#include "PieceEmp.h"
+int main()
+{
+	Employee e("乔丹",30000000);
+	e.print();
+	cout<<"--------------"<<endl;
+
+	HourlyEmp h("姚明",0,40,100000);
+	h.print();
+	cout<<"工作小时数："<<h.get_hour()<<endl;
+	cout<<"每小时工资："<<h.get_wage()<<endl;
+	cout<<"共赚："<<h.earnings()<<endl;
+	cout<<"--------------"<<endl;
+
+	PieceEmp y("易建联",100000,5,10000);
+	y.print();
+	cout<<"成品数："<<y.get_quantity()<<endl;
+	cout<<"每件工资："<<y.get_wagePerPeice()<<endl;
+	cout<<"共赚："<<y.earnings()<<endl;
+	cout<<"--------------"<<endl;
+
+	return 0;
+}

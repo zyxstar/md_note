@@ -1,0 +1,65 @@
+//14.10 reverse、reverse_copy、rotate、rotate_copy、swap、iter_swap才swap_ranges
+#include<iostream>
+#include<algorithm>
+using std::cout;
+using std::endl;
+using std::reverse;
+using std::reverse_copy;
+using std::rotate;
+using std::rotate_copy;
+using std::swap;
+using std::iter_swap;
+using std::swap_ranges;
+using std::copy;
+
+void print(const int* arr,int len,const char* str)
+{	
+	for(int i=0;i<len;++i)
+		cout<<arr[i]<<" ";
+	cout<<str;
+	cout<<endl;
+}
+
+int main()
+{ 
+	int a1[]={1,2,3,4,5};
+	int a2[]={6,7,8,9,0};
+	print(a1,5,":a1");
+	swap(a1[0],a1[1]);
+	print(a1,5,":swap(a1[0],a1[1])");
+	iter_swap(a1,a1+1);
+	print(a1,5,": iter_swap(a1,a1+1)");
+	cout<<"----------------------"<<endl;
+
+	print(a1,5,":a1");
+	print(a2,5,":a2");
+	swap_ranges(a1,a1+5,a2);
+	print(a1,5,":a1");
+	print(a2,5,":a2");
+	cout<<"----------------------"<<endl;
+
+	print(a1,5,":a1");
+	reverse(a1,a1+5);
+	print(a1,5,":reverse(a1,a1+5)");
+	reverse_copy(a1,a1+5,a2);
+	print(a2,5,":a2");
+	cout<<"----------------------"<<endl;
+
+	print(a1,5,":a1");
+	rotate(a1,a1+2,a1+5);
+	print(a1,5,":rotate(a1,a1+2,a1+5)");
+	rotate_copy(a1,a1+2,a1+5,a2);
+	print(a2,5,":a2");
+	cout<<"----------------------"<<endl;
+
+	copy(a1,a1+5,a2);
+	print(a1,5,":a1");
+	print(a2,5,":a2");
+	rotate(a1,a1+2,a1+5);
+	swap_ranges(a2,a2+2,a2+3);
+	print(a1,5,":rotate(a1,a1+2,a1+5)");
+	print(a2,5,":swap_ranges(a2,a2+2,a2+3)");
+	cout<<"----------------------"<<endl;
+
+	return 0;
+}

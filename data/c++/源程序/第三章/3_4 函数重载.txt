@@ -1,0 +1,27 @@
+//3.4 函数重载
+#include<iostream.h>
+int max(int,int);
+int max(int,int,int);
+double max(double,double);
+main()
+{
+	cout<<"max(1,2):\t"<<max(1,2)<<endl;
+	cout<<"max(1,3,2):\t"<<max(1,3,2)<<endl;
+    cout<<"max(1.1,2.2):\t"<<max(1.1,2.2)<<endl;
+  	return 0;
+}
+int max(int a,int b)
+{   
+	cout<<"调用max(int,int)"<<endl;
+	return a>b?a:b;
+}
+int max(int a,int b,int c)
+{
+	cout<<"调用max(int,int,int)"<<endl;
+	return max(max(a,b),c);
+}
+double max(double a,double b)
+{
+	cout<<"调用max(double,double)"<<endl;
+	return a>b?a:b;
+}

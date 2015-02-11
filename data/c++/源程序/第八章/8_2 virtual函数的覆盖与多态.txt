@@ -1,0 +1,69 @@
+//8.2 virtual函数的覆盖与多态
+#include<iostream>
+using std::cout;
+using std::endl;
+class A
+{
+public:
+    virtual void f1()
+	{
+		cout<<"void A::f1()被执行"<<endl;
+  	}
+    virtual void f2(int)
+	{
+		cout<<"void A::f2(int)被执行"<<endl;
+	}
+};
+class B:public A
+{
+public:
+    virtual void f1()
+	{
+		cout<<"void B::f1()被执行"<<endl;
+	}
+    void f2(int)
+	{
+		cout<<"void B::f2(int)被执行"<<endl;
+	}
+};
+class C:public B
+{
+public:
+    virtual void f1()
+	{
+		cout<<"void C::f1()被执行"<<endl;
+	}
+    virtual int f3()
+	{
+		cout<<"int C::f3()被执行"<<endl;
+		return 0;
+	}
+};
+
+int main()
+{
+	A* p[3];
+	p[0]=new A;
+	p[1]=new B;
+	p[2]=new C;
+
+    for(int i=0;i<3;++i)
+	{
+		p[i]->f1();
+		p[i]->f2(0);
+	}
+	cout<<"-------------"<<endl;
+
+	//p[2]->f3();编译错误
+	((C*)p[2])->f3();
+	cout<<"-------------"<<endl;
+
+	p[1]->A::f1();
+	p[2]->A::f1();
+	//p[2]->B::f1();编译错误
+	cout<<"-------------"<<endl;
+
+	for( i=0;i<3;++i)
+	    delete p[i];
+	return 0;
+}
