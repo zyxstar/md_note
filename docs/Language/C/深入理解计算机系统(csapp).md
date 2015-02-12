@@ -249,18 +249,172 @@ dest_t *p;
 
 ![img](../../../imgs/csapp_09.png)
 
+练习
+
+已知`void decode1(int *xp, int *yp, int *zp);`并且汇编如下，写出等效C代码
+
+```
+#xp at %ebp+8, yp at %ebp+12, zp at %ebp+16
+movl 8(%ebp), %edi    #Get xp
+movl 12(%ebp), %edx   #Get yp
+movl 16(%ebp), %ecx   #Get zp
+movl (%edx), %ebx     #Get y
+movl (%ecx), %esi     #Get z
+movl (%edi), %eax     #Get x
+movl %eax, (%edx)     #Store x at yp
+movl %ebx, (%ecx)     #Store y at zp
+movl %esi, (%edi)     #Store z at xp
+```
+
+等效于
+
+```c
+void decode1(int *xp, int *yp, int *zp){
+    int tx = *xp;
+    int ty = *yp;
+    int tz = *zp;
+    *yp = tx;
+    *zp = ty;
+    *xp = tz;
+}
+```
+
+## 算术和逻辑操作
+![img](../../../imgs/csapp_10.png)
+
+除了`leal`没有变种外，大多数操作都为指令类，如`ADD`，具有`addb`,`addw`,`addl`等变种
+
+### 加载有效地址
+指令`leal`实际上是`movl`指令的变形，但它不是从指定位置（存储器）读入数据，而是将有效地址写入到目的操作数（__必须是寄存器__），第一个操作数看上去是一个存储器引用，但实际上它 __根本没用引用存储器__，以后用C语言的地址操作符`&`说明这种计算
+
+假如`%eax`的值为x，`%ecx`的值为y，则
+
+```
+leal 6(%eax),%edx             # 6 + x
+leal (%eax,%ecx),%edx         # x + y
+leal (%eax,%ecx,4),%edx       # x + 4y
+leal 7(%eax,%eax,8),%edx      # 7 + 9x
+leal 0xA(,%ecx,4),%edx        # 10 + 4y
+leal 9(%eax,%ecx,2),%edx      # 9 + x + 2y
+```
+
+### 一元操作和二元操作
+一元操作，只有一个操作数，既是源又是目的，__操作数可以是一个寄存器，也可以是一个存储器位置__
+
+二元操作，第二个操作数，既是源又是目的，对于不可交换的操作来说，有点奇特，如`subl %eax, %edx`使`%edx`的值减去`%eax`，__第一个操作数可以是立即数、寄存器或是存储器位置，第二个操作数可以是寄存器或存储器位置__，但不能两者同时是存储器位置
+
+练习
+
+![img](../../../imgs/csapp_11.png)
+
+![img](../../../imgs/csapp_12.png)
+
+### 移位操作
+先给出移位量，然后第二项给出的是要移位的位数，因为只允许进行0到31位的移位（所以只考虑　__移位量的低5位__）。
+
+移位量可以是一个 __立即数__，或者放在单字节 __寄存器`%cl`__中
+
+左移两个指令`SAL`和`SHL`，两者效果是一样的，都是将右边填上0
+
+右移指令不同，`SAR`执行　__算术移位__，填上符号位，而`SHR`执行　__逻辑移位__，填上0
+
+移位的操作的目的操作数可以是一个寄存器或者一个存储器位置
+
+练习
+
+```c
+int shift_left2_rightn(int x, int n){
+  x <<= 2;
+  x >>= n;
+  return x;
+}
+```
+
+```
+movl 8(%ebp), %eax    # Get x
+sall $2, %eax         # x <<= 2
+movl 12(%ebp), %ecx   # Get n
+sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
+```
+
+补码运算是实现有符号整数运算的一种比较好的方法
+
+![img](../../../imgs/csapp_13.png)
+
+指令2和指令3用`leal`和移位指令的组合来实现表达式`z*48`
+
+> `xor %edx, %edx`，实现了`movl $0, %edx`的功能，但前者指令只需2个字节，后者需要5个字节
+
+### 特殊的算术操作
+![img](../../../imgs/csapp_14.png)
+
+描述了指令支持产生两个32位数字的全64位乘积以及整数除法
+
+`imull`和`mull`要求一个参数　__必须在寄存器`%eax`__ 中，而另一个作为源操作数给出，然后乘积放在寄存器`%edx`(高32位)和`%eax`(低32位)中
+
+> `imull`虽然可以用于两个不同的乘法操作，但通过操作数的数目上，可以分辨想用哪条指令
+
+下面希望将全64位乘积作为8个字节存放在栈顶
+
+![img](../../../imgs/csapp_15.png)
+
+存储两个寄存器的位置对小端机器来说是对的，寄存器`%edx`中的高位，存放在相对于`%eax`中低位偏移量为4的地方，栈是向低地址方向增长的，__低位在栈顶__
+
+`idivl`将寄存器`%edx`(高32位)和`eax`(低32位)中的64位数作为被除数，而除数作为指令的操作数给出，指令将 __商存储在`eax`__中，将 __余数存储在`%edx`__ 中
+
+![img](../../../imgs/csapp_16.png)
+
+第1行的传送指令和第3行的算术移位指令联合起来，就是根据x的符号将寄存器`%edx`设置为全零或全一，第2行传送指令将x复制到`%eax`，因此有了将寄存器`%edx`和`eax`联合起来　__存放x的64位符号扩展__ 的版本
+
+也可使用`cltd`指令，它将`eax`符号扩展到`%edx`，改进入如下
+
+![img](../../../imgs/csapp_17.png)
+
+无符号除法是`divl`指令，通常事先将寄存器`%edx`设置为0，如上面的改成计算x和y无符号商和余数
+
+![img](../../../imgs/csapp_18.png)
 
 
-```
-```
-```
-```
 
+## 控制
+
+
+
+
+<hr/>
+
+```
+```
 
 <!--
-zh 141 236
+%eax  %ax  %ah  %al
+%ecx  %cx  %ch  %cl
+%edx  %dx  %dh  %dl
+%ebx  %bx  %bh  %bl
+%esi  %si
+%edi  %di
+%esp  %sp
+%ebp  %bp
 
-en 176/211 344
+movl    movw    movb
+movsbw  movsbl  movswl
+movzbw  movzbl  movzwl
+pushl   popl
+leal
+inc     dec     neg     not
+add     sub     imul    xor    or    and
+sal     shl     sar     shr
+imull   mull
+cltd
+idivl   divl
+
+
+
+
+
+zh 146 238
+
+en 184 311
 
  -->
 
