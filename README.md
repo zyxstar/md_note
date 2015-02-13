@@ -14,13 +14,16 @@
 - [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FDesign%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md) <span>2012-07-21</span>
 - [领域驱动设计(Eric.Evans).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FDesign%2F%25E9%25A2%2586%25E5%259F%259F%25E9%25A9%25B1%25E5%258A%25A8%25E8%25AE%25BE%25E8%25AE%25A1%2528Eric.Evans%2529.md) <span>2014-05-30</span>
 
+# OS
+- [Unix环境高级编程(apue).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FOS%2FUnix%25E7%258E%25AF%25E5%25A2%2583%25E9%25AB%2598%25E7%25BA%25A7%25E7%25BC%2596%25E7%25A8%258B%2528apue%2529.md) <span>2015-02-08</span>
+- [深入理解计算机系统(csapp).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FOS%2F%25E6%25B7%25B1%25E5%2585%25A5%25E7%2590%2586%25E8%25A7%25A3%25E8%25AE%25A1%25E7%25AE%2597%25E6%259C%25BA%25E7%25B3%25BB%25E7%25BB%259F%2528csapp%2529.md) <span>2014-12-31</span>
+
 # Language
 
 ## C
 - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md) <span>2013-08-15</span>
 - [C专家编程(PeterVanDerLinden).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2FC%25E4%25B8%2593%25E5%25AE%25B6%25E7%25BC%2596%25E7%25A8%258B%2528PeterVanDerLinden%2529.md) <span>2014-09-04</span>
 - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md) <span>2014-08-01</span>
-- [深入理解计算机系统(csapp).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E6%25B7%25B1%25E5%2585%25A5%25E7%2590%2586%25E8%25A7%25A3%25E8%25AE%25A1%25E7%25AE%2597%25E6%259C%25BA%25E7%25B3%25BB%25E7%25BB%259F%2528csapp%2529.md) <span>2014-12-31</span>
 
 ## JavaScript
 - [JavaScriptCollected.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgithub.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScriptCollected.md) <span>2013-06-18</span>

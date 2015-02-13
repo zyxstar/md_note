@@ -130,7 +130,7 @@ long double     |扩展精度        | t           |  10/12
 ## 访问信息
 一个IA32中央处理单元包含一组8个存储32位值的寄存器，它们以`%e`开头
 
-![img](../../../imgs/csapp_01.png)
+![img](../../imgs/csapp_01.png)
 
 字节操作指令可以独立的读或写前4个寄存器的2个低位字节，如`%ax`则表示16位，其中还可以细分`%ah`表示高8位，`%al`表示低8位
 
@@ -142,15 +142,15 @@ long double     |扩展精度        | t           |  10/12
 - 寄存器(register)，表示某个寄存器的内容，对 __双字__ 操作来说，可以是8个32位寄存器（如`%eax`）中的一个，对 __字__ 操作来说，可以是8个16位寄存器（如`%ax`）中的一个，或者对 __字节__ 操作来说，可以是8个单字节寄存器元（如`%al`）素中的一个。E<sub>a</sub>来表示任意寄存器a，用引用R[E<sub>a</sub>]来表示它的值，将寄存器看成一个数组R，用寄存器标识作为索引
 - 存储器(memory)引用，它会根据计算出来的地址，访问某个存储器位置，将存储器看成一个很大的字节数组，用符号M<sub>b</sub>[Addr]表示对存储器中从地址Addr开始的b个字节值的引用，为了方便通常省去下方的b
 
-![img](../../../imgs/csapp_02.png)
+![img](../../imgs/csapp_02.png)
 
 上图表示多种不同的寻址模式，允许不同形式的存储器引用，Imm(E<sub>b</sub>,E<sub>i</sub>,s)表示：一个立即数偏移Imm，一个基址寄存器E<sub>b</sub>，一个变址寄存器E<sub>i</sub>和一个比例因子s，这里s必须是1、2、4、8。然后有效地址被计算为Imm+R[E<sub>b</sub>]+R[E<sub>i</sub>]*s
 
 练习
 
-![img](../../../imgs/csapp_03.png)
+![img](../../imgs/csapp_03.png)
 
-![img](../../../imgs/csapp_04.png)
+![img](../../imgs/csapp_04.png)
 
 - 9(%eax,%edx) => M[9 + R[%eax] + R[%edx]] => M[9 + 0x100 + 0x3] => M[0x10C] => 0x11
 - 0xFC(,%ecx,4) => M[0xFC + R[%ecx] * 4] => M[0xFC + 0x1 * 4] => M[0xFC + 0x4] => M[0x100] => 0xFF
@@ -159,9 +159,9 @@ long double     |扩展精度        | t           |  10/12
 ### 数据传送指令
 指令类，指令执行一样的操作，只不过操作数的大小不同，如`MOV`类由三条指令组成：`movb`、`movw`、`movl`，不同的只是它们分别是在大小为1,2,4个字节的数据上进行操作
 
-![img](../../../imgs/csapp_05.png)
+![img](../../imgs/csapp_05.png)
 
-![img](../../../imgs/csapp_06.png)
+![img](../../imgs/csapp_06.png)
 
 `MOV`类中，IA32有一条限制，__传送指令的两个操作数不能都指向存储器位置__，下面是mov指令的五种可能组合，记住，每一个是源操作数，第二个是目的操作数
 
@@ -184,7 +184,7 @@ movzbl %dh,%eax   #%eax = 000000CD  高三位全为0
 
 `pushl`和`popl`将数据压入程序栈或出栈(__栈本身在存储器中__)，__栈向下增长__，栈顶元素是栈中最低的，压栈是减少栈指针(寄存器`%esp`)的值(`R[%esp]`)，并将数据存放到 __存储器__(`M[R[%esp]]`)中
 
-![img](../../../imgs/csapp_07.png)
+![img](../../imgs/csapp_07.png)
 
 ```
 pushl %eax
@@ -230,7 +230,7 @@ movb %si, 8(%ebp)   　＃Mismatch between instruction suffix and register ID, u
 
 ### 数据传送示例
 
-![img](../../../imgs/csapp_08.png)
+![img](../../imgs/csapp_08.png)
 
 - `movl 8(%ebp), %edx`，将`xp`的值，放入`%edx`，即`R[%edx] = xp`
 - `movl (%edx), %eax`，将`M[R[%edx]]`，即`*xp`指向的值，放入`%eax`，即`R[%eax]=*xp`，`R[%eax]`将变成返回值
@@ -247,7 +247,7 @@ dest_t *p;
 
 设`v`存储在寄存器`%eax`适当命名的部分中，也就是`%eax`,`%ax`,`%al`，而指针`p`存储在寄存器`%edx`中，当执行 __既涉及大小变化又涉及符号改变的强制类型转换__ 时，操作应该先改变符号
 
-![img](../../../imgs/csapp_09.png)
+![img](../../imgs/csapp_09.png)
 
 练习
 
@@ -280,7 +280,7 @@ void decode1(int *xp, int *yp, int *zp){
 ```
 
 ## 算术和逻辑操作
-![img](../../../imgs/csapp_10.png)
+![img](../../imgs/csapp_10.png)
 
 除了`leal`没有变种外，大多数操作都为指令类，如`ADD`，具有`addb`,`addw`,`addl`等变种
 
@@ -305,9 +305,9 @@ leal 9(%eax,%ecx,2),%edx      # 9 + x + 2y
 
 练习
 
-![img](../../../imgs/csapp_11.png)
+![img](../../imgs/csapp_11.png)
 
-![img](../../../imgs/csapp_12.png)
+![img](../../imgs/csapp_12.png)
 
 ### 移位操作
 先给出移位量，然后第二项给出的是要移位的位数，因为只允许进行0到31位的移位（所以只考虑　__移位量的低5位__）。
@@ -339,14 +339,14 @@ sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
 
 补码运算是实现有符号整数运算的一种比较好的方法
 
-![img](../../../imgs/csapp_13.png)
+![img](../../imgs/csapp_13.png)
 
 指令2和指令3用`leal`和移位指令的组合来实现表达式`z*48`
 
 > `xor %edx, %edx`，实现了`movl $0, %edx`的功能，但前者指令只需2个字节，后者需要5个字节
 
 ### 特殊的算术操作
-![img](../../../imgs/csapp_14.png)
+![img](../../imgs/csapp_14.png)
 
 描述了指令支持产生两个32位数字的全64位乘积以及整数除法
 
@@ -356,23 +356,23 @@ sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
 
 下面希望将全64位乘积作为8个字节存放在栈顶
 
-![img](../../../imgs/csapp_15.png)
+![img](../../imgs/csapp_15.png)
 
 存储两个寄存器的位置对小端机器来说是对的，寄存器`%edx`中的高位，存放在相对于`%eax`中低位偏移量为4的地方，栈是向低地址方向增长的，__低位在栈顶__
 
 `idivl`将寄存器`%edx`(高32位)和`eax`(低32位)中的64位数作为被除数，而除数作为指令的操作数给出，指令将 __商存储在`eax`__中，将 __余数存储在`%edx`__ 中
 
-![img](../../../imgs/csapp_16.png)
+![img](../../imgs/csapp_16.png)
 
 第1行的传送指令和第3行的算术移位指令联合起来，就是根据x的符号将寄存器`%edx`设置为全零或全一，第2行传送指令将x复制到`%eax`，因此有了将寄存器`%edx`和`eax`联合起来　__存放x的64位符号扩展__ 的版本
 
 也可使用`cltd`指令，它将`eax`符号扩展到`%edx`，改进入如下
 
-![img](../../../imgs/csapp_17.png)
+![img](../../imgs/csapp_17.png)
 
 无符号除法是`divl`指令，通常事先将寄存器`%edx`设置为0，如上面的改成计算x和y无符号商和余数
 
-![img](../../../imgs/csapp_18.png)
+![img](../../imgs/csapp_18.png)
 
 
 

@@ -12,7 +12,7 @@ GITHUB_BASE_URL = "https://github.com/zyxstar/md_note/raw/master/docs"
 
 ORDER_DIC = {"Analysis":10,
              "Design":15,
-             "ProgrammingParadigm":20,
+             "OS":20,
              "Language":30,
              "Skill":40,
              "Framework":50,
