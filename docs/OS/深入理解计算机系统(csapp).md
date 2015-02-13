@@ -219,13 +219,13 @@ IA32中即使操作数是一个字节或者单字的，__存储器的引用也�
 以下是常见的一些错误指令
 
 ```
-movb $0xF, (%bl)    　＃Cannot use %bl as address register
-movl %ax, (%esp)    　＃Mismatch between instruction suffix and register ID, use movw
-movw (%eax),4(%esp) 　＃Cannot have both source and destination be memory references
-movb %ah,%sh        　＃No register named %sh
-movl %eax,$0x123    　＃Cannot have immediate as destination
-movl %eax,%dx       　＃Destination operand incorrect size
-movb %si, 8(%ebp)   　＃Mismatch between instruction suffix and register ID, use movw
+movb $0xF, (%bl)     ＃Cannot use %bl as address register
+movl %ax, (%esp)     ＃Mismatch between instruction suffix and register ID, use movw
+movw (%eax),4(%esp)  ＃Cannot have both source and destination be memory references
+movb %ah,%sh         ＃No register named %sh
+movl %eax,$0x123     ＃Cannot have immediate as destination
+movl %eax,%dx        ＃Destination operand incorrect size
+movb %si, 8(%ebp)    ＃Mismatch between instruction suffix and register ID, use movw
 ```
 
 ### 数据传送示例
@@ -310,13 +310,13 @@ leal 9(%eax,%ecx,2),%edx      # 9 + x + 2y
 ![img](../../imgs/csapp_12.png)
 
 ### 移位操作
-先给出移位量，然后第二项给出的是要移位的位数，因为只允许进行0到31位的移位（所以只考虑　__移位量的低5位__）。
+先给出移位量，然后第二项给出的是要移位的位数，因为只允许进行0到31位的移位（所以只考虑 __移位量的低5位__）。
 
 移位量可以是一个 __立即数__，或者放在单字节 __寄存器`%cl`__中
 
 左移两个指令`SAL`和`SHL`，两者效果是一样的，都是将右边填上0
 
-右移指令不同，`SAR`执行　__算术移位__，填上符号位，而`SHR`执行　__逻辑移位__，填上0
+右移指令不同，`SAR`执行 __算术移位__，填上符号位，而`SHR`执行 __逻辑移位__，填上0
 
 移位的操作的目的操作数可以是一个寄存器或者一个存储器位置
 
@@ -350,7 +350,7 @@ sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
 
 描述了指令支持产生两个32位数字的全64位乘积以及整数除法
 
-`imull`和`mull`要求一个参数　__必须在寄存器`%eax`__ 中，而另一个作为源操作数给出，然后乘积放在寄存器`%edx`(高32位)和`%eax`(低32位)中
+`imull`和`mull`要求一个参数 __必须在寄存器`%eax`__ 中，而另一个作为源操作数给出，然后乘积放在寄存器`%edx`(高32位)和`%eax`(低32位)中
 
 > `imull`虽然可以用于两个不同的乘法操作，但通过操作数的数目上，可以分辨想用哪条指令
 
@@ -364,7 +364,7 @@ sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
 
 ![img](../../imgs/csapp_16.png)
 
-第1行的传送指令和第3行的算术移位指令联合起来，就是根据x的符号将寄存器`%edx`设置为全零或全一，第2行传送指令将x复制到`%eax`，因此有了将寄存器`%edx`和`eax`联合起来　__存放x的64位符号扩展__ 的版本
+第1行的传送指令和第3行的算术移位指令联合起来，就是根据x的符号将寄存器`%edx`设置为全零或全一，第2行传送指令将x复制到`%eax`，因此有了将寄存器`%edx`和`eax`联合起来 __存放x的64位符号扩展__ 的版本
 
 也可使用`cltd`指令，它将`eax`符号扩展到`%edx`，改进入如下
 
