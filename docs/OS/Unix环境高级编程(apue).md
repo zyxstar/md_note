@@ -17,10 +17,27 @@ int openat(int fd ,const char *path ,int oflag ,... /* mode_t mode*/ );
 ```
 
 - `O_CREAT` 若文件不存在，则创建它，需要第三个参数`mode`，用于指定该新文件的访问权限位
-- `O_EXCL` 如果同时指定了`O_CREAT`，而文件存在，则会出错，可以测试一个文件是否存在，如果不存在则创建，测试和创建是一个原子操作
+- `O_CLOEXEC` 设置文件描述符为`FD_CLOEXEC`
+- `O_DIRECTORY` 如果`path`引用的不是目录，则出错 
+- `O_EXCL` 如果同时指定了`O_CREAT`，而文件存在，则会出错，可以测试一个文件是否存在，如果不存在则创建，测试和创建是一个 __原子__ 操作
+- `O_NOFOLLOW` 如果`path`引用的是一个符号链接，则出错
+- `O_NONBLOCK` 如果`path`引用的是一个FIFO、一个块特殊文件或一个字符特殊文件，则此选项为文件的本次打开操作和后续IO操作设置为 __非阻塞__ 方式
 - `O_DSYNC` 使每次`write`等待物理IO操作完成，但是如果写操作并不影响读取刚写入的数据，则不等待文件属性被更新
 - `O_SYNC` 使每次`write`等待物理IO操作完成，包括由`write`操作引起的文件属性更新所需的IO
+- `O_RSYNC` 进行`read`操作等待，直至所有对文件同一部分挂起的写操作都完成
 
+关于`openat`:
+
+- `path`参数指定的是绝对路径，这种情况下`fd`参数被忽略，`openat`相当于`open`
+- `path`参数指定的是相对路径，`fd`参数指出了相对路径名在文件系统中的开始地址，`fd`参数是通过打开相对路径名所在的目录来获取（即通过以前`open`过的目录所得到的`fd`）
+- `path`参数指定的是相对路径，`fd`参数具有特殊值`AT_FDCWD`，路径名在当前工作目录中获取
+
+引入它，为了解决：
+
+- 让线程可以使用相对路径名打开目录中的文件，而不再只能打开当前工作目录
+- 避免time-of-check-to-time-of-use(TOCTTOU)错误
+
+使用`O_APPEND`打开一个文件以便读写，无论`lseek`到任意位置，`write`都从文件末尾开始写。不用该标志打开文件，就可`lseek`到任意位置，然后`write`，但会覆盖之前内容
 
 ## creat函数
 ```c
@@ -149,10 +166,10 @@ ssize_t read(int fd ,void *buf,size_tnbytes );
 - 当某一信号造成中断，而已经读了部分数据量时
 
 ### 有关错误处理
-- EAGAIN 提示没有数据可读，可以重试，也许下次能成功
-- EBADF EISDIR 等属于程序错误，不应做错误处理（测试就能发现）
-- EFAULT EIO　等错误，无法处理，只能出错返回
-- EINTR 信号中断，需要重试
+- `EAGAIN` 提示没有数据可读，可以重试，也许下次能成功
+- `EBADF`,`EISDIR` 等属于程序错误，不应做错误处理（测试就能发现）
+- `EFAULT`,`EIO`　等错误，无法处理，只能出错返回
+- `EINTR` 信号中断，需要重试
 
 ```c
 while (1) {
@@ -192,6 +209,18 @@ ssize_t write(int fd ,const void *buf,size_tnbytes );
 ```
 
 `write`出错的常见原因是：磁盘已写满，或者超过了一个给定进程的文件长度限制
+
+## IO效率
+磁盘块长度为4096字节(由`st_blksize`表示)，当缓存区大小设置为该大小时，系统CPU时间最小
+
+文件系统为改善性能都会采用某种 __预读__ 技术，当检测到正在进行顺序读取时，系统就试图读入比应用所要求的更多数据，所以当缓存区即使设置为32时与设置较大缓存区，最后的墙上时间几乎一样
+
+程序执行时，设置`fd`的文件状态标志为`O_SYNC`时（使用`fcntl`），每次`write`都要等待，会增加系统时间和时钟时间（墙上时间）
+
+![img](../../imgs/apue_03.png)
+
+同步写入文件之后，`fsync`的调用并不明显
+
 
 ## 文件共享
 即支持在 __不同进程间共享__ 打开的文件
@@ -236,9 +265,16 @@ int dup(int fd );
 int dup2(int fd ,int fd2);
 ```
 
-由`dup`返回的新文件描述符一定是当前可用文件描述符中的最小数值，用`dup2`则可以用参数`fd2`指定新描述符的数值，如果该数值已打开，则先将其关闭，如果`fd`等于`fd2`，则返回`fd2`而不关闭它
+- 由`dup`返回的新文件描述符一定是当前可用文件描述符中的最小数值，
+- 用`dup2`则可以用参数`fd2`指定新描述符的数值，
+    + 如果`fd2`已打开，则先将其关闭
+    + 如果`fd`等于`fd2`，则返回`fd2`，而不关闭它
+    + 否则，`fd2`的`FD_CLOEXEC`文件描述标志就清除，这样`fd2`在进程调用`exec`时是打开的
 
-当两个描述符指向同一文件表项，它们 __共享__ 同一文件状态标志(file status flags)，以及同一当前文件偏移量(current file offset)，__但__ 却有自己的一套文件描述符标志(fd flags)，新描述符的执行时关闭(`close-on-exec`)标志总是由`dup`函数清除
+> `FD_CLOEXEC` close on exec, not on-fork, 意为如果对描述符设置了FD_CLOEXEC，使用execl执行的程序里，此描述符被关闭，不能再使用它，但是在使用fork调用的子进程中，此描述符并不关闭，仍可使用
+
+
+当两个描述符指向 __同一文件表项__，它们 __共享__ 同一文件状态标志(file status flags)，以及同一当前文件偏移量(current file offset)，__但__ 却有自己的一套文件描述符标志(fd flags)，新描述符的执行时关闭(`close-on-exec`)标志总是由`dup`函数清除
 
 ![img](../../imgs/apue_02.png)
 
@@ -256,6 +292,19 @@ fcntl(fd, F_DUPFD, fd2);
 ```
 
 在后一种情况，`dup2`是一个原子操作，且两者有某些不同的`errno`
+
+说明下面命令区别
+
+```shell
+./a.out > outfile 2>&1
+./a.out 2>&1 > outfile
+```
+
+第一条，设置标准输出到outfile，然后执行`dup`将 __标准输出复制到描述符2上__，其结果是将标准输出和标准错误设置为同一个文件
+
+第二条，首先执行`dup`，描述符2成为终端（标准输入？），而标准输出重定向到outfile
+
+
 
 ## sync/fsync/fdatasync函数
 ```c
@@ -279,13 +328,176 @@ void sync(void);
 int fcntl(int fd ,int cmd ,... /* int arg */ );
 ```
 
+如果出错，返回-1，如果成功则返回某个其他值
+
 该函数有5种功能
 
 - 复制一个现有的描述符(cmd = `F_DUPFD`　or `F_DUPFD_CLOEXEC`)
+    + `F_DUPFD`，复制文件描述符，新文件描述符作为函数值返回，它是尚未打开的各描述符中，大于或等于第3个参数中各值的最小值（对照`dup`），新描述符与`fd`共享同一文件表项，但其文件描述符中`FD_CLOEXEC`标志被清除
+    + `F_DUPFD_CLOEXEC`，复制文件描述符，设置与新描述符关联的`FD_CLOEXEC`文件描述符标志的值，返回新文件描述符
 - 获得、设置文件描述符标记(cmd = `F_GETFD`　or `F_SETFD`)
+    + `F_GETFD`，对应于`fd`的文件描述符标志作为函数值返回（目前只有一个文件文件描述符标志`FD_CLOEXEC`）
+    + `F_SETFD`，设置对于`fd`的文件描述符标志，一般不用常量`FD_CLOEXEC`，而使用0，`exec`时不关闭，1时关闭
 - 获得、设置文件状态标志(cmd = `F_GETFL`　or `F_SETFL`)
+    + `F_GETFL`，对应于`fd`的文件状态标志作为函数值返回
+        * `O_RDONLY` open for reading only
+        * `O_WRONLY` open for writing only
+        * `O_RDWR` open for reading and writing
+        * `O_EXEC` open for execute only
+        * `O_SEARCH` open directory for searching only
+        * `O_APPEND` append on each write
+        * `O_NONBLOCK` nonblocking mode
+        * `O_SYNC` wait for writes to complete (data and attributes)
+        * `O_DSYNC` wait for writes to complete (data only)
+        * `O_RSYNC` synchronize reads and writes
+        * `O_FSYNC` wait for writes to complete (FreeBSD and Mac OS X only)
+        * `O_ASYNC` asynchronous I/O (FreeBSD and Mac OS X only)
+        * 前五个访问标志`O_RDONLY`、`O_WRONLY`、`O_RDWR`、`O_EXEC`、`O_SEARCH`，并不各占一位，它们互斥，只能取其一，需用屏蔽字`O_ACCMODE`取得访问方式位，然后将结果与这五个值一一比较(见下代码)
+    + `F_SETFL`，可以更改的值为`O_APPEND`、`O_NONBLOCK`、`O_SYNC`、`O_DSYNC`、`O_RSYNC`、`O_FSYNC`、`O_ASYNC`
 - 获得、设置异步IO所有权(cmd = `F_GETOWN` or `F_SETOWN`)
+    + `F_GETOWN`，获取当前接收`SIGIO`和`SIGURG`信号的进程ID或进程组ID
+    + `F_SETOWN`，设置，正的`arg`指定一个进程ID，负的`arg`表示等于`arg`绝对值的一个进程组ID
 - 获得、设置记录锁(cmd = `F_GETLK`, `F_SETLK`,　or `F_SETLKW`)
+
+### 取得文件描述符
+
+```c
+#include "apue.h"
+#include <fcntl.h>
+
+int
+main(int argc, char *argv[])
+{
+    int     val;
+
+    if (argc != 2)
+        err_quit("usage: a.out <descriptor#>");
+
+    if ((val = fcntl(atoi(argv[1]), F_GETFL, 0)) < 0)
+        err_sys("fcntl error for fd %d", atoi(argv[1]));
+
+    switch (val & O_ACCMODE) {
+    case O_RDONLY:
+        printf("read only");
+        break;
+
+    case O_WRONLY:
+        printf("write only");
+        break;
+
+    case O_RDWR:
+        printf("read write");
+        break;
+
+    default:
+        err_dump("unknown access mode");
+    }
+
+    if (val & O_APPEND)
+        printf(", append");
+    if (val & O_NONBLOCK)
+        printf(", nonblocking");
+    if (val & O_SYNC)
+        printf(", synchronous writes");
+
+#if !defined(_POSIX_C_SOURCE) && defined(O_FSYNC) && (O_FSYNC != O_SYNC)
+    if (val & O_FSYNC)
+        printf(", synchronous writes");
+#endif
+
+    putchar('\n');
+    exit(0);
+}
+```
+
+```shell
+$./a.out 0 < /dev/tty
+read only
+$./a.out 1 > temp.foo
+$cat temp.foo
+write only
+$./a.out 2 2>>temp.foo
+write only, append
+$./a.out 5 5<>temp.foo
+read write
+```
+
+程序在一个描述符上进行操作，但根本不知道由shell打开的相应文件的名称，因为这是shell打开的，不能打开时设置，就只能使用`fcntl`了
+
+`5<>temp.foo`表示在文件描述符5上打开文件temp.foo以供读写
+
+### 设置/取消状态标志
+```c
+#include "apue.h"
+#include <fcntl.h>
+
+void
+set_fl(int fd, int flags) /* flags are file status flags to turn on */
+{
+    int     val;
+
+    if ((val = fcntl(fd, F_GETFL, 0)) < 0)
+        err_sys("fcntl F_GETFL error");
+
+    val |= flags;       /* turn on flags */
+
+    if (fcntl(fd, F_SETFL, val) < 0)
+        err_sys("fcntl F_SETFL error");
+}
+
+void
+clr_fl(int fd, int flags) /* flags are file status flags to turn off */
+{
+    int     val;
+
+    if ((val = fcntl(fd, F_GETFL, 0)) < 0)
+        err_sys("fcntl F_GETFL error");
+
+    val &= ~flags;       /* turn flags off */
+
+    if (fcntl(fd, F_SETFL, val) < 0)
+        err_sys("fcntl F_SETFL error");
+}
+```
+
+先要获得现有标志值，然后按照期望修改它，最后修改设置新标志值，不能只执行`F_SETFL`(或`F_SETFD`)，这样会关闭以前设置的标志位
+
+## ioctl函数
+```c
+#include <unistd.h> /* System V */
+#include <sys/ioctl.h> /* BSD and Linux */
+int ioctl(intfd,intrequest,...);
+```
+
+## /dev/fd
+系统提供的`/dev/fd`目录下，有名为0、1、2等的文件，打开它们相当于复制描述符
+
+```c
+fd = open("/dev/fd/0", mode);
+// equals
+fd = dup(0);
+```
+
+但描述符之前打开时是只读的，那么也只能对`fd`进行读操作，下面的调用即使成功，也不能写操作
+
+```c
+fd = open("/dev/fd/0", O_RDWR);
+```
+
+> linux的实现是个例外，它把文件描述符映射成指向底层物理文件的符号链接，因此返回的新文件描述符的模式与`/dev/fd`文件描述符其实并不相关
+
+也可使用`/dev/fd`作为路径名参数调用`creat`
+
+> 但linux上，因为指向实际文件的符号链接，在`/dev/fd`上使用`creat`会导致底层文件被截断
+
+系统提供的`/dev/stdin`, `/dev/stdout`, `/dev/stderr`等效于`/dev/fd/0`, `/dev/fd/1`, `/dev/fd/2`
+
+`/dev/fd`主要由shell使用，它允许使用路径名称为调用参数的程序，__能用处理其他路径名的相同方式处理标准输入和标准输出__
+
+```shell
+filter file2 | cat file1 /dev/fd/0 file3 | lpr
+```
+
 
 
 ## 函数
