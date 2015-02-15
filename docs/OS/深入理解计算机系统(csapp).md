@@ -20,7 +20,7 @@ int sum(int x, int y){
 
 使用`gcc -O1 -S code.c`得到的`code.s`
 
-```
+```assembly
 sum:
     pushl   %ebp
     movl    %esp, %ebp
@@ -63,19 +63,19 @@ int simple(int *xp, int y){
 
 对应的`simple.s`
 
-```
+```assembly
   .file "simple.c"
   .text
 .globl simple
   .type simple, @function
 simple:
-  pushl   %ebp              #save frame pointer
-  movl    %esp, %ebp        #create new frame pointer
-  movl    8(%ebp), %edx     #retrieve xp
-  movl    12(%ebp), %eax    #retrieve y
-  addl    (%edx), %eax      #add *xp to get t
-  movl    %eax, (%edx)      #store t at xp
-  popl    %ebp              #restore frame pointer
+  pushl   %ebp              @ save frame pointer
+  movl    %esp, %ebp        @ create new frame pointer
+  movl    8(%ebp), %edx     @ retrieve xp
+  movl    12(%ebp), %eax    @ retrieve y
+  addl    (%edx), %eax      @ add *xp to get t
+  movl    %eax, (%edx)      @ store t at xp
+  popl    %ebp              @ restore frame pointer
   ret
   .size simple, .-simple
   .ident  "GCC: (GNU) 4.1.2 20080704 (Red Hat 4.1.2-54)"
@@ -87,7 +87,7 @@ simple:
 也可产生相应的Intel格式`gcc -O1 -S -masm=intel simple.c`
 
 
-```
+```assembly
 simple:
   push  ebp
   mov ebp, esp
@@ -165,46 +165,46 @@ long double     |扩展精度        | t           |  10/12
 
 `MOV`类中，IA32有一条限制，__传送指令的两个操作数不能都指向存储器位置__，下面是mov指令的五种可能组合，记住，每一个是源操作数，第二个是目的操作数
 
-```
-movl $0x4050,%eax         #Immediate--Register, 4 bytes
-movw %bp,%sp              #Register--Register, 2 bytes
-movb (%edi,%ecx),%ah      #Memory--Register, 1 byte
-movb $-17,(%esp)          #Immediate--Memory, 1 byte
-movl %eax,-12(%ebp)       #Register--Memory, 4 bytes
+```assembly
+movl $0x4050,%eax         @ Immediate--Register, 4 bytes
+movw %bp,%sp              @ Register--Register, 2 bytes
+movb (%edi,%ecx),%ah      @ Memory--Register, 1 byte
+movb $-17,(%esp)          @ Immediate--Memory, 1 byte
+movl %eax,-12(%ebp)       @ Register--Memory, 4 bytes
 ```
 
 `MOVS`和`MOVZ`指令类将一个较小的源数据复制到一个较大的数据位置，高位用符号位扩展(`MOVS`)或零扩展(`MOVZ`)进行填充，用符号位扩展，目的位置的所有高位用源值的最高位数值进行填充，用零扩展时，则所有高位用零填充。这两个类中每个都有三条指令，包括了所有源大小为1和2个字节，目的大小为2和4个的情况
 
-```
-#Assume initially that %dh = CD, %eax = 98765432
-movb %dh,%al      #%eax = 987654CD  不改变其他三个字节
-movsbl %dh,%eax   #%eax = FFFFFFCD  高三位全为符号扩展，CD符号位为1，高位全部为1
-movzbl %dh,%eax   #%eax = 000000CD  高三位全为0
+```assembly
+@ Assume initially that %dh = CD, %eax = 98765432
+movb %dh,%al      @ %eax = 987654CD  不改变其他三个字节
+movsbl %dh,%eax   @ %eax = FFFFFFCD  高三位全为符号扩展，CD符号位为1，高位全部为1
+movzbl %dh,%eax   @ %eax = 000000CD  高三位全为0
 ```
 
 `pushl`和`popl`将数据压入程序栈或出栈(__栈本身在存储器中__)，__栈向下增长__，栈顶元素是栈中最低的，压栈是减少栈指针(寄存器`%esp`)的值(`R[%esp]`)，并将数据存放到 __存储器__(`M[R[%esp]]`)中
 
 ![img](../../imgs/csapp_07.png)
 
-```
+```assembly
 pushl %eax
-#等价于
-subl $4,%esp        #Decrement stack pointer
-movl %eax,(%esp)    #Store %eax on stack
+@ 等价于
+subl $4,%esp        @ Decrement stack pointer
+movl %eax,(%esp)    @ Store %eax on stack
 ```
 
-```
+```assembly
 popl %edx
-#等价于
-movl (%esp),%edx    #Read %edx from stack
-addl $4,%esp        #Increment stack pointer
+@ 等价于
+movl (%esp),%edx    @ Read %edx from stack
+addl $4,%esp        @ Increment stack pointer
 ```
 
 因为栈和程序代码以及其他形式的程序数据都是放在同样的存储器中，所以程序可以用标准的存储器寻址方法访问栈内任意位置，如，栈顶元素是双字，`movl 4(%esp),%edx`会将第二个双字从栈中复制到寄存器`%edx`
 
 根据操作数，确定指令后缀
 
-```
+```assembly
 movl %eax, (%esp)
 movw (%eax), %dx
 movb $0xFF, %bl
@@ -218,19 +218,34 @@ IA32中即使操作数是一个字节或者单字的，__存储器的引用也�
 
 以下是常见的一些错误指令
 
-```
-movb $0xF, (%bl)     ＃Cannot use %bl as address register
-movl %ax, (%esp)     ＃Mismatch between instruction suffix and register ID, use movw
-movw (%eax),4(%esp)  ＃Cannot have both source and destination be memory references
-movb %ah,%sh         ＃No register named %sh
-movl %eax,$0x123     ＃Cannot have immediate as destination
-movl %eax,%dx        ＃Destination operand incorrect size
-movb %si, 8(%ebp)    ＃Mismatch between instruction suffix and register ID, use movw
+```assembly
+movb $0xF, (%bl)     @ Cannot use %bl as address register
+movl %ax, (%esp)     @ Mismatch between instruction suffix and register ID, use movw
+movw (%eax),4(%esp)  @ Cannot have both source and destination be memory references
+movb %ah,%sh         @ No register named %sh
+movl %eax,$0x123     @ Cannot have immediate as destination
+movl %eax,%dx        @ Destination operand incorrect size
+movb %si, 8(%ebp)    @ Mismatch between instruction suffix and register ID, use movw
 ```
 
 ### 数据传送示例
 
-![img](../../imgs/csapp_08.png)
+```c
+int exchange(int *xp, int y){
+    int x = *xp;
+    *xp = y;
+    return x;
+}
+```
+
+```assembly
+@ xp at %ebp+8, y at %ebp+12
+movl 8(%ebp), %edx    @ Get xp
+                      @ By copying to %eax below, x becomes the return value
+movl (%edx), %eax     @ Get x at xp
+movl 12(%ebp), %ecx   @ Get y
+movl %ecx, (%edx)     @ Store y at xp
+```
 
 - `movl 8(%ebp), %edx`，将`xp`的值，放入`%edx`，即`R[%edx] = xp`
 - `movl (%edx), %eax`，将`M[R[%edx]]`，即`*xp`指向的值，放入`%eax`，即`R[%eax]=*xp`，`R[%eax]`将变成返回值
@@ -247,23 +262,33 @@ dest_t *p;
 
 设`v`存储在寄存器`%eax`适当命名的部分中，也就是`%eax`,`%ax`,`%al`，而指针`p`存储在寄存器`%edx`中，当执行 __既涉及大小变化又涉及符号改变的强制类型转换__ 时，操作应该先改变符号
 
-![img](../../imgs/csapp_09.png)
+```table
+src_t         |dest_t           |Instruction
+--------------|-----------------|---------------
+int           | int             |  movl   %eax,(%edx)
+char          | int             |  movsbl %al,(%edx)
+char          | unsigned        |  movsbl %al,(%edx)
+unsigned char | int             |  movzbl %al,(%edx)
+int           | char            |  movb   %al,(%edx)
+unsigned      | unsignedchar    |  movb   %al,(%edx)
+unsigned      | int             |  movl   %eax,(%edx)
+```
 
 练习
 
 已知`void decode1(int *xp, int *yp, int *zp);`并且汇编如下，写出等效C代码
 
-```
-#xp at %ebp+8, yp at %ebp+12, zp at %ebp+16
-movl 8(%ebp), %edi    #Get xp
-movl 12(%ebp), %edx   #Get yp
-movl 16(%ebp), %ecx   #Get zp
-movl (%edx), %ebx     #Get y
-movl (%ecx), %esi     #Get z
-movl (%edi), %eax     #Get x
-movl %eax, (%edx)     #Store x at yp
-movl %ebx, (%ecx)     #Store y at zp
-movl %esi, (%edi)     #Store z at xp
+```assembly
+@ xp at %ebp+8, yp at %ebp+12, zp at %ebp+16
+movl 8(%ebp), %edi    @ Get xp
+movl 12(%ebp), %edx   @ Get yp
+movl 16(%ebp), %ecx   @ Get zp
+movl (%edx), %ebx     @ Get y
+movl (%ecx), %esi     @ Get z
+movl (%edi), %eax     @ Get x
+movl %eax, (%edx)     @ Store x at yp
+movl %ebx, (%ecx)     @ Store y at zp
+movl %esi, (%edi)     @ Store z at xp
 ```
 
 等效于
@@ -289,14 +314,16 @@ void decode1(int *xp, int *yp, int *zp){
 
 假如`%eax`的值为x，`%ecx`的值为y，则
 
+```assembly
+leal 6(%eax),%edx             @ 6 + x
+leal (%eax,%ecx),%edx         @ x + y
+leal (%eax,%ecx,4),%edx       @ x + 4y
+leal 7(%eax,%eax,8),%edx      @ 7 + 9x
+leal 0xA(,%ecx,4),%edx        @ 10 + 4y
+leal 9(%eax,%ecx,2),%edx      @ 9 + x + 2y
 ```
-leal 6(%eax),%edx             # 6 + x
-leal (%eax,%ecx),%edx         # x + y
-leal (%eax,%ecx,4),%edx       # x + 4y
-leal 7(%eax,%eax,8),%edx      # 7 + 9x
-leal 0xA(,%ecx,4),%edx        # 10 + 4y
-leal 9(%eax,%ecx,2),%edx      # 9 + x + 2y
-```
+
+> 利用`leal`可以达到，寄存器内容相加的功能，代替`add`部分功能？
 
 ### 一元操作和二元操作
 一元操作，只有一个操作数，既是源又是目的，__操作数可以是一个寄存器，也可以是一个存储器位置__
@@ -330,16 +357,35 @@ int shift_left2_rightn(int x, int n){
 }
 ```
 
-```
-movl 8(%ebp), %eax    # Get x
-sall $2, %eax         # x <<= 2
-movl 12(%ebp), %ecx   # Get n
-sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
+```assembly
+movl 8(%ebp), %eax    @ Get x
+sall $2, %eax         @ x <<= 2
+movl 12(%ebp), %ecx   @ Get n
+sarl %cl, %eax        @ x >>= n   使用%cl，即%ecx的低字节
 ```
 
 补码运算是实现有符号整数运算的一种比较好的方法
 
-![img](../../imgs/csapp_13.png)
+```c
+int arith(int x, int y, int z){
+    int t1 = x+y;
+    int t2 = z*48;
+    int t3 = t1 & 0xFFFF;
+    int t4 = t2 * t3;
+    return t4;
+}
+```
+
+```assembly
+@ x at %ebp+8, y at %ebp+12, z at %ebp+16
+movl  16(%ebp), %eax            @ z
+leal  (%eax,%eax,2), %eax       @ z*3
+sall  $4, %eax                  @ t2 = z*48
+movl  12(%ebp), %edx            @ y
+addl  8(%ebp), %edx             @ t1 = x+y
+andl  $65535, %edx              @ t3 = t1&0xFFFF
+imull %edx, %eax                @ Return t4 = t2*t3
+```
 
 指令2和指令3用`leal`和移位指令的组合来实现表达式`z*48`
 
@@ -356,34 +402,118 @@ sarl %cl, %eax        # x >>= n   使用%cl，即%ecx的低字节
 
 下面希望将全64位乘积作为8个字节存放在栈顶
 
-![img](../../imgs/csapp_15.png)
+```assembly
+@ x at %ebp+8, y at %ebp+12
+movl  12(%ebp), %eax      @ Put y in %eax
+imull 8(%ebp)             @ Multiply by x
+movl  %eax, (%esp)        @ Store low-order 32 bits
+movl  %edx, 4(%esp)       @ Store high-order 32 bits
+```
 
-存储两个寄存器的位置对小端机器来说是对的，寄存器`%edx`中的高位，存放在相对于`%eax`中低位偏移量为4的地方，栈是向低地址方向增长的，__低位在栈顶__
+存储两个寄存器的位置对小端机器(__低位字节的先输出__)来说是对的，寄存器`%edx`中的高位，存放在相对于`%eax`中低位偏移量为4的地方，栈是向低地址方向增长的，__低位在栈顶__
 
 `idivl`将寄存器`%edx`(高32位)和`eax`(低32位)中的64位数作为被除数，而除数作为指令的操作数给出，指令将 __商存储在`eax`__中，将 __余数存储在`%edx`__ 中
 
-![img](../../imgs/csapp_16.png)
+```assembly
+@ x at %ebp+8, y at %ebp+12
+movl  8(%ebp), %edx       @ Put x in %edx
+movl  %edx, %eax          @ Copy x to %eax
+sarl  $31, %edx           @ Sign extend x in %edx
+idivl 12(%ebp)            @ Divide by y
+movl  %eax, 4(%esp)       @ Store x / y
+movl  %edx, (%esp)        @ Store x % y
+```
 
 第1行的传送指令和第3行的算术移位指令联合起来，就是根据x的符号将寄存器`%edx`设置为全零或全一，第2行传送指令将x复制到`%eax`，因此有了将寄存器`%edx`和`eax`联合起来 __存放x的64位符号扩展__ 的版本
 
 也可使用`cltd`指令，它将`eax`符号扩展到`%edx`，改进入如下
 
-![img](../../imgs/csapp_17.png)
+```assembly
+@ x at %ebp+8, y at %ebp+12
+movl  8(%ebp),%eax     @ Load x into %eax
+cltd                   @ Sign extend into %edx
+idivl 12(%ebp)         @ Divide by y
+movl  %eax, 4(%esp)    @ Store x / y
+movl  %edx, (%esp)     @ Store x % y
+```
 
 无符号除法是`divl`指令，通常事先将寄存器`%edx`设置为0，如上面的改成计算x和y无符号商和余数
 
-![img](../../imgs/csapp_18.png)
+```assembly
+@ x at%ebp+8,y at %ebp+12
+movl 8(%ebp),%eax      @ Load x into %eax
+movl $0,%edx           @ Set high-order bits to 0
+divl 12(%ebp)          @ Unsigned divide by y
+movl %eax, 4(%esp)     @ Storex/y
+movl %edx, (%esp)      @ Storex%y
+```
 
+考虑下面C函数，`num_t`是用`typedef`声明的数据类型
 
+```c
+void store_prod(num_t *dest, unsigned x, num_t y) {
+    *dest = x*y;
+}
+```
+
+gcc产生的汇编如下：
+
+```assembly
+@ dest at %ebp+8, x at %ebp+12, y at %ebp+16
+movl  12(%ebp), %eax             @ Get x
+movl  20(%ebp), %ecx             @ Get y_h
+imull %eax, %ecx                 @ Compute s = x * y_h   即 %ecx存乘积的低32位
+mull  16(%ebp)                   @ Compute t = x * y_l   即 %edx存乘积的高32位, %eax存低32位
+leal  (%ecx,%edx), %edx          @ Add s to t_h          用leal做了一下加法
+movl  8(%ebp), %ecx              @ Get dest
+movl  %eax, (%ecx)               @ Store t_l
+movl  %edx, 4(%ecx)              @ Store s + t_h
+```
+
+第4行使用无符号运算，并且程序是在64位数据上进行操作，可以确定`num_t`为`unsigned long long`
+
+![img](../../imgs/csapp_15.png)
 
 ## 控制
+### 条件码
+除了整数寄存器，CPU还维护着一组 __单个位__ 的条件码(condition code)寄存器
 
+- `CF`进位标志，最近的操作使最高位产生了进位，可以用来检查无符号操作数的溢出
+- `ZF`零标志，最近的操作得出的结果为0
+- `SF`符号标志，最近的操作得到的结果为负
+- `OF`溢出标志，最近的操作导致一个补码溢出－正溢出或负溢出
 
+假设用一条`add`完成了`t=a+b`的功能，变量a,b,t都是整型
 
+- `CF`:`(unsigned) t < (unsigned) a`
+- `ZF`:`(t == 0)`
+- `SF`:`(t < 0)`
+- `OF`:`(a < 0 == b < 0) && ( t < 0 != a < 0)`
+
+![img](../../imgs/csapp_10.png)
+
+该图中，除了`leal`不会设置条件码，其它指令都会设置条件码
+
+- `xor`，`CF`和`OF`会设置成0
+- 移位操作，`CF`将设置为最后一个被移出的位，而`OF`设置为0
+- `inc`和`dec`会设置`OF`和`ZF`，但不会改变`CF`
+
+![img](../../imgs/csapp_16.png)
+
+`CMP`指令根据它们的两个操作数之差来设置条件码，除了只设置条件码而不更新目标寄存器之外，它与`SUB`行为是一样的，如果两个操作数相等，将`ZF`标志设置为1
+
+同理，`TEST`指令的行为对应`AND`
+
+`testl %eax, %eax`用来检查`%eax`是负、零、正数，或其中的一个操作数是一个掩码，用来指示哪些位应该被测试
 
 <hr/>
 
+```assembly
+@c
 ```
+
+```c
+//
 ```
 
 <!--
@@ -412,9 +542,9 @@ idivl   divl
 
 
 
-zh 146 238
+zh 147 238
 
-en 184 311
+en 185 311
 
  -->
 
