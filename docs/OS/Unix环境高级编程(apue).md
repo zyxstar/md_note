@@ -18,7 +18,7 @@ int openat(int fd ,const char *path ,int oflag ,... /* mode_t mode*/ );
 
 - `O_CREAT` 若文件不存在，则创建它，需要第三个参数`mode`，用于指定该新文件的访问权限位
 - `O_CLOEXEC` 设置文件描述符为`FD_CLOEXEC`
-- `O_DIRECTORY` 如果`path`引用的不是目录，则出错 
+- `O_DIRECTORY` 如果`path`引用的不是目录，则出错
 - `O_EXCL` 如果同时指定了`O_CREAT`，而文件存在，则会出错，可以测试一个文件是否存在，如果不存在则创建，测试和创建是一个 __原子__ 操作
 - `O_NOFOLLOW` 如果`path`引用的是一个符号链接，则出错
 - `O_NONBLOCK` 如果`path`引用的是一个FIFO、一个块特殊文件或一个字符特殊文件，则此选项为文件的本次打开操作和后续IO操作设置为 __非阻塞__ 方式
@@ -466,7 +466,7 @@ clr_fl(int fd, int flags) /* flags are file status flags to turn off */
 ```c
 #include <unistd.h> /* System V */
 #include <sys/ioctl.h> /* BSD and Linux */
-int ioctl(intfd,intrequest,...);
+int ioctl(int fd, int request, ...);
 ```
 
 ## /dev/fd
@@ -496,6 +496,180 @@ fd = open("/dev/fd/0", O_RDWR);
 
 ```shell
 filter file2 | cat file1 /dev/fd/0 file3 | lpr
+```
+
+文件和目录
+=================
+## stat/fstat/fstatat/lstat函数
+```c
+#include <sys/stat.h>
+int stat(const char *restrict pathname, struct stat *restrict buf );
+int fstat(int fd, struct stat *buf );
+int lstat(const char *restrict pathname, struct stat *restrict buf );
+int fstatat(int fd, const char *restrict pathname, struct stat *restrict buf, int flag);
+```
+
+`stat`返回与此命名文件有关的信息结构，`fstat`获取已在描述符`fd`上打开文件的有关信息，当命名文件是一个符号连接时，`lstat`返回该符号链接的有关信息，而不是由该符号链接引用文件的信息，除此之外，同于`stat`
+
+第二个参数`buf`是指针，指向一个结构体，这些函数填写该结构体，该结构在不同实现中有所不同，但基本形式为：
+
+```c
+struct stat {
+    mode_t st_mode; /* file type & mode (permissions) */
+    ino_t st_ino; /* i-node number (serial number) */
+    dev_t st_dev; /* device number (file system) */
+    dev_t st_rdev; /* device number for special files */
+    nlink_t st_nlink; /* number of links */
+    uid_t st_uid; /* user ID of owner */
+    gid_t st_gid; /* group ID of owner */
+    off_t st_size; /* size in bytes, for regular files */
+    struct timespec st_atim; /* time of last access */
+    struct timespec st_mtim; /* time of last modification */
+    struct timespec st_ctim; /* time of last file status change */
+    blksize_t st_blksize; /* best I/O block size */
+    blkcnt_t st_blocks; /* number of disk blocks allocated */
+};
+
+struct timespec {
+    time_t tv_sec;
+    long tv_nsec;
+};
+
+```
+
+## 文件类型
+- __普通文件__，至于是文本还是二进制，对内核无区别，对普通文件内容的解释由应用程序进行
+> 一个例外是二进制可执行文件，为了执行它，内核必须理解其格式，所有二进制可执行文件都遵循一种格式，这种格式能使内核确定程序文件和数据的加载位置
+
+- __目录文件__，包含了其他文件的名字以及指向这些文件有信息的指针，具有读权限的任一进程可以读该目录内容，但只有内核可以直接写目录
+- __块特殊文件__，提供对设备（如磁盘）带缓冲的访问，每次访问以固定长度为单位进行
+- __字符特殊文件__，提供对设备不带缓冲的访问，每次访问长度可变，系统中 __所有设备__ 要么是字符特殊文件，要么是块特殊文件
+- __FIFO__，用于进程间通信，有时也称为命名管道
+- __套接字__，用于进程间的网络网络通信，也可用于一台宿主上进程之间的非网络通信
+- __符号链接__，这种文件类型指向另一个文件
+
+可用下面的宏来确定文件类型，宏的参数即`stat`结构的`st_mode`成员
+
+```c
+S_ISREG()      // regular file
+S_ISDIR()      // directory file
+S_ISCHR()      // character special file
+S_ISBLK()      // block special file
+S_ISFIFO()     // pipe or FIFO
+S_ISLNK()      // symbolic link
+S_ISSOCK()     // socket
+```
+
+```shell
+$ ./a.out /etc/passwd /etc /dev/log /dev/tty \
+> /var/lib/oprofile/opd_pipe /dev/sr0 /dev/cdrom
+/etc/passwd: regular
+/etc: directory
+/dev/log: socket
+/dev/tty: character special
+/var/lib/oprofile/opd_pipe: fifo
+/dev/sr0: block special
+/dev/cdrom: symbolic link
+```
+
+在linux上编译该程序，必须定义`_GNU_SOURCE`，这样就能包括`S_ISSOCK`宏定义
+
+> 早期版本并不提供宏，需要与屏蔽字`S_IFMT`进行逻辑与运算，然后与`S_IFxxx`常量进行比较
+
+```
+#define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
+```
+
+## 设置用户ID和组ID
+与一个进程相关的ID：
+
+- 我们实际上谁，这两个字段在登录时取自口令文件中的登录项，通常一个登录会话间这些值并不改变，但是超级用户进程有方法改变它们
+    - 实际用户ID(real user ID)
+    - 实际组ID(real group ID)
+- 用于文件访问权限检查
+    - 有效用户ID(effective user ID)
+    - 有效组ID(effective group ID)
+    - 附加组ID(supplementary group IDs)
+- 由exec函数保存
+    - 保存的设置用户ID(saved set-user-ID)
+    - 保存的设置组ID(saved set-group-ID)
+
+当执行一个程序文件时，进程的有效用户ID等于实际用户ID，有效组ID等于实际组ID，但是可以在文件模式字`st_mode`中设置一个特殊标志，其含义是，当执行此文件时，将进程的有效用户ID设置为`st_uid`，同理，文件模式中可以设置另一位，将执行此文件的进程的有效组ID为文件的组所有者ID`st_gid`
+
+若文件所有者`st_uid`是超级用户，并且设置了`st_mode`中的`set-user-ID`bit，然后该程序由另一进程执行时，则该进程具有超级用户特权，不管执行此文件的进程的实际用户ID是什么，如`/usr/bin/passwd`，允许任一用户改变口令
+
+`set-user-ID`和`set-group-ID`bit包含在`st_mode`中，通过宏`S_ISUID`和`S_ISGID`测试
+
+## 文件访问权限
+`st_mode`值也包含了针对文件的访问权限位
+
+```table
+
+st_mode mask | Meaning
+---------|--------------
+S_IRUSR  |  user-read
+S_IWUSR  |  user-write
+S_IXUSR  |  user-execute
+S_IRGRP  |  group-read
+S_IWGRP  |  group-write
+S_IXGRP  |  group-execute
+S_IROTH  |  other-read
+S_IWOTH  |  other-write
+S_IXOTH  |  other-execute
+
+```
+
+```c
+assert((buf.st_mode & S_IXUSR) == S_IXUSR);
+```
+
+- 用名字打开任一类型的文件时，对该名字中的 __包含每一个目录，以及当前工作目录__，都应具有 __执行权限__（执行权限位常被称为搜索位）
+
+> 对于目录的读权限和执行权限的意义是 __不同__ 的，读权限允许我们读目录，获得在该目录中所有文件名的列表。当一个目录是要访问文件的路径名的一个组成部分时，对该目录的执行权限可使我们通过该目录
+
+> 如果`PATH`环境变量指定了一个我们不具有执行权限的目录，那么shell决不会在该目录下找到可执行文件
+
+- 对于一个读权限决定了我们是否能够打开该文件进行读操作，与`open`的`O_RDONLY`和`O_RDWR`标志相关
+- 对于一个写权限决定了我们是否能够打开该文件进行写操作，与`open`的`O_WRONLY`和`O_RDWR`标志相关
+- 为了在`open`中对一个文件指定`O_TRUNC`标志，必须对该文件具有写权限
+- 为了在一个目录创建一个新文件，必须对该目录具有写权限和执行权限
+- 为了删除一个现有文件，必须对包含该文件的目录具有写权限和执行权限。对该文件本身则不需要有读、写权限
+- 如果用`exec`族函数中任何一个执行某个文件，都必须对该文件具有执行权限，该文件还必须是一个普通文件
+
+进程每次打开、创建或删除一个文件时，内核就进行文件访问权限测试，而这种测试可能涉及文件的所有者（`st_uid`或`st_gid`）、进程的有效ID（有效用户ID和有效组ID）以及进程的附加组ID。__两个所有者ID是 *文件的性质*，而两个有效ID和附加组ID则是 *进程的性质*__
+
+- 若进程的有效用户ID是0（超级用户），则允许访问
+- 若进程的有效用户ID等于文件的所有者ID（也就是该进程拥有此文件），那么，若所有者适当的访问权限被设置，则允许访问，否则拒绝访问
+- 若进程的有效组ID或进程的附加组ID之一等于文件的组ID，那么，若组适当的访问限位被设置，则允许访问，否则拒绝访问
+- 若其他用户适当的访问权限位被设置，则允许访问，否则拒绝访问
+
+
+## 新文件和目录的所有权
+新文件的用户ID设置为进程的有效用户ID，新文件的组ID可以是进程的有效组ID，也可以是它所在目录的组ID
+
+> As we mentioned earlier, this option for group ownership is the default for FreeBSD 8.0 and Mac OS X 10.6.8, but an option for Linux and Solaris. Under Solaris 10, and by default under Linux 3.2.0, we have to enable the set-group-ID bit, and the mkdir function has to propagate a directory’s set-group-ID bit automatically for this to work.
+
+## access/faccessat函数
+```c
+#include <unistd.h>
+int access(const char *pathname, int mode);
+int faccessat(int fd, const char *pathname, int mode, int flag);
+```
+
+其中`mode`为
+
+```table
+mode | Description
+-----|--------------
+R_OK | test for read permission
+W_OK | test for write permission
+X_OK | test for execute permission
+```
+
+## umask函数
+```c
+#include <sys/stat.h>
+mode_t umask(mode_t cmask);
 ```
 
 
