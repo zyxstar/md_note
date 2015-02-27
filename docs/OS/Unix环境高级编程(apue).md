@@ -594,7 +594,7 @@ $ ./a.out /etc/passwd /etc /dev/log /dev/tty \
     - 保存的设置用户ID(saved set-user-ID)
     - 保存的设置组ID(saved set-group-ID)
 
-当执行一个程序文件时，进程的有效用户ID等于实际用户ID，有效组ID等于实际组ID，但是可以在文件模式字`st_mode`中设置一个特殊标志，其含义是，当执行此文件时，将进程的有效用户ID设置为`st_uid`，同理，文件模式中可以设置另一位，将执行此文件的进程的有效组ID为文件的组所有者ID`st_gid`
+当执行一个程序文件时，进程的有效用户ID等于实际用户ID，有效组ID等于实际组ID，但是可以在文件模式字`st_mode`中设置一个特殊标志，其含义是，当执行此文件时，将进程的有效用户ID设置为`st_uid`，(shell中为`chmod u+s xxx`)，同理，文件模式中可以设置另一位，将执行此文件的进程的有效组ID为文件的组所有者ID`st_gid`
 
 若文件所有者`st_uid`是超级用户，并且设置了`st_mode`中的`set-user-ID`bit，然后该程序由另一进程执行时，则该进程具有超级用户特权，不管执行此文件的进程的实际用户ID是什么，如`/usr/bin/passwd`，允许任一用户改变口令
 
@@ -671,6 +671,117 @@ X_OK | test for execute permission
 #include <sys/stat.h>
 mode_t umask(mode_t cmask);
 ```
+
+为进程设置文件模式创建屏蔽字，并返回以前的值，这是少数几个没有出错返回的，其中`cmask`是9个常量`S_IRUSR，S_IWUSR，S_IXUSR，S_IRGRP，S_IWGRP，S_IXGRP，S_IROTH，S_IWOTH，S_IXOTH`中的若干个按位 或 构成的，对于任何在文件模式创建屏蔽字中为1的位，在文件`mode`中的相应位则一定被关闭
+
+unix系统大多数用户从不处理他们的`umask`值，通常在登录时，由shell启动文件设置一次，然后从不改娈。尽管如此，当编写创建新文件的程序时，还是确保`umask(0);`，否则，当我们进程运行时，有效的`umask`值有可能关闭该权限位
+
+更改进程的文件模式创建屏蔽字，不会影响父进程的屏蔽字
+
+常用的几种`umask`值为002,022,027，`umask -S`打印符号形式
+
+```table
+Mask bit | Meaning
+-----|-----------
+0400 | user-read 
+0200 | user-write
+0100 | user-execute 
+0040 | group-read
+0020 | group-write
+0010 | group-execute
+0004 | other-read
+0002 | other-write
+0001 | other-execute
+      
+```
+
+
+## chmod/fchmod/fchmodat函数
+```c
+#include <sys/stat.h>
+int chmod(const char *pathname, mode_t mode);
+int fchmod(int fd, mode_t mode);
+int fchmodat(int fd, const char *pathname, mode_t mode, int flag);
+```
+
+```table
+mode       |  Description
+-----------|-------------------------
+S_ISUID    |  set-user-ID on execution
+S_ISGID    |  set-group-ID on execution
+S_ISVTX    |  saved-text (sticky bit)
+S_IRWXU    |  read, write, and execute by user (owner)
+   S_IRUSR |  read by user (owner)
+   S_IWUSR |  write by user (owner)
+   S_IXUSR |  execute by user (owner)
+S_IRWXG    |  read, write, and execute by group
+   S_IRGRP |  read by group
+   S_IWGRP |  write by group
+   S_IXGRP |  execute by group
+S_IRWXO    |  read, write, and execute by other (world) 
+   S_IROTH |  read by other (world)
+   S_IWOTH |  write by other (world)
+   S_IXOTH |  execute by other (world)
+```
+
+除了以前的9个文件访问权限位，另外加了6项，两个设置id常量，保存正文常量，以及三个组合常量
+
+`chmod`函数更新的只是i节点最近一次被更改的时间，而`ls`命令列出的是最后修改文件内容的时间
+
+## 粘住位
+
+目录`/tmp`为`drwxrwxrwt`，任何用户都可以在这目录中创建文件，任一用户对这目录都是读、写和执行，但用户不能删除或更名属于其他人的文件
+
+> linux中粘住位对普通文件无意义
+
+
+## chown/fchown/lchown函数
+```c
+#include <unistd.h>
+int chown(const char *pathname, uid_t owner, gid_t group);
+int fchown(int fd, uid_t owner, gid_t group);
+int fchownat(int fd, const char *pathname, uid_t owner, gid_t group, int flag);
+int lchown(const char *pathname, uid_t owner, gid_t group);
+```
+
+在符号链接的情况下，`lchown`更改符号链接本身的所有者，而不是该符号所指向的文件
+
+若两个参数`owner`或`group`中任意一个是-1，则对应ID不变
+
+## 文件长度
+`stat`结构成员`st_size`表示以字节为单位的文件长度，只对普通文件、目录文件和符号链接有意义
+
+对于目录，文件长度通常是一个数（16或256)的倍数，对于符号链接，文件长度是 文件名 中的实际字节数
+
+```
+lrwxrwxrwx  1 root            7 Sep 25 07:14 lib -> usr/lib
+```
+
+其中，文件长度7就是路径名`usr/lib`的长度
+
+`stat`结构成员`st_blksize`是对文件IO较合适的块长度，当将它用于读操作时，读一个文件所需的时间最少；`st_blocks`是所分配的实际512字节块数量
+
+
+### 文件中的空洞
+`ls -l`得到文件长度，但`ls -ls`或`du -s`可以得到实际占磁盘多少个字节块(512大小的)
+
+`wc -c`得到文件中字符（字节）数，包括没写过的字节位置（空洞），使用`cat`再重定向输出，则把所有空洞填满
+
+
+## 文件截短
+```c
+#include <unistd.h>
+int truncate(const char *pathname, off_t length); 
+int ftruncate(int fd, off_t length);
+```
+
+当`length`大于以前文件长度，遵循XSI的系统将增加文件长度，即创建一个空洞
+
+## 文件系统
+
+img
+
+
 
 
 
