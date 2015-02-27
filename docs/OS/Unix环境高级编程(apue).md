@@ -522,6 +522,8 @@ int fstatat(int fd, const char *restrict pathname, struct stat *restrict buf, in
 //All four return: 0 if OK,−1 on error
 ```
 
+`fstatat`为相对于当前打开目录（`fd`指定）的路径名返回文件统计信息，`flag`决定是否跟随一个符号链接，默认是跟随。如果`fd`值为`AT_FDCWD`，且`pathname`是相对路径，则计算具体的路径，如果`pathname`是绝对路径，`fd`被忽略
+
 `stat`返回与此命名文件有关的信息结构，`fstat`获取已在描述符`fd`上打开文件的有关信息，当命名文件是一个符号连接时，`lstat`返回该符号链接的有关信息，而不是由该符号链接引用文件的信息，除此之外，同于`stat`
 
 第二个参数`buf`是指针，指向一个结构体，这些函数填写该结构体，该结构在不同实现中有所不同，但基本形式为：
@@ -549,6 +551,9 @@ struct timespec {
 };
 
 ```
+
+> 2008版本以前，时间字段为`st_atime/st_mtime/st_ctime`，都是`time_t`类型的（以秒来表示），`timespec`提供了更高精度的时间戳，为了保持兼容，旧的名字可以定义成`tv_sec`成员，如`st_atime`定义为`st_atim.tv_sec`
+
 
 ## 文件类型
 - __普通文件__，至于是文本还是二进制，对内核无区别，对普通文件内容的解释由应用程序进行
@@ -752,7 +757,7 @@ S_IRWXO    |  read, write, and execute by other (world)
 > linux中粘住位对普通文件无意义
 
 
-## chown/fchown/lchown函数
+## chown/fchown/fchownat/lchown函数
 ```c
 #include <unistd.h>
 int chown(const char *pathname, uid_t owner, gid_t group);
@@ -856,6 +861,8 @@ int renameat(int oldfd, const char *oldname, int newfd, const char *newname );
 
 - 如果`oldname`指的是一个文件而不是目录，那么为该文件或符号链接更名，如果`newname`已存在（不能引用一个目录），先将该目录项删除，然后将`oldname`更名为`newname`，对于包含新旧文件的目录，调用进程必须具有写权限
 - 如果`oldname`指的是目录，那么为该目录更名，如果`newname`已存在，必须引用一个目录，且目录为空目录，先将其删除，然后将`oldname`更名为`newname`，另，当为一个目录更名时，`newname`不能包含`oldname`作为其路径前缀
+- 如果引用符号链接，则处理符号链接本身，而不是它所引用的文件
+
 
 
 ## 符号链接
@@ -942,8 +949,8 @@ st_ctim |last-change time of i-node status   |chmod, chown | -c
 
 ```c
 #include <sys/stat.h>
-int futimens(int fd, const struct timespec times);
-int utimensat(int fd, const char *path, const struct timespec times, int flag);
+int futimens(int fd, const struct timespec times[2]);
+int utimensat(int fd, const char *path, const struct timespec times[2], int flag);
 //Both return: 0 if OK, −1 on error
 ```
 
