@@ -481,6 +481,53 @@ slocate
 ldd            #列出程序的动态依赖关系 ldd /bin/cp
 ```
 
+## curl使用
+```shell
+curl http://www.linuxidc.com
+
+#指定输出文件
+curl -o page.html http://www.linuxidc.com
+#指定代理
+curl -x 123.45.67.89:1080 -o page.html http://www.linuxidc.com
+#保存cookie
+curl -x 123.45.67.89:1080 -o page.html -D cookie0001.txt http://www.linuxidc.com
+#使用cookie
+curl -x 123.45.67.89:1080 -o page1.html -D cookie0002.txt -b cookie0001.txt http://www.linuxidc.com
+#指定referer
+curl -A "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.0)" -x 123.45.67.89:1080 -e "mail.linuxidc.com" -o page.html -D cookie0001.txt http://www.linuxidc.com
+
+#下载文件
+curl -O http://cgi2.tky.3web.ne.jp/~zzh/screen1.JPG
+#文件名匹配下载
+curl -O http://cgi2.tky.3web.ne.jp/~zzh/screen[1-10].JPG
+#下载多个目录下的文件
+curl -O http://cgi2.tky.3web.ne.jp/~{zzh,nick}/[001-201].JPG
+
+#断点续传，比如我们下载screen1.JPG中，突然掉线了，我们就可以这样开始续传
+curl -c -O http://cgi2.tky.3wb.ne.jp/~zzh/screen1.JPG
+#分块下载
+curl -r 0-10240 -o "zhao.part1" http:/cgi2.tky.3web.ne.jp/~zzh/zhao1.mp3 &\
+curl -r 10241-20480 -o "zhao.part1" http:/cgi2.tky.3web.ne.jp/~zzh/zhao1.mp3 &\
+curl -r 20481-40960 -o "zhao.part1" http:/cgi2.tky.3web.ne.jp/~zzh/zhao1.mp3 &\
+curl -r 40961- -o "zhao.part1" http:/cgi2.tky.3web.ne.jp/~zzh/zhao1.mp3
+
+cat zhao.part* > zhao.mp3
+
+#ftp下载
+curl -u name:passwd ftp://ip:port/path/file
+curl ftp://name:passwd@ip:port/path/file
+
+#上传文件
+curl -T localfile -u name:passwd ftp://upload_site:port/path/                #ftp
+curl -T localfile http://cgi2.tky.3web.ne.jp/~zzh/abc.cgi                    #http put
+
+#提交表单
+curl -d "user=nickwolfe&password=12345" http://www.linuxidc.com/login.cgi    #http post
+
+#表单中上传文件
+curl -F upload=@localfile -F nick=go http://cgi2.tky.3web.ne.jp/~zzh/up_file.cgi
+
+```
 
 用户管理
 ========
@@ -777,6 +824,13 @@ vim /etc/sysconfig/i18n
 LANG="zh_CN.GB18030"              #当前系统的语言环境变量设置
 SUPPORTED="zh_CN.GB18030:zh_CN:zh:en_US.UTF-8:en_US:en"  #系统支持哪些字符集
 SYSFONT="latarcyrheb-sun16"       #系统终端字符的字体
+```
+
+设置时区与同步时间
+
+```shell
+cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+ntpdate cn.pool.ntp.org
 ```
 
 ## Shell相关

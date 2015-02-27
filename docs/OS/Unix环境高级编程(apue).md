@@ -12,8 +12,9 @@
 ## open函数
 ```c
 #include <fcntl.h>
-int open(const char *path ,int oflag ,... /* mode_t mode*/ );
-int openat(int fd ,const char *path ,int oflag ,... /* mode_t mode*/ );
+int open(const char *path, int oflag, ... /* mode_t mode*/ );
+int openat(int fd, const char *path, int oflag, ... /* mode_t mode*/ );
+//Both return: file descriptor if OK, −1 on error
 ```
 
 - `O_CREAT` 若文件不存在，则创建它，需要第三个参数`mode`，用于指定该新文件的访问权限位
@@ -42,25 +43,27 @@ int openat(int fd ,const char *path ,int oflag ,... /* mode_t mode*/ );
 ## creat函数
 ```c
 #include <fcntl.h>
-int creat(const char *path ,mode_tmode);
+int creat(const char *path, mode_tmode);
+//Returns: file descriptor opened for write-only if OK, −1 on error
 ```
 
 此函数等效于
 
 ```c
-open(path ,O_WRONLY | O_CREAT | O_TRUNC, mode);
+open(path, O_WRONLY | O_CREAT | O_TRUNC, mode);
 ```
 
 `creat`不足之外它以 __只写__ 方式打开所创建的文件，如果需要创建一个临时文件，并先写，然后再读，推荐以下方式
 
 ```c
-open(path ,O_RDWR | O_CREAT | O_TRUNC, mode);
+open(path, O_RDWR | O_CREAT | O_TRUNC, mode);
 ```
 
 ## close函数
 ```c
 #include <unistd.h>
 int close(int fd );
+//Returns: 0 if OK,−1 on error
 ```
 
 关闭一个文件时还会释放该进程加在该文件上的所有记录锁。当一个进程终止时，内核自动关闭它所有打开的文件。
@@ -68,7 +71,8 @@ int close(int fd );
 ## lseek函数
 ```c
 #include <unistd.h>
-off_t lseek(intfd ,off_t offset,int whence );
+off_t lseek(intfd, off_t offset,int whence );
+Returns: new file offset if OK,−1 on error
 ```
 
 当打开一个文件时，除非指定`O_APPEND`选项，否则该偏移量被设置为0
@@ -153,7 +157,8 @@ $ ls -ls file.hole file.nohole      #compar esizes
 ## read函数
 ```c
 #include <unistd.h>
-ssize_t read(int fd ,void *buf,size_tnbytes );
+ssize_t read(int fd, void *buf,size_tnbytes );
+//Returns: number of bytes read, 0 if end of file,−1 on error
 ```
 
 有多种情况可使读到的字节数少于要求读的字节数：
@@ -205,7 +210,8 @@ while (1) {
 ## write函数
 ```c
 #include <unistd.h>
-ssize_t write(int fd ,const void *buf,size_tnbytes );
+ssize_t write(int fd, const void *buf,size_tnbytes );
+Returns: number of bytes written if OK, −1 on error
 ```
 
 `write`出错的常见原因是：磁盘已写满，或者超过了一个给定进程的文件长度限制
@@ -249,8 +255,10 @@ ssize_t write(int fd ,const void *buf,size_tnbytes );
 ### pread和pwrite函数
 ```c
 #include <unistd.h>
-ssize_t pread(int fd ,void *buf,size_tnbytes ,off_t offset);
-ssize_t pwrite(int fd ,const void *buf,size_tnbytes ,off_t offset);
+ssize_t pread(int fd, void *buf,size_tnbytes, off_t offset);
+//Returns: number of bytes read, 0 if end of file,−1 on error
+ssize_t pwrite(int fd, const void *buf,size_tnbytes, off_t offset);
+Returns: number of bytes written if OK, −1 on error
 ```
 
 相当于顺序调用`lseek`和`read`/`write`，但它是 __原子操作，且不更新文件偏移量__
@@ -262,7 +270,8 @@ ssize_t pwrite(int fd ,const void *buf,size_tnbytes ,off_t offset);
 ```c
 #include <unistd.h>
 int dup(int fd );
-int dup2(int fd ,int fd2);
+int dup2(int fd, int fd2);
+//Both return: new file descriptor if OK, −1 on error
 ```
 
 - 由`dup`返回的新文件描述符一定是当前可用文件描述符中的最小数值，
@@ -311,6 +320,7 @@ fcntl(fd, F_DUPFD, fd2);
 #include <unistd.h>
 int fsync(int fd );
 int fdatasync(int fd );
+//Returns: 0 if OK,−1 on error
 void sync(void);
 ```
 
@@ -325,7 +335,8 @@ void sync(void);
 ## fcntl函数
 ```c
 #include <fcntl.h>
-int fcntl(int fd ,int cmd ,... /* int arg */ );
+int fcntl(int fd, int cmd, ... /* int arg */ );
+Returns: depends on cmd if OK (see following), −1 on error
 ```
 
 如果出错，返回-1，如果成功则返回某个其他值
@@ -467,6 +478,7 @@ clr_fl(int fd, int flags) /* flags are file status flags to turn off */
 #include <unistd.h> /* System V */
 #include <sys/ioctl.h> /* BSD and Linux */
 int ioctl(int fd, int request, ...);
+//Returns: −1 on error,s omething else if OK
 ```
 
 ## /dev/fd
@@ -507,6 +519,7 @@ int stat(const char *restrict pathname, struct stat *restrict buf );
 int fstat(int fd, struct stat *buf );
 int lstat(const char *restrict pathname, struct stat *restrict buf );
 int fstatat(int fd, const char *restrict pathname, struct stat *restrict buf, int flag);
+//All four return: 0 if OK,−1 on error
 ```
 
 `stat`返回与此命名文件有关的信息结构，`fstat`获取已在描述符`fd`上打开文件的有关信息，当命名文件是一个符号连接时，`lstat`返回该符号链接的有关信息，而不是由该符号链接引用文件的信息，除此之外，同于`stat`
@@ -654,6 +667,7 @@ assert((buf.st_mode & S_IXUSR) == S_IXUSR);
 #include <unistd.h>
 int access(const char *pathname, int mode);
 int faccessat(int fd, const char *pathname, int mode, int flag);
+//Both return: 0 if OK, −1 on error
 ```
 
 其中`mode`为
@@ -670,6 +684,7 @@ X_OK | test for execute permission
 ```c
 #include <sys/stat.h>
 mode_t umask(mode_t cmask);
+//Returns: previous file mode creation mask
 ```
 
 为进程设置文件模式创建屏蔽字，并返回以前的值，这是少数几个没有出错返回的，其中`cmask`是9个常量`S_IRUSR，S_IWUSR，S_IXUSR，S_IRGRP，S_IWGRP，S_IXGRP，S_IROTH，S_IWOTH，S_IXOTH`中的若干个按位 或 构成的，对于任何在文件模式创建屏蔽字中为1的位，在文件`mode`中的相应位则一定被关闭
@@ -682,19 +697,17 @@ unix系统大多数用户从不处理他们的`umask`值，通常在登录时，
 
 ```table
 Mask bit | Meaning
------|-----------
-0400 | user-read 
-0200 | user-write
-0100 | user-execute 
-0040 | group-read
-0020 | group-write
-0010 | group-execute
-0004 | other-read
-0002 | other-write
-0001 | other-execute
-      
+---------|-----------
+0400     | user-read
+0200     | user-write
+0100     | user-execute
+0040     | group-read
+0020     | group-write
+0010     | group-execute
+0004     | other-read
+0002     | other-write
+0001     | other-execute
 ```
-
 
 ## chmod/fchmod/fchmodat函数
 ```c
@@ -702,6 +715,7 @@ Mask bit | Meaning
 int chmod(const char *pathname, mode_t mode);
 int fchmod(int fd, mode_t mode);
 int fchmodat(int fd, const char *pathname, mode_t mode, int flag);
+//All three return: 0 if OK, −1 on error
 ```
 
 ```table
@@ -718,17 +732,20 @@ S_IRWXG    |  read, write, and execute by group
    S_IRGRP |  read by group
    S_IWGRP |  write by group
    S_IXGRP |  execute by group
-S_IRWXO    |  read, write, and execute by other (world) 
+S_IRWXO    |  read, write, and execute by other (world)
    S_IROTH |  read by other (world)
    S_IWOTH |  write by other (world)
    S_IXOTH |  execute by other (world)
 ```
 
-除了以前的9个文件访问权限位，另外加了6项，两个设置id常量，保存正文常量，以及三个组合常量
+![img](../../imgs/apue_08.png)
+
+除了以前的9个文件访问权限位，另外加了6项，两个设置id常量（`S_ISUID/S_ISGID`），保存正文常量（`S_ISVTX`），以及三个组合常量（`S_IRWXU/S_IRWXG/S_IRWXO`）
 
 `chmod`函数更新的只是i节点最近一次被更改的时间，而`ls`命令列出的是最后修改文件内容的时间
 
 ## 粘住位
+`S_ISVTX`位被称为粘住位
 
 目录`/tmp`为`drwxrwxrwt`，任何用户都可以在这目录中创建文件，任一用户对这目录都是读、写和执行，但用户不能删除或更名属于其他人的文件
 
@@ -742,6 +759,7 @@ int chown(const char *pathname, uid_t owner, gid_t group);
 int fchown(int fd, uid_t owner, gid_t group);
 int fchownat(int fd, const char *pathname, uid_t owner, gid_t group, int flag);
 int lchown(const char *pathname, uid_t owner, gid_t group);
+//All four return: 0 if OK,−1 on error
 ```
 
 在符号链接的情况下，`lchown`更改符号链接本身的所有者，而不是该符号所指向的文件
@@ -771,15 +789,775 @@ lrwxrwxrwx  1 root            7 Sep 25 07:14 lib -> usr/lib
 ## 文件截短
 ```c
 #include <unistd.h>
-int truncate(const char *pathname, off_t length); 
+int truncate(const char *pathname, off_t length);
 int ftruncate(int fd, off_t length);
+//Both return: 0 if OK, −1 on error
 ```
 
 当`length`大于以前文件长度，遵循XSI的系统将增加文件长度，即创建一个空洞
 
 ## 文件系统
 
-img
+![img](../../imgs/apue_04.png)
+
+![img](../../imgs/apue_05.png)
+
+- 图中有两上目录项指向同一个i节点，每一个i节点都有一个链接计数，其值指向该i节点的目录项数，只有当链接计数减少至0时，才可以删除该文件（释放该文件占用的数据块），所以，删除一个目录项称为`unlink`而不是`delete`的原因
+- 在`stat`结构中，链接计数包含在`st_nlink`成员中，这种链接称为硬链接
+- 另一种链接称为符号链接，该文件的实际内容（在数据块中）包含了该符号所指向的文件的名字，该i节点中的文件类型是`S_IFLNK`
+- i节点包含了大多数与文件有关的信息：文件类型、文件访问权限位、文件长度、指向该文件所占用的数据块的指针等，`stat`结构中大多数信息都取自i节点，只有文件名和i节点编号（类型是`ino_t`）取自目录项
+- 每个文件系统各自对它们的i节点进行编号，目录项中的i节点编号数指向同一文件系统中的相应i节点，不能使一个目录项指向另一个文件系统的i节点，这也是为什么`ln`命令不能跨越文件系统的原因
+- 当不更换文件系统情况下为一个文件更名时，该文件的实际内容并未移动，只需构造一个指向现有i节点的新目录项，并解除与旧目录项的链接
+
+
+对于目录文件的链接计数字段又如何？
+
+![img](../../imgs/apue_06.png)
+
+任何一个叶目录（不包含任何其他目录的目录）的链接计数总是2，一个是命名该目录的目录项，另一个是该目录项中`.`项，如果包含子目录，则链接计数至少为3，多一个子目录，子目录中的`..`项，使父目录的链接计数增1
+
+## link/linkat/unlink/unlinkat/remove/rename函数
+
+```c
+#include <unistd.h>
+int link(const char *existingpath, const char *newpath);
+int linkat(int efd,const char *existingpath, int nfd, const char *newpath, int flag);
+//Both return: 0 if OK, −1 on error
+```
+
+```c
+#include <unistd.h>
+int unlink(const char * pathname );
+int unlinkat(int fd, const char *pathname, int flag);
+//Both return: 0 if OK, −1 on error
+```
+
+```c
+#include <stdio.h>
+int remove(const char * pathname );
+//Returns: 0 if OK,−1 on error
+```
+
+- 创建目录项以及增加链接计数应当是个原子操作，大多数系统不允许对目录的硬链接
+- 为了解除对文件的链接，必须对包含该目录项的目录具有写和执行权限，如果对该目录设置了粘住位，则对该目录必须具有写权限
+- 当链接计数达到0时，该文件的内容才可被删除，另一个阻止删除文件夹的内容是，如果进程打开了该文件。
+- 进程用`open/creat`创建一个文件，然后立即调用`unlink`，因为文件是打开的，所以不会将其内容删除，只有当进程关闭该文件或终止时，该文件内容才会被删除，这种性质经常被程序用来确保即使在该程序崩溃时，它所创建的临时文件也 __不会遗留__ 下来
+- 如果是符号链接，那么`unlink`删除该符号链接，而不会删除由该链接所引用的文件，在给出符号链接名情况下，没有一个函数能直接删除由该链接所引用的文件
+- `remove`函数，对于文件与`unlink`相同，对于目录与`rmdir`相同
+
+
+## rename/renameat函数
+```c
+#include <stdio.h>
+int rename(const char * oldname, const char *newname );
+int renameat(int oldfd, const char *oldname, int newfd, const char *newname );
+//Both return: 0 if OK, −1 on error
+```
+
+- 如果`oldname`指的是一个文件而不是目录，那么为该文件或符号链接更名，如果`newname`已存在（不能引用一个目录），先将该目录项删除，然后将`oldname`更名为`newname`，对于包含新旧文件的目录，调用进程必须具有写权限
+- 如果`oldname`指的是目录，那么为该目录更名，如果`newname`已存在，必须引用一个目录，且目录为空目录，先将其删除，然后将`oldname`更名为`newname`，另，当为一个目录更名时，`newname`不能包含`oldname`作为其路径前缀
+
+
+## 符号链接
+硬链接指向文件i节点，而符号链接指向一个文件的间接指针，它避开了硬链接的一些限制：
+
+- 硬链接通常要求链接和文件位于同一文件系统中
+- 只有超级用户才能创建指向目录的硬链接
+
+当使用以名字引用文件的函数时，需要了解该函数是否处理符号链接，也就是函数是否跟随符号链接到达它所链接的文件
+
+```table
+Function |Does not follow symbolic link |Follows symbolic link
+---------|------------------------------|---------------------
+access   |                              | •
+chdir    |                              | •
+chmod    |                              | •
+chown    |                              | •
+creat    |                              | •
+exec     |                              | •
+lchown   | •                            |
+link     |                              | •
+lstat    | •                            |
+open     |                              | •
+opendir  |                              | •
+pathconf |                              | •
+readlink | •                            |
+remove   | •                            |
+rename   | •                            |
+stat     |                              | •
+truncate |                              | •
+unlink   | •                            |
+```
+
+`mkdir/mkinfo/mknod/rmdir`当路径名是符号链接时，都出错返回，`chown`是否跟随符号链接取决于实现（目前都跟随）
+
+同时`O_CREAT`和`O_EXCL`调用`open`时，若路径名引用符号链接，将出错返回，并将`errno`设置为`EEXIST`
+
+```shell
+$ ln -s /no/such/file myfile
+$ ls myfile
+myfile
+$ cat myfile
+cat: myfile: No such file or directory
+$ ls -l myfile
+lrwxrwxrwx 1 sar 13 Jan 22 00:26 myfile -> /no/such/file
+```
+
+## symlink/readlink函数
+创建一个符号链接，并不要求实际路径已经存在，也不要求位于同一文件系统中
+
+```c
+#include <unistd.h>
+int symlink(const char *actualpath, const char *sympath);
+int symlinkat(const char *actualpath, int fd, const char *sympath);
+//Both return: 0 if OK, −1 on error
+```
+
+```c
+#include <unistd.h>
+ssize_t readlink(const char* restrict pathname, char *restrict buf, size_t bufsize);
+ssize_t readlinkat(int fd, const char* restrict pathname, char *restrict buf, size_t bufsize);
+//Both return: number of bytes read if OK, −1 on error
+```
+
+此函数组合了`open`,`read`,`close`的所有操作，如果执行成功，返回读入`buf`字节数，`buf`中内容不以`null`终止
+
+## 文件的时间
+```table
+Field   |Description                         |Example      |ls(1) option
+--------|------------------------------------|-------------|---------------
+st_atim |last-access time of file data       |read         | -u
+st_mtim |last-modification time of file data |write        | default
+st_ctim |last-change time of i-node status   |chmod, chown | -c
+```
+
+修改时间`st_mtim`是文件内容最后一次被修改的时间，更改状态时间`st_ctim`是该文件的i节点（更改文件的访问权限、用户ID、链接数等）最后一次被修改的时间
+
+系统并不保存一个i节点的最后一次访问时间，所以`access/stat`函数并不更改这三个时间中的任一个
+
+![img](../../imgs/apue_07.png)
+
+## futimens/utimensat/utimes函数
+一个文件的访问和修改时间可用该函数
+
+```c
+#include <sys/stat.h>
+int futimens(int fd, const struct timespec times);
+int utimensat(int fd, const char *path, const struct timespec times, int flag);
+//Both return: 0 if OK, −1 on error
+```
+
+```c
+#include <sys/time.h>
+int utimes(const char *pathname, const struct timeval times[2]);
+//Returns: 0 if OK,−1 on error
+```
+
+我们不能对更改状态时间`st_ctime`指定一个值，当调用`utime`函数时，此字段将被自动更新
+
+
+## mkdir/mkdirat/rmdir函数
+```c
+#include <sys/stat.h>
+int mkdir(const char *pathname, mode_t mode);
+int mkdirat(int fd, const char *pathname, mode_t mode);
+//Both return: 0 if OK, −1 on error
+```
+
+```c
+#include <unistd.h>
+int rmdir(const char *pathname);
+//Returns: 0 if OK,−1 on error
+```
+
+## 读目录
+```c
+#include <dirent.h>
+DIR *opendir(const char *pathname );
+DIR *fdopendir(int fd );
+//Both return: pointer if OK, NULL on error
+struct dirent *readdir(DIR * dp);
+//Returns: pointer if OK,NULL at end of directory or error
+void rewinddir(DIR *dp);
+int closedir(DIR * dp);
+//Returns: 0 if OK,−1 on error
+long telldir(DIR * dp);
+//Returns: current location in directory associated with dp
+void seekdir(DIR * dp,long loc);
+```
+
+## chdir/fchdir/getcwd函数
+```c
+#include <unistd.h>
+int chdir(const char *pathname );
+int fchdir(int fd );
+//Both return: 0 if OK, −1 on error
+```
+
+当前工作目录是进程的一个属性，它只影响调用`chdir`的进程本身，而不影响其他进程
+
+如果`open`或`creat`创建已经存在的文件，则该文件的访问权限位不变
+
+标准IO库
+========
+## 流和FILE对象
+流的定向决定了所读、写的字符是单字还是多字节的，当一个流最初被创建时，并没有定向，在其流上使用一个多字节IO函数（`wchar.h`），则将该流的定向设置为 __宽定向__ 的，如使用一个单字节IO函数，则将该流的定向设置为 __字节定向__ 的。`freopen()`清除一个流的定向，`fwide()`设置流的定向
+
+```c
+#include <stdio.h>
+#include <wchar.h>
+int fwide(FILE *fp, int mode);
+//Returns: positive if stream is wide oriented,
+//negative if stream is byte oriented,
+//or 0 if stream has no orientation
+```
+
+- `mode`为负，试图使指定的流是字节定向的
+- `mode`为正，试图使指定的流是宽定向的
+- `mode`为0，不试图设置流的定向，但返回该流定向的值
+
+`fwide`并不改变 __已__ 定向流的定向，而且它无出错返回，唯一可靠是，调用它前，清除了`errno`，执行后，检查`errno`
+
+## 缓冲
+- 全缓冲，在填满标准IO缓冲区后才进行实际IO操作，对于驻留在磁盘上的文件通常是由标准IO实施全缓冲的，缓冲区可由标准IO例程自动冲洗，或者调用`fflush`冲洗一个流
+- 行缓冲，在这种情况下，在输入和输出中遇到换行符时，标准IO库执行IO操作，允许我们一次输出一个字符（`fputc`），但只有在写了一行之后才进行实际IO操作。当流涉及一个终端时（标准输入和标准输出），通常使用行缓冲
+> 行缓冲有两个限制，第一，因为标准IO库用来收集每一行的缓冲区的长度是固定的，只要填满了缓冲区，即使还没有写一个换行符，也进行IO操作；第二，任何时候只要通过标准IO库要求从一个不带缓冲的流，或一个行缓冲的流且要求从内核得到输入数据，那么会造成冲洗所有行缓冲输出流
+- 不带缓冲，如标准IO中`fputs`写15个字符到不带缓冲的流中。标准出错流`stderr`通常是不带缓冲的
+
+ISO C缓冲特征：
+
+- 当且仅当标准输入和标准输出并不涉及交互式设备时，它们才是会缓冲的
+- 标准出错不带缓冲的
+- 若涉及终端设备的其他流，则它们是行缓冲的，否则是全缓冲的
+
+```c
+#include <stdio.h>
+void setbuf(FILE *restrict fp, char *restrict buf );
+int setvbuf(FILE *restrict fp, char *restrict buf, int mode, size_t size);
+//Returns: 0 if OK, nonzero on error
+```
+
+mode参数：
+
+- `_IOFBF`全缓冲
+- `_IOLBF`行缓冲
+- `_IONBF`不带缓冲
+
+![img](../../imgs/apue_09.png)
+
+一般而言，应由系统选择缓冲区的长度，并自动分配缓冲区，在此情况下关闭此流时，标准IO库将自动释放缓冲区
+
+```c
+#include <stdio.h>
+int fflush(FILE *fp);
+//Returns: 0 if OK,EOF on error
+```
+
+此函数使该流所有未写的数据都被传送至内核，如果`fp`是`NULL`，则此函数将导致所有输出流被冲洗
+
+## 打开流
+```c
+#include <stdio.h>
+FILE *fopen(const char *restrict pathname, const char *restrict type);
+FILE *freopen(const char *restrict pathname, const char *restrict type, FILE *restrict fp);
+FILE *fdopen(int fd, const char *type);
+//All three return: file pointer if OK,NULL on error
+```
+
+- `fopen`打开一个指定的文件
+- `freopen`在一个指定的流上打开一个指定的文件，如流已打开，则先关闭该流，如流已定向，则清除该定向。此函数一般用于将一个指定的文件打开为一个预定义的流：标准输入、标准输出或标准出错
+- `fdopen`获取一个现有的文件描述符(`open/dup/fntl/pipe/socket...`)，并使一个标准的IO流与该描述符相结合。常用于由创建管道和网络通信通道函数返回的描述符，因为这些特殊文件不能用标准的`fopen`打开
+
+```table
+type              |open(2) Flags                 |Description
+------------------|------------------------------|---------------
+r or rb           |`O_RDONLY`                    |open for reading
+w or wb           |`O_WRONLY｜O_CREAT｜O_TRUNC ` |truncate to 0 length or create for writing
+a or ab           |`O_WRONLY｜O_CREAT｜O_APPEND` |append; open for writing at end of file, or create for writing
+r+ or r+b or rb+  |`O_RDWR`                      |open for reading and writing
+w+ or w+b or wb+  |`O_RDWR｜O_CREAT｜O_TRUNC`    |truncate to 0 length or create for reading and writing
+a+ or a+b or ab+  |`O_RDWR｜O_CREAT｜O_APPEND`   |open or create for reading and writing at end of file
+```
+
+对于`fdopen`为`tyep="wb"`而打开，并不截短该文件，`type="a"`也不会创建文件
+
+当添写类型打开一文件后，则每次都将数据写到文件的当前尾端处，多个进程打开了同一文件，每个进程的数据都将正确的写到文件中
+
+当 __读和写__ 打开一个文件时，即`type`中有`+`时:
+
+- 如果中间没有`fflush/fseek/fsetpos/rewind`，则在输出的后面不能直接跟随输入
+- 如果中间没有`fseek/fsetpos/rewind`，或者一个输入操作没有到达文件尾端，则在输入之后不能直接跟参输出
+
+```table
+Restriction                          |r  |w  |a   |r+  |w+  |a+
+-------------------------------------|---|---|----|----|----|-----
+file must already exist              |•  |   |    |•   |    |
+previous contents of file discarded  |   |•  |    |    |•   |
+stream can be read                   |•  |   |    |•   |•   |•
+stream can be written                |   |•  |•   |•   |•   |•
+stream can be written only at end    |   |   |•   |    |    |•
+```
+
+在指定`w/a`类型创建一个新文件时，无法说明该文件的访问权限位（`open/creat`则能做到）
+
+若流引用终端设备，则流是行缓冲的，否则按系统默认的情况，流被打开时是全缓冲的，有需要，可通过`setbuf/setvbuf`改变缓冲的类型
+
+```c
+#include <stdio.h>
+int fclose(FILE *fp );
+//Returns: 0 if OK,EOF on error
+```
+
+在该文件被关闭之前，冲洗缓冲区的输出数据，丢弃缓冲区的任何输入数据，如果标准IO为流`malloc`了一人缓冲区，则释放此缓冲区
+
+当一个进程正常终止时（调用`exit`或从`main`返回），则所有带未写缓冲数据的标准IO流都会被冲洗，所有打开的标准IO流都会被关闭
+
+## 读和写流
+
+- 每次一个字符的IO，如果流是带缓冲的，则标准IO会处理所有缓冲
+- 每次一行的IO，使用`gfets/fputs`，当调用`fgets`，应能说明处理的最大行长
+- 直接IO，`fread/fwrite`
+
+### 输入函数
+```c
+#include <stdio.h>
+int getc(FILE *fp );
+int fgetc(FILE *fp );
+int getchar(void);
+//All three return: next character if OK,EOF on end of file or error
+```
+
+`getchar`等价于`getc(stdin)`，`getc`可被实现为宏，而`fgetc`则是函数，后者可以作为参数传参
+
+不管是出错还是到达文件尾端，这三个函数都返回同样的值`EOF`，为了区分这两种不同情况，必须调用`ferror/feof` 
+
+```c
+#include <stdio.h>
+int ferror(FILE *fp);
+int feof(FILE *fp);
+//Both return: nonzer o(true) if condition is true, 0 (false) otherwise
+void clearerr(FILE *fp);
+```
+
+```c
+#include <stdio.h>
+int ungetc(int c, FILE *fp);
+//Returns: c if OK, EOF on error
+```
+
+回送的字符不必是上一次读到的字符，不能回送`EOF`，已到达文件尾端时，仍可以回送一字符，下次读将返回该字符，再次读则返回`EOF`
+
+> `ungetc`并没将字符写到文件中设备中，只写回标准IO的流缓冲区中
+
+### 输出函数
+```c
+#include <stdio.h>
+int putc(int c, FILE *fp);
+int fputc(int c, FILE *fp);
+int putchar(int c);
+//All three return:c if OK, EOF on error
+```
+
+同理，`putchar(c)`等价于`putc(c, stdout)`，`putc`可实现为宏，而`fputc`则为函数
+
+## 每次一行IO
+```c
+#include <stdio.h>
+char *fgets(char *restrict buf, int n, FILE *restrict fp);
+char *gets(char *buf);
+//Both return:buf if OK, NULL on end of file or error
+```
+
+对于`fgets`，必须指定缓冲区的长度`n`，一直读到下一个换行符为止，但不超过`n-1`个字符，缓冲区以`null`字符结尾，若该行（包括换行符）的字符数超过`n-1`，则返回一个不完整的行，下次调用继续读该行
+
+`gets` __不推荐__ 使用，容易造成缓冲区溢出，与`fgets`另一个区别是，它不将换行符存入缓冲区中
+
+```c
+#include <stdio.h>
+int fputs(const char *restrict str, FILE *restrict fp);
+int puts(const char *str);
+//Both return: non-negative value if OK, EOF on error
+```
+
+`fputs`将一个`null`符终止的字符串写到指定的流，尾端`null`不写出，通常`null`之前是一个换行符
+
+`puts`会自动将换行符写到标准输出，也 __不推荐__ 使用，推荐总是使用`fgets/fputs`，手工处理换行符
+
+## 标准IO的效率
+
+如果`fgets/fputs`是用`getc/putc`实现的，那么，可以预期`fgets`版本的时间会和`getc`相接近，但`fgets`是用`memccpy`（使用汇编）实现的，会有较高的速度
+
+
+## 二进制IO
+```c
+#include <stdio.h>
+size_t fread(void *restrict ptr, size_t size, size_t nobj, FILE *restrict fp);
+size_t fwrite(const void *restrict ptr, size_t size, size_t nobj, FILE *restrict fp);
+//Both return: number of objects read or written
+```
+
+在一个系统上写的数据，要在另一个系统上进行处理，可能不能正常工作：
+
+- 在一个结构中，同一成员的偏移量可能因编译器和系统而异：如紧密包装、内存对齐
+- 用来存储多字节整数和浮点值的二进制格式在不同机器体系结构间也可能不同
+
+## 定位流
+- `ftell/fseek`，假定文件的位置可以存放在一个长整型中
+- `ftello/fseeko`，使用`off_t`数据类型代替了长整型
+- `fgetpos/fsetpos`，使用一个抽象数据类型`fpos_t`记录文件的位置，移植到非UNIX系统上应当使用它
+
+```c
+#include <stdio.h>
+long ftell(FILE *fp );
+//Returns: current file position indicator if OK, −1L on error
+int fseek(FILE *fp, long offset,int whence );
+//Returns: 0 if OK,−1 on error
+void rewind(FILE * fp );
+```
+
+```c
+#include <stdio.h>
+off_t ftello(FILE *fp );
+//Returns: current file position indicator if OK, (off_t)−1 on error
+int fseeko(FILE *fp, off_t offset,int whence );
+//Returns: 0 if OK,−1 on error
+```
+
+```c
+#include <stdio.h>
+int fgetpos(FILE *restrict fp, fpos_t *restrictpos);
+int fsetpos(FILE * fp, const fpos_t * pos);
+//Both return: 0 if OK, nonzero on error
+```
+
+## 格式化IO
+### 格式化输出
+
+```c
+#include <stdio.h>
+int printf(const char *restrict format, ...);
+int fprintf(FILE *restrict fp, const char *restrict format, ...);
+int dprintf(intfd, const char *restrict format, ...);
+//All three return: number of characters output if OK, negative value if output error
+int sprintf(char *restrict buf,const char *restrict format, ...);
+//Returns: number of characters stored in array if OK, negative value if encoding error
+int snprintf(char *restrict buf,size_tn, const char *restrictformat, ...);
+//Returns: number of characters that would have been stored in array
+//if buffer was large enough, negative value if encoding error
+```
+
+`sprintf`在数组的尾端自动加一个`null`字节，但该字节不包括在返回值中。该函数有可能造成`buf`指向的缓冲区的溢出，调用者有责任确保该缓冲区足够大
+
+`snprintf`解决缓冲区溢出问题，缓冲区长度是一个显式参数，超过的任何字符都会被丢弃，返回的是写入缓冲区的字符数，同上，不包括`null`字节，若发生错误，则返回负值
+
+`%[flags][fldwidth][precision][lenmodifier]convtype`
+
+![img](../../imgs/apue_10.png)
+
+- `fldwidth`说明转换的最小字段宽度，字符少时用空格填充它，是一个非负十进制数，或一个星号(`*`，占位符，具体值由后续的参数给出)
+- `precision`说明整型转换后最小输出数字位数、浮点数转换后小数点后的最少位数、字符转换后的最大字符数。精度是一个句点(`.`)，后接一个可选的非负十进制整数或一个星号(`*`)
+- 宽度和精度字段两者皆可为`*`，此时，一个整型参数指定宽度或精度的值。该整型参数正好位于被转换的参数之前
+- `lenmodifier`说明参数长度
+
+![img](../../imgs/apue_11.png)
+
+- `convtype`是必选的，它控制如何解释参数
+
+![img](../../imgs/apue_12.png)
+
+下面是变体，可变参数代换成了`arg`
+
+```c
+#include <stdarg.h>
+#include <stdio.h>
+int vprintf(const char *restrict format, va_list arg);
+int vfprintf(FILE *restrict fp, const char *restrict format, va_list arg);
+int vdprintf(int fd, const char *restrict format, va_list arg);
+//All three return: number of characters output if OK, negative value if output error
+int vsprintf(char *restrict buf,const char *restrict format, va_list arg);
+//Returns: number of characters stored in array if OK, negative value if encoding error
+int vsnprintf(char *restrict buf,size_tn, const char *restrictformat, va_list arg);
+//Returns: number of characters that would have been stored in array
+//if buffer was large enough, negative value if encoding error
+```
+
+### 格式化输入
+
+#include <stdio.h>
+int scanf(const char *restrict format, ...);
+int fscanf(FILE *restrict fp, const char *restrict format, ...);
+int sscanf(const char *restrict buf, const char *restrict format, ...);
+
+
+除转换说明和空白字符外，格式字符串中的其他字符必须与输入匹配，若有一个字符不匹配，则停止后续处理，不再读入输入的其余部分
+
+`%[*][fldwidth][lenmodifier]convtype`
+
+- `*`用于抑制转换，按照转换说明的其余部分对输入进行转换，但转换结果并不存放在参数中
+- `fldwidth`说明最大宽度
+- `lenmodifier`说明要用转换结果初始化的参数大小，同输出函数的长度修饰符
+- `convtype`类似输出函数，但还有些差别，如存储在无符号类型中的结果可输入时带上符号，如-1可被转换成4294967295赋予无符号整型变量
+
+table
+
+
+支持的可变参数
+
+#include <stdarg.h>
+#include <stdio.h>
+int vscanf(const char *restrict format, va_list arg);
+int vfscanf(FILE *restrict fp, const char *restrict format, va_list arg);
+int vsscanf(const char *restrict buf, const char *restrict format, va_list arg);
+
+
+## 实现细节
+对一个流调用`fileno()`得到其描述符
+
+#include <stdio.h>
+int fileno(FILE *fp);
+
+在打印缓冲状态信息之前，需要对每个流执行IO操作，第一个IO操作通常就造成为该流分配缓冲。结构体成员`_IO_file_flags/_IO_buf_base/_IO_buf_end/_IO_UNBUFFERED/_IO_LINE_BUFFERED`由GUN标准IO库定义的
+
+当标准输入、输出连至终端时，它们是行缓冲的，长度是1024，当重定向到普通文件时，则变成全缓冲的，长度是`stat.st_blksize`(4096)
+
+## 临时文件
+
+#include <stdio.h>
+char *tmpnam(char *ptr);
+FILE *tmpfile(void);
+
+若`ptr`是`NULL`，则所产生的路径名存放在一个静态区，并将指向该静态区的指针返回，下一次调用时，会 __重写__ 该静态区（想保存路径名，则应保存路径名的副本），若不是`NULL`，则认为它指向长度至少是`L_tmpnam`个字符的数组，所产生的路径名存放在该数组中，`ptr`也作为函数值返回。
+
+`tmpfile`创建一个临时二进制文件（类型`wb+`），在关闭该文件或程序结束将自动删除这种文件
+
+
+#include <stdlib.h>
+char *mkdtemp(char *template);
+int mkstemp(char *template);
+
+与`tempfile`不同，它们所创建的临时文件不会自动删除(需要手工`unlink`)，`tmpnam/tempnam`不足之处是，在返回唯一路径名和应用程序用该路径创建文件之间有一个时间窗口，不同进程可能创建同名文件，而`mkstemp`不会产生此问题
+
+
+系统数据文件和信息
+===============
+
+## 口令文件
+`<pwd.h>`中定义的`passwd`结构
+
+table
+
+为了阻止一个特定用户登录系统:
+
+- 使用`/dev/null`作为登录shell，如`squid`用户，它是一个设备（很多服务对帮助它们得以实现的不同守护进程使用不同的用户ID，`squid`项为实现squid代理缓冲服务而设置的），阻止任何人以该用户名义登录到系统
+- 将`/bin/false`用作登录shell，将以不成功（非0）状态终止，该shell将此种终止状态判断为假
+- 将`/bin/true`禁止一个账户，将以成功（0）状态终止
+- 某此系统提供`nologin`命令，打印可自定义的出错信息，然后以非0状态终止
+
+
+`nobody`用户名的目的是，使任何人都可登录至系统，但其用户和组不提供任何特权
+
+
+
+
+POSIX.1定义了两个获取口令文件项的函数，在给出用户登录名或数值用户ID后，这两个函数就能查询相关项
+
+```c
+#include <pwd.h>
+struct passwd *getpwuid(uid_t uid);
+struct passwd *getpwnam(const char *name);
+```
+
+`getpwuid`由`ls(1)`使用，它将i节点中的数值用户ID映射为用户登录名；`getpwnam`由`login(1)`使用
+
+如果需要查看整个口令文件，下面函数用于此目的
+
+```c
+#include <pwd.h>
+struct passwd *getpwent(void);
+void setpwent(void);
+void endpwent(void);
+```
+
+`getpwent`返回口令文件中的下一个记录项，返回一个由它填写好的结构的指针，每次调用都重写该结构。在第一次调用它时，它打开所使用的各个文件。
+
+`setpwent`rewind它所使用的文件（定位到文件开始处），`endpwent`则关闭这些文件
+
+一个`getpwnam`实现
+
+```c
+#include <pwd.h>
+#include <stddef.h>
+#include <string.h>
+
+struct passwd *
+getpwnam(const char *name){
+    struct passwd *ptr;
+    setpwent();
+    while ((ptr = getpwent()) != NULL)
+        if (strcmp(name, ptr->pw_name) == 0)
+            break;  /* found a match */
+    endpwent();
+    return(ptr);  /* ptr is NULL if no match found */
+}
+```
+
+`getpwnam/getpwuid`调用完成后不应使有关文件仍处于打开状态，所以应调用`endpwent`关闭它们
+
+
+## 阴影口令
+`etc/shadow`文件中的字段
+
+```table
+Description                             | struct spwd member
+----------------------------------------|------------------
+user login name                         | char *sp_namp
+encrypted password                      | char *sp_pwdp
+days since Epoch of last password change| int  sp_lstchg
+days until change allowed               | int  sp_min
+days before change required             | int  sp_max
+days warning for expiration             | int  sp_warn
+days befor eaccount inactive            | int  sp_inact
+days since Epoch when account expires   | int  sp_expire
+reserved                                | unsigned int sp_flag
+```
+
+用于访问阴影口令文件的函数
+
+```c
+#include <shadow.h>
+struct spwd *getspnam(const char *name);
+struct spwd *getspent(void);
+void setspent(void);
+void endspent(void);
+```
+
+## 组文件
+`/etc/group`中字段
+
+```table
+Description       |struct group member|POSIX.1|FreeBSD 8.0|Linux 3.2.0|Mac OS X 10.6.8|Solaris 10
+------------------|-------------------|-------|----------|----------|--------------|---------
+group name        | char  *gr_name    |•      |•         |•         |•             |•
+encrypted password| char  *gr_passwd  |       |•         |•         |•             |•
+numerical group ID| int  gr_gid       |•      |•         |•         |•             |•
+array of pointers to individual user names| char **gr_mem |•|•|•    |•             |•
+```
+
+下面的函数来查看属于组名或数值组ID
+
+```c
+#include <grp.h>
+struct group *getgrgid(gid_t gid);
+struct group *getgrnam(const char *name);
+```
+
+如需搜索整个组文件，则需要另外几个函数
+
+```c
+#include <grp.h>
+struct group *getgrent(void);
+void setgrent(void);
+void endgrent(void);
+```
+
+## 附加组ID
+执行`newgrp(1)`，将组ID更改为新的组ID，不带参数则返回原来的组，创建的文件的gid则为切换后的
+
+不仅可以属于口令文件记录项中组ID所对应的组，也可属于多达16个另外的组，文件访问权限也为：不仅将进程的有效组ID与文件的组ID相比较，而且也将所有附加组ID与文件的组ID进行比较
+
+使用附加组则不必显式的经常更改组
+
+```c
+#include <unistd.h>
+int getgroups(int gidsetsize, gid_t grouplist []);
+
+#include <grp.h> /* on Linux */
+#include <unistd.h> /* on FreeBSD, Mac OS X, and Solaris */
+int setgroups(int ngroups, const gid_tgrouplist []);
+
+#include <grp.h> /* on Linux and Solaris */
+#include <unistd.h> /* on FreeBSD and Mac OS X */
+int initgroups(const char *username, gid_t basegid );
+```
+
+作为一个特例，若`gidsetsize`为0，则函数只返回附加组数，而对数组`grouplist`不作修改，使调用者可以确定`grouplist`的长度
+
+后两个是特权操作，只有超级用户才能调用，`login(1)`在用户登录时调用该函数
+
+
+## 实现的区别
+```table
+Information           | FreeBSD 8.0        | Linux 3.2.0 | Mac OS X 10.6.8   | Solaris 10
+----------------------|--------------------|-------------|-------------------|------------
+account information   | /etc/passwd        |/etc/passwd  |Directory Services |/etc/passwd
+encrypted passwords   | /etc/master.passwd |/etc/shadow  |Directory Services |/etc/shadow
+hashed passwordfiles? | yes                |no           |no                 |no
+group information     | /etc/group         |/etc/group   |Directory Services |/etc/group
+```
+
+## 其他数据文件
+```table
+Description |Data file      |Header     |Structure |Additional keyed lookup functions
+------------|---------------|-----------|----------|----------------------------------
+passwords   |/etc/passwd    |<pwd.h>    |passwd    |getpwnam, getpwuid
+groups      |/etc/group     |<grp.h>    |group     |getgrnam, getgrgid
+shadow      |/etc/shadow    |<shadow.h> |spwd      |getspnam
+hosts       |/etc/hosts     |<netdb.h>  |hostent   |getnameinfo,  getaddrinfo
+networks    |/etc/networks  |<netdb.h>  |netent    |getnetbyname, getnetbyaddr
+protocols   |/etc/protocols |<netdb.h>  |protoent  |getprotobyname, getprotobynumber
+services    |/etc/services  |<netdb.h>  |servent   |getservbyname, getservbyport
+```
+
+## 登录账户记录
+`utmp`文件，记录当前登录进系统的各个用户；`wtmp`跟踪各个登录和注销事件
+
+```c
+struct utmp {
+    char  ut_line[8]; /* tty line: "ttyh0", "ttyd0", "ttyp0", ... */
+    char  ut_name[8]; /* login name */
+    long  ut_time; /* seconds since Epoch */
+};
+```
+
+登录时，`login`程序填写`utmp`结构，然后写入到`/var/run/utmp`文件中，同时也将其添写到`var/log/wtmp`文件中，注销时，`init`进程将`utmp`文件中相应的记录擦除（每个字节都填0），并将一个新记录添写到`wtmp`文件中，在`wtmp`文件注销记录中，将`ut_name`字段清0。
+
+在系统重新启动时，以及更改系统时间和日期的前后，都在`wtmp`文件中添写特殊的记录项。
+
+`who(1)`读`utmp`文件，并以可读格式打印其内容，`last(1)`，读`wtmp`文件并打印所选择的记录
+
+## 系统标识
+`uname`函数，返回与当前主机和操作系统有关的信息
+
+```c
+#include <sys/utsname.h>
+int uname(struct utsname *name);
+//Returns: non-negative value if OK,−1 on error
+
+struct utsname {
+    char  sysname[]; /* name of the operating system */
+    char  nodename[]; /* name of this node */
+    char  release[]; /* current release of operating system */
+    char  version[]; /* current version of this release */
+    char  machine[]; /* name of hardware type */
+};
+```
+
+`utsname`结构中的信息，通常可用`uname(1)`打印
+
+`gethostname`函数，返回主机名，通常是TCP/IP网络上主机的名字
+
+```c
+#include <unistd.h>
+int gethostname(char *name,int namelen);
+//Returns: 0 if OK,−1 on error
+```
+
+如果将主机连接到TCP/IP网络中，主机名通常是该主机的完全限定域名。
+
+`hostname(1)`可以获取和设置主机名。主机名通常在系统自举时设置，由`/etc/rc`或`init`取自一个启动文件
+
+
+## 时间和日期例程
 
 
 
