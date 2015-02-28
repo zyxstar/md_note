@@ -1290,11 +1290,14 @@ int vsnprintf(char *restrict buf,size_tn, const char *restrictformat, va_list ar
 
 ### 格式化输入
 
+```c
 #include <stdio.h>
-int scanf(const char *restrict format, ...);
-int fscanf(FILE *restrict fp, const char *restrict format, ...);
-int sscanf(const char *restrict buf, const char *restrict format, ...);
-
+int scanf(const char *restrictformat ,...);
+int fscanf(FILE *restrictfp ,const char *restrict format ,...);
+int sscanf(const char *restrict buf,const char *restrict format ,...);
+//All three return: number of input items assigned,
+//EOF if input error or end of file beforeany conversion
+```
 
 除转换说明和空白字符外，格式字符串中的其他字符必须与输入匹配，若有一个字符不匹配，则停止后续处理，不再读入输入的其余部分
 
@@ -1305,23 +1308,28 @@ int sscanf(const char *restrict buf, const char *restrict format, ...);
 - `lenmodifier`说明要用转换结果初始化的参数大小，同输出函数的长度修饰符
 - `convtype`类似输出函数，但还有些差别，如存储在无符号类型中的结果可输入时带上符号，如-1可被转换成4294967295赋予无符号整型变量
 
-table
-
+![img](../../imgs/apue_13.png)
 
 支持的可变参数
 
+```c
 #include <stdarg.h>
 #include <stdio.h>
-int vscanf(const char *restrict format, va_list arg);
-int vfscanf(FILE *restrict fp, const char *restrict format, va_list arg);
-int vsscanf(const char *restrict buf, const char *restrict format, va_list arg);
-
+int vscanf(const char *restrict format ,va_list arg);
+int vfscanf(FILE *restrict fp ,const char *restrict format ,va_list arg);
+int vsscanf(const char *restrict buf,const char *restrict format ,va_list arg);
+//All three return: number of input items assigned,
+//EOF if input error or end of file beforeany conversion
+```
 
 ## 实现细节
 对一个流调用`fileno()`得到其描述符
 
+```c
 #include <stdio.h>
 int fileno(FILE *fp);
+//Returns: the file descriptor associated with the stream
+```
 
 在打印缓冲状态信息之前，需要对每个流执行IO操作，第一个IO操作通常就造成为该流分配缓冲。结构体成员`_IO_file_flags/_IO_buf_base/_IO_buf_end/_IO_UNBUFFERED/_IO_LINE_BUFFERED`由GUN标准IO库定义的
 
@@ -1329,29 +1337,35 @@ int fileno(FILE *fp);
 
 ## 临时文件
 
+```c
 #include <stdio.h>
 char *tmpnam(char *ptr);
+//Returns: pointer to unique pathname
 FILE *tmpfile(void);
+//Returns: file pointer if OK, NULL on error
+```
 
 若`ptr`是`NULL`，则所产生的路径名存放在一个静态区，并将指向该静态区的指针返回，下一次调用时，会 __重写__ 该静态区（想保存路径名，则应保存路径名的副本），若不是`NULL`，则认为它指向长度至少是`L_tmpnam`个字符的数组，所产生的路径名存放在该数组中，`ptr`也作为函数值返回。
 
 `tmpfile`创建一个临时二进制文件（类型`wb+`），在关闭该文件或程序结束将自动删除这种文件
 
-
+```c
 #include <stdlib.h>
-char *mkdtemp(char *template);
-int mkstemp(char *template);
+char *mkdtemp(char *template );
+//Returns: pointer to directory name if OK,NULL on error
+int mkstemp(char * template );
+//Returns: file descriptor if OK,−1 on error
+```
 
 与`tempfile`不同，它们所创建的临时文件不会自动删除(需要手工`unlink`)，`tmpnam/tempnam`不足之处是，在返回唯一路径名和应用程序用该路径创建文件之间有一个时间窗口，不同进程可能创建同名文件，而`mkstemp`不会产生此问题
 
 
 系统数据文件和信息
 ===============
-
 ## 口令文件
 `<pwd.h>`中定义的`passwd`结构
 
-table
+![img](../../imgs/apue_14.png)
 
 为了阻止一个特定用户登录系统:
 
@@ -1360,11 +1374,7 @@ table
 - 将`/bin/true`禁止一个账户，将以成功（0）状态终止
 - 某此系统提供`nologin`命令，打印可自定义的出错信息，然后以非0状态终止
 
-
 `nobody`用户名的目的是，使任何人都可登录至系统，但其用户和组不提供任何特权
-
-
-
 
 POSIX.1定义了两个获取口令文件项的函数，在给出用户登录名或数值用户ID后，这两个函数就能查询相关项
 
@@ -1372,6 +1382,7 @@ POSIX.1定义了两个获取口令文件项的函数，在给出用户登录名�
 #include <pwd.h>
 struct passwd *getpwuid(uid_t uid);
 struct passwd *getpwnam(const char *name);
+//Both return: pointer if OK, NULL on error
 ```
 
 `getpwuid`由`ls(1)`使用，它将i节点中的数值用户ID映射为用户登录名；`getpwnam`由`login(1)`使用
@@ -1381,6 +1392,7 @@ struct passwd *getpwnam(const char *name);
 ```c
 #include <pwd.h>
 struct passwd *getpwent(void);
+//Returns: pointer if OK,NULL on error or end of file
 void setpwent(void);
 void endpwent(void);
 ```
@@ -1434,6 +1446,7 @@ reserved                                | unsigned int sp_flag
 #include <shadow.h>
 struct spwd *getspnam(const char *name);
 struct spwd *getspent(void);
+//Both return: pointer if OK, NULL on error
 void setspent(void);
 void endspent(void);
 ```
@@ -1456,6 +1469,7 @@ array of pointers to individual user names| char **gr_mem |•|•|•    |•  
 #include <grp.h>
 struct group *getgrgid(gid_t gid);
 struct group *getgrnam(const char *name);
+//Both return: pointer if OK, NULL on error
 ```
 
 如需搜索整个组文件，则需要另外几个函数
@@ -1463,6 +1477,7 @@ struct group *getgrnam(const char *name);
 ```c
 #include <grp.h>
 struct group *getgrent(void);
+//Returns: pointer if OK,NULL on error or end of file
 void setgrent(void);
 void endgrent(void);
 ```
@@ -1476,15 +1491,15 @@ void endgrent(void);
 
 ```c
 #include <unistd.h>
-int getgroups(int gidsetsize, gid_t grouplist []);
-
+int getgroups(int gidsetsize ,gid_t grouplist []);
+//Returns: number of supplementary group IDs if OK,−1 on error
 #include <grp.h> /* on Linux */
 #include <unistd.h> /* on FreeBSD, Mac OS X, and Solaris */
-int setgroups(int ngroups, const gid_tgrouplist []);
-
+int setgroups(int ngroups,const gid_tgrouplist []);
 #include <grp.h> /* on Linux and Solaris */
 #include <unistd.h> /* on FreeBSD and Mac OS X */
-int initgroups(const char *username, gid_t basegid );
+int initgroups(const char *username ,gid_t basegid );
+//Both return: 0 if OK, −1 on error
 ```
 
 作为一个特例，若`gidsetsize`为0，则函数只返回附加组数，而对数组`grouplist`不作修改，使调用者可以确定`grouplist`的长度
@@ -1506,13 +1521,13 @@ group information     | /etc/group         |/etc/group   |Directory Services |/e
 ```table
 Description |Data file      |Header     |Structure |Additional keyed lookup functions
 ------------|---------------|-----------|----------|----------------------------------
-passwords   |/etc/passwd    |<pwd.h>    |passwd    |getpwnam, getpwuid
-groups      |/etc/group     |<grp.h>    |group     |getgrnam, getgrgid
-shadow      |/etc/shadow    |<shadow.h> |spwd      |getspnam
-hosts       |/etc/hosts     |<netdb.h>  |hostent   |getnameinfo,  getaddrinfo
-networks    |/etc/networks  |<netdb.h>  |netent    |getnetbyname, getnetbyaddr
-protocols   |/etc/protocols |<netdb.h>  |protoent  |getprotobyname, getprotobynumber
-services    |/etc/services  |<netdb.h>  |servent   |getservbyname, getservbyport
+passwords   |/etc/passwd    | pwd.h     |passwd    |getpwnam, getpwuid
+groups      |/etc/group     | grp.h     |group     |getgrnam, getgrgid
+shadow      |/etc/shadow    | shadow.h  |spwd      |getspnam
+hosts       |/etc/hosts     | netdb.h   |hostent   |getnameinfo,  getaddrinfo
+networks    |/etc/networks  | netdb.h   |netent    |getnetbyname, getnetbyaddr
+protocols   |/etc/protocols | netdb.h   |protoent  |getprotobyname, getprotobynumber
+services    |/etc/services  | netdb.h   |servent   |getservbyname, getservbyport
 ```
 
 ## 登录账户记录
@@ -1565,6 +1580,150 @@ int gethostname(char *name,int namelen);
 
 
 ## 时间和日期例程
+UNIX内核提供的基本时间服务是计算国际标准时间公元19700101T00:00:00以来经过的秒数，以数据类型`time_t`表示
+
+- 以国际标准时间而非本地时间计时
+- 可自动进行转换，如变换到夏时制
+- 将时间和日期作为一个量值保存
+
+```c
+#include <time.h>
+time_t time(time_t *calptr);
+//Returns: value of time if OK, −1 on error
+```
+
+时间值总是作为函数值，如果参数不为空，也存放在指针指向的单元内
+
+
+```table
+Identifier                 | Option                    | Description
+---------------------------|---------------------------|-------------------
+`CLOCK_REALTIME`           |                           | real system time
+`CLOCK_MONOTONIC`          | `_POSIX_MONOTONIC_CLOCK`  | real system time with no negative jumps
+`CLOCK_PROCESS_CPUTIME_ID` | `_POSIX_CPUTIME`          | CPU time for calling process
+`CLOCK_THREAD_CPUTIME_ID`  | `_POSIX_THREAD_CPUTIME`   | CPU time for calling thread
+```
+
+```c
+#include <sys/time.h>
+int clock_gettime(clockid_t clock_id,struct timespec *tsp);
+//Returns: 0 if OK,−1 on error
+```
+
+```c
+#include <sys/time.h>
+int clock_getres(clockid_t clock_id,struct timespec *tsp);
+//Returns: 0 if OK,−1 on error
+```
+
+```c
+#include <sys/time.h>
+int clock_settime(clockid_t clock_id,const struct timespec *tsp);
+//Returns: 0 if OK,−1 on error
+```
+
+
+与`time`相比，`gettimeofday`提供了微秒级，这对某些应用很重要
+
+```c
+#include <sys/time.h>
+int gettimeofday(struct timeval *restrict tp ,void *restrict tzp);
+//Returns: 0 always
+```
+
+一旦取得这种以秒计的整型时间值后，通常要调用另一个时间函数将其转换为人可读的时间和日期
+
+![img](../../imgs/apue_15.png)
+
+虚线表示的函数`localtime/mktime/strftime`等受到环境变量`TZ`影响
+
+```c
+#include <time.h>
+struct tm *gmtime(const time_t *calptr);
+struct tm *localtime(const time_t *calptr);
+//Both return: pointer to broken-down time, NULL on error
+```
+
+`localtime`和`gmtime`将日历时间转换成以下结构，两者区别是，前者转换成本地时间并考虑夏时制，后者为国际标准时间
+
+> 秒可以超过59表示润秒
+
+```c
+struct tm { /* a broken-down time */
+    int  tm_sec; /* seconds after the minute: [0 - 60] */
+    int  tm_min; /* minutes after the hour: [0 - 59] */
+    int  tm_hour;  /* hours after midnight: [0 - 23] */
+    int  tm_mday;  /* day of the month: [1 - 31] */
+    int  tm_mon; /* months since January: [0 - 11] */
+    int  tm_year;  /* years since 1900 */
+    int  tm_wday;  /* days since Sunday: [0 - 6] */
+    int  tm_yday;  /* days since January 1: [0 - 365] */
+    int  tm_isdst; /* daylight saving time flag: <0, 0, >0 */
+};
+```
+
+`mktime`以 __本地时间__ 的年月日作参数，转换成`time_t`值
+
+```c
+#include <time.h>
+time_t mktime(struct tm *tmptr);
+//Returns: calendar time if OK, −1 on error
+```
+
+
+```c
+#include <time.h>
+size_t strftime(char *restrict buf, size_t maxsize,
+                const char *restrict format ,
+                const struct tm *restrict tmptr);
+size_t strftime_l(char *restrict buf, size_t maxsize,
+                  const char *restrict format,
+                  const struct tm *restrict tmptr, locale_t locale);
+//Both return: number of characters stored in array if room, 0 otherwise
+```
+
+格式化的结果放在一个长度为`maxsize`个字符的`buf`数组中，`format`是格式
+
+![img](../../imgs/apue_16.png)
+
+
+进程环境
+=============
+
+## main函数
+当内核执行C程序时，使用一个`exec`函数，在调用`main`前先调用一个特殊的启动例程，可执行程序文件将此启动例程指定为程序的起始地址（由链接器设置的，而链接器则由C编译器调用）。启动例程从内核取得命令行参数和环境变量值，然后为调用`main`做好安排
+
+## 进程终止
+有8种方式使进程终止，前5种为正常终止
+
+- 从`main`返回
+- 调用`exit`
+- 调用`_exit`或`_Exit`
+- 最后一个线程从其启动例程返回
+- 最后一个线程调用`pthread_exit`
+- 调用`abort`
+- 接到一个信号并终止
+- 最后一个线程对取消请求做出响应
+
+如果将启动例程以C代码表示（实际上为汇编），形式如下
+
+```c
+exit(main(argc, argv));
+```
+
+### exit函数
+`_exit`和`_Exit`立即进入内核，`exit`则先执行一些清理处理（包括调用执行各终止处理程序，关闭所有标准IO流等），然后进入内核
+
+```c
+#include <stdlib.h>
+void exit(int status );
+void _Exit(int status );
+#include <unistd.h>
+void _exit(int status );
+```
+
+
+
 
 
 
@@ -1575,6 +1734,7 @@ int gethostname(char *name,int namelen);
 
 ```
 
+![img](../../imgs/apue_00.png)
 
 
 
@@ -1584,6 +1744,9 @@ int gethostname(char *name,int namelen);
 <!--
 gcc -I../include/ ../lib/error.c seek.c -o seek
 
-
+休闲食品
+联合办宴
+时时秒杀
+意见奖励
 
 -->

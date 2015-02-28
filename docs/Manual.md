@@ -2,13 +2,7 @@
 
 为什么有它
 ==========
-
-- 你是否有过，到处散落的小随笔而没有归档，想找到以前记录的东西，需要查找一个个文件
-- 当你做读书笔记的时候，太深入细节，没有提纲，想看看整体脉络时，却千头万绪？
-- 记录里的东西被删除了，但某天突然想起某个重要信息在上面，只怪当时手太痒
-- 如果你是程序员，记录的东西里面也可能有一些代码，想看看运行效果怎么办？所见即所得的是能加深学习效率的
-
-嗯，是的，本工具能帮助到你，它使用纯文本格式（Markdown）作笔记，非常适合做 __*版本管理*__，不用担心内容会丢失；同时能根据文档中的标题自动生成 __*目录结构*__，方便理清层次关系，帮助归纳推演；如果文档中包含代码小片断，还能在文档中 __*直接运行代码*__ ，不需要IDE，不需要<kbd>Ctrl</kbd> <kbd>C</kbd> + <kbd>Ctrl</kbd> <kbd>V</kbd>，直接在页面中就能得到反馈。
+本工具能对Markdown格式的文档，针对文中的标题自动生成 __*目录结构*__，方便理清层次关系，帮助归纳推演；如果文档中包含代码小片断，还能在文档中 __*直接运行代码*__ ，不需要IDE，不需要<kbd>Ctrl</kbd> <kbd>C</kbd> + <kbd>Ctrl</kbd> <kbd>V</kbd>，直接在页面中就能得到反馈。
 
 用它来做什么
 ==============
@@ -34,7 +28,7 @@
 ## 第1步：创建文档
 在网络上一个可访问的地址空间，如在[github](https://github.com/)上创建文档，使用[Markdown](http://zh.wikipedia.org/wiki/Markdown)来编写
 
-> 版本控制其实由gibhub来支持
+> 可由gibhub来支持相应的版本控制
 
 ## 第2步：查看文档
 取得第1步的url地址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
@@ -66,13 +60,7 @@
 - 支持列的对齐方式
 - table中支持内联的Markdown语法
 
-并在编写时，在首行(不缩进)写上`<!-- language: table -->`，接着空一行，并需要将整个table缩进4个字符
-
-编写示例如下：
-
-![table编写规则](../imgs/manual_table_rule.png)
-
-或使用<code>```table</code>：
+编写示例，使用<code>```table</code>：
 
 ![table编写规则2](../imgs/manual_table_rule2.png)
 
@@ -87,16 +75,7 @@ Erin  | lamb madras | __*HOT*__| $5
 ```
 
 ## 代码语法高亮
-依赖[syntaxhighlighter](http://alexgorbatchev.com/SyntaxHighlighter/)，支持绝大多数的语法高亮，使用时，首行(不缩进)加`<!-- language: «language» -->`接着空一行，再编写代码，所有代码缩进4个字符。
-
-> ps: `<!-- language: «language» -->`的想法[参考](http://stackoverflow.com/editing-help#syntax-highlighting)，通过html的comment来标识语法，对于Markdown的解析无侵入性。<br/>
-已知的BUG，在代码注释中，不要使用`'`与`"`，否则容易将注释中引号与代码中的引号相匹配；不要在注释中使用html标签，否则生成的高亮代码块中会产生该标签，影响代码阅读
-
-如css需高亮，则在首行加`<!-- language: css -->`
-
-![css编写规则](../imgs/manual_css_rule.png)
-
-或[仿照github对代码高亮的处理](https://help.github.com/articles/github-flavored-markdown)，使用<code>```css</code>：
+[仿照github对代码高亮的处理](https://help.github.com/articles/github-flavored-markdown)，使用<code>```css</code>：
 
 ![css编写规则2](../imgs/manual_css_rule2.png)
 
@@ -117,56 +96,53 @@ ul.TOCEntry li {
 ```
 
 ## 展示Web页面
-首行加`<!-- language: web -->`
+使用<code>```web</code>
 
 并且在每部分(html,css,js)代码起始前加相应的`comment`，如图：
-
-![web编写规则](../imgs/manual_web_rule.png)
-
-或使用<code>```web</code>，则表示为：
 
 ![web编写规则2](../imgs/manual_web_rule2.png)
 
 以下是生成效果
 
-<!-- language: web -->
+```web
+<!-- language: html -->
+<div>
+    <input id='txt_say' type='text'/>
+    <input type='button' value='Say'/>
+</div>
 
-    <!-- language: html -->
-    <div>
-        <input id='txt_say' type='text'/>
-        <input type='button' value='Say'/>
-    </div>
+<!-- language: css -->
+@import url(/static/css/normalize.css);
+body{
+    padding:20px;
+}
+input[type='button']{
+    padding:3px 5px;
+    font-size:14px;
+    font-weight:bold;
+    background-color:black;
+    color:white;
+}
 
-    <!-- language: css -->
-    @import url(/static/css/normalize.css);
-    body{
-        padding:20px;
-    }
-    input[type='button']{
-        padding:3px 5px;
-        font-size:14px;
-        font-weight:bold;
-        background-color:black;
-        color:white;
-    }
-
-    <!-- language: js -->
-    //= require jquery.1.9.0
-    $(function(){
-        $("#txt_say").val("hello, web")
-        $("input[type='button']").click(function(){
-            alert($("#txt_say").val())
-        });
-    })
-
+<!-- language: js -->
+//= require jquery.1.9.0
+$(function(){
+    $("#txt_say").val("hello, web")
+    $("input[type='button']").click(function(){
+        alert($("#txt_say").val())
+    });
+})
+```
 
 ## 代码即时运行
-使用时，与代码高亮一样，只是首行为`<!-- language: !«language» -->`，其中的`!`代表是可执行的。如果使用github规则，则表示为<code>```!«language»</code>，目前支持以下几种语言，你看到的效果都是生成出来的：
+使用时，与代码高亮一样，只是需要在代码段前增加一行`<!-- run -->`的comment，你看到的效果都是生成出来的：
 
 ### JavaScript
-首行加`<!-- language: !js -->`或<code>```!js</code>：
+将`<!-- run -->`放在<code>```js</code>之前：
 
-```!js
+<!-- run -->
+
+```js
 function MyClass(name) {
     this.name = name;
     this.say = function() {
@@ -179,7 +155,9 @@ alert(m.say());
 
 使用js库，在代码的首部使用`//= require «lib.ver»`的方式引入，如`//= require jquery.1.9.0`
 
-```!js
+<!-- run -->
+
+```js
 //= require jquery.1.9.0
 $(function(){
     alert($().jquery);
@@ -187,9 +165,11 @@ $(function(){
 ```
 
 ### Python
-首行加`<!-- language: !py -->`或`<!-- language: !python -->`或<code>```!py</code>：
+将`<!-- run -->`放在<code>```py</code>之前：
 
-```!py
+<!-- run -->
+
+```py
 #coding:utf-8
 class MyClass(object):
     def __init__(self, name):
@@ -210,9 +190,11 @@ print m.say()
 > - <del>语言的编译器(解析器)工具需要在环境变量中配置，如python.exe、ruby.exe、java.exe、javac.exe、csc.exe（目前只支持这几种语言） __所在的目录__ 需要添加到环境变量PATH中</del>
 
 ### Ruby
-首行加`<!-- language: !rb -->`或`<!-- language: !ruby -->`或<code>```!rb</code>：
+将`<!-- run -->`放在<code>```rb</code>之前：
 
-```!rb
+<!-- run -->
+
+```rb
 #coding:utf-8
 class MyClass
     def initialize(name)
@@ -229,9 +211,11 @@ puts m.say
 ```
 
 ### C
-首行加`<!-- language: !c -->`或<code>```!c</code>：
+将`<!-- run -->`放在<code>```c</code>之前：
 
-```!c
+<!-- run -->
+
+```c
 #include <stdio.h>
 
 typedef struct MyStruct_tag {
@@ -255,9 +239,11 @@ int main(){
 ```
 
 ### C++
-首行加`<!-- language: !cpp -->`或<code>```!cpp</code>：
+将`<!-- run -->`放在<code>```cpp</code>之前：
 
-```!cpp
+<!-- run -->
+
+```cpp
 #include <iostream>
 #include <string>
 
@@ -282,9 +268,11 @@ int main(){
 ```
 
 ### CSharp
-首行加`<!-- language: !c# -->`或`<!-- language: !csharp -->`或<code>```!c#</code>：
+将`<!-- run -->`放在<code>```csharp</code>之前：
 
-```!csharp
+<!-- run -->
+
+```csharp
 using System;
 
 class Program {
@@ -305,7 +293,7 @@ class Program {
 ```
 
 ### Java
-首行加`<!-- language: !java -->`或<code>```!java</code>：
+将`<!-- run -->`放在<code>```java</code>之前：
 
 <!-- run -->
 
@@ -333,35 +321,10 @@ public class Program {
 }
 ```
 
-浏览器支持
-==========
-
-- Chrome
-- Firefox
-- IE9+
-- Safari
-
-未完待续
-========
-
-- chrome插件
-- blog插件
-- 自定义样式
-- LaTeX公式
-- web运行支持coffeescript,sass,less
-
-
-感谢
-====
-- [SyntaxHighlighter](http://alexgorbatchev.com/SyntaxHighlighter)
-- [CodeMirror](http://codemirror.net/)
-- [JsFiddle](http://jsfiddle.net/)
-- [CompileOnline](http://compileonline.com)
 
 给我反馈
 ========
 zyxstar2013 at 163.com
-
 
 
 <script>
@@ -381,43 +344,10 @@ zyxstar2013 at 163.com
     │ │ │ │ │
     └─┴─┴─┴─┘
 
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-int main(int argc, const char* argv[]){
-    printf("%d : %s", argc, argv[1]);
-
-    int num ;
-    scanf("%d", &num);
-    printf("%d", num);
-
-    scanf("%d", &num);
-    printf("%d", num);
-
-    char buff[255];
-    FILE *fp;
-    fp = fopen("input.txt", "r");
-    if( fp != NULL ){
-      while ( !feof(fp ) ){
-         memset(buff, '\0', sizeof( buff) );
-         fgets(buff, 255, (FILE*)fp);
-         printf("%s", buff );
-      }
-      fclose(fp);
-   }
-   return 0;
-}
-
-/*
-$args: arg1 arg2
-$stdin: 12 13
-$inputs:
-this contents will fill in input.txt
-this is a new line
-end
-*/
+- [SyntaxHighlighter](http://alexgorbatchev.com/SyntaxHighlighter)
+- [CodeMirror](http://codemirror.net/)
+- [JsFiddle](http://jsfiddle.net/)
+- [CompileOnline](http://compileonline.com)
 
 
 -->

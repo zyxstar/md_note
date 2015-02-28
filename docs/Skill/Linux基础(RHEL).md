@@ -46,7 +46,7 @@ RHEL的经典版本：5.8和6.4
 /mnt        其它的挂载点
 /proc       进程文件(pid)，虚拟文件系统
             du -sh /proc 统计大小为0，表示数据在内存中，不占硬盘空间
-/opt        主机额外安装软件所放的目录，也是个挂载点
+/opt        主机额外安装软件所放的目录，也可以是个挂载点
 /srv        一些服务启动后，这些服务所需访问的数据目录
 
 ```
@@ -72,7 +72,7 @@ SCSI硬盘
 /usr  ext3 看情况（程序数据）
 /     ext3 看情况
 ```
-使用`sudo fdisk -l`可查看硬盘分区情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
+使用`sudo fdisk -l`可查看硬盘分区(partition)情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
 
 ## 快捷键
 ```
@@ -694,10 +694,16 @@ chmod 744 a.txt
 
 如`ll /usr/bin/locate`，得到`-rwx--s--x`，其中`s`就是`sgid`
 
+- 对二进制程序，运行者在运行过程中将会获得该程序群组的支持，上面普通用户将得到`slocate`群组支持
+- 针对目录
+  + 使用者若对於此目录具有 r 与 x 的权限时，该使用者能够进入此目录
+  + 使用者在此目录下的有效群组(effective group)将会变成该目录的群组
+  + 若使用者在此目录下具有 w 的权限(可以新建文件)，则使用者所创建的新文件，该新文件的群组与此目录的群组相同。
+
 ### skicky
 [参考](http://vbird.dic.ksu.edu.tw/linux_basic/0220filemanager_4.php#sbit)
 
-只针对目录有效，当使用者在该目录下创建文件或目录时，仅有自己与 root 才有权力删除该文件
+只针对 __目录__ 有效，当使用者在该目录下创建文件或目录时，仅有自己与 root 才有权力删除该文件
 
 ## 修改文件所属者/组
 间接修改了权限
@@ -705,7 +711,7 @@ chmod 744 a.txt
 ```shell
 chown <username> <file>   #修改文件所属者
 chown .<groupname> <file> #修改文件所组，前面加点
-chown <username> .<groupname> <file> #同时修改文件所属者与组
+chown <username>:<groupname> <file> #同时修改文件所属者与组
 chgrp <groupname> <file>  #修改文件所组
 ```
 
@@ -902,7 +908,7 @@ let x=$x+1
 
 ## 杂项
 ```shell
-mount                             #查看目前所有挂载
+mount -l                          #查看目前所有挂载
 mount /dev/sdb /media             #挂载U盘、光盘
       /dev/sr0 /mnt
 umount /dev/sdb                   #取消挂载U盘
