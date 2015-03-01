@@ -945,7 +945,7 @@ st_ctim |last-change time of i-node status   |chmod, chown | -c
 ![img](../../imgs/apue_07.png)
 
 ## futimens/utimensat/utimes函数
-一个文件的访问和修改时间可用该函数
+一个文件的访问和修改时间可用该函数，下面函数可以指定纳秒级精度的时间戳
 
 ```c
 #include <sys/stat.h>
@@ -954,13 +954,21 @@ int utimensat(int fd, const char *path, const struct timespec times[2], int flag
 //Both return: 0 if OK, −1 on error
 ```
 
+`times`数组第一个元素包含访问时间，第二包包含修改时间
+
+- 如果`times`参数是一个空指针，则访问时间和修改时间两者设置为当前时间
+- 如果`times`参数某一元素中的`tv_nsec`字段的值为`UTIME_NOW`，相应的时间戳为当前时间，忽略`tv_sec`
+- 如果`times`参数某一元素中的`tv_nsec`字段的值为`UTIME_OMIT`，相应的时间戳不变，忽略`tv_sec`
+- 除维持时间戳不变，即`times`的两个元素中的`tv_nsec`字段的值均为`UTIME_OMIT`，否则，要么为超级用户进程，要么进程的有效用户ID等于该文件的所有者ID，则该进程对该文件必须具有写权限
+
+
 ```c
 #include <sys/time.h>
 int utimes(const char *pathname, const struct timeval times[2]);
 //Returns: 0 if OK,−1 on error
 ```
 
-我们不能对更改状态时间`st_ctime`指定一个值，当调用`utime`函数时，此字段将被自动更新
+我们不能对更改状态时间`st_ctim`指定一个值，当调用`utime`函数时，此字段将被自动更新
 
 
 ## mkdir/mkdirat/rmdir函数
@@ -971,13 +979,19 @@ int mkdirat(int fd, const char *pathname, mode_t mode);
 //Both return: 0 if OK, −1 on error
 ```
 
+所指定的文件访问权限mode，由进程的文件模式mask修改
+
 ```c
 #include <unistd.h>
 int rmdir(const char *pathname);
 //Returns: 0 if OK,−1 on error
 ```
 
+如果调用此函数使目录的链接计数成0，并且也没有其它进程打开此目录，则释放占用的空间。为了执行成功，目录必须是空的
+
 ## 读目录
+为了防止文件系统产生混乱，只有内核才能写目录。一个目录的写权限位和执行权限位，并不代表能否写目录本身
+
 ```c
 #include <dirent.h>
 DIR *opendir(const char *pathname );
@@ -1004,6 +1018,14 @@ int fchdir(int fd );
 当前工作目录是进程的一个属性，它只影响调用`chdir`的进程本身，而不影响其他进程
 
 如果`open`或`creat`创建已经存在的文件，则该文件的访问权限位不变
+
+```c
+#include <unistd.h>
+char *getcwd(char *buf,size_tsize);
+//Returns:bufif OK,NULLon error
+```
+
+取得当前工作目录的绝对路径
 
 标准IO库
 ========
@@ -1359,6 +1381,52 @@ int mkstemp(char * template );
 
 与`tempfile`不同，它们所创建的临时文件不会自动删除(需要手工`unlink`)，`tmpnam/tempnam`不足之处是，在返回唯一路径名和应用程序用该路径创建文件之间有一个时间窗口，不同进程可能创建同名文件，而`mkstemp`不会产生此问题
 
+## 内存流
+目前只有linux 3.2.0支持内存流
+
+```c
+#include <stdio.h>
+FILE *fmemopen(void *restrict buf,size_t size, const char *restrict type);
+//Returns: stream pointer if OK,NULLon error
+```
+
+如果`buf`为空，则函数分配`size`字节的缓冲区，当流关闭时，缓冲区被释放
+
+```table
+type             | Description
+-----------------|------------
+r or rb          | open for reading
+w or wb          | open for writing
+a or ab          | append; open for writing at first null byte
+r+ or r+b or rb+ | open for reading and writing
+w+ or w+b or wb+ | truncate to 0 length and open for reading and writing
+a+ or a+b or ab+ | append; open for reading and writing at first null byte
+```
+
+`type`参数取值与标准IO类似，但有微小差别：
+
+- 无论何时以追加写方式打开内存流时，当前文件位置为缓冲区中的第一个null字节，如果不存在null字节，则当前位置就设为缓冲区结尾的后一个字节
+> 内存流不适合存储二进制数据（适合字符串），二进制数据在数据尾端之前就可以包含多个null字节
+- 当流并不是以追加写方式打开时，当前位置为缓冲区的开始位置
+- 如果`buf`参数是一个null指针，打开流进行读或写没有任何意义，无法找到缓冲区地址，只写打开流，意味着无法再读了，只读方式打开意味着只能读取那些无意义的数据
+- 任何时候需要增加流缓冲区的数据量，以及调用`fclose/fflush/fseek/fseeko/fsetpos`时，都会在当前位置写入一个null字节
+
+用于创建内存流的另外两个函数，一个是面向字节的，另一个是面向宽字节的
+
+```c
+#include <stdio.h>
+FILE *open_memstream(char **bufp,size_t *sizep);
+#include <wchar.h>
+FILE *open_wmemstream(wchar_t **bufp,size_t *sizep);
+//Both return: stream pointer if OK,NULLon error
+```
+
+- 创建的流只能写打开
+- 不能指定自己的缓冲区，但可通过`bufp`和`sizep`参数访问缓冲区地址和大小
+- 关闭流后需要自行释放缓冲区
+- 对流添加字节会增加缓冲区大小
+- 缓冲区地址和长度只有在调用`fclose/fflush`后才有效，这些值只有在下一次流写入或调用`fclose`前才有效（因为缓冲区可以增长，可能需要重新分配）
+
 
 系统数据文件和信息
 ===============
@@ -1594,6 +1662,7 @@ time_t time(time_t *calptr);
 
 时间值总是作为函数值，如果参数不为空，也存放在指针指向的单元内
 
+POSXI.1扩展增加了对多个系统时钟的支持，时钟通过`clockid_t`类型进行标识：
 
 ```table
 Identifier                 | Option                    | Description
@@ -1604,11 +1673,15 @@ Identifier                 | Option                    | Description
 `CLOCK_THREAD_CPUTIME_ID`  | `_POSIX_THREAD_CPUTIME`   | CPU time for calling thread
 ```
 
+`clock_gettime`用取获得指定时钟的时间，当`clock_id`为`CLOCK_REALTIME`时，与`time`函数功能相似，但精度更高
+
 ```c
 #include <sys/time.h>
 int clock_gettime(clockid_t clock_id,struct timespec *tsp);
 //Returns: 0 if OK,−1 on error
 ```
+
+`clock_getres`把参数`tsp`指向的结构初始化为与`clock_id`参数对应的时钟精度。
 
 ```c
 #include <sys/time.h>
@@ -1616,14 +1689,15 @@ int clock_getres(clockid_t clock_id,struct timespec *tsp);
 //Returns: 0 if OK,−1 on error
 ```
 
+对特定时钟设置时间，需要适当的特权来更改时钟值，并且有些时钟是不能修改的
+
 ```c
 #include <sys/time.h>
 int clock_settime(clockid_t clock_id,const struct timespec *tsp);
 //Returns: 0 if OK,−1 on error
 ```
 
-
-与`time`相比，`gettimeofday`提供了微秒级，这对某些应用很重要
+与`time`相比，`gettimeofday`提供了微秒级，这对某些应用很重要，SUSv4中已弃用
 
 ```c
 #include <sys/time.h>
@@ -1670,6 +1744,7 @@ time_t mktime(struct tm *tmptr);
 //Returns: calendar time if OK, −1 on error
 ```
 
+下面函数用于定制产生字符串（`asctime/ctime`已弃用，易受缓冲区溢出问题而影响）
 
 ```c
 #include <time.h>
@@ -1682,10 +1757,54 @@ size_t strftime_l(char *restrict buf, size_t maxsize,
 //Both return: number of characters stored in array if room, 0 otherwise
 ```
 
+`strftime_l`允许指定区域
+
 格式化的结果放在一个长度为`maxsize`个字符的`buf`数组中，`format`是格式
 
 ![img](../../imgs/apue_16.png)
 
+`strptime`则反过来，将字符串转换成时间
+
+```c
+#include <time.h>
+char *strptime(const char *restrict buf,const char *restrict format, struct tm *restrict tmptr);
+//Returns: pointer to one character past last character parsed,NULLotherwise
+```
+
+```table
+Format  |Description
+--------|------------
+%a      |abbreviated or full weekday name
+%A      |same as%a
+%b      |abbreviated or full month name
+%B      |same as%b
+%c      |date and time
+%C      |all but the last two digits of the year
+%d      |day of the month: [01–31]
+%D      |date[MM/DD/YY]
+%e      |same as%d
+%h      |same as%b
+%H      |hour of the day (24-hour format): [00–23]
+%I      |hour of the day (12-hour format): [01–12]
+%j      |day of the year: [001–366]
+%m      |month: [01–12]
+%M      |minute: [00–59]
+%n      |any white space
+%p      |AM/PM
+%r      |locale’s time (12-hour format, AM/PM notation)
+%R      |time as%H:%M
+%S      |second: [00–60]
+%t      |any white space
+%T      |time as%H:%M:%S
+%U      |Sunday week number: [00–53]
+%w      |weekday: [0 = Sunday,0–6]
+%W      |Monday week number: [00–53]
+%x      |locale’s date
+%X      |locale’s time
+%y      |last two digits of year: [00–99]
+%Y      |year
+%%      |translates to a percent sign
+```
 
 进程环境
 =============
