@@ -721,20 +721,116 @@ chgrp <groupname> <file>  #修改文件所组
 ## 查看进程
 ```shell
 ps      #当前终端上进程
-ps a    #所有终端上进程
-ps ax   #所有进程，包括非终端上进程
-ps aux  #把进程启动的用户(及起始时间)包含进来
-ps e    #显示shell环境信息
-ps f    #格式化父子进程的显示
+   a    #所有终端上进程，-a则为只显示非终端上进程
+   ax   #所有进程，包括非终端上进程
+   aux  #把进程启动的用户(及起始时间)包含进来
+   e    #显示shell环境信息
+   f    #格式化父子进程的显示
+   l    #较长、较详细的将该 PID 的的资讯列出
+   j    #工作的格式
+   axjf #连同部分程序树状态
 
-top
-free -k
+ps -l
+   #F：代表这个程序旗标 (process flags)，说明这个程序的总结权限
+       #4 表示此程序的权限为 root;
+       #1 则表示此子程序仅进行复制(fork)而没有实际运行(exec)
+   #S：代表这个程序的状态 (STAT)，主要的状态有
+       #R (Running)：该程序正在运行中；
+       #S (Sleep)：该程序目前正在睡眠状态(idle)，但可以被唤醒(signal)。
+       #D ：不可被唤醒的睡眠状态，通常这支程序可能在等待 I/O 的情况(ex>列印)
+       #T ：停止状态(stop)，可能是在工作控制(背景暂停)或除错 (traced) 状态；
+       #Z (Zombie)：僵尸状态，程序已经终止但却无法被移除至内存外。
+   #UID/PID/PPID：代表『此程序被该 UID 所拥有/程序的 PID 号码/此程序的父程序 PID 号码』
+   #C：代表 CPU 使用率，单位为百分比；
+   #PRI/NI：Priority/Nice 的缩写，数值越小代表该程序越快被 CPU 运行
+   #ADDR/SZ/WCHAN：
+       #ADDR 是 kernel function，指出该程序在内存的哪个部分，如果是个 running 的程序，一般就会显示『 - 』
+       #SZ 代表此程序用掉多少内存
+       #WCHAN 表示目前程序是否运行中，同样的， 若为 - 表示正在运行中
+   #TTY：登陆者的终端机位置，若为远程登陆则使用动态终端介面 (pts/n)；
+   #TIME：使用掉的 CPU 时间，注意，是此程序实际花费 CPU 运行的时间，而不是系统时间；
+   #CMD：就是 command 的缩写，造成此程序的触发程序之命令为何
 
+ps aux
+   #USER：该 process 属於那个使用者帐号的？
+   #PID ：该 process 的程序识别码。
+   #%CPU：该 process 使用掉的 CPU 资源百分比；
+   #%MEM：该 process 所占用的实体内存百分比；
+   #VSZ ：该 process 使用掉的虚拟内存量 (Kbytes)
+   #RSS ：该 process 占用的固定的内存量 (Kbytes)
+   #TTY ：该 process 是在那个终端机上面运行，若与终端机无关则显示 ?，
+          #tty1-tty6 是本机上面的登陆者程序，若为 pts/0 等等的，则表示为由网络连接进主机的程序。
+   #STAT：该程序目前的状态，状态显示与 ps -l 的 S 旗标相同 (R/S/T/Z)
+   #START：该 process 被触发启动的时间；
+   #TIME ：该 process 实际使用 CPU 运行的时间。
+   #COMMAND：该程序的实际命令为何？
+
+pstree
+   -p   #列出每个 process 的 PID
+   -u   #列出每个 process 的所属帐号名称
 ```
+
+## 查看系统状态
+```shell
+top
+   -d   #后面可以接秒数，就是整个程序画面升级的秒数。默认是 5 秒；
+   -n   #与 -b 搭配，意义是，需要进行几次 top 的输出结果
+   -p   #指定某些个 PID 来进行观察监测而已
+
+vmstat
+   -a   #使用 inactive/active(活跃与否) 取代 buffer/cache 的内存输出资讯；
+   -f   #启动到目前为止，系统复制 (fork) 的程序数；
+   -s   #将一些事件 (启动至目前为止) 导致的内存变化情况列表说明；
+   -S   #后面可以接单位，让显示的数据有单位。例如 K/M 取代 bytes 的容量；
+   -d   #列出磁碟的读写总量统计表
+   -p   #后面列出分割槽，可显示该分割槽的读写总量统计表
+   #procs
+        #r ：等待运行中的程序数量
+        #b：不可被唤醒的程序数量
+        #这两个项目越多，代表系统越忙碌 (因为系统太忙，所以很多程序就无法被运行或一直在等待而无法被唤醒之故)。
+   #memory
+        #swpd：虚拟内存被使用的容量；
+        #free：未被使用的内存容量；
+        #buff：用於缓冲内存；
+        #cache：用於高速缓存。
+        #这部份则与 free 是相同的。
+   #swap
+        #si：由磁碟中将程序取出的量；
+        #so：由於内存不足而将没用到的程序写入到磁碟的 swap 的容量。
+        #如果 si/so 的数值太大，表示内存内的数据常常得在磁碟与主内存之间传来传去，系统效能会很差！
+   #io
+        #bi：由磁碟写入的区块数量；
+        #bo：写入到磁碟去的区块数量。
+        #如果这部份的值越高，代表系统的 I/O 非常忙碌！
+   #system
+        #in：每秒被中断的程序次数；
+        #cs：每秒钟进行的事件切换次数；
+        #这两个数值越大，代表系统与周边设备的沟通非常频繁！ 这些周边设备当然包括磁碟、网络卡、时间钟等。
+   #cup
+        #us：非核心层的 CPU 使用状态；
+        #sy：核心层所使用的 CPU 状态；
+        #id：闲置的状态；
+        #wa：等待 I/O 所耗费的 CPU 状态；
+        #st：被虚拟机器 (virtual machine) 所盗用的 CPU 使用状态 (2.6.11 以后才支持)。
+
+vmstat -a <延迟> <总计侦测次数> #CPU/内存等资讯
+vmstat -fs                     #内存相关
+vmstat -S <单位>               #配置显示数据的单位
+vmstat -d                      #与磁碟有关
+vmstat -p <分割槽>             #与磁碟有关
+
+free    #内存空间
+   -m   #字节单位为M
+   -t   #在输出的最终结果，显示实体内存与 swap 的总量
+```
+
 
 ## 杀死进程
 ```shell
-ps aux | grep <keyword>   #查到进程pid
+ps aux | grep <keyword>         #查到进程pid
+ps aux | egrep '(cron|syslog)'  #找出与 cron 与 syslog 这两个服务有关的PID
+pidof sshd                      #查找sshd的进程pid
+
 kill -9 <pid>
 ```
 
@@ -1009,6 +1105,7 @@ netstat -ntlp
     -t                        #显示TCP协议的连接情况，-u是UDP
     -l                        #正在listening的
     -p                        #显示程序名字
+    -a                        #将目前系统上所有的连线、监听、Socket 数据都列出来
 
 service iptables stop         #关闭防火墙
 iptables -F                   #关闭防火墙
