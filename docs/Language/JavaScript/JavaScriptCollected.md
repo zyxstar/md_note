@@ -5246,7 +5246,7 @@ debounce和throttle很像，debounce是空闲时间必须大于或等于 一定�
 
 underscore.js有对throttle和debounce的封装。jQuery也有一个throttle和debounce的插件：jQuery throttle / debounce
 
-以下摘自underscore.js 1.2，最新版本有变化，[underscore.js更详细的演进](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.github.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FUnderscore_throttle.md)：
+以下摘自underscore.js 1.2，最新版本有变化，[underscore.js更详细的演进](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.gitcafe.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FUnderscore_throttle.md)：
 
 <!--language: !js-->
 
