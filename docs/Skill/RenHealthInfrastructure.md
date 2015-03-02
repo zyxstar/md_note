@@ -581,7 +581,7 @@ __规则__
 
 ![db_rbac](../../imgs/db_rbac.png)
 
-[参考](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.gitcafe.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FDataBase.md#TOC6)
+[参考](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FDataBase.md#TOC6)
 
 ## 规则描述
 领域类中具有许多规则描述的类，必须被单独标识，而不是作为某个类中的某个方法的片断

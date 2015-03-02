@@ -410,7 +410,7 @@ low                       └──────────┘     └───�
 #### 破坏自动变量的内存区域
 如果没有做数组长度检查，将数据写入了超过数组内存区域的地方，可能会破坏相邻的自动变量的内容。如果一直破坏下去，有可能将存储函数的 __返回信息给破坏掉__，导致函数不能返回。
 
-示例可参考[为什么程序会崩溃](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.gitcafe.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC13.3)
+示例可参考[为什么程序会崩溃](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC13.3)
 
 ### 可变长参数
 C语言的参数是 __从后往前__ 被堆积在栈中的，应该由 __调用方__ 将参数从栈中除去
@@ -1818,7 +1818,7 @@ char *slogan[7];
         return 0;
     }
 
-> 也可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fraw.gitcafe.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FProgrammingParadigm%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
+> 也可以使用 [泛型栈](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md#TOC7.1) 来进行编码，`push()`即相当于此处的`add_data()`
 
 ### 命令行参数
 实现`cat`命令
