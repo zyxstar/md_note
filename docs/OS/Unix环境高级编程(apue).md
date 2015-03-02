@@ -1841,7 +1841,7 @@ void _Exit(int status );
 void _exit(int status );
 ```
 
-
+前两者是ISO C说明的，后一个是POSIX.1说明的
 
 
 
