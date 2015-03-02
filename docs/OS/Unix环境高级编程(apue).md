@@ -80,7 +80,7 @@ Returns: new file offset if OK,−1 on error
 若`lseek`成功，则返回新的文件偏移量，为此可以用以下方式确定打开文件的当前偏移量(相当于标准库中的`ftell`?)
 
 ```c
-off_t  currpos;
+off_t currpos;
 currpos = lseek(fd, 0, SEEK_CUR);
 ```
 
@@ -1830,7 +1830,7 @@ Format  |Description
 exit(main(argc, argv));
 ```
 
-### exit函数
+### 退出函数
 `_exit`和`_Exit`立即进入内核，`exit`则先执行一些清理处理（包括调用执行各终止处理程序，关闭所有标准IO流等），然后进入内核
 
 ```c
@@ -1843,9 +1843,173 @@ void _exit(int status );
 
 前两者是ISO C说明的，后一个是POSIX.1说明的
 
+调用这些函数时不带终止状态；`main`执行了一个无返回值的`return`；`main`没声明返回类型为整型，则该进程的终止状态是未定义的。但若`main`返回类型为整型，并且`main`执行到最后一条语句时返回，则认为终止状态为0
 
+### atexit函数
+```c
+#include <stdlib.h>
+int atexit(void (*func)(void));
+//Returns: 0 if OK, nonzero on error
+```
 
+`exit`调用这些注册函数（终止处理程序）的顺序与它们登记时顺序相反，同一函数若登记多次，就执行多次
 
+![img](../../imgs/apue_17.png)
+
+## 命令行参数
+ISO C和POSIX.1均要求`argv[argc]`是一个空指针，可将参数处理循环写成：
+
+```c
+for (i = 0; argv[i] != NULL; i++)
+```
+
+## 环境表
+全局变量`environ`
+
+```c
+extern char **environ;
+```
+
+![img](../../imgs/apue_18.png)
+
+通常使用`getenv/putenv`来访问特定的环境变量，而不是用`environ`(除非遍历整个环境变量)
+
+## C程序的存储空间布局
+- Text segment，CPU执行的机器指指令部分，可共享，通常为只读
+- Initialized data segment，也称数据段，程序中任何函数之外，需明确赋初值的变量
+- Uninitialized data segment，也称bss段，函数外的变量声明，内核将此段中数据初始化为0或空指针
+- Stack，自动变量以及每次函数调用时所需保存的信息
+- Heap，通常在堆中进行动态存储分配，它位于bss和stack之间
+
+![img](../../imgs/apue_19.png)
+
+> 32位intel x86处理器上的linux，正文段从0x08048000单元开始，栈底则在0xC0000000之下开始
+
+未初始化段内容并不存放在磁盘程序文件中，因为内核需要在程序开始运行前将它们都设置为0，需要存放在磁盘程序文件中的段只有正文段和初始化数据段
+
+`size(1)`报告正文段、数据段和bss段的长度（以字节为单位）
+
+## 共享库
+动态链接，减少了执行文件的长度，但增加了一些运行时开销，这种开销发生在该程序第一次被执行，或每个共享库函数第一次被调用时。
+
+共享库另一个优点是可以用库函数的新版本代替老版本，而无需对使用该库的程序重新链接编译
+
+```shell
+$gcc -static hello1.c    #prevent gcc from using shared libraries
+$ls -l a.out
+-rwxr-xr-x  1 sar  879443 Sep 2 10:39 a.out
+$size a.out
+text    data  bss    dec    hex    filename
+787775  6128  11272  805175 c4937  a.out
+```
+
+```shell
+$gcc hello1.c gcc       #defaults to use shared libraries
+$ls -l a.out
+-rwxr-xr-x  1 sar  8378 Sep 2 10:39 a.out
+$size a.out
+text  data  bss dec   hex  filename
+1176  504   16  1696  6a0  a.out
+```
+
+## 存储空间分配
+```c
+#include <stdlib.h>
+void *malloc(size_tsize);
+void *calloc(size_tnobj,size_tsize);
+void *realloc(void *ptr,size_tnewsize);
+//All three return: non-null pointer if OK,NULL on error
+void free(void *ptr);
+```
+
+这三个分配函数所返回的指针一定是适当对齐的，使其可用于任何数据对象，某些特定系统上，double必须8倍数地址单元处开始，那么这此函数返回的指针都应这样对齐
+
+> 这些分配通常用`sbrk(2)`系统调用来实现
+> 
+> 标准的`malloc`算法是最佳适配或首次适配，现在许多分配程序基于快速适配`auick-fit`
+> 
+> `alloca`在当前函数的栈上分配存储空间，而不是堆中，当函数返回时，自动释放，缺点是增加了栈的长度
+
+## 环境变量
+```c
+#include <stdlib.h>
+char *getenv(const char *name);
+//Returns: pointer to value associated with name,NULL if not found
+```
+
+![img](../../imgs/apue_20.png)
+
+有时需要设置环境变量，虽然能影响的只是当前进程以及后生成和调用的任何子进程，不能影响父进程，但仍然很有用
+
+![img](../../imgs/apue_21.png)
+
+```c
+#include <stdlib.h>
+int putenv(char *str);
+//Returns: 0 if OK, nonzero on error
+int setenv(const char *name,const char *value,int rewrite);
+int unsetenv(const char *name);
+//Both return: 0 if OK,−1 on error
+```
+
+- `putenv`取形式`name=value`的字符串
+- `setenv`会分配存储空间，但`putenv`自由的将传递给它的参数字符串直接放到环境中，因此 __将栈中字符串传递给它会出错__
+
+## setjmp/longjmp函数
+`setjmp/longjmp`对处理发生在很深层嵌套函数调用中的出错情况非常有用，在栈上跳过若干调用帧，返回到当前函数 __调用路径__ 上的某一个函数中
+
+在希望返回到的位置调用`setjmp`，`longjmp`用于发生错误时调用，参数`val`为非零值，方便在`setjmp`时判断是谁发生了错误
+
+当通过`longjmp`返回到的函数中，原先的变量是否恢复，大多数标准称它们的值为不确定。如果有一个自动变量，而 __不想使其回滚__，可定义为`volatile`（将不被优化而放到寄存器中），另外，声明为全局变量或静态变量的值，在执行`longjmp`时保持不变
+
+```c
+#include <setjmp.h>
+int setjmp(jmp_buf env);
+//Returns: 0 if called directly,nonzero if returning from a call to longjmp
+void longjmp(jmp_buf env,int val);
+```
+
+## getrlimit/setrlimit函数
+查询和更改进程的资源限制
+
+```c
+#include <sys/resource.h>
+int getrlimit(int resource,struct rlimit *rlptr);
+int setrlimit(int resource,const struct rlimit *rlptr);
+//Both return: 0 if OK,−1 on error
+```
+
+每一次调用都指定一个资源以及一个指向下列结构的指针
+
+```c
+struct rlimit {
+  rlim_t  rlim_cur;  /* soft limit: current limit */
+  rlim_t  rlim_max;  /* hard limit: maximum value for rlim_cur */
+};
+```
+
+![img](../../imgs/apue_22.png)
+
+- `RLIMIT_AS` The maximum size in bytes of a process’s total available memory. This affects the `sbrk` function and the `mmap` function
+- `RLIMIT_CORE` The maximum size in bytes of a corefile. A limit of 0 prevents the creation of a corefile.
+- `RLIMIT_CPU` The maximum amount of CPU time in seconds. When the soft limit is exceeded, the `SIGXCPU` signal is sent to the process.
+- `RLIMIT_DATA` The maximum size in bytes of the data segment: the sum of the initialized data, uninitialized data, and heap
+- `RLIMIT_FSIZE` The maximum size in bytes of a file that may be created. When the soft limit is exceeded, the process is sent the `SIGXFSZ` signal.
+- `RLIMIT_MEMLOCK` The maximum amount of memory in bytes that a process can lock into memory using `mlock(2)`.
+- `RLIMIT_MSGQUEUE` The maximum amount of memory in bytes that a process can allocate for POSIX message queues.
+- `RLIMIT_NICE` The limit to which a process’s nice value can be raised to affect its scheduling priority.
+- `RLIMIT_NOFILE` The maximum number of open files per process. Changing this limit affects the value returned by the `sysconf` function for its `_SC_OPEN_MAX` argument
+- `RLIMIT_NPROC` The maximum number of child processes per real user ID. Changing this limit affects the value returned for `_SC_CHILD_MAX` by the `sysconf` function
+- `RLIMIT_NPTS` The maximum number of pseudo terminals that a user can have open at one time.
+- `RLIMIT_RSS` Maximum resident set size(RSS) in bytes. If available physical memory is low, the kernel takes memory from processes that exceed their RSS.
+- `RLIMIT_SBSIZE` The maximum size in bytes of socket buffers that a user can consume at any given time.
+- `RLIMIT_SIGPENDING` The maximum number of signals that can be queued for a
+process. This limit is enforced by the `sigqueue` function.
+- `RLIMIT_STACK` The maximum size in bytes of the stack.
+- `RLIMIT_SWAP` The maximum amount of swap space in bytes that a user can consume.
+- `RLIMIT_VMEM` This is a synonym for `RLIMIT_AS`.
+
+资源限制影响到调用进程并由其子进程继承。为了影响一个用户所有后续进程，需将资源限制在设置构造在shell之中
 
 
 ## 函数
