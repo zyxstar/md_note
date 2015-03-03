@@ -2012,6 +2012,98 @@ process. This limit is enforced by the `sigqueue` function.
 资源限制影响到调用进程并由其子进程继承。为了影响一个用户所有后续进程，需将资源限制在设置构造在shell之中
 
 
+进程控制
+===========
+## 进程标识
+- pid为0通常是调度进程，称为交换进程
+- pid为1通常是`init`进程，在自举过程结束时 __由内核调用__。该进程决不会终止，它是普通进程（交换进程为内核进程），但以超级用户特权执行，是所有孤儿进程的父进程
+> MacOSX 10.4中`init`被`launchd`进程所代替
+- 某些unix的虚拟存储器实现中，pid为2的是页守护进程，负责支持虚拟存储器系统的分页操作
+
+```c
+#include <unistd.h>
+pid_t getpid(void);
+//Returns: process ID of calling process
+pid_t getppid(void);
+//Returns: parent process ID of calling process
+uid_t getuid(void);
+//Returns: real user ID of calling process
+uid_t geteuid(void);
+//Returns: effective user ID of calling process
+gid_t getgid(void);
+//Returns: real group ID of calling process
+gid_t getegid(void);
+//Returns: effective group ID of calling process
+```
+
+## fork函数
+```c
+#include <unistd.h>
+pid_t fork(void);
+//Returns: 0 in child, process ID of child in parent,−1 on error
+```
+
+子进程和父进程继续执行`fork`调用之后的指令，子进程是父进程的副本，__获得父进程的数据空间、堆和栈的副本（包括缓冲区数据）__，但父子进程 __并不共享这些存储空间__，子进程对变量做的改变不会影响父进程。父子进程共享正文段（Text Segment）
+
+由于在`fork`之后经常跟随`exec`，现在许多实现并不执行一个父进程的数据段、栈和堆的完全副本，而使用 __写时复制__（COW）技术，这些区域由父子进程共享，并且内核将它们的访问权限改变为只读，如试图修改这些区域，则内核只为修改区域的那块内存制作一个副本，通常是虚拟存储系统中的一“页”
+
+> linux 3.2提供了`clone(2)`系统调用，一种`fork`推广形式，允许调用者控制哪些部分由父进程和子进程共享
+
+### 文件共享
+在重定向父进程的标准输出时，子进程的标准输出也被重定向，`fork`的一个特性就是，父进程的所有打开文件描述符都被复制到子进程中，对于每个描述符，好像执行了`dup`
+
+![img](../../imgs/apue_23.png)
+
+父子进程共享同一个文件偏移量，子进程写到文件时，将更新与父进程共享的该文件的偏移量，如果两者都写到标准输出时，后写者将追加输出
+
+父子进程写同一描述符指向的文件，如果不做同步，那么它们的输出就会相互混合
+
+`fork`之后处理文件描述符：
+
+- 父进程等待子进程完成，父进程无需对其描述符做任何处理，当子进程终止后，它曾进行过读、写操作的任一共享描述符的文件偏移量已做了相应更新
+- 父进程和子进程各自执行不同的程序段，各自关闭它们不需使用的文件描述符，这是网络服务进程经常使用的
+
+子进程继承的其它属性：
+
+- Real user ID, real group ID, effective user ID, and effective group ID
+- Supplementary group IDs
+- Process group ID
+- Session ID
+- Controlling terminal
+- The set-user-ID and set-group-ID flags
+- Current working directory
+- Root directory
+- File mode creation mask
+- Signal mask and dispositions
+- The close-on-exec flag for any open file descriptors
+- Environment
+- Attached shared memory segments
+- Memory mappings
+- Resource limits
+
+父进程和子进程之间的区别：
+
+- The return values from fork are different.
+- The process IDs are different.
+- The two processes have different parent process IDs: the parent process ID of the child is the parent; the parent process ID of the parent doesn’t change.
+- The child’s `tms_utime`, `tms_stime`, `tms_cutime`,and `tms_cstime` values are set to 0
+- File locks set by the parent are not inherited by the child.
+- Pending alarms are cleared for the child.
+- The set of pending signals for the child is set to the empty set.
+
+## vfork函数
+> 可移植的应用程序不应该使用它
+
+`vfork`也用于创建新进程，而该新进程的目的是`exec`一个新程序，但它并不将父进程地址空间完全复制到子进程，因为子进程会立即调用`exec`(或`exit`)，不过在子进程调用`exec/exit`之前，它在父进程的空间中运行，如果子进程修改数据（除用于存放`vfork`返回值的变量）、进行函数调用、或没有调用`exec/exit`，可能会带来未知结果
+
+`vfork`保证子进程先运行，在它调用`exec/exit`后父进程才可能被调度运行，如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则导致死锁
+
+## exit函数
+```c
+
+```
+
+
 ## 函数
 ```c
 

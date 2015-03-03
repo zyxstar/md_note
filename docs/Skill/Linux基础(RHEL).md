@@ -1192,7 +1192,9 @@ rsync: ALL  #利用 ALL 配置让所有其他来源不可登陆
 
 服务配置
 ========
-## daemon相关目录
+## daemon守护进程
+相关目录
+
 - `/etc/init.d/*`启动脚本放置处
 - `/etc/sysconfig/*`各服务的初始化环境配置文件
 - `/etc/xinetd.conf`, `/etc/xinetd.d/*`super daemon 配置文件
