@@ -72,6 +72,9 @@ SCSI硬盘
 /usr  ext3 看情况（程序数据）
 /     ext3 看情况
 ```
+
+> 要记得 `/lib` 不可以与 `/` 分别放在不同的 partition
+
 使用`sudo fdisk -l`可查看硬盘分区(partition)情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
 
 ## 快捷键
@@ -140,6 +143,26 @@ info <command>
           info make -o make.txt -s
 
 ```
+
+## 启动过程
+- 加载 BIOS 的硬件资讯与进行自我测试，并依据配置取得第一个可启动的装置；
+- 读取并运行第一个启动装置内 MBR 的 boot Loader (亦即是 `grub`, `spfdisk` 等程序)；
+- 依据 boot loader 的配置加载 Kernel ，Kernel 会开始侦测硬件与加载驱动程序；
+- 在硬件驱动成功后，Kernel 会主动呼叫 `init` 程序，而 `init` 会取得 run-level 资讯；
+- `init` 运行 `/etc/rc.d/rc.sysinit` 文件来准备软件运行的作业环境 (如网络、时区等)；
+- `init` 运行 run-level 的各个服务之启动 (script 方式)；
+- `init` 运行 `/etc/rc.d/rc.local` 文件；
+- `init` 运行终端机模拟程序 `mingetty` 来启动 `login` 程序，最后就等待使用者登录啦；
+
+runlevel:
+
+- 0 - halt (系统直接关机)
+- 1 - single user mode (单人维护模式，用在系统出问题时的维护)
+- 2 - Multi-user, without NFS (类似底下的 runlevel 3，但无 NFS 服务)
+- 3 - Full multi-user mode (完整含有网络功能的纯文字模式)
+- 4 - unused (系统保留功能)
+- 5 - X11 (与 runlevel 3 类似，但加载使用 X Window)
+- 6 - reboot (重新启动)
 
 
 ## 关机
@@ -242,6 +265,7 @@ find <path>
     -size +1000M
     #查找指定类型的文件，然后指定按时间排序
     find . -name *.php |xargs ls -alt
+    ls -alt $(find . -name *.php)
     #统计所有c文件的行数总和，不包括空行
     find . -name "*.c" |xargs cat|grep -v ^$|wc -l
 
@@ -890,6 +914,11 @@ Linux其它
 tee         #在管道过程中产生分支
             grep -v "a" file | tee file1 | grep -v "b" file
 
+xargs
+            find . -name *.php |xargs ls -alt
+            #等同于
+            ls -alt $(find . -name *.php)
+
 ```
 
 > `except`可用于写交互性的脚本
@@ -1117,7 +1146,7 @@ system-config-network         #GUI方式配置，RHEL6有问题
                               #可把它关闭`/etc/init.d/NetWorkManager stop`
 ```
 
-> 常用服务端口号
+> 常用服务端口号，可通过`grep 3306 /etc/services`查看某端口的服务
 
 > - tcp
 >>   - ftp 21
@@ -1131,12 +1160,74 @@ system-config-network         #GUI方式配置，RHEL6有问题
 > - udp
 >>   - dhcp 67 68
 
+
+
 > windows下网络配置查看
 >
 > `ipconfig [/release] [/renew] [/all]`
 
+## 服务的防火墙
+任何以 xinetd 管理的服务，都可以透过 `/etc/hosts.allow`, `/etc/hosts.deny`来配置防火墙，它们也是 `/usr/sbin/tcpd` 的配置文件，这两个文件的判断依据是allow为优先
+
+基本上只要一个服务受到 xinetd 管理，或者是该服务的程序支持 TCP Wrappers 函式的功能时，那么该服务的防火墙方面的配置就能够以 `/etc/hosts.{allow,deny}` 来处
+
+```shell
+ldd $(which sshd httpd)
+#有无支持tcp wrappers需要看是否依赖libwrap.so
+#sshd 有支持，但是 httpd 则没有支持
+```
+
+例：只允许 140.116.0.0/255.255.0.0 与 203.71.39.0/255.255.255.0 这两个网域，及 203.71.38.123 这个主机可以进入我们的 rsync 服务器；此外，其他的 IP 全部都挡掉！
+
+```shell
+vim /etc/hosts.allow
+rsync:  140.116.0.0/255.255.0.0
+rsync:  203.71.39.0/255.255.255.0
+rsync:  203.71.38.123
+rsync:  LOCAL
+
+vim /etc/hosts.deny
+rsync: ALL  #利用 ALL 配置让所有其他来源不可登陆
+```
+
 服务配置
 ========
+## daemon相关目录
+- `/etc/init.d/*`启动脚本放置处
+- `/etc/sysconfig/*`各服务的初始化环境配置文件
+- `/etc/xinetd.conf`, `/etc/xinetd.d/*`super daemon 配置文件
+- `/etc/*`各服务各自的配置文件
+- `/var/lib/*`各服务产生的数据库
+- `/var/run/*`各服务的程序之 PID 记录处
+
+## 查看所有服务
+```shell
+#找出目前系统开启的『网络服务』有哪些
+netstat -tulp
+
+#找出所有的有监听网络的服务 (包含 socket 状态）
+netstat -lnp
+
+#观察所有的服务状态
+service --status-all
+service --status-all | grep httpd
+```
+
+## 开机启动服务
+`chkconfig`： 管理系统服务默认启动启动与否
+
+```shell
+#列出目前系统上面所有被 chkconfig 管理的服务
+chkconfig --list |more
+
+#显示出目前在 run level 3 为启动的服务
+chkconfig --list | grep '3:on'
+
+#让 atd 这个服务在 run level 为 3, 4, 5 时启动：
+chkconfig --level 345 atd on
+```
+
+
 ## SSH
 代替了telnet，后者通信时使用明文，不安全，另外也不能使用root用户登录
 ### 安装
@@ -1148,6 +1239,7 @@ yum install -y *openssh*
 service sshd start      #redhat专有
 /etc/init.d/sshd start  #linux通用，并可借助tab得到智能感知
 ```
+
 ### 登录
 ```shell
 ssh <username>@<ip>        #如果不写<username>，默认是root用户
