@@ -2099,9 +2099,109 @@ pid_t fork(void);
 `vfork`保证子进程先运行，在它调用`exec/exit`后父进程才可能被调度运行，如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则导致死锁
 
 ## exit函数
-```c
+任意终止情形，终止进程通知其父进程是如何终止的。对于3个终止函数（`exit/_exit/_Exit`）将其 __退出状态(exit status)__ 作为参数传送给函数。异常终止时，内核（不是进程本身）产生一个指示其异常终止原因的 __终止状态(termination status)__，父进程能用`wait/waitpid`取得其终止状态
 
+如果父进程在子进程之前终止，则子进程的父进程都改变为`init`进程，保证了每个进程都有父进程
+
+一个已经终止、但父进程未对其处理（获取终止子进程的有关信息、释放它占用的资源）的进程称为 __僵尸进程__，`ps(1)`时的状态为`Z`
+
+被`init`收养的进程终止时，并不会成为僵尸进程，只要一个子进程终止，`init`就会调用一个`wait`函数取得其终止状态
+
+## wait/waitpid函数
+当一个进程正常或异常终止时，内核就向其父进程发送`SIGCHLD`信号（一个异步通知），父进程可以忽略它，或提供一个信号处理程序
+
+```c
+#include <sys/wait.h>
+pid_t wait(int *statloc);
+pid_t waitpid(pid_t pid, int *statloc, int options);
+//Both return: process ID if OK, 0 (see later), or −1 on error
 ```
+
+调用`wait/waitpid`的进程：
+
+- 如果其所有子进程都还在运行，则阻塞
+- 如果一个子进程已终止，正等待父进程获取其终止状态，则取得该子进程的终止状态立即返回
+- 如果调用者阻塞而且它有多个子进程，则在其某一子进程终止时，`wait`就立即返回
+- 如果它没有任何子进程，则立即出错返回
+- `waitpid`有一选项，可使调用者不阻塞（有时希望获取一个子进程状态，但不想阻塞）
+- `waitpid`可以控制它所等待的进程
+- `waitpid`通过`WUNTRACED/WCONTINUED`选项支持作业控制
+
+检查`statloc`参数的宏
+
+![img](../../imgs/apue_24.png)
+
+```c
+#include <sys/wait.h>
+void pr_exit(int status){
+    if (WIFEXITED(status))
+        printf("normal termination, exit status = %d\n", 
+            WEXITSTATUS(status));
+    else if (WIFSIGNALED(status))
+        printf("abnormal termination, signal number = %d%s\n", 
+            WTERMSIG(status),
+#ifdef  WCOREDUMP
+            WCOREDUMP(status) ? " (core file generated)" : "");
+#else
+            "");
+#endif
+    else if (WIFSTOPPED(status))
+        printf("child stopped, signal number = %d\n",
+            WSTOPSIG(status));
+}
+```
+
+`waitpid`的`pid`参数
+
+- -1，等待任一子进程，此时同`wait`
+- >0，等待的进程ID与pid相等的子进程
+- 0，等待组ID等于调用进程组ID的任一子进程
+- <-1，等待组ID等于pid绝对值的任一子进程
+
+`waitpid`的`options`参数
+
+![img](../../imgs/apue_25.png)
+
+如果一个进程`fork`一个子进程，不等待子进程终止，也不希望子进程处于僵死状态，诀窍是调用`fork`两次
+
+```c
+int
+main(void)
+{
+    pid_t   pid;
+
+    if ((pid = fork()) < 0) {
+        err_sys("fork error");
+    } else if (pid == 0) {      /* first child */
+        if ((pid = fork()) < 0)
+            err_sys("fork error");
+        else if (pid > 0)
+            exit(0);    /* parent from second fork == first child */
+
+        /*
+         * We're the second child; our parent becomes init as soon
+         * as our real parent calls exit() in the statement above.
+         * Here's where we'd continue executing, knowing that when
+         * we're done, init will reap our status.
+         */
+        sleep(2);
+        printf("second child, parent pid = %ld\n", (long)getppid());
+        exit(0);
+    }
+
+    if (waitpid(pid, NULL, 0) != pid)   /* wait for first child */
+        err_sys("waitpid error");
+
+    /*
+     * We're the parent (the original process); we continue executing,
+     * knowing that we're not the parent of the second child.
+     */
+    exit(0);
+}
+```
+
+
+
 
 
 ## 函数
