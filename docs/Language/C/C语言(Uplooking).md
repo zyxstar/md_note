@@ -1,13 +1,5 @@
 > 2014-11-01
 
-> 参考
->
-> - [C课件.ppt](https://gitcafe.com/zyxstar/md_note/tree/master/data/C.ppt)
-> - [vim配置](https://gitcafe.com/zyxstar/md_note/tree/master/data/vimrc)
-> - [数据结构课件](https://gitcafe.com/zyxstar/md_note/tree/master/data/DataStructure)
-> - [讲师代码](https://github.com/zyxstar/exam_c/tree/master/data_structure)
-
-
 基础测试
 ==========
 - 闰年判断，四年一闰，百年不闰，四百年一闰（if,  else if）
@@ -121,6 +113,14 @@ int main(){
 
 课堂笔记
 ========
+> 参考
+>
+> - [C课件.ppt](https://gitcafe.com/zyxstar/md_note/tree/master/data/C.ppt)
+> - [vim配置](https://gitcafe.com/zyxstar/md_note/tree/master/data/vimrc)
+> - [数据结构课件](https://gitcafe.com/zyxstar/md_note/tree/master/data/DataStructure)
+> - [讲师代码](https://github.com/zyxstar/exam_c/tree/master/data_structure)
+
+
 ## 变量与内存结构
 - 内存靠寻址来查找数据，一个地址只对应一个字节（8位）
 - 变量用来管理和使用内存，引用相应数据类型所需内存的首地址
