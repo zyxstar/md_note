@@ -1,20 +1,7 @@
 > 2014-11-01
 
-回到索引
-=======
-- [嵌入式培训索引(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2F%25E5%25B5%258C%25E5%2585%25A5%25E5%25BC%258F%25E5%259F%25B9%25E8%25AE%25AD%25E7%25B4%25A2%25E5%25BC%2595%2528Uplooking%2529.md)
-
-> 参考
->
-> - [课件C.ppt](../../data/C.ppt)
-> - [vim配置](../../data/vimrc)
-> - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
-> - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md)
-
-
 基础测试
 ==========
-## Test01
 - 闰年判断，四年一闰，百年不闰，四百年一闰（if,  else if）
 
 <!-- run -->
@@ -42,7 +29,6 @@ int is_leap_year(int year){
 }
 ```
 
-## Test02
 - 写一个函数，能够将两个字符窜连接，并测试函数
 
 <!-- run -->
@@ -72,9 +58,8 @@ char* my_strcat(char *str1, char *str2){
 }
 ```
 
-- 最好使用`char str1[ARR_SIZE] = "abcd"`，将字符串分配在栈中；如果使用`strdup()`分配在堆中，有可能覆盖后面的空间；如果分配在只读空间，将报错
+> - 最好使用`char str1[ARR_SIZE] = "abcd"`，将字符串分配在栈中；如果使用`strdup()`分配在堆中，有可能覆盖后面的空间；如果分配在只读空间，将报错
 
-## Test03
 - 写一个函数，能够将两个整型指针的指向交换
 
 <!-- run -->
@@ -98,8 +83,6 @@ void swap(int **p1, int **p2){
 }
 ```
 
-
-## Test04
 - 书写四个函数，分别计算两个整数 + - * /，书写第五个函数，使用参数型函数指针完成对以上四个函数的调用。
 
 <!-- run -->
@@ -128,9 +111,16 @@ int main(){
 }
 ```
 
-
-Day01
+课堂笔记
 ========
+> 参考
+>
+> - [C课件.ppt](https://gitcafe.com/zyxstar/md_note/tree/master/data/C.ppt)
+> - [vim配置](https://gitcafe.com/zyxstar/md_note/tree/master/data/vimrc)
+> - [数据结构课件](https://gitcafe.com/zyxstar/md_note/tree/master/data/DataStructure)
+> - [讲师代码](https://github.com/zyxstar/exam_c/tree/master/data_structure)
+
+
 ## 变量与内存结构
 - 内存靠寻址来查找数据，一个地址只对应一个字节（8位）
 - 变量用来管理和使用内存，引用相应数据类型所需内存的首地址
@@ -160,8 +150,6 @@ int main(){
 - 注意`%`的使用，将数值求模，可以将固定数值的取值范围
 - `srand(time(NULL))`用于产生随机数的种子
 
-Day02
-=========
 ## 进制转换
 - 十进制转任意进制
 
@@ -269,13 +257,9 @@ int main(){
 ```
 
 
-Day03
-=========
 ## 效率tip
 编码时，要考虑数据的普遍情况，将能过滤掉大量无效数据的条件前置，可有效提高程序效率
 
-Day04
-=========
 ## 指针初始化
 - `int *p = &a;`, 定义变量`p`，`*`说明`p`是一个指针，`int`说明`p`可以控制内存的范围
 - `*p = 10;`, `*`是寻址操作，该地址可读可写
@@ -297,8 +281,6 @@ assert(**pp == *p && *p == a);
 - 与一般的二级指针不一样，`a`是只读的，甚至`a[0]..a[2]`也是只读的
 
 
-Day05
-=========
 ## 二维数组与二级指针
 
 <!-- run -->
@@ -325,8 +307,6 @@ int main(){
 }
 ```
 
-Day06
-=========
 ## 常数区字符串复用
 - 如果在常数区存在同一字符串，那么可以根据编译器不同有可能 __复用__(基本上来讲，常数区有一份可以利用的字符数组，就会复用)
 
@@ -341,8 +321,6 @@ Day06
 1. 堆区
 1. 常数区
 
-Day07
-=========
 ## 堆中分配二维数组
 - 除`pp`在栈中，其余都在堆中
 
@@ -375,8 +353,6 @@ int main(){
 }
 ```
 
-Day08
-=========
 ## 二维数组传参
 
 ```c
@@ -498,8 +474,6 @@ free(name);
 ## 共用体
 - 当参数类型不确定时，可以使用共用体来传递
 
-Day09
-========
 ## 函数指针
 - 定义的函数名就是一个只读的函数指针
 
@@ -574,9 +548,6 @@ int main(){
 ## 指针函数
 - 即返回指针的函数，需要注意返回的不能是无效的地址，如函数内部栈中定义的地址
 
-
-Day10
-========
 ## 变量
 ### 全局变量
 - 存储区域：全局区（静态区）
@@ -628,6 +599,14 @@ gcc -o hello.out hello.o           #链接
 ## Make
 - [什么是makefile.doc](../../data/什么是makefile.doc)
 
+
+## 数据结构
+- `#if 0\#else\#endif`条件注释，有效规避多行注释不能嵌套问题
+- `scanf()`是有返回值的，返回成功匹配与赋值的个数，例如`1 != scanf("%d", &tmp);`可用来判断读取是否失败了
+- `NULL == (void*)0`
+- 在泛型线性表中找到所有符合条件的元素，实现于[代码](https://github.com/zyxstar/exam_c/blob/master/data_structure/darr/darr.c)中的`int darr_find_all(DARR head, const void *key, darr_cmp *fun, void ***find_data)`与`static void** _store_find_data(int size, void *data)`
+- [代码](https://github.com/zyxstar/exam_c/blob/master/data_structure/list/list.c)中`int list_insert(LIST *l, const DATA *data)`，`LIST *l`因为本例是无头链表，当链表的首节点需要变化时，需要将其地址传入`list_insert(&head, &tmp);`，方便句柄的改变
+- 比较好的代码实践：[代码](https://github.com/zyxstar/exam_c/blob/master/data_structure/list/list1/list.h)中`typedef struct list_node *LIST;`，`typedef struct list_node *PtrNode;`，`typedef struct list_node *Position;`，虽然为同一类型的重定义，但可读性增强
 
 50道题
 =========
@@ -2745,6 +2724,8 @@ int main(){
 
 火车订票系统
 ==========
+[Code in Github](https://github.com/zyxstar/exam_c/tree/master/train)
+
 1. 用户注册功能
     - 注册新用户，输入用户名密码。
         - 用户名检测，用户名重复，重新注册。
@@ -2761,10 +2742,64 @@ int main(){
     - 订票： 显示座位号，订票成功，订票信息记入个人账户
 
 
-[Code in Github](https://github.com/zyxstar/exam_c/tree/master/train)
+学生管理系统
+==========
+[Code in Github](https://github.com/zyxstar/exam_c/tree/master/school)
+
+- 能够管理一个学校的学生
+- 学校的年届可以增加和删除
+- 每一年级的班级可以增加和删除
+- 每个班级的学生也可以增加和删除
+- 对班级的学生可以根据学号和姓名进行查找
+- 对班级的学生分数具有排序功能
+- 对同一年级的学生具有按成绩排序的功能
+- 要求使用有头双向循环链表完成
+- 能够把年级，班级，学生存储到文件中，下次打开系统可以直接载入文件。
+- 每次修改都必须对文件进行保存
+
+实现说明
+
+- 本项目使用内核链表来实现
+- `STUDENT`只有一个`struct list_head`，用于编成链，`CLASS`，`GRADE`均有两个`struct list_head`，一个表示下级的链表，另一个用于自身编成链
+- 用 __宏__(`../utils/kernel_list_helper.h`) 封装了内核链表在 `each`、`find`、`save`、`load`方面的通用实现(因为如果用函数封装，不能模拟泛型的要求)
+
+> 使用如下，第一行是声明，第二行是实现，将来宏会被展开
+
+```c
+// declare
+void class_each_student(CLASS *, void *env, void(*each_do)(STUDENT *, int idx, void *env));
+// implement
+_implement_list_each(class_each_student, CLASS, student_list, STUDENT, node);
+```
+
+- 排序功能使用了标准库的`qsort()`，返回的是一个指向`STUDENT *`的数组，相当于一个视图，并未真正改变他们在各自班级中的顺序，盖因为排序的依据是可变的，以这种视图的方式呈现可能更好些
+
+- 简单的实现了一个事件机制(位于`../utils/event.h`，内部的事件列表也是使用内核链表实现的)，`CLASS`中`STUDENT`的增删能够被`GRADE`所监听，后者可据此做一些事情（如增减学生的计数）
 
 
+俄罗斯方块
+==========
+[Code in Github](https://github.com/zyxstar/exam_c/tree/master/tetris)
 
+- 基础helper工具类，与具体应用无关，可重用，在`..\utils`中
+    + `console.c`的实现，用于输出调试信息
+    + `simple_timer.c`的实现，实现了可注册多个时间响应函数，响应函数可接受一个`void*`的数据，由于C不存在内嵌函数及闭包，必要的上下文则由该参数来保持（该上下文由创建者来指定）
+    + `vt_code`，`termios`的相关封装，参考了网上的例子
+- __模型层__：`BLOCK`，`GAME`的实现，它们只有逻辑部分，不包含UI交互
+    + 它们可被单独测试，测试代码在`test_game.c`中
+    + 它们不依赖于具体的UI技术，比如使用qt，只需能完成`GAME_UI`适配即可
+    + 高层函数，即开放在`game.h`中的，抽象一致，并且所有逻辑判断不超过两层，基本达到可读性
+    + 计分规则`_calc_score`、升级规则`_check_level_up`、加速规则`_speed_up`等由单独函数来完成，方便修改
+    + <del>使用了`mutex`，防止在手工的与`timer`激发的`move_down`动作同时发生时，产生资源竞争，导致数据不一致</del>
+    + 如`POS *set = (POS*)(&pos_set);`，采用结构体，利用了它能被整体赋值的优势，必要时，将它再强制转换成数组，方便数据计算
+    + 使用函数指针数组`void(*config_set_fn[])(POS_SET*)`，充当路由的功能，类似高级语言中的多态，避免了过多的`swich/if`
+    + 原则上来说，`GAME`中不能依赖`SIMPER_TIMER`（破坏了可测性），而在控制层将两者联系到一起，达到解耦，但此处选择了相对方便的方式将两者耦合在一起了
+- __视图层__：`view.c`存放具体的UI绘制的部分，它依赖于工具类中的`vt_code`
+    + 它也可被单独运行，在`test_view.c`中用于测试单个绘制是否有效
+- __控制层__：
+    + `ctrl.c`，接收UI的交互（键盘输入），并将行为委托给模型层的具体方法。
+    + 模型层发生的变化，借由`GAME_UI`来绘制UI，后者承担`GAME`与`view`之间的联系，由一系列函数指针组成的结构体，充担高级语言中的接口的概念
+- 避免了全局变量的存在，方便在单人应用`tetris_single`与双人应用`tetris_double`使用同一套逻辑
 
 
 <script>
