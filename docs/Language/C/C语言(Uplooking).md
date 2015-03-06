@@ -579,11 +579,6 @@ int main(){
 ## 头文件
 一般将外部全局变量声明，函数声明放在此处，如必须要存在定义（struct,typedef）时，则需`#ifndef/#endif`
 
-## 宏
-- 没有数据类型，方便公用代码提炼
-- 只是替换，没有栈空间分配与函数调用，速度上优于函数
-
-
 
 ## GCC
 ```shell
@@ -594,10 +589,10 @@ gcc -o hello.out hello.o           #链接
 ```
 
 ## GDB
-- [linux下GDB教程.pdf](../../data/linux下GDB教程.pdf)
+- [linux下GDB教程.pdf](https://gitcafe.com/zyxstar/md_note/blob/master/data/linux下GDB教程.pdf)
 
 ## Make
-- [什么是makefile.doc](../../data/什么是makefile.doc)
+- [什么是makefile.doc](https://gitcafe.com/zyxstar/md_note/blob/master/data/什么是makefile.doc)
 
 
 ## 数据结构
