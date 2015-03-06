@@ -1058,11 +1058,18 @@ strip                             #将编译链接的可执行文件进行剪切
 
 locale                            #查看系统当前locale环境变量
 
+lsusb                             #检查USB
+
+iwconfig                          #检测无线
+iwlist
+
 ```
 
 
 网络配置
 ========
+[常用网络命令](http://vbird.dic.ksu.edu.tw/linux_server/0140networkcommand_1.php)
+
 ## 查看网卡
 ```shell
 ifconfig eth0
@@ -1082,11 +1089,14 @@ ifup eth0
 ifconfig eth0 <ip> netmask <ip> up
 ip addr add <ip> netmask 255.255.255.0 dev eth0
 ip addr add <ip/24> dev eth0    #等同于上面，24个1（二进制）即255.255.255.0
+
+ifconfig eth0:0 192.168.50.50   # eth0:0 那就是在该实体网卡上，再仿真一个网络接口，一张网络卡上面设定多个 IP
 ```
 
 ## 查看网关
 ```shell
 route -n
+ip route show
 ```
 
 ## 临时设置网关
@@ -1098,7 +1108,12 @@ route add default gw <ip>
 ```shell
 vim /etc/resolv.conf
 
-nameserver 202.106.0.46 #最多三个
+nameserver 202.106.0.46 #最多三个wh
+
+#查询域名对应ip
+host baidu.com
+nslookup baidu.com
+dig baidu.com
 ```
 
 ## 永久的网络设置
@@ -1400,11 +1415,18 @@ subnet 172.24.40.0 netmask 255.255.255.0{
 /etc/init.d/dhcpd start
 ```
 
+### 客户端续约
+```shell
+dhclient eth0
+```
+
 ## DNS
 ### 概述
 FQDN是完全限定域名，准备的描述出主机所在的位置。DNS是倒置的树状结构的 分布式 数据库系统，存储着FQDN名和ip地址的对应关系，负责它们之间的解析
 
 一个局域网内最好只有一个DNS
+
+> 客户端存放DNS主机IP的配置在`/etc/resolv.conf`
 
 ### 安装
 ```shell
