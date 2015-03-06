@@ -2200,7 +2200,159 @@ main(void)
 }
 ```
 
+## waitid函数
+```c
+#include <sys/wait.h>
+int waitid(idtype_t idtype, id_t id, siginfo_t *infop, int options);
+//Returns: 0 if OK,−1 on error
+```
 
+与`waitpid`相似，它允许一个进程指定要等待的子进程，但使用两个单独的参数表示要等待的子进程所属的类型，而不是将此进程的ID或进程组ID组合成一个参数
+
+`idtype`值
+
+![img](../../imgs/apue_26.png)
+
+`options`参数，使用按位或运算
+
+![img](../../imgs/apue_27.png)
+
+## wait3/wait4函数
+```c
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <sys/time.h>
+#include <sys/resource.h>
+pid_t wait3(int *statloc, int options, struct rusage *rusage);
+pid_t wait4(pid_t pid, int *statloc, int options, struct rusage *rusage);
+//Both return: process ID if OK, 0, or−1 on error
+```
+
+允许内核返回由终止进程及其所有子进程使用的资源情况（用户CPU时间总量、系统CPU时间总量、缺页次数、接收到信号的次数等，细节查`getrusage(2)`）
+
+![img](../../imgs/apue_28.png)
+
+## 竞争条件
+如果一个进程要等待其父进程终止，可使用
+
+```c
+while (getppid() != 1)
+    sleep(1);
+```
+
+但浪费了CPU时间，为了避免竞争条件和轮询，多个进程间需要某种信号机制
+
+一个`TELL/WAIT`可能被使用的地方(可用信号实现，也可用管道实现)
+
+```c
+#include  "apue.h"
+TELL_WAIT();  /* set things up for TELL_xxx & WAIT_xxx */
+
+if ((pid = fork()) < 0) {
+    err_sys("fork error");
+} else if (pid == 0) { /* child */
+    /* child does whatever is necessary ... */
+    TELL_PARENT(getppid());  /* tell parent we’re done */
+    WAIT_PARENT();  /* and wait for parent */
+    /* and the child continues on its way ... */
+    exit(0);
+}
+/* parent does whatever is necessary ... */
+TELL_CHILD(pid);  /* tell child we’re done */
+WAIT_CHILD();  /* and wait for child */
+/* and the parent continues on its way ... */
+exit(0);
+```
+
+一个确保父进程先输出的例子
+
+```c
+int
+main(void)
+{
+    pid_t   pid;
+
+    TELL_WAIT();
+
+    if ((pid = fork()) < 0) {
+        err_sys("fork error");
+    } else if (pid == 0) {
+        WAIT_PARENT();      /* parent goes first */
+        charatatime("output from child\n");
+    } else {
+        charatatime("output from parent\n");
+        TELL_CHILD(pid);
+    }
+    exit(0);
+}
+
+static void
+charatatime(char *str)
+{
+    char    *ptr;
+    int     c;
+
+    setbuf(stdout, NULL);           /* set unbuffered */
+    for (ptr = str; (c = *ptr++) != 0; )
+        putc(c, stdout);
+}
+```
+
+## exec函数
+```c
+#include <unistd.h>
+int execl(const char *pathname,const char *arg0,... 
+         /* (char *)0 */ );
+int execv(const char *pathname,char *constargv[]);
+int execle(const char *pathname,const char *arg0,...
+         /* (char *)0, char *constenvp[] */ );
+int execve(const char *pathname,char *constargv[], char *constenvp[]);
+int execlp(const char *filename,const char *arg0,... 
+         /* (char *)0 */ );
+int execvp(const char *filename,char *constargv[]);
+int fexecve(intfd,char *constargv[], char *constenvp[]);
+//All seven return:−1 on error, no return on success
+```
+
+当进程调用一种`exec`时，该进程执行的程序完全替换为新程序，而新程序则从其main函数开始执行，因为调用`exec`并不创建新进程（创建新进程是`fork`），所以前后的进程ID并未改变，`exec`是用硬盘上的一个新程序替换了当前进程的正文段、数据段、堆段、栈段
+
+前4个函数取路径名作参数，后两个取文件名作参数，最后一个取文件描述符做参数
+
+当指定`filename`作参数时
+
+- 如果`filename`中包含`/`，则将其视为路径名
+- 否则按`PATH`环境变量，搜寻可执行文件
+
+`execlp/execvp`找到的文件不是机器可执行文件，就认为是一个shell脚本，会调用`/bin/sh`，并以该`filename`作为shell输入
+
+![img](../../imgs/apue_29.png)
+
+![img](../../imgs/apue_30.png)
+
+新程序从调用进程继承了：
+
+- 进程ID和父进程ID
+- 实际用户ID和实际组ID
+- 附属组ID
+- 进程组ID
+- 会话ID
+- 控制终端
+- 闹钟尚余留的时间
+- 当前工作目录
+- 根目录
+- 文件模式创建屏蔽字
+- 文件锁
+- 进程信号屏蔽
+- 未处理信号
+- 资源限制
+- nice值
+- tms_utime,tms_stime,tms_cutime,tms_cstime
+
+`FD_CLOEXEC`标志，若设置了，则在执行`exec`时关闭该描述符，否则仍打开，默认是未设置，需`fcntl`设置
+
+POSIX.1明确要求有`exec`时关闭打开的目录流
+
+`exec`后有效ID是否改变，则取决于所执行的程序是否`set-user-ID/set-group-ID`
 
 
 
