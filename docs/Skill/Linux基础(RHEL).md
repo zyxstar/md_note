@@ -40,13 +40,16 @@ RHEL的经典版本：5.8和6.4
             ls /dev/sd*  查看所有硬盘及分区
 /lib        库文件，驱动，由glibc提供
             /lib64       64位的库文件
+            /usr/lib     各distribute维护的库文件
+            /usr/local/lib   程序或用户创建的库文件
 /tmp        临时文件
 /media      光盘的默认挂载点
             /media/cdrom
 /mnt        其它的挂载点
 /proc       进程文件(pid)，虚拟文件系统
             du -sh /proc 统计大小为0，表示数据在内存中，不占硬盘空间
-/opt        主机额外安装软件所放的目录，也可以是个挂载点
+/sys        用来代替/proc的
+/opt        主机额外安装软件所放的目录
 /srv        一些服务启动后，这些服务所需访问的数据目录
 
 ```
@@ -201,6 +204,8 @@ ls
     -r    #逆向排序
     -R    #递归显示目录结构
     -F    #目录以/结尾显示
+ls -l / | grep tmp #只看某项
+
 
 cat
     -n    #给文件所有行编号
@@ -223,8 +228,8 @@ head
 
 tree      #树形显示目录
 fdisk -l  #查看硬盘分区情况
-du        #显示当前目录中对象的大小
-    -s    #显示当前目录大小
+du        #显示当前目录中对象占磁盘大小
+    -s    #显示当前目录占磁盘大小
     -h    #人性化显示
     --max-depth=1  #设置显示深度
 df        #查看文件系统使用情况
@@ -266,6 +271,7 @@ find <path>
     #查找指定类型的文件，然后指定按时间排序
     find . -name *.php |xargs ls -alt
     ls -alt $(find . -name *.php)
+    ls -alt `find . -name *.php`
     #统计所有c文件的行数总和，不包括空行
     find . -name "*.c" |xargs cat|grep -v ^$|wc -l
 

@@ -1,0 +1,12 @@
+# exprot CFLAGS=-DDEBUG
+
+DIRS=lib server client
+
+all:
+%:
+	for dir in $(DIRS) ; do \
+		make -C $$dir $@ ; \
+	done
+
+clean:
+	rm -r *~ *.o

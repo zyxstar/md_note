@@ -1,0 +1,84 @@
+创建项目仓库
+mkdir /svn
+svnadmin create /svn
+
+创建项目
+svn import . file:///svn/ds -m "genesis"
+-m 后接日志
+
+签出
+svn co [-r rev] file:///svn/ds ds
+svn co [-r rev] svn://192.168.0.254/ds ds [--username hsienmu]
+后面的 ds 指定新建的目录名
+--username 指定用户名
+
+更新
+svn up
+
+查看状态
+svn st [file]
+
+查看区别
+svn diff [file]
+
+查看日志
+svn log
+
+提交修改
+svn ci [-m "..."] [-F file]
+
+拷贝文件
+svn cp src dest
+
+移动文件
+svn mv src dest
+
+添加文件
+svn add [-N] file
+-N 非递归
+
+删除文件
+svn del file
+
+创建目录
+svn mkdir file
+
+导出无版本记录的拷贝
+svn export file:///svn/ds ds
+
+查看来源
+svn info
+
+列出仓库中的条目
+svn ls
+
+放弃修改
+svn revert [file]
+
+解决冲突
+svn up
+消息中 C 代表冲突
+svn resolved file
+
+
+
+联网
+使用svn自带的 svnserve
+svnserve --daemon --root /svn
+svn co svn://192.168.0.254/ds teacher
+保证 TCP 3690 端口连接畅通
+
+
+
+
+working copy
+checking out
+export
+committing
+update
+
+
+tags
+branching
+merging
+

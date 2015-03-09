@@ -1,0 +1,57 @@
+静态库
+
+libxx.a
+xx 指代库名
+
+ar -cr libxx.a yyy.o
+ranlib libxx.a
+
+发布到
+/usr/local/include
+/usr/local/lib
+
+gcc -I/usr/local/include
+gcc -L/usr/local/lib -o main main.o -lxx
+-l 参数必须在最后，有依赖
+
+
+
+
+
+
+动态库
+
+libxx.so
+
+gcc -shared -fPIC -o libxx.so yyy.c
+
+发布到
+/usr/local/include
+/usr/local/lib
+
+在 /etc/ld.so.conf 中添加路径
+/sbin/ldconfig    重读 /etc/ld.so.conf
+
+gcc -I/usr/local/include -L/usr/local/lib -o ... -lxx
+
+ldd - print shared library dependencies
+
+
+非 root 用户发布
+cp xx.so ~/lib
+export LD_LIBRARY_PATH=~/lib
+
+
+
+
+
+
+插件
+
+dlopen
+dlclose
+dlsym
+
+
+
+

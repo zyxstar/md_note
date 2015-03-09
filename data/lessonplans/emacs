@@ -1,0 +1,58 @@
+C-f 
+C-b 
+C-p 
+C-n
+C-v 
+ESC v
+ESC <
+ESC >
+
+C-x C-f
+C-x C-c
+C-x C-s
+C-x C-w
+C-x k
+
+C-x 2
+C-x ^
+C-x 3
+C-x { or }
+
+
+C-x o
+C-x 1
+C-x 0
+C-x b
+C-x u    // undo
+C-u      // C-u runs the command universal-argument
+
+C-x h     // mark-whole-buffer
+C-space or C-@   // markw
+
+ESC C-\        //  indent
+ESC m    // jmp to the true start of current line
+ESC ^    // delete indentation  //merg line
+
+ESC x c-set-style      C-c .
+TAB
+ESC x untabify       // replace tab to space
+
+ESC x goto-line   // ESC g g
+
+ESC %  // ! force   // RETURN or q  exit
+
+C-r
+ESC C-c
+
+ESC %
+SPACE y
+n
+
+(add-hook 'c-mode-hook 'turn-on-font-lock)
+
+C-h k     // describe key
+C-h w     // where is   //what key bind this command
+C-h b     // describe bindings at current buffer
+
+
+

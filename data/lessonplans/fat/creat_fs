@@ -1,0 +1,3 @@
+$dd if=/dev/zero of=./test_fat16 bs=32k count=1536
+$mkfs.msdos -F 16 test_fat16 
+#mount -t msdos test_fat16 ttt -o loop

@@ -554,6 +554,9 @@ struct timespec {
 
 > 2008版本以前，时间字段为`st_atime/st_mtime/st_ctime`，都是`time_t`类型的（以秒来表示），`timespec`提供了更高精度的时间戳，为了保持兼容，旧的名字可以定义成`tv_sec`成员，如`st_atime`定义为`st_atim.tv_sec`
 
+> 有关设备文件，`st_rdev`的值需要在不同平台下，测试出如何得到`ls(1)`相同结果，`st_dev`不怎么用了
+
+> `ls(1)`中不同颜色的设置在环境变量`LS_COLORS`
 
 ## 文件类型
 - __普通文件__，至于是文本还是二进制，对内核无区别，对普通文件内容的解释由应用程序进行
@@ -598,6 +601,9 @@ $ ./a.out /etc/passwd /etc /dev/log /dev/tty \
 #define S_ISDIR(mode) (((mode) & S_IFMT) == S_IFDIR)
 ```
 
+__宏与常量各有优势，前者方便确定某一类型，后者方便`switch`的处理__
+
+
 ## 设置用户ID和组ID
 与一个进程相关的ID：
 
@@ -608,7 +614,7 @@ $ ./a.out /etc/passwd /etc /dev/log /dev/tty \
     - 有效用户ID(effective user ID)
     - 有效组ID(effective group ID)
     - 附加组ID(supplementary group IDs)
-- 由exec函数保存
+- 由exec函数保存(开始时等于effective，主要用于切换ID，在real与effective之间切换)
     - 保存的设置用户ID(saved set-user-ID)
     - 保存的设置组ID(saved set-group-ID)
 
@@ -663,7 +669,7 @@ assert((buf.st_mode & S_IXUSR) == S_IXUSR);
 
 
 ## 新文件和目录的所有权
-新文件的用户ID设置为进程的有效用户ID，新文件的组ID可以是进程的有效组ID，也可以是它所在目录的组ID
+新文件的用户ID设置为进程的 __有效用户ID__，新文件的组ID可以是进程的有效组ID，也可以是它所在目录的组ID
 
 > As we mentioned earlier, this option for group ownership is the default for FreeBSD 8.0 and Mac OS X 10.6.8, but an option for Linux and Solaris. Under Solaris 10, and by default under Linux 3.2.0, we have to enable the set-group-ID bit, and the mkdir function has to propagate a directory’s set-group-ID bit automatically for this to work.
 
@@ -691,6 +697,10 @@ X_OK | test for execute permission
 mode_t umask(mode_t cmask);
 //Returns: previous file mode creation mask
 ```
+
+> mask不管网络中，还是内核中，表示这个值，会被取反，再与上将来给定的值
+>
+> 如创建的文件模式是777，但mask为002，相当于 ~002 & 777 得到 775
 
 为进程设置文件模式创建屏蔽字，并返回以前的值，这是少数几个没有出错返回的，其中`cmask`是9个常量`S_IRUSR，S_IWUSR，S_IXUSR，S_IRGRP，S_IWGRP，S_IXGRP，S_IROTH，S_IWOTH，S_IXOTH`中的若干个按位 或 构成的，对于任何在文件模式创建屏蔽字中为1的位，在文件`mode`中的相应位则一定被关闭
 
@@ -786,7 +796,7 @@ lrwxrwxrwx  1 root            7 Sep 25 07:14 lib -> usr/lib
 
 
 ### 文件中的空洞
-`ls -l`得到文件长度，但`ls -ls`或`du -s`可以得到实际占磁盘多少个字节块(512大小的)
+`ls -l`得到文件长度，但`ls -ls`(`st_size`的反映)或`du -s`(`st_blksize`的反映)可以得到实际占磁盘多少个字节块(512大小的)
 
 `wc -c`得到文件中字符（字节）数，包括没写过的字节位置（空洞），使用`cat`再重定向输出，则把所有空洞填满
 
@@ -847,6 +857,7 @@ int remove(const char * pathname );
 - 为了解除对文件的链接，必须对包含该目录项的目录具有写和执行权限，如果对该目录设置了粘住位，则对该目录必须具有写权限
 - 当链接计数达到0时，该文件的内容才可被删除，另一个阻止删除文件夹的内容是，如果进程打开了该文件。
 - 进程用`open/creat`创建一个文件，然后立即调用`unlink`，因为文件是打开的，所以不会将其内容删除，只有当进程关闭该文件或终止时，该文件内容才会被删除，这种性质经常被程序用来确保即使在该程序崩溃时，它所创建的临时文件也 __不会遗留__ 下来
+> 但如果断电了，还是会存在没有path的文件，这时，开机文件检查就是解决类似问题的
 - 如果是符号链接，那么`unlink`删除该符号链接，而不会删除由该链接所引用的文件，在给出符号链接名情况下，没有一个函数能直接删除由该链接所引用的文件
 - `remove`函数，对于文件与`unlink`相同，对于目录与`rmdir`相同
 
@@ -927,7 +938,7 @@ ssize_t readlinkat(int fd, const char* restrict pathname, char *restrict buf, si
 //Both return: number of bytes read if OK, −1 on error
 ```
 
-此函数组合了`open`,`read`,`close`的所有操作，如果执行成功，返回读入`buf`字节数，`buf`中内容不以`null`终止
+此函数组合了`open`,`read`,`close`的所有操作，如果执行成功，返回读入`buf`字节数，`buf`中内容 __不以`null`终止__(没有尾0)
 
 ## 文件的时间
 ```table
@@ -970,6 +981,7 @@ int utimes(const char *pathname, const struct timeval times[2]);
 
 我们不能对更改状态时间`st_ctim`指定一个值，当调用`utime`函数时，此字段将被自动更新
 
+> `touch(1)`会修改`st_atim`和`st_mtim`，不会修改`st_ctim`
 
 ## mkdir/mkdirat/rmdir函数
 ```c
@@ -1049,7 +1061,7 @@ int fwide(FILE *fp, int mode);
 
 ## 缓冲
 - 全缓冲，在填满标准IO缓冲区后才进行实际IO操作，对于驻留在磁盘上的文件通常是由标准IO实施全缓冲的，缓冲区可由标准IO例程自动冲洗，或者调用`fflush`冲洗一个流
-- 行缓冲，在这种情况下，在输入和输出中遇到换行符时，标准IO库执行IO操作，允许我们一次输出一个字符（`fputc`），但只有在写了一行之后才进行实际IO操作。当流涉及一个终端时（标准输入和标准输出），通常使用行缓冲
+- 行缓冲，在这种情况下，在输入和输出中遇到换行符时，标准IO库执行IO操作，允许我们一次输出一个字符（`fputc`），但只有在写了一行之后才进行实际IO操作。__当流涉及一个终端时（标准输入和标准输出），通常使用行缓冲__，或者认为行缓冲，只对终端有效
 > 行缓冲有两个限制，第一，因为标准IO库用来收集每一行的缓冲区的长度是固定的，只要填满了缓冲区，即使还没有写一个换行符，也进行IO操作；第二，任何时候只要通过标准IO库要求从一个不带缓冲的流，或一个行缓冲的流且要求从内核得到输入数据，那么会造成冲洗所有行缓冲输出流
 - 不带缓冲，如标准IO中`fputs`写15个字符到不带缓冲的流中。标准出错流`stderr`通常是不带缓冲的
 
@@ -1225,6 +1237,8 @@ size_t fwrite(const void *restrict ptr, size_t size, size_t nobj, FILE *restrict
 //Both return: number of objects read or written
 ```
 
+> 注意，返回的是number of objects，而不同于`read/write`返回的是字节数
+
 在一个系统上写的数据，要在另一个系统上进行处理，可能不能正常工作：
 
 - 在一个结构中，同一成员的偏移量可能因编译器和系统而异：如紧密包装、内存对齐
@@ -1243,6 +1257,8 @@ int fseek(FILE *fp, long offset,int whence );
 //Returns: 0 if OK,−1 on error
 void rewind(FILE * fp );
 ```
+
+> `fseek`只会返回是否成功，而`lseek`还会告诉当前位置
 
 ```c
 #include <stdio.h>
@@ -1314,14 +1330,16 @@ int vsnprintf(char *restrict buf,size_tn, const char *restrictformat, va_list ar
 
 ```c
 #include <stdio.h>
-int scanf(const char *restrictformat ,...);
-int fscanf(FILE *restrictfp ,const char *restrict format ,...);
+int scanf(const char *restrict format ,...);
+int fscanf(FILE *restrict fp ,const char *restrict format ,...);
 int sscanf(const char *restrict buf,const char *restrict format ,...);
 //All three return: number of input items assigned,
 //EOF if input error or end of file beforeany conversion
 ```
 
 除转换说明和空白字符外，格式字符串中的其他字符必须与输入匹配，若有一个字符不匹配，则停止后续处理，不再读入输入的其余部分
+
+> 应该使用`fgets`和`sscanf`来代替`scanf`，后者有缓冲区溢出风险
 
 `%[*][fldwidth][lenmodifier]convtype`
 
@@ -1366,6 +1384,8 @@ char *tmpnam(char *ptr);
 FILE *tmpfile(void);
 //Returns: file pointer if OK, NULL on error
 ```
+
+`tmpnam`不是原子操作，不建议使用
 
 若`ptr`是`NULL`，则所产生的路径名存放在一个静态区，并将指向该静态区的指针返回，下一次调用时，会 __重写__ 该静态区（想保存路径名，则应保存路径名的副本），若不是`NULL`，则认为它指向长度至少是`L_tmpnam`个字符的数组，所产生的路径名存放在该数组中，`ptr`也作为函数值返回。
 
@@ -1434,6 +1454,8 @@ FILE *open_wmemstream(wchar_t **bufp,size_t *sizep);
 `<pwd.h>`中定义的`passwd`结构
 
 ![img](../../imgs/apue_14.png)
+
+> 初始shell或登录shell，只是通用叫法，真实的叫法，应该是登录后第一个程序
 
 为了阻止一个特定用户登录系统:
 
@@ -1863,6 +1885,9 @@ ISO C和POSIX.1均要求`argv[argc]`是一个空指针，可将参数处理循�
 for (i = 0; argv[i] != NULL; i++)
 ```
 
+> 命令行第一个参数，也是有用的，表明运行该程序时的名字，比如对该程序做了软链接，真实的程序在运行时，可以得到该软链接名，如busybox的应用
+
+
 ## 环境表
 全局变量`environ`
 
@@ -1912,6 +1937,41 @@ text  data  bss dec   hex  filename
 1176  504   16  1696  6a0  a.out
 ```
 
+### 静态库
+```shell
+ar -cr libxxx.a some.o
+# ar r向库里添加模块，同名则覆盖replace
+# ar x从库里提取模块，产生.o文件
+# ar t察看库里的模块
+# ar d删除模块
+
+runlib libxxx.a
+
+cp libxxx.a ~/lib
+
+gcc main.c ~/lib/libxxx.a
+gcc main.c -L~/lib -lxxx
+```
+
+### 动态库
+```shell
+#生成库
+gcc -o libxxx.so -fpic -shared some.c
+cp some.h /usr/local/include
+cp libxxx.so /usr/local/lib
+echo "/usr/local/lib">>/etc/ld.so.conf
+/sbin/ldconfig
+
+#如果是非root用户
+cp libxxx.so ~/lib
+export LD_LIBRARY_PATH=~/lib
+
+#调用
+gcc main.c -lxxx
+ldd  #print shared library dependencies
+```
+
+
 ## 存储空间分配
 ```c
 #include <stdlib.h>
@@ -1925,9 +1985,9 @@ void free(void *ptr);
 这三个分配函数所返回的指针一定是适当对齐的，使其可用于任何数据对象，某些特定系统上，double必须8倍数地址单元处开始，那么这此函数返回的指针都应这样对齐
 
 > 这些分配通常用`sbrk(2)`系统调用来实现
-> 
+>
 > 标准的`malloc`算法是最佳适配或首次适配，现在许多分配程序基于快速适配`auick-fit`
-> 
+>
 > `alloca`在当前函数的栈上分配存储空间，而不是堆中，当函数返回时，自动释放，缺点是增加了栈的长度
 
 ## 环境变量
@@ -2135,10 +2195,10 @@ pid_t waitpid(pid_t pid, int *statloc, int options);
 #include <sys/wait.h>
 void pr_exit(int status){
     if (WIFEXITED(status))
-        printf("normal termination, exit status = %d\n", 
+        printf("normal termination, exit status = %d\n",
             WEXITSTATUS(status));
     else if (WIFSIGNALED(status))
-        printf("abnormal termination, signal number = %d%s\n", 
+        printf("abnormal termination, signal number = %d%s\n",
             WTERMSIG(status),
 #ifdef  WCOREDUMP
             WCOREDUMP(status) ? " (core file generated)" : "");
@@ -2301,13 +2361,13 @@ charatatime(char *str)
 ## exec函数
 ```c
 #include <unistd.h>
-int execl(const char *pathname,const char *arg0,... 
+int execl(const char *pathname,const char *arg0,...
          /* (char *)0 */ );
 int execv(const char *pathname,char *constargv[]);
 int execle(const char *pathname,const char *arg0,...
          /* (char *)0, char *constenvp[] */ );
 int execve(const char *pathname,char *constargv[], char *constenvp[]);
-int execlp(const char *filename,const char *arg0,... 
+int execlp(const char *filename,const char *arg0,...
          /* (char *)0 */ );
 int execvp(const char *filename,char *constargv[]);
 int fexecve(intfd,char *constargv[], char *constenvp[]);

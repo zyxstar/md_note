@@ -116,7 +116,7 @@ int main(){
 > 参考
 >
 > - [C课件.ppt](https://gitcafe.com/zyxstar/md_note/tree/master/data/C.ppt)
-> - [vim配置](https://gitcafe.com/zyxstar/md_note/tree/master/data/vimrc)
+> - [C资源](https://gitcafe.com/zyxstar/md_note/tree/master/data/lessonplans)
 > - [数据结构课件](https://gitcafe.com/zyxstar/md_note/tree/master/data/DataStructure)
 > - [讲师代码](https://github.com/zyxstar/exam_c/tree/master/data_structure)
 
