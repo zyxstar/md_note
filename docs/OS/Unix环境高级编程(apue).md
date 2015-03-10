@@ -1477,6 +1477,28 @@ struct passwd *getpwnam(const char *name);
 
 `getpwuid`由`ls(1)`使用，它将i节点中的数值用户ID映射为用户登录名；`getpwnam`由`login(1)`使用
 
+__如果返回的是指针类型，并且不需要手工释放的（可能存在静态区），请不要保留该指针，再次调用时，有可能改变上次指针所指内容（ *被覆盖* ）。如`tmpnam`，`getpwent`，`getpwuid`等，甚至是`gmtime/localtime`等，需要保持原因指针内容时，需要用到`memcpy`。__
+
+<!-- run -->
+
+```c
+#include <sys/types.h>
+#include <pwd.h>
+
+#include <stdio.h>
+
+int main(void){
+    struct passwd *pwd;
+    struct passwd *pwd2;
+
+    pwd = getpwuid(0);
+    pwd2 = getpwuid(1);
+
+    printf("%p %p\n", pwd, pwd2); // same
+    return 0;
+}
+```
+
 如果需要查看整个口令文件，下面函数用于此目的
 
 ```c
