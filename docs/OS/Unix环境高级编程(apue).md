@@ -2436,6 +2436,113 @@ POSIX.1明确要求有`exec`时关闭打开的目录流
 
 `exec`后有效ID是否改变，则取决于所执行的程序是否`set-user-ID/set-group-ID`
 
+## 更改用户ID和组ID
+一般而言，在设计应用程序时，总试图使用最小特权`least privilege`模型
+
+```c
+#include <unistd.h>
+int setuid(uid_t uid);
+int setgid(gid_t gid);
+//Both return: 0 if OK, −1 on error
+```
+
+- 若进程具有root用户特权，则`setuid`函数将real ID、effective ID，以及saved ID设置为uid
+- 若进程没特级，但uid等于real ID或saved ID，则`setuid`只将effective ID设置为uid，不改变另外两个（开始时，saved==effective，所以此功能用于real与effetive切换）
+- 如果均不满足，则`errno`为`EPERM`
+
+注意点：
+
+- 只有root可以更改real ID，用户登录时，由`login(1)`设置的，而且永远不会改变它
+- 仅当程序文件权限位`S_ISUID`为真，`exec`才设置effective ID
+- saved ID由`exec`复制effective ID得来，是一个副本
+
+![img](../../imgs/apue_31.png)
+
+在进程运行间，通过`setuid(getuid())`切回real ID，以确保大部分时间只有普通权限
+
+### setreuid/setregid函数
+```c
+#include <unistd.h>
+int setreuid(uid_t ruid ,uid_t euid );
+int setregid(gid_t rg id ,gid_t egid );
+//Both return: 0 if OK, −1 on error
+```
+
+交换real与effective(不需要借助saved)
+
+### seteuid/setegid函数
+```c
+#include <unistd.h>
+int seteuid(uid_t uid);
+int setegid(gid_t gid);
+//Both return: 0 if OK, −1 on error
+```
+
+更改effective
+
+各函数图示
+
+![img](../../imgs/apue_32.png)
+
+## 解释器文件
+`#! pathname  [ optional-argument ]`
+
+## system函数
+```c
+#include <stdlib.h>
+int system(const char * cmdstring);
+```
+
+如果传入空指针，并且返回0，说明`system`是被支持的。它内部调用了`fork/exec/waitpid`，因此有三种返回值
+
+- 如果`fork`失败或者`waitpid`返回除`EINTR`之外的错，则返回-1，而且设置`errno`
+- 如果`exec`失败，则如果shell执行了`exit(127)`
+- 如果三个函数都执行成功，并且返回值是shell的终止状态，其格式同`waitpid`中的`statloc`
+
+一种未处理信号的实现
+
+```c
+#include <sys/wait.h>
+#include <errno.h>
+#include <unistd.h>
+
+int system(const char *cmdstring){   /* version without signal handling */
+    pid_t   pid;
+    int     status;
+
+    if (cmdstring == NULL)
+        return (1);             /* always a command processor with UNIX */
+    if ((pid = fork()) < 0)
+        status = -1;            /* probably out of processes */
+    else if (pid == 0) {                         /* child */
+        execl("/bin/sh", "sh", "-c", cmdstring, (char *)0);
+        _exit(127);             /* execl error */
+    }
+    else {                      /* parent */
+        while (waitpid(pid, &status, 0) < 0){
+            if (errno != EINTR){
+                status = -1;    /* error other than EINTR from waitpid() */
+                break;
+            }
+        }
+    }
+    return (status);
+}
+```
+
+shell中`-c`代表`cmdstring`作为命令输入，可以包含任一有效的shell命令，甚至可以重定向。如果不使用此，而试图自己执行它，那将相当困难，必须使用`execlp`而不是`execl`，像shell那样使用PATH变量，并要拆分命令行参数，也不能使用一个shell元字符
+
+使用`_exit`而不是`exit`为了防止任一标准IO缓冲区在子进程中被flush
+
+使用`system`优点是，它进行了各种出错处理以及信号处理
+
+### 设置用户ID程序
+如果一个设置用户ID程序中调用`system`，将是一个 __安全性方面的漏洞__
+
+
+
+
+
 
 
 ## 函数
