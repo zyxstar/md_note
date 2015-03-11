@@ -2820,32 +2820,32 @@ main()
     parse_argv()
     load_ls_colors()
     trave_dir()
-        while:
+        foreach:
             process_file()
                 get_file_type()
-                    get_idx_of_arr()
                 get_file_perm()
                 get_file_username()
                 get_file_groupname()
                 get_file_time()
                 get_link_filenm()
-                fill_colors()
+                get_file_colors()
                     get_ls_color_item()
         show_ls_entries()
             qsort()
-            while:
+            foreach:
                 print_ls_entry()
 
 ```
 
 实现说明
 
-- 解释选项，并存储到位图中，并定义了一个判断选项位的宏`HAS_OPTION`
+- 解释选项，并存储到位图中，并定义了一个判断选项位的宏`HAS_BIT`
 - 加载环境变量`LS_COLORS`，使用`strtok_r`来分解分割符
 - > 使用`strtok_r`分割后，会影响被分割的字符串，所以会影响再次使用，并且该字符串不能存在只读区
 - 使用`setjmp/longjmp`来捕获异常，确保异常时，资源也得到回收
 - > 在`setjmp`函数内部，如果是异常返回来的，并且需要使用的变量，最好是`static`的
 - 使用内核链表来存储和`qsort`来排序
+- 注意`localtime`重复调用时，会覆盖上次指针指向内容
 
 
 
