@@ -1877,6 +1877,8 @@ exit(main(argc, argv));
 ### 退出函数
 `_exit`和`_Exit`立即进入内核，`exit`则先执行一些清理处理（包括调用执行各终止处理程序，关闭所有标准IO流等），然后进入内核
 
+> 关闭所有标准IO流，但并不会关闭文件描述符`STDOUT_FILENO`等
+
 ```c
 #include <stdlib.h>
 void exit(int status );
@@ -2179,6 +2181,7 @@ pid_t fork(void);
 `vfork`也用于创建新进程，而该新进程的目的是`exec`一个新程序，但它并不将父进程地址空间完全复制到子进程，因为子进程会立即调用`exec`(或`exit`)，不过在子进程调用`exec/exit`之前，它在父进程的空间中运行，如果子进程修改数据（除用于存放`vfork`返回值的变量）、进行函数调用、或没有调用`exec/exit`，可能会带来未知结果
 
 `vfork`保证子进程先运行，在它调用`exec/exit`后父进程才可能被调度运行，如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则导致死锁
+
 
 ## exit函数
 任意终止情形，终止进程通知其父进程是如何终止的。对于3个终止函数（`exit/_exit/_Exit`）将其 __退出状态(exit status)__ 作为参数传送给函数。异常终止时，内核（不是进程本身）产生一个指示其异常终止原因的 __终止状态(termination status)__，父进程能用`wait/waitpid`取得其终止状态
@@ -2541,10 +2544,328 @@ shell中`-c`代表`cmdstring`作为命令输入，可以包含任一有效的she
 
 > rehl6 不存在此问题
 
+## 会计进程
+```shell
+accton /var/account/pacct  #以root来启用它
+#运行某程序
+accton                     #以root停止它
+#打开文件,使用struct acct来读取
+```
+
 ## 用户标识
+```c
+#include <unistd.h>
+char *getlogin(void);
+//Returns: pointer to string giving login name if OK,NULL on error
+```
+
+如果调用此函数的进程没的连接到用户登录时所用的终端（daemon），本函数无效，给出了登录名，就可用`getpwnam()`查找用户相应记录
+
+## 进程优先级
+```c
+#include <unistd.h>
+int nice(int incr );
+//Returns: new nice value − NZERO if OK, −1 on error
+
+#include <sys/resource.h>
+int getpriority(int which,id_t who);
+//Returns: nice value between −NZERO and NZERO−1 if OK, −1 on error
+
+int setpriority(int which,id_t who,int value);
+//Returns: 0 if OK,−1 on error
+```
+
+示例(含运行时间的控制)
+
+```c
+#include "apue.h"
+#include <errno.h>
+#include <sys/time.h>
+
+#if defined(MACOS)
+#include <sys/syslimits.h>
+#elif defined(SOLARIS)
+#include <limits.h>
+#elif defined(BSD)
+#include <sys/param.h>
+#endif
+
+unsigned long long count;
+struct timeval end;
+
+void
+checktime(char *str){
+    struct timeval  tv;
+
+    gettimeofday(&tv, NULL);
+    if (tv.tv_sec >= end.tv_sec && tv.tv_usec >= end.tv_usec) {
+        printf("%s count = %lld\n", str, count);
+        exit(0);
+    }
+}
+
+int main(int argc, char *argv[]){
+    pid_t   pid;
+    char    *s;
+    int     nzero, ret;
+    int     adj = 0;
+
+    setbuf(stdout, NULL);
+#if defined(NZERO)
+    nzero = NZERO;
+#elif defined(_SC_NZERO)
+    nzero = sysconf(_SC_NZERO);
+#else
+#error NZERO undefined
+#endif
+    printf("NZERO = %d\n", nzero);
+    if (argc == 2)
+        adj = strtol(argv[1], NULL, 10);
+    gettimeofday(&end, NULL);
+    end.tv_sec += 10;   /* run for 10 seconds */
+
+    if ((pid = fork()) < 0) {
+        err_sys("fork failed");
+    } else if (pid == 0) {  /* child */
+        s = "child";
+        printf("current nice value in child is %d, adjusting by %d\n",
+          nice(0)+nzero, adj);
+        errno = 0;
+        if ((ret = nice(adj)) == -1 && errno != 0)
+            err_sys("child set scheduling priority");
+        printf("now child nice value is %d\n", ret+nzero);
+    } else {        /* parent */
+        s = "parent";
+        printf("current nice value in parent is %d\n", nice(0)+nzero);
+    }
+    for(;;) {
+        if (++count == 0)
+            err_quit("%s counter wrap", s);
+        checktime(s);
+    }
+}
+```
+
+## 进程时间
+```c
+#include <sys/times.h>
+clock_t times(struct tms *buf );
+//Returns: elapsed wall clock time in clock ticks if OK,−1 on error
+
+struct tms {
+    clock_t  tms_utime;  /* user CPU time */
+    clock_t  tms_stime;  /* system CPU time */
+    clock_t  tms_cutime; /* user CPU time, terminated children */
+    clock_t  tms_cstime; /* system CPU time, terminated children */
+};
+```
+
+任何一进程都可以调用以获得自己以及终止子进程的时间，该结构没有墙上时钟，所以其返回值是墙上时钟。
+
+调用`times`保存其返回值，在以后某个时间再次调用`times`，从新的返回值中减去以前的返回值，此差就是墙上时钟时间（一个长期运行的进程可能会墙上时钟时间溢出）
+
+结构体中针对子进程的字段包含了此进程用`wait/waitid/waitpid`等待到各个子进程的值
+
+`clock_t`值都用`_SC_CLK_TCK`(由`sysconf`函数返回的每秒时钟滴答数)变换成秒数
+
+> `getrusage(2)`返回CPU时间，以及指示资源使用情况的另外14个值
+
+进程关系
+=========
+## 终端登录
+
+![img](../../imgs/apue_33.png)
+
+最初的`init`进程具有超级用户特权，后一张图所有进程都有超级用户特权，并且底部三个进程的进程ID相同，因为进程ID不会因执行`exec`而改变，除了最初的`init`进程，所有进程的父进程ID均为1
+
+如果登录正确，`login`进行如下工作：
+
+- 将当前工作目录更改为该用户的起始目录
+- 调用`chown`改变该终端的所有权，使登录用户成为它的所有者
+- 将对该终端设备的访问权限改变成用户读和写
+- 调用`setgid`及`initgroups`设置进程的组ID
+- 用`login`所有到的所有信息初始化环境：HOME,shell,user/logname,path
+- `login`进程改变为登录用户的用户ID(`setuid`)并调用该用户的登录shell，如下
+
+```c
+execl("/bin/sh", "-sh", (char *)0);
+```
+
+![img](../../imgs/apue_34.png)
+
+当登录shell终止时，`init`会得到`SIGCHLD`信号，会对终端重复全部上述过程
+
+## 网络登录
+BSD中有一个`inetd`进程（linux下是`xinetd`），等待大多数网络连接。
+
+`init`调用一个shell，执行`/etc/rc`，由此脚本启动一个守护进程`inetd`，一旦shell终止，`inetd`的父进程就是`init`了，`inetd`等待TCPIP连接请求到主机，到请求到达时，它执行一次`fork`，然后生成子进程执行适当程序
+
+假设使用`telnet`，则主机上启动一个`telnetd`服务进程，它打开一个伪终端，并用`fork`分成两个进程，父进程处理网络连接通信，子进程执行`login`程序。父子进程通过伪终端相连接，在调用`exec`之前，子进程使其文件描述符0,1,2与伪终端相连
+
+![img](../../imgs/apue_35.png)
+
+## 进程组
+进程组是一个或多个进程的集合（与用户组ID是完全不同的概念），可以接收来自同一终端的各种信号。每个进程组有唯一一个进程组ID
+
+```c
+#include <unistd.h>
+pid_t getpgrp(void);
+//Returns: process group ID of calling process
+
+#include <unistd.h>
+pid_t getpgid(pid_t pid);
+//Returns: process group ID if OK, −1 on error
+```
+
+当`pid`为0，则返回调用进程的进程组ID
+
+每个进程组都有一个组长进程，它的进程ID，即为该进程组ID
+
+`setpgid`来加入一个现有的组或创建一个新进程组
+
+```c
+#include <unistd.h>
+int setpgid(pid_t pid, pid_t pgid );
+//Returns: 0 if OK,−1 on error
+```
+
+- 如果两个参数相等，则由`pid`指定的进程变成进程组组长
+- 如果`pid`为0，则使用调用者的进程ID
+- 如果`pgid`为0，则`pid`指定的进程ID作为进程组ID
+
+一个进程只能为它自己或它的子进程设置进程组ID，在它的子进程调用了`exec`函数之一后，它就不再能改变子进程的进程组ID
+
+大多数作业控制shell中，在`fork`后调用此函数，使父进程设置其子进程的进程组ID，并且使其子进程设置自己的进程组ID，有一个是冗余的，为了保证子进程已进入进程组
+
+## 会话
+进程调用`setsid`函数建立一个新会话
+
+```c
+#include <unistd.h>
+pid_t setsid(void);
+//Returns: process group ID if OK, −1 on error
+```
+
+如果调用此函数的进程不是组长，则此函数会创建一个新会话：
+
+- 该进程变成新会话首进程（session leader），也是新会话中唯一的进程
+- 该进程成为新进程组的组长
+- 该进程没有控制终端，如果在调用`setsid`之前该进程有一个控制终端，那么这种联系也会被中断
+
+如果是组长，则函数出错，为了保证不出错，通常先`fork`，然后使其父进程终止，子进程继续
+
+```c
+#include <unistd.h>
+pid_t getsid(pid_t pid);
+//Returns: session leader’s process group ID if OK, −1 on error
+```
+
+如`pid`为0，则返回调用进程的会话首进程的进程组ID，如果`pid`并不属于调用者所在的会话，那么调用者就不能得到该会话首进程的进程组ID
 
 
+## 控制终端
+- 一个会话可以有一个控制终端，通常是登录到其上的终端设备，或伪终端设备
+- 建立与控制终端连接的会话首进程为控制进程
+- 一个会话中的几个进程组可被分成一个前台进程组以及一个或几个后台进程组
+- 无论何时键入终端的中断键（DELETE或CTRL+C），就会将中断信号`SIGINT`发送给前台进程组的所有进程
+- 无何何时键入终端的退出键（CTRL+\）,就会将退出信号`SIGQUIT`发送给前台进程组的所有进程
+- 如果终端接口检测到网络已断开连接，或CTRL+Z，则将挂断信号`SIGTSTP`发送给控制进程（会话首进程）
 
+![img](../../imgs/apue_36.png)
+
+有时不管标准输入、标准输出是否重定向，程序都需要与控制终端交互，此时需要打开文件`/dev/tty`
+
+## tcgetpgrp/tcsetpgrp/tcgetsid函数
+```c
+#include <unistd.h>
+pid_t tcgetpgrp(int fd );
+//Returns: process group ID of foreground process group if OK,−1 on error
+int tcsetpgrp(int fd ,pid_t pgrpid );
+//Returns: 0 if OK,−1 on error
+```
+
+需要一种方法来通知内核哪一个进程组是前台进程组，终端设备驱动程序就能了解将终端输入和终端产生的信号送到何处
+
+`tcgetpgrp`返回前台进程组的进程组ID，该前台进程组与在filedes上打开的终端相关联
+
+如果进程有一个控制终端，则该进程可以调用`tcsetpgrp`将前台进程组ID设置为`pgrpid`，该值应当为同一会话中的某一个进程组的ID
+
+大多数应用程序并不直接调用这两个函数
+
+`tcgetsid`给出控制tty的文件描述符，得到会话首进程的进程组ID
+
+```c
+#include <termios.h>
+pid_t tcgetsid(int fd );
+//Returns: session leader’s process group ID if OK, −1 on error
+```
+
+## 作业控制
+只有前台作业接收终端输入，如果后台作业试图读终端，那么这并不是一个错误，终端驱动程序会检测到这种情况，并且向后台作业发送一个`SIGTTIN`，挂起后台作业，shell向有关用户发出通知，用户可将此作业转为前台作业(调用`tcsetpgrp`)，并将继续信号`SIGCONT`送给该进程组，于是它就可以读终端了
+
+```shell
+$ cat > temp.foo &
+[1]  1681
+$                        #we press RETURN
+[1] + Stopped (SIGTTIN)  cat > temp.foo
+$ fg %1
+cat > temp.foo           #tells us which job is now in the foreground
+hello, world enter one line
+ˆD                       #type the end-of-file character
+$ cat temp.foo           #check that the one line was put into the file
+hello, world
+````
+
+> 当如果不是作业控制时，而且该进程自己没有重定向标准输入，则shell自动将后台进程标准输入重定向到`/dev/null`，产生一个文件结束，`cat`立即读到文件尾，并正常结束
+
+如果后台作业输出到控制终端时
+
+```shell
+$ cat temp.foo &
+[1]  1719
+$hello, world
+                         #we press RETURN
+[1] + Done  cat temp.foo &
+$ stty tostop
+$ cat temp.foo &
+[1]  1721
+$                        #we press RETURN and find the job is stopped
+[1] + Stopped(SIGTTOU) cat temp.foo &
+$ fg %1
+cat temp.foo             #tells us which job is now in the foreground
+hello, world
+```
+
+终端驱动程序将写操作标识为来自于后台进程，于于向该作业发送`SIGTTOU`信号
+
+![img](../../imgs/apue_37.png)
+
+## shell执行程序
+```shell
+ps -o pid,ppid,pgid,sid,comm
+  PID  PPID  PGID   SID COMMAND
+ 4390  2082  4390  4390 bash
+ 4851  4390  4851  4390 ps
+ ```
+
+`ps`命令的父进程是shell，它们位于同一会话，在linux中，但它具有自己的进程组
+
+```shell
+ ps  -o pid,ppid,pgid,sid,comm | cat
+  PID  PPID  PGID   SID COMMAND
+ 4390  2082  4390  4390 bash
+ 4912  4390  4912  4390 ps
+ 4913  4390  4912  4390 cat
+```
+
+`ps`和`cat`还位于同一进程组，并且`cat`的父进程是`ps`（或者相反？？？？）
+
+> 管道线中最后一个进程是shell的子进程，而管道线中第一个进程(或其它进程)是最后一个进程的子进程，shell`fork`一个自身副本，然后此副本再为管道线中每条命令各`fork`一个进程
+
+`ps -o pid,ppid,pgid,sid,tpgid,comm`linux下通过`tpgid`查看当前前台进程组
+
+## 孤儿进程组
+整个进程组也可成为“孤儿”
 
 
 
@@ -2561,11 +2882,13 @@ shell中`-c`代表`cmdstring`作为命令输入，可以包含任一有效的she
 
 
 <!--
-gcc -I../include/ ../lib/error.c seek.c -o seek
+gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
 
 休闲食品
 联合办宴
 时时秒杀
 意见奖励
+
+
 
 -->

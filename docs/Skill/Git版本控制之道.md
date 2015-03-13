@@ -821,14 +821,14 @@ git merge origin/master     #把更新的内容合并到本地分支/master
 
 如果需要指定推入的版本库`git push <repository> <refspec>`，`<repository>`可以是任意有效的版本库名称，`<refspec>`可以是标签、分支、或HEAD这样的关键字，如`git push origin mybranch:master`将本地分支mybranch上的提交推入远程版本的master分支上
 
- ```shell
+```shell
 git push -u origin master    #提交到主分支
 git push -u origin 1.1       #提交到tag
 git push origin RB_1_1       #提交到分支
 git push origin test:master  #提交本地test分支作为远程的master分支
 git push origin test:test    #提交本地test分支作为远程的test分支
 git push origin :test        #刚提交到远程的test将被删除，但是本地还会保存的
- ```
+```
 
 ## 添加新的远程版本库
 只有相应权限，可以跟任意远程版本库打交道，进行推入和拖入操作。
