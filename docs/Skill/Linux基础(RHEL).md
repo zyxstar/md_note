@@ -170,8 +170,8 @@ runlevel:
 
 ## 关机
 ```shell
-init 0            #关机
-shutdown -h now
+shutdown -h now   #关机
+init 0            #也是关机,不推荐
 
 reboot            #重启
 ```

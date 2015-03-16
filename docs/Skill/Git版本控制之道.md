@@ -1027,29 +1027,29 @@ git commit -m "update commit to track in submoduel"
 - 服务端设置
 
 ```shell
-sudo useradd gituser                             #设置用户与密码,ubuntu下使用adduser
+sudo useradd gituser                           #设置用户与密码,ubuntu下使用adduser
 
 su - gituser
-mkdir repo                                       #第一次需要创建目录,以后不需要
+mkdir repo                                     #第一次需要创建目录,以后不需要
 
 cd repo
-git --bare init proj1.git                        #创建项目
+git --bare init proj1.git                      #创建项目
 ```
 
 - 客户端设置
 
 ```shell
-ssh-keygen                                       #生成ssh key,该过程中一直回车
-ssh-copy-id -i gituser@192.168.0.153             #假设git服务器是192.168.0.153,该过程需要输入gituser的密码
-                                                 #上面两步不设置,将每次push/pull时要求输入gituser的密码
+ssh-keygen                                     #生成ssh key,该过程中一直回车
+ssh-copy-id -i gituser@192.168.0.153           #假设服务器192.168.0.153,该过程需要输入gituser密码
+                                               #上面如不设置,将每次push/pull时要求输入gituser密码
 
-git config --global user.name "user1"            #设置git配置,不同用户使用不同的名字
+git config --global user.name "user1"          #设置git配置,不同用户使用不同的名字
 git config --global user.email "user1@qq.com"
 
-cd work_space                                    #进入某个工作目录
-git clone gituser@192.168.0.153:repo/proj1.git   #克隆项目
+cd work_space                                  #进入某个工作目录
+git clone gituser@192.168.0.153:repo/proj1.git #克隆项目到本地
 
-cd proj1                                         #将产生proj1的目录,下面进行测试
+cd proj1                                       #将产生proj1的目录,下面进行测试
 echo "a">a.txt
 git add .
 git commit -a

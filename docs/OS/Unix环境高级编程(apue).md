@@ -1877,6 +1877,8 @@ exit(main(argc, argv));
 ### 退出函数
 `_exit`和`_Exit`立即进入内核，`exit`则先执行一些清理处理（包括调用执行各终止处理程序，关闭所有标准IO流等），然后进入内核
 
+> 不要依赖`exit`的清理工作，应自己做好
+
 > 关闭所有标准IO流，但并不会关闭文件描述符`STDOUT_FILENO`等
 
 ```c
@@ -1899,6 +1901,8 @@ int atexit(void (*func)(void));
 ```
 
 `exit`调用这些注册函数（终止处理程序）的顺序与它们登记时顺序相反，同一函数若登记多次，就执行多次
+
+> `exit`或main的返回，会调用它，但`_exit/_Exit`是不会调用这些注册函数的
 
 ![img](../../imgs/apue_17.png)
 
@@ -2040,11 +2044,13 @@ int unsetenv(const char *name);
 - `setenv`会分配存储空间，但`putenv`自由的将传递给它的参数字符串直接放到环境中，因此 __将栈中字符串传递给它会出错__
 
 ## setjmp/longjmp函数
+> 不推荐使用，优先使用返回值来判断是否异常
+
 `setjmp/longjmp`对处理发生在很深层嵌套函数调用中的出错情况非常有用，在栈上跳过若干调用帧，返回到当前函数 __调用路径__ 上的某一个函数中
 
 在希望返回到的位置调用`setjmp`，`longjmp`用于发生错误时调用，参数`val`为非零值，方便在`setjmp`时判断是谁发生了错误
 
-当通过`longjmp`返回到的函数中，原先的变量是否恢复，大多数标准称它们的值为不确定。如果有一个自动变量，而 __不想使其回滚__，可定义为`volatile`（将不被优化而放到寄存器中），另外，声明为全局变量或静态变量的值，在执行`longjmp`时保持不变
+当通过`longjmp`返回到的函数中，原先的变量是否恢复，大多数标准称它们的值为不确定。如果有一个自动变量，而 __不想使其回滚__，可定义为`volatile`（将不被优化而放到寄存器中），另外，声明为全局变量或静态变量的值，或使用`alloca`分配在当前栈中，在执行`longjmp`时保持不变
 
 ```c
 #include <setjmp.h>
@@ -2098,6 +2104,25 @@ process. This limit is enforced by the `sigqueue` function.
 
 进程控制
 ===========
+## 基础知识
+linux进程的结构体位于`/usr/src/linux-headers-3.2.0-61-generic-pae/include/linux/sched.h`
+
+`struct task_struct`中
+
+- `state`进程状态，runnable包含运行中与就绪
+- `stack`3G以下空间为进程独立，3G以上的1G空间为内核共享，整个4G空间均为虚拟内存空间
+- `on_cpu`在哪个CPU上运行
+- `tasks`用内核链表表示，所有进程均在上面
+- `mm/active_mm`的结构体是`struct mm_struct`，用于页表相关
+- `parent/children/sibling`通过二叉树表示的进程树
+
+当进程启动时，每个进程相当于自己独占一台机器（俗称虚拟机），相应的机制有：
+
+- 处理器调度：调度是 __中断__，时钟周期一到，就发送一个中断到CPU，这时引发一个进程（俗称调度进程），去调度其它进程。
+> 中断打断运行中的进程，而信号打断休眠状态的进程（如`sleep`未到指定的时间，提前被唤醒），而进程又分可被某信号打断与不可被某信号打断
+- 虚拟内存：进程启动时，页表先建好，进程访问的地址空间，通过MMU查找页表，映射到真实的物理地址
+
+
 ## 进程标识
 - pid为0通常是调度进程，称为交换进程
 - pid为1通常是`init`进程，在自举过程结束时 __由内核调用__。该进程决不会终止，它是普通进程（交换进程为内核进程），但以超级用户特权执行，是所有孤儿进程的父进程
@@ -2121,6 +2146,12 @@ gid_t getegid(void);
 ```
 
 ## fork函数
+`fork`复制缓冲区，如果子进程不需要缓冲区内容，在`fork`前，先`fflush`
+
+`fork`创建子进程的行为，在`fork`函数 __内部已完成__，所以通过返回值，可以知道当前进程
+
+使用多进程的场景：提高性能、拆分逻辑
+
 ```c
 #include <unistd.h>
 pid_t fork(void);
@@ -2176,11 +2207,11 @@ pid_t fork(void);
 - The set of pending signals for the child is set to the empty set.
 
 ## vfork函数
-> 可移植的应用程序不应该使用它
+> 可移植的应用程序不应该使用它，并且现在`fork`时使用写时拷贝，它的优势已不存在
 
 `vfork`也用于创建新进程，而该新进程的目的是`exec`一个新程序，但它并不将父进程地址空间完全复制到子进程，因为子进程会立即调用`exec`(或`exit`)，不过在子进程调用`exec/exit`之前，它在父进程的空间中运行，如果子进程修改数据（除用于存放`vfork`返回值的变量）、进行函数调用、或没有调用`exec/exit`，可能会带来未知结果
 
-`vfork`保证子进程先运行，在它调用`exec/exit`后父进程才可能被调度运行，如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则导致死锁
+`vfork`保证 __子进程先运行__，在它调用`exec/exit`后父进程才可能被调度运行，如果在调用这两个函数之前子进程依赖于父进程的进一步动作，则导致死锁
 
 
 ## exit函数
@@ -2191,6 +2222,8 @@ pid_t fork(void);
 一个已经终止、但父进程未对其处理（获取终止子进程的有关信息、释放它占用的资源）的进程称为 __僵尸进程__，`ps(1)`时的状态为`Z`
 
 被`init`收养的进程终止时，并不会成为僵尸进程，只要一个子进程终止，`init`就会调用一个`wait`函数取得其终止状态
+
+> 僵尸进程是有存在意义的，它表示它的返回状态还未被父进程获取
 
 ## wait/waitpid函数
 当一个进程正常或异常终止时，内核就向其父进程发送`SIGCHLD`信号（一个异步通知），父进程可以忽略它，或提供一个信号处理程序
@@ -2384,6 +2417,11 @@ charatatime(char *str)
 ```
 
 ## exec函数
+- `l`代表参数以list平坦开
+- `v`代表参数以vector向量表示
+- `p`代表会查找`PATH`环境变量
+- `e`代表使用新的环境变量，而不是当前进程的
+
 ```c
 #include <unistd.h>
 int execl(const char *pathname,const char *arg0,...
@@ -2407,6 +2445,9 @@ int fexecve(intfd,char *constargv[], char *constenvp[]);
 
 - 如果`filename`中包含`/`，则将其视为路径名
 - 否则按`PATH`环境变量，搜寻可执行文件
+
+> 经常看到`execlp("ls", "ls", "-l", NULL);`存在相同的`ls`，第二个是作为`main`函数中`argv[0]`使用的
+
 
 `execlp/execvp`找到的文件不是机器可执行文件，就认为是一个shell脚本，会调用`/bin/sh`，并以该`filename`作为shell输入
 
@@ -2450,7 +2491,7 @@ int setgid(gid_t gid);
 ```
 
 - 若进程具有root用户特权，则`setuid`函数将real ID、effective ID，以及saved ID设置为uid
-- 若进程没特级，但uid等于real ID或saved ID，则`setuid`只将effective ID设置为uid，不改变另外两个（开始时，saved==effective，所以此功能用于real与effetive切换）
+- 若进程没特级，但uid等于real ID或saved ID，则`setuid`只将effective ID(则要求是`u+s`的)设置为uid，不改变另外两个（开始时，saved==effective，所以此功能用于real与effetive切换）
 - 如果均不满足，则`errno`为`EPERM`
 
 注意点：
@@ -2481,7 +2522,7 @@ int setegid(gid_t gid);
 //Both return: 0 if OK, −1 on error
 ```
 
-更改effective
+更改effective，最好不用，忘记改回会有风险
 
 各函数图示
 
@@ -2490,7 +2531,31 @@ int setegid(gid_t gid);
 ## 解释器文件
 `#! pathname  [ optional-argument ]`
 
+shell存在内部命令与外部命令，像`ls`为外部命令，是另开一个进程执行的，而`cd/export`是内部命令，在当前进程中执行的
+
+如果存在以下情况
+
+- `cmdline`按序输出所有命令行的参数
+- `cmdline.sh`为`#!./cmdline 123 456`
+- 存在一个解释器程序，它执行`execl("./cmdline.sh", "aaa", "bbb", "ccc", NULL);`
+
+则最后输出为
+
+```
+./cmdline
+123 456
+./cmdline.sh
+bbb
+ccc
+```
+
+"aaa"被"./cmdline.sh"替代了，"123 456"被作为一个参数
+
+
+
 ## system函数
+相当于`fork`后直接`execlp`，并且父进程`wait`
+
 ```c
 #include <stdlib.h>
 int system(const char * cmdstring);
@@ -2660,11 +2725,13 @@ struct tms {
 };
 ```
 
-任何一进程都可以调用以获得自己以及终止子进程的时间，该结构没有墙上时钟，所以其返回值是墙上时钟。
+`clock_t`为多少个时钟周期，称嘀嗒，一个时钟周期为`sysconf(_SC_CLK_TCK)`，计算时间时使用`(double)tms.tms_cutime / sysconf(_SC_CLK_TCK)`
+
+任何一进程都可以调用以获得自己以及终止子进程的时间，该结构没有墙上时钟，所以其返回值是墙上时钟，多进程运行某段逻辑时，墙上时钟会少，但user时间不会少（甚至更多）。
 
 调用`times`保存其返回值，在以后某个时间再次调用`times`，从新的返回值中减去以前的返回值，此差就是墙上时钟时间（一个长期运行的进程可能会墙上时钟时间溢出）
 
-结构体中针对子进程的字段包含了此进程用`wait/waitid/waitpid`等待到各个子进程的值
+结构体中针对子进程的字段包含了此进程用`wait/waitid/waitpid`等待到各个子进程的值，如果没`wait`则不包括子进程时间
 
 `clock_t`值都用`_SC_CLK_TCK`(由`sysconf`函数返回的每秒时钟滴答数)变换成秒数
 
@@ -2867,6 +2934,35 @@ ps -o pid,ppid,pgid,sid,comm
 ## 孤儿进程组
 整个进程组也可成为“孤儿”
 
+
+信号
+=========
+内核函数分为可重入与不可重入函数，可重入函数是自包含的函数，不使用静态、全局等外部资源，重入运行，不会发生错误
+
+`rand`如果作为随机数，不可重入问题不大，但作为加密使用时，就有问题。`rand_r`是可重入版本（一般后面`_r`的为可重入版本）
+
+`printf`不可重入，所以在信号处理函数中最好不要使用
+
+
+`signal`的返回值是以前的信号处理回调函数，保存下来，可以恢复用
+
+信号从内核态到用户态，才会响应，信号会打断阻塞（休眠）的系统调用
+
+阻塞一定是在内核态发生，即使`kill -9`也不会响应，因此阻塞一旦返回，就会响应
+
+早期版本的`signal`关联就一次，需要在回调中再次绑定
+
+`sigprocmask`当用来解除阻塞时，是立即发生的，然后函数才返回，所以如果在信号响应函数中解除阻塞，有可能还是会导致函数重入
+
+`sigpending`来过的信号，但还未响应的，而且是阻塞中的信号
+
+`sigaction`除了丢失，基本上认为是可靠信号
+> `act.sa_flags |= SA_RESTART`表示自动重启，如示例，但有些函数是不能自动重启的，如`semop`
+> `act.sa_flags |= SA_RESETHAND`相当于就关联一次，不常用
+
+`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`
+
+man 3p signal
 
 
 ## 函数
