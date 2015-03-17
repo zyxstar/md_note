@@ -124,6 +124,7 @@ man       #man是分章节的
            # 6 Games et. Al.
            # 7 Miscellanea
            # 8 System Administration tools and Deamons
+           # 3p posix手册
           #查找fopen的使用，在第3章节查找
           man 3 fopen
           #查询所有含有passwd的帮助文件

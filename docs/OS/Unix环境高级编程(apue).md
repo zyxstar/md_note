@@ -2950,6 +2950,8 @@ ps -o pid,ppid,pgid,sid,comm
 - 执行系统默认动作，如下图
 
 > 进程当前工作目录的`core`文件复制该进程的存储映像，调试程序使用它来检查进程终止的状态
+> 
+> 设置`ulimit -c unlimited`，将会在当前目录下产生`core`文件
 
 ![img](../../imgs/apue_38.png)
 
@@ -2961,10 +2963,18 @@ ps -o pid,ppid,pgid,sid,comm
 `fork`时，子进程继承父进程的信号处理方式，捕捉函数地址是有意义的
 
 ```c
+#define SIG_ERR (void (*)())-1
+#define SIG_DFL (void (*)())0
+#define SIG_IGN (void (*)())1
+
 #include <signal.h>
 void (*signal(intsigno,void (*func)(int)))(int);
 //Returns: previous disposition of signal (see following) if OK,SIG_ERR on error
 ```
+
+`signal`的返回值是以前的信号处理回调函数，保存下来，可以恢复用
+
+早期版本的`signal`关联就一次，需要在回调中再次绑定
 
 ## 不可靠的信号
 信号可能丢失，进程对信号的控制能力也差，也不具备阻塞信号的能力。进程不希望某种信号发生时，不能关闭该信号，能做的只是忽略它
@@ -2994,43 +3004,235 @@ again:
   }
 ```
 
-为了帮助应用程序使其不必处理被中断的系统调用，4.2BSD引入中断系统调用自动重启(`act.sa_flags = SA_RESTART`时)，如`ioctl, read, readv, write, writev, wait, waitpid`，前5个函数只对低速设备进行操作时才会被信号中断，而后两个在捕捉到信号时总时被中断。这种自动重启，可基于信号禁用此功能
+为了帮助应用程序使其不必处理被中断的系统调用，4.2BSD引入中断系统调用自动重启(POSIX.1要求`act.sa_flags = SA_RESTART`时,并且使用`sigaction`)，如`ioctl, read, readv, write, writev, wait, waitpid`，前5个函数只对低速设备进行操作时才会被信号中断，而后两个在捕捉到信号时总时被中断。这种自动重启，可基于信号禁用此功能
 
 ## 可重入函数
-
-
-
-
-
-
 内核函数分为可重入与不可重入函数，可重入函数是自包含的函数，不使用静态、全局等外部资源，重入运行，不会发生错误
+
+进程捕捉到信号并对其处理时，可能还会被信号打断，从而引发一些问题，这些函数是不可重入的。加锁也是没有用的，反而有可能引起死锁
+
+> 假设A是某信号的响应函数，在A执行过程中，又系统又捕捉了了该信号，必然还执行A函数，如果A函数开始部分加锁，结束部分解锁，看似解决竞争问题，实际上，重入的A函数，会先要求加锁，就等待，无法返回，导致先行的A函数无法被执行到，也无法解锁，形成死锁
+
+```plain
+    A            A
+    ｜        -> |
+    lock     /   wait lock
+    ｜      /    |
+    signal /     |
+    ｜      \    | 
+    unlock   \   | 
+    ｜         <-|
+```
+
+下面的函数是可重入的，并称为异步信号安全，除了可重入以外，在信号处理操作期间，它会阻塞任何会引起不一致的信号发送
+
+![img](../../imgs/apue_40.png)
 
 `rand`如果作为随机数，不可重入问题不大，但作为加密使用时，就有问题。`rand_r`是可重入版本（一般后面`_r`的为可重入版本）
 
-`printf`不可重入，所以在信号处理函数中最好不要使用
+即使使用这些可重入函数，但由于 __每个线程只有一个`errno`__，所以信号处理程序可能会修改其原先值，作为一个通用规则，在调用上述函数时，在调用前保存`errno`，在调用后恢复`errno`
+
+而大多数函数是不可重入的：
+
+- 使用了静态数据结构
+- 调用了`malloc/free`
+- 是标准IO函数，如`printf`
+
+## SIGCLD语义
+子进程状态改变后产生此信号，父进程需要调用一个`wait`函数以检测发生了什么
+
+## 可靠信号术语和语义
+当造成信号的事件发生时，为进程产生一个信号，事件可以是硬件异常、软件条件、终端产生信号或调用`kill`，当信号产生时，内核通常在进程表中以某种形式设置一个标志
+
+当对信号采取了这种动作时，我们说向进程递送了一个信号，在信号产生(generation)和递送(delivery)之间的时间间隔内，称信号是未决的(pending)
+
+进程可以选用阻塞信号递送，如果为进程产生了一个阻塞的信号，而且对该信号的动作是捕捉该信号（或系统默认），则为该进程将此信号保持为未决状态，直到该进程对此信号解除了阻塞（或改为忽略）
+
+内核在递送一个原来被阻塞的信号给进程时（而不是产生该信号时），才决定对它的处理方式，于是进程在信号给它之前仍可以改变对该信号的动作
+
+信号 __从内核态到用户态，才会响应__。阻塞一定是在内核态发生，即使`kill -9`也不会响应，但进程一旦从内核态返回到用户态，就会马上响应
+
+信号会打断阻塞（休眠）的系统调用，如`sleep()`有时会不准确，盖因休眠被唤醒了
+
+如果在进程解除对某个信号的阻塞之前，这种信号发生了多次，POSIX.1允许递送该信号一次或多次，实时信号就为多次，对信号进行了排队，但大多数信号只递送一次
+
+如果多个信号要递送给一个进程，POSIX.1并未规定递送顺序，但建议先递送与进程当前状态有关的信号，如`SIDGEGV`
+
+接下来的`sigprocmask`来检测和更改当前信号屏蔽字，而`sigset_t`及它相关的函数，用来存放信号屏蔽字
 
 
-`signal`的返回值是以前的信号处理回调函数，保存下来，可以恢复用
+## 信号集
+主要是给`sigprocmask`中使用这种数据类型
 
-信号从内核态到用户态，才会响应，信号会打断阻塞（休眠）的系统调用
+```c
+#include <signal.h>
+int sigemptyset(sigset_t *set);
+int sigfillset(sigset_t *set);
+int sigaddset(sigset_t *set,int signo);
+int sigdelset(sigset_t *set,int signo);
+//All four return: 0 if OK,−1 on error
+int sigismember(const sigset_t *set,int signo);
+//Returns: 1 if true, 0 if false,−1 on error
+```
 
-阻塞一定是在内核态发生，即使`kill -9`也不会响应，因此阻塞一旦返回，就会响应
+它的实现
 
-早期版本的`signal`关联就一次，需要在回调中再次绑定
+```c
+#define sigemptyset(ptr) (*(ptr) = 0)
+#define sigfillset(ptr) (*(ptr) = ˜(sigset_t)0, 0)
 
-`sigprocmask`当用来解除阻塞时，是立即发生的，然后函数才返回，所以如果在信号响应函数中解除阻塞，有可能还是会导致函数重入
+#define SIGBAD(signo) ((signo) <= 0 || (signo) >= NSIG)
 
-`sigpending`来过的信号，但还未响应的，而且是阻塞中的信号
+int sigaddset(sigset_t *set, int signo) {
+  if (SIGBAD(signo)) {
+    errno = EINVAL;
+    return(-1);
+  }
+  *set |= 1 << (signo - 1); /* turn bit on */
+  return(0);
+}
 
+int sigdelset(sigset_t *set, int signo) {
+  if (SIGBAD(signo)) {
+    errno = EINVAL;
+    return(-1);
+  }
+  *set &= ˜(1 << (signo - 1)); /* turn bit off */
+  return(0);
+}
+
+int sigismember(const sigset_t *set, int signo){
+  if (SIGBAD(signo)) {
+    errno = EINVAL;
+    return(-1);
+  }
+  return((*set & (1 << (signo - 1))) != 0);
+}
+```
+
+宏`sigfillset`后面的0，用于返回值
+
+## sigprocmask函数
+它是为单线程进程定义，处理多线程进程中的信号，使用另一函数
+
+```c
+#include <signal.h>
+int sigprocmask(int how,const sigset_t *restrict set, sigset_t *restrict oset);
+//Returns: 0 if OK,−1 on error
+```
+
+`how`指示了如何修改当前信号屏蔽字，注意，不能阻塞`SIGKILL/SIGSTOP`
+
+- `SIG_BLOCK`是`set`包含的信号与当前信号屏蔽字做并集
+- `SIG_UNBLOCK`当前信号屏蔽字减去`set`包含的信号
+- `SIG_SETMASK`进程新的信号屏蔽字为`set`包含的信号
+
+`oset`用于保存之前的设置
+
+`sigprocmask`当用来解除阻塞时，是 __立即发生__ 的，然后函数才返回，所以如果在信号响应函数中解除阻塞，有可能还是会导致函数重入
+
+## sigpending函数
+该函数返回一个信号集，对于调用进程而言，其中的信号是阻塞不能递送的，因而也一定是当前未决的，即`sigpending`来过的信号，但还未响应的，而且是阻塞中的信号
+
+```c
+#include <signal.h>
+int sigpending(sigset_t *set);
+//Returns: 0 if OK,−1 on error
+```
+
+如果同一信号未决多次，当解除阻塞时，只向进程传送一次，没有队列
+
+## sigaction函数
 `sigaction`除了丢失，基本上认为是可靠信号
+
+```c
+#include <signal.h>
+int sigaction(int signo,const struct sigaction *restrict act, struct sigaction *restrict oact);
+//Returns: 0 if OK,−1 on error
+
+struct sigaction {
+  void       (*sa_handler)(int);
+  void       (*sa_sigaction)(int, siginfo_t *, void *);
+  sigset_t   sa_mask;
+  int        sa_flags;
+  void       (*sa_restorer)(void);
+};
+```
+
+`struct sigaction`结构体中，前两个函数指针，只能使用其一，它们有可能实现为共用体
+
+默认在调用信号处理程序时，就能阻塞某些信号，保证在处理一个给定的信号时，如果这种信号再次发生，__它会被阻塞到对前一个信号的处理结束为止__(除非设置了`sa_flags`为`SA_NODEFER`)
+
+若同一信号多次发生，通常并不加入队列，解除阻塞后，其信号处理函数只会被调用一次
+
+![img](../../imgs/apue_41.png)
+
 > `act.sa_flags |= SA_RESTART`表示自动重启，如示例，但有些函数是不能自动重启的，如`semop`
 > `act.sa_flags |= SA_RESETHAND`相当于就关联一次，不常用
+> `act.sa_flags |= SA_SIGINFO`包含额外信息，配合`sigqueue()`使用，响应函数使用`sa_sigaction`而不是`sa_handler`，需注意，`sa_sigaction`中参数`info`是指针类型，除非下次产生信号，否则它的值不变，如果一个响应函数对应多个信号时，容易误导，以为是传递过来的值
 
-`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`
+使用`sigaction`实现`signal`
 
-man 3p signal
+```c
+Sigfunc *signal(int signo, Sigfunc *func){
+    struct sigaction    act, oact;
 
-可重入+锁
+    act.sa_handler = func;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (signo == SIGALRM) {
+#ifdef  SA_INTERRUPT
+        act.sa_flags |= SA_INTERRUPT;
+#endif
+    } else {
+        act.sa_flags |= SA_RESTART;
+    }
+    if (sigaction(signo, &act, &oact) < 0)
+        return(SIG_ERR);
+    return(oact.sa_handler);
+}
+```
+
+## kill/raise函数
+`kill`将信号发给进程或进程组，`raise`则允许向自身发送信号
+
+```c
+#include <signal.h>
+int kill(pid_t pid,int signo);
+int raise(int signo);
+//Both return: 0 if OK,−1 on error
+```
+
+`raise(signo) == kill(getpid(), signo)`
+
+其中:
+
+- pid>0，发送给进程ID为pid的进程
+- pid==0，发送给与发送进程属于同一组的所有进程
+- pid<0，发送给其进程组ID等于pid的绝对值的所有进程
+- pid==-1，发送给有权发送的所有进程
+
+以上均不包括系统进程集中的进程，如内核进程和init
+
+对于非超级用户，基本规则是发送者的real ID或effective ID必须等于接收者的real ID或effective ID。POSIX.1要求检查接收者的save ID（而不是effective ID）
+
+> 一个特例，如果发送`SIGCONT`，则进程可以将它发送给属于同一会话的任一其他进程
+
+如果信号编号是0，则`kill`执行错误检查，但不发送信号，用来 __确定特定进程是否存在__
+
+> 不存在时，返回-1，`errno`为`ESRCH`，但由于是非原子操作，实际意义不大
+
+## sigqueue函数
+```c
+#include <signal.h>
+int sigqueue(pid_t pid,int signo,const union sigval value)
+//Returns: 0 if OK,−1 on error
+```
+
+POSIX.1的实时扩展中，开始增加对信号排队的支持，该函数只能把信号发给单个进程，除此以外，`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`，响应函数使用`sa_sigaction`而不是`sa_handler`
+
+
+
 
 ## 函数
 ```c
@@ -3053,5 +3255,13 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
 意见奖励
 
 
+为什么不使用SIGCHLD的回调中wait
+reenter.c 不能跑
+core文件在哪
 
+ld --gun
 -->
+
+
+
+
