@@ -3229,7 +3229,30 @@ int sigqueue(pid_t pid,int signo,const union sigval value)
 //Returns: 0 if OK,−1 on error
 ```
 
-POSIX.1的实时扩展中，开始增加对信号排队的支持，该函数只能把信号发给单个进程，除此以外，`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`，响应函数使用`sa_sigaction`而不是`sa_handler`
+POSIX.1的实时扩展中，开始增加对信号排队的支持(普通信号不排列)，该函数只能把信号发给单个进程，除此以外，`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`，响应函数使用`sa_sigaction`而不是`sa_handler`
+
+## alarm/pause函数
+`alarm`当定时器超时时，产生`SIGALRM`，__如果忽略或不捕捉此信号，默认动作是终止调用该函数的进程__
+
+```c
+#include <unistd.h>
+unsigned int alarm(unsigned intseconds);
+//Returns: 0 or number of seconds until previously set alarm
+```
+
+每个进程只能有一个闹钟时间，如果在调用`alarm`时，之前注册的闹钟时间还没超过，则该闹钟时间的余值作为本次函数返回值，进程中闹钟时间以本次为准
+
+如果有以前注册的尚未超时，再调用`sleep(0)`时，则取消以前的闹钟时间，余留值返回
+
+`pause`使调用进程挂起直到捕捉到一个信号
+
+```c
+#include <unistd.h>
+int pause(void);
+//Returns:−1 with errno set to EINTR
+```
+
+只有执行了一个信号处理程序并从其返回时，`pause`才返回，在这种情况下，返回-1，`errno`为`EINTR`，否则挂起状态
 
 
 
@@ -3260,6 +3283,15 @@ reenter.c 不能跑
 core文件在哪
 
 ld --gun
+
+    sigaddset(&act.sa_mask, SIGINT);重复
+    sigaddset(&act.sa_mask, SIGQUIT);
+    act.sa_flags = SA_RESTART | SA_SIGINFO;
+    sigaction(SIGINT, &act, &save);
+
+    sigaction(SIGQUIT, &act, NULL);
+
+
 -->
 
 
