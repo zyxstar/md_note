@@ -3690,6 +3690,59 @@ abort(void)         /* POSIX-style abort() function */
 ## system函数
 POSIX.1要求`system`忽略`SIGINT`和`SIGOUIT`，阻塞`SIGCHLD`
 
+```c
+int
+system(const char *cmdstring)   /* with appropriate signal handling */
+{
+    pid_t               pid;
+    int                 status;
+    struct sigaction    ignore, saveintr, savequit;
+    sigset_t            chldmask, savemask;
+
+    if (cmdstring == NULL)
+        return(1);      /* always a command processor with UNIX */
+
+    ignore.sa_handler = SIG_IGN;    /* ignore SIGINT and SIGQUIT */
+    sigemptyset(&ignore.sa_mask);
+    ignore.sa_flags = 0;
+    if (sigaction(SIGINT, &ignore, &saveintr) < 0)
+        return(-1);
+    if (sigaction(SIGQUIT, &ignore, &savequit) < 0)
+        return(-1);
+    sigemptyset(&chldmask);         /* now block SIGCHLD */
+    sigaddset(&chldmask, SIGCHLD);
+    if (sigprocmask(SIG_BLOCK, &chldmask, &savemask) < 0)
+        return(-1);
+
+    if ((pid = fork()) < 0) {
+        status = -1;    /* probably out of processes */
+    } else if (pid == 0) {          /* child */
+        /* restore previous signal actions & reset signal mask */
+        sigaction(SIGINT, &saveintr, NULL);
+        sigaction(SIGQUIT, &savequit, NULL);
+        sigprocmask(SIG_SETMASK, &savemask, NULL);
+
+        execl("/bin/sh", "sh", "-c", cmdstring, (char *)0);
+        _exit(127);     /* exec error */
+    } else {                        /* parent */
+        while (waitpid(pid, &status, 0) < 0)
+            if (errno != EINTR) {
+                status = -1; /* error other than EINTR from waitpid() */
+                break;
+            }
+    }
+
+    /* restore previous signal actions & reset signal mask */
+    if (sigaction(SIGINT, &saveintr, NULL) < 0)
+        return(-1);
+    if (sigaction(SIGQUIT, &savequit, NULL) < 0)
+        return(-1);
+    if (sigprocmask(SIG_SETMASK, &savemask, NULL) < 0)
+        return(-1);
+
+    return(status);
+}
+```
 
 ## sleep函数
 ```c
@@ -3698,7 +3751,14 @@ unsigned int sleep(unsigned int seconds);
 //Returns: 0 or number of unslept seconds
 ```
 
-可靠实现
+此函数使调用进程被挂起直到满足下面两个条件之一
+
+- 已经过了`seconds`所指定的墙上时钟时间
+- 调用进程捕捉到一个信号并从信号处理程序返回
+
+第一种情况返回0，第二种情况返回未休眠完的秒数
+
+一种可靠实现，使用`alarm`实现，但这并不是必须的，两个函数可能相互影响
 
 ```c
 static void
@@ -3746,6 +3806,33 @@ sleep(unsigned int seconds)
     return(unslept);
 }
 ```
+
+`nonosleep`与`sleep`相似，但提供了纳秒级精度
+
+```c
+#include <time.h>
+int nanosleep(const struct timespec *reqtp,struct timespec *remtp);
+//Returns: 0 if slept for requested time or −1 on error
+```
+
+`clock_nanosleep`使用相对于特定时钟的延迟时间来挂起调用线程
+
+```c
+#include <time.h>
+int clock_nanosleep(clockid_tclock_id,intflags,const struct timespec *reqtp,struct timespec *remtp);
+//Returns: 0 if slept for requested time or error number on failure
+```
+
+## 信号名和编号
+```c
+#include <signal.h>
+void psignal(intsigno,const char *msg);
+void psiginfo(const siginfo_t *info,const char *msg);
+char *strsignal(intsigno);
+int sig2str(intsigno,char *str);
+int str2sig(const char *str,int *signop);
+```
+
 
 
 ## 函数
