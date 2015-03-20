@@ -2977,7 +2977,50 @@ void (*signal(intsigno,void (*func)(int)))(int);
 早期版本的`signal`关联就一次，需要在回调中再次绑定
 
 ## 不可靠的信号
-信号可能丢失，进程对信号的控制能力也差，也不具备阻塞信号的能力。进程不希望某种信号发生时，不能关闭该信号，能做的只是忽略它
+早期UNIX版本中，信号是不可靠的
+
+- 信号可能丢失，一个信号发生了，但进程却可能一直不知道这一点，即使`sigaction`也存在这个问题
+- 进程对信号的控制能力也差，也不具备阻塞信号的能力。`signal`不可以阻塞，但`sigaction`就能阻塞
+- 在进程每次接到信号对其进行处理时，随即将该信号动作重置为默认值，代码不得不如下，但信号处理程序调用`signal`有一个时间窗口，在此期间，又发生了另一次中断，此时只执行默认动作（很可能是终止进程）：
+
+```c
+    int  sig_int(); /* my signal handling function */
+    .
+    signal(SIGINT, sig_int); /* establish handler */
+    .
+
+sig_int(){
+    signal(SIGINT, sig_int); /* reestablish handler for next time */
+    .
+    ./*process the signal ... */
+    .
+}
+```
+
+- 进程不希望某种信号发生时，不能关闭该信号，能做的只是忽略它
+
+```c
+int  sig_int(); /* my signal handling function */
+int  sig_int_flag; /* set nonzero when signal occurs */
+main(){
+    signal(SIGINT, sig_int); /* establish handler */
+    .
+    while (sig_int_flag == 0)
+        pause();  /* go to sleep, waiting for signal */
+    .
+}
+int sig_int(){
+    signal(SIGINT, sig_int); /* reestablish handler for next time */
+    sig_int_flag = 1; /* set flag for main loop to examine */
+}
+```
+
+如果在时间窗口，`while (sig_int_flag == 0)`与`pause()`之间，发生信号，则此进程在调用`pause`可能永久休眠（假定该信号不会再发生），这次发生的信号也丢失了
+
+> `pause`只有执行了一个信号处理程序并从其返回时，它才返回
+
+- 不提供一个原子操作中恢复信号屏蔽字，见`sigsuspend`章节
+
 
 ## 中断的系统调用
 早期UNIX，如果进程在执行一个 __低速系统调用__ (不会是函数)而阻塞期间捕捉到一个信号，则系统调用就被中断不再执行执行，系统调用返回出错，`errno`设置为`EINTR`(如`read()/write()`)。
@@ -3038,8 +3081,17 @@ again:
 - 调用了`malloc/free`
 - 是标准IO函数，如`printf`
 
-## SIGCLD语义
+> 书中的例子的`signal`是被重写的，不能反映作者意图（被阻塞了），需调用原生`signal`时，会出现段错误（作者真实意图）
+
+
+## SIGCLD/SIGCHLD语义
 子进程状态改变后产生此信号，父进程需要调用一个`wait`函数以检测发生了什么
+
+- 如果调用`signal`或`sigset`将`SIGCHLD`的配置设置为忽略`SIG_IGN`，则决不会产生僵死进程，也可使用`sigaction`中配置`SA_NOCLDWAIT`以避免僵死进程
+- 如果设置为捕捉，则内核立即检查是否有子进程准备好等待，如果是这样，则调用处理程序
+
+> 所以不能在处理函数中，再次设置捕捉（除非已`wait`返回了），这也是绑定一次处理函数的不可靠性（`sigaction`中不必再设置处理函数）
+
 
 ## 可靠信号术语和语义
 当造成信号的事件发生时，为进程产生一个信号，事件可以是硬件异常、软件条件、终端产生信号或调用`kill`，当信号产生时，内核通常在进程表中以某种形式设置一个标志
@@ -3161,9 +3213,13 @@ struct sigaction {
 
 `struct sigaction`结构体中，前两个函数指针，只能使用其一，它们有可能实现为共用体
 
+`sa_mask`在调用该信号捕捉函数之前，这一信号集要加到进程的信号屏蔽字中，仅当从信号捕捉函数返回时再将进程屏蔽字恢复为原先值（下面一条是阻塞自己，这一条是还可以阻塞别的信号）
+
 默认在调用信号处理程序时，就能阻塞某些信号，保证在处理一个给定的信号时，如果这种信号再次发生，__它会被阻塞到对前一个信号的处理结束为止__(除非设置了`sa_flags`为`SA_NODEFER`)
 
 若同一信号多次发生，通常并不加入队列，解除阻塞后，其信号处理函数只会被调用一次
+
+除非显示改变设置处理函数，否则设置一直有效，不是一次注册
 
 ![img](../../imgs/apue_41.png)
 
@@ -3192,6 +3248,10 @@ Sigfunc *signal(int signo, Sigfunc *func){
     return(oact.sa_handler);
 }
 ```
+
+- 使用`sigemptyset(&act.sa_mask)`，不能确保`act.sa_mask = 0`会一样
+
+
 
 ## kill/raise函数
 `kill`将信号发给进程或进程组，`raise`则允许向自身发送信号
@@ -3229,9 +3289,463 @@ int sigqueue(pid_t pid,int signo,const union sigval value)
 //Returns: 0 if OK,−1 on error
 ```
 
-POSIX.1的实时扩展中，开始增加对信号排队的支持，该函数只能把信号发给单个进程，除此以外，`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`，响应函数使用`sa_sigaction`而不是`sa_handler`
+POSIX.1的实时扩展中，开始增加对信号排队的支持(普通信号不排列)，该函数只能把信号发给单个进程，除此以外，`sigqueue`相当于`kill`，但可带上多余信息，当然，需要`act.sa_flags |= SA_SIGINFO;`，响应函数使用`sa_sigaction`而不是`sa_handler`
+
+## alarm/pause函数
+`alarm`当定时器超时时，产生`SIGALRM`，如果忽略或不捕捉此信号，__默认动作是终止调用该函数的进程__
+
+```c
+#include <unistd.h>
+unsigned int alarm(unsigned intseconds);
+//Returns: 0 or number of seconds until previously set alarm
+```
+
+每个进程只能有一个闹钟时间，如果在调用`alarm`时，之前注册的闹钟时间还没超过，则该闹钟时间的余值作为本次函数返回值，进程中闹钟时间以本次为准
+
+如果有以前注册的尚未超时，再调用`sleep(0)`时，则取消以前的闹钟时间（不再设置处理函数），余留值返回
+
+`pause`使调用进程挂起直到捕捉到一个信号
+
+```c
+#include <unistd.h>
+int pause(void);
+//Returns:−1 with errno set to EINTR
+```
+
+只有执行了一个信号处理程序并从其返回时，`pause`才返回，在这种情况下，返回-1，`errno`为`EINTR`，否则挂起状态
+
+## 实现sleep
+`sleep`使函数被挂起直到满足其中之一：
+
+- 已经过了所定的墙上时钟
+- 调用进程捕捉到一个信号并从信号处理程序返回，同`pause`
+
+### 版本1
+```c
+static void sig_alrm(int signo) {
+    /* nothing to do, just return to wake up the pause */
+}
+unsigned int sleep1(unsigned int seconds){
+    if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+        return(seconds);
+    alarm(seconds);  /* start the timer */
+    pause();  /* next caught signal wakes us up */
+    return(alarm(0));  /* turn off timer, return unslept time */
+}
+```
+
+- 如果在`sleep1`之前，调用者已设置了闹钟，则它被`sleep1`中第一次的`alarm`调用覆盖了。可更正：检查第一次`alarm`返回值，如小于本次调用的参数值且非零，则只应等到已有闹钟超时；如果返回值大于本次设置时间，则在`sleep1`返回之前，重置此闹钟，使其再次发生
+- 该函数对`SIGALRM`做了配置，应保存原配置，在函数返回前再恢复原配置
+- 在第一次`alarm`和`pause`之间有一个竞争条件，未到`pause`时，响应函数已处理完毕，在调用`pause`时就永远被挂起
+
+### 版本2
+```c
+static jmp_buf env_alrm;
+static void sig_alrm(int signo){
+    longjmp(env_alrm, 1);
+}
+unsigned int sleep2(unsigned int seconds){
+    if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+        return(seconds);
+    if (setjmp(env_alrm) == 0) {
+        alarm(seconds);  /* start the timer */
+        pause();  /* next caught signal wakes us up */
+    }
+    return(alarm(0));  /* turn off timer, return unslept time */
+}
+```
+
+- 如果`SIGALRM`中断了某个其他信号处理程序，则调用`longjmp`会提早终止该信号处理程序
 
 
+## 实现timeout
+### 版本1
+利用超时处理函数去打断`read`，让它马上返回
+
+```c
+static void sig_alrm(int);
+int main(void){
+    int  n;
+    char  line[MAXLINE];
+    if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+        err_sys("signal(SIGALRM) error");
+
+    alarm(10);
+    if ((n = read(STDIN_FILENO, line, MAXLINE)) < 0)
+        err_sys("read error");
+    alarm(0);
+
+    write(STDOUT_FILENO, line, n);
+    exit(0);
+}
+static void sig_alrm(int signo){
+    /* nothing to do, just return to interrupt the read */
+}
+```
+
+- 在第一次`alarm`和`read`之间有一个竞争条件，如果`alarm`的处理函数在`read`调用之前，已完成了，则`read`有可能永远阻塞
+- 如果系统是自动重启动的，则当从`SIGALRM`信号处理程序返回时，`read`并不被中断，在这种情况下，设置时间限制不起作用
+
+### 版本2
+再次利用`longjmp`
+
+```c
+static void sig_alrm(int);
+static jmp_buf env_alrm;
+int main(void) {
+    int  n;
+    char  line[MAXLINE];
+    if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+        err_sys("signal(SIGALRM) error");
+    if (setjmp(env_alrm) != 0)
+        err_quit("read timeout");
+
+    alarm(10);
+    if ((n = read(STDIN_FILENO, line, MAXLINE)) < 0)
+        err_sys("read error");
+    alarm(0);
+
+    write(STDOUT_FILENO, line, n);
+    exit(0);
+}
+static void sig_alrm(int signo){
+    longjmp(env_alrm, 1);
+}
+```
+
+存在与`sleep2`版本相同的问题
+
+## sigsuspend函数
+更改进程的信号屏蔽字可以阻塞所选择的信号，或解除对它们的阻塞，使用这种技术可以保护不希望由信号中断的代码临界区
+
+如果希望一个信号解除阻塞，然后`pause`以等待以前被阻塞的信号发生，假定信号是`SIGINT`
+
+```c
+sigset_t  newmask, oldmask;
+sigemptyset(&newmask);
+sigaddset(&newmask, SIGINT);
+
+/* block SIGINT and save current signal mask */
+if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
+    err_sys("SIG_BLOCK error");
+
+/* critical region of code */
+
+/* restore signal mask, which unblocks SIGINT */
+if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
+    err_sys("SIG_SETMASK error");
+
+/* window is open */
+pause();  /* wait for signal to occur */
+/* continue processing */
+```
+
+如果信号阻塞时将其发送给进程，那么该信号的传递被推迟直到对它解决了阻塞，该信号好像在解除对`SIGINT`的阻塞和`pause`之间，那么就产生了问题，在此时间发生的信号丢失了，使得`pause`永远阻塞，这也是 __不可靠机制__ 的另一个问题
+
+需要在一个原子操作中先恢复信号屏蔽字，然后使进程休眠，由`sigsuspend`提供
+
+```c
+#include <signal.h>
+int sigsuspend(const sigset_t *sigmask);
+//Returns: −1 with errno set to EINTR
+```
+
+将进程信号屏蔽字设置为`sigmask`，在捕捉到一个信号或发生了一个会终止该进程的信号之前，该进程被挂起，如果捕捉到一个信号而且从该信号处理程序返回，则`sigsuspend`返回，并且将该进程的信号屏蔽字设置为调用`sigsuspend`之前的值
+
+如果它返回到调用者，总是返回-1，并且`errno = ENITR`
+
+```c
+int main(void){
+    sigset_t    newmask, oldmask, waitmask;
+
+    pr_mask("program start: ");
+
+    if (signal(SIGINT, sig_int) == SIG_ERR)
+        err_sys("signal(SIGINT) error");
+    sigemptyset(&waitmask);
+    sigaddset(&waitmask, SIGUSR1);
+    sigemptyset(&newmask);
+    sigaddset(&newmask, SIGINT);
+
+    /*
+     * Block SIGINT and save current signal mask.
+     */
+    if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
+        err_sys("SIG_BLOCK error");
+
+    /*
+     * Critical region of code.
+     */
+    pr_mask("in critical region: ");
+
+    /*
+     * Pause, allowing all signals except SIGUSR1.
+     */
+    if (sigsuspend(&waitmask) != -1)
+        err_sys("sigsuspend error");
+
+    pr_mask("after return from sigsuspend: ");
+
+    /*
+     * Reset signal mask which unblocks SIGINT.
+     */
+    if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
+        err_sys("SIG_SETMASK error");
+
+    /*
+     * And continue processing ...
+     */
+    pr_mask("program exit: ");
+
+    exit(0);
+}
+
+static void sig_int(int signo){
+    pr_mask("\nin sig_int: ");
+}
+```
+
+其中`sigsuspend(&waitmask)`为挂起，用`wait`信号集替换`new`信号集。即：过来`SIGUSR1`信号，阻塞掉，程序继续挂起；过来其他信号，例如`SIGINT`，则会唤醒程序(`sigaddset(&waitmask, SIGUSR1)`如没有，则此处不会阻塞任何信号，过来任何信号均唤醒程序)
+
+
+```plain
+$ ./a.out
+program start:
+in critical region: SIGINT
+ˆC                             #type the interrupt character
+in sig_int: SIGINT SIGUSR1
+after return from sigsuspend: SIGINT
+program exit:
+```
+
+`sigsuspend`是一个原子操作
+
+- 设置新的mask阻塞当前进程；
+- 收到信号，恢复原先mask；
+- 调用该进程设置的信号处理函数；
+- 待信号处理函数返回后，sigsuspend返回。
+
+另一个应用是等待一个信号处理程序设置一个全局变量，下面用于捕捉中断信号和退出信号，仅当退出信号时，才唤醒主例程
+
+```c
+volatile sig_atomic_t   quitflag;   /* set nonzero by signal handler */
+
+static void sig_int(int signo){  /* one signal handler for SIGINT and SIGQUIT */
+    if (signo == SIGINT)
+        printf("\ninterrupt\n");
+    else if (signo == SIGQUIT)
+        quitflag = 1;   /* set flag for main loop */
+}
+
+int main(void){
+    sigset_t    newmask, oldmask, zeromask;
+
+    if (signal(SIGINT, sig_int) == SIG_ERR)
+        err_sys("signal(SIGINT) error");
+    if (signal(SIGQUIT, sig_int) == SIG_ERR)
+        err_sys("signal(SIGQUIT) error");
+
+    sigemptyset(&zeromask);
+    sigemptyset(&newmask);
+    sigaddset(&newmask, SIGQUIT);
+
+    /*
+     * Block SIGQUIT and save current signal mask.
+     */
+    if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
+        err_sys("SIG_BLOCK error");
+
+    while (quitflag == 0)
+        sigsuspend(&zeromask);
+
+    /*
+     * SIGQUIT has been caught and is now blocked; do whatever.
+     */
+    quitflag = 0;
+
+    /*
+     * Reset signal mask which unblocks SIGQUIT.
+     */
+    if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
+        err_sys("SIG_SETMASK error");
+
+    exit(0);
+}
+```
+
+## 父子进程同步
+```c
+static volatile sig_atomic_t sigflag; /* set nonzero by sig handler */
+static sigset_t newmask, oldmask, zeromask;
+
+static void
+sig_usr(int signo)  /* one signal handler for SIGUSR1 and SIGUSR2 */
+{
+    sigflag = 1;
+}
+
+void
+TELL_WAIT(void)
+{
+    if (signal(SIGUSR1, sig_usr) == SIG_ERR)
+        err_sys("signal(SIGUSR1) error");
+    if (signal(SIGUSR2, sig_usr) == SIG_ERR)
+        err_sys("signal(SIGUSR2) error");
+    sigemptyset(&zeromask);
+    sigemptyset(&newmask);
+    sigaddset(&newmask, SIGUSR1);
+    sigaddset(&newmask, SIGUSR2);
+
+    /* Block SIGUSR1 and SIGUSR2, and save current signal mask */
+    if (sigprocmask(SIG_BLOCK, &newmask, &oldmask) < 0)
+        err_sys("SIG_BLOCK error");
+}
+
+void
+TELL_PARENT(pid_t pid)
+{
+    kill(pid, SIGUSR2);     /* tell parent we're done */
+}
+
+void
+WAIT_PARENT(void)
+{
+    while (sigflag == 0)
+        sigsuspend(&zeromask);  /* and wait for parent */
+    sigflag = 0;
+
+    /* Reset signal mask to original value */
+    if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
+        err_sys("SIG_SETMASK error");
+}
+
+void
+TELL_CHILD(pid_t pid)
+{
+    kill(pid, SIGUSR1);         /* tell child we're done */
+}
+
+void
+WAIT_CHILD(void)
+{
+    while (sigflag == 0)
+        sigsuspend(&zeromask);  /* and wait for child */
+    sigflag = 0;
+
+    /* Reset signal mask to original value */
+    if (sigprocmask(SIG_SETMASK, &oldmask, NULL) < 0)
+        err_sys("SIG_SETMASK error");
+}
+```
+
+使用两个用户定义的信号，`SIGUSR1`由父进程发送给子进程，`SIGUSR2`由子进程发送给父进程
+
+如果在等待信号发生时希望去休眠，则使用`sigsuspend`是非常适当的，但在等待期间希望调用其他系统函数，在单线程环境下没有好办法
+
+## abort函数
+```c
+#include <stdlib.h>
+void abort(void);
+//This function never returns
+```
+
+将`SIGABRT`信号发送给调用进程（进程不应忽略此信号），POSIX.1说明`abort`不理会进程对此信号的阻塞和忽略
+
+让进程捕捉`SIGABRT`的意图是，在进程终止前由其执行所需的清理操作，如果进程不在信号处理程序中终止自己，当信号返回时，`abort`终止该进程
+
+POSIX.1要求如果`abort`调用终止进程，则它对所有打开标准IO流的效果应当与进程终止前对每个流调用`fclose`相同
+
+```c
+void
+abort(void)         /* POSIX-style abort() function */
+{
+    sigset_t            mask;
+    struct sigaction    action;
+
+    /* Caller can't ignore SIGABRT, if so reset to default */
+    sigaction(SIGABRT, NULL, &action);
+    if (action.sa_handler == SIG_IGN) {
+        action.sa_handler = SIG_DFL;
+        sigaction(SIGABRT, &action, NULL);
+    }
+    if (action.sa_handler == SIG_DFL)
+        fflush(NULL);           /* flush all open stdio streams */
+
+    /* Caller can't block SIGABRT; make sure it's unblocked */
+    sigfillset(&mask);
+    sigdelset(&mask, SIGABRT);  /* mask has only SIGABRT turned off */
+    sigprocmask(SIG_SETMASK, &mask, NULL);
+    kill(getpid(), SIGABRT);    /* send the signal */
+
+    /* If we're here, process caught SIGABRT and returned */
+    fflush(NULL);               /* flush all open stdio streams */
+    action.sa_handler = SIG_DFL;
+    sigaction(SIGABRT, &action, NULL);  /* reset to default */
+    sigprocmask(SIG_SETMASK, &mask, NULL);  /* just in case ... */
+    kill(getpid(), SIGABRT);                /* and one more time */
+    exit(1);    /* this should never be executed ... */
+}
+```
+
+## system函数
+POSIX.1要求`system`忽略`SIGINT`和`SIGOUIT`，阻塞`SIGCHLD`
+
+
+## sleep函数
+```c
+#include <unistd.h>
+unsigned int sleep(unsigned int seconds);
+//Returns: 0 or number of unslept seconds
+```
+
+可靠实现
+
+```c
+static void
+sig_alrm(int signo)
+{
+    /* nothing to do, just returning wakes up sigsuspend() */
+}
+
+unsigned int
+sleep(unsigned int seconds)
+{
+    struct sigaction    newact, oldact;
+    sigset_t            newmask, oldmask, suspmask;
+    unsigned int        unslept;
+
+    /* set our handler, save previous information */
+    newact.sa_handler = sig_alrm;
+    sigemptyset(&newact.sa_mask);
+    newact.sa_flags = 0;
+    sigaction(SIGALRM, &newact, &oldact);
+
+    /* block SIGALRM and save current signal mask */
+    sigemptyset(&newmask);
+    sigaddset(&newmask, SIGALRM);
+    sigprocmask(SIG_BLOCK, &newmask, &oldmask);
+
+    alarm(seconds);
+    suspmask = oldmask;
+
+    /* make sure SIGALRM isn't blocked */
+    sigdelset(&suspmask, SIGALRM);
+
+    /* wait for any signal to be caught */
+    sigsuspend(&suspmask);
+
+    /* some signal has been caught, SIGALRM is now blocked */
+
+    unslept = alarm(0);
+
+    /* reset previous action */
+    sigaction(SIGALRM, &oldact, NULL);
+
+    /* reset signal mask, which unblocks SIGALRM */
+    sigprocmask(SIG_SETMASK, &oldmask, NULL);
+    return(unslept);
+}
+```
 
 
 ## 函数
@@ -3260,14 +3774,25 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
 restart.c中ctrl\不起作用
 
 为什么不使用SIGCHLD的回调中wait
-reenter.c 不能跑
-core文件在哪
+
+core文件在哪 怎么用
+
 
 开始增加对信号排队的支持sigqueue ?? 普通信号还是一次
 
 /usr/local/bin/ld: unrecognized option '--hash-style=gnu'
 /usr/local/bin/ld: use the --help option for usage information
 
+
+    sigaddset(&act.sa_mask, SIGINT);重复 无效
+    sigaction(SIGINT, &act, &save);
+
+树莓派
+
+执行信号异步处理时，是否为当前线程
+
+
+abort为什么两次kill
 -->
 
 
