@@ -2950,7 +2950,7 @@ ps -o pid,ppid,pgid,sid,comm
 - 执行系统默认动作，如下图
 
 > 进程当前工作目录的`core`文件复制该进程的存储映像，调试程序使用它来检查进程终止的状态
-> 
+>
 > 设置`ulimit -c unlimited`，将会在当前目录下产生`core`文件
 
 ![img](../../imgs/apue_38.png)
@@ -3019,8 +3019,8 @@ again:
     lock     /   wait lock
     ｜      /    |
     signal /     |
-    ｜      \    | 
-    unlock   \   | 
+    ｜      \    |
+    unlock   \   |
     ｜         <-|
 ```
 
@@ -3255,11 +3255,19 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
 意见奖励
 
 
+
+
+restart.c中ctrl\不起作用
+
 为什么不使用SIGCHLD的回调中wait
 reenter.c 不能跑
 core文件在哪
 
-ld --gun
+开始增加对信号排队的支持sigqueue ?? 普通信号还是一次
+
+/usr/local/bin/ld: unrecognized option '--hash-style=gnu'
+/usr/local/bin/ld: use the --help option for usage information
+
 -->
 
 
