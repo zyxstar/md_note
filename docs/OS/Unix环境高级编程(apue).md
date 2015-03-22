@@ -3020,7 +3020,7 @@ int sig_int(){
 > `pause`只有执行了一个信号处理程序并从其返回时，它才返回
 
 - 不提供一个原子操作中恢复信号屏蔽字，见`sigsuspend`章节
-
+- `signal`不支持重启，而`sigaction`则支持
 
 ## 中断的系统调用
 早期UNIX，如果进程在执行一个 __低速系统调用__ (不会是函数)而阻塞期间捕捉到一个信号，则系统调用就被中断不再执行执行，系统调用返回出错，`errno`设置为`EINTR`(如`read()/write()`)。
@@ -3165,7 +3165,9 @@ int sigismember(const sigset_t *set, int signo){
 宏`sigfillset`后面的0，用于返回值
 
 ## sigprocmask函数
-它是为单线程进程定义，处理多线程进程中的信号，使用另一函数
+它是为单线程进程定义，处理多线程进程中的信号，使用另一函数`pthread_sigmask`
+
+如果一段代码，有可能信号会调用，也可能UI交互时会调用（如俄罗斯方块中的下行动作），为了防止竞争，此时不能使用线程中`mutex`，可能会导致死锁（见可重入函数中的图示），而应该在代码前阻塞信号，代码尾非阻塞信号
 
 ```c
 #include <signal.h>
@@ -3193,6 +3195,8 @@ int sigpending(sigset_t *set);
 ```
 
 如果同一信号未决多次，当解除阻塞时，只向进程传送一次，没有队列
+
+
 
 ## sigaction函数
 `sigaction`除了丢失，基本上认为是可靠信号
@@ -3303,6 +3307,14 @@ unsigned int alarm(unsigned intseconds);
 每个进程只能有一个闹钟时间，如果在调用`alarm`时，之前注册的闹钟时间还没超过，则该闹钟时间的余值作为本次函数返回值，进程中闹钟时间以本次为准
 
 如果有以前注册的尚未超时，再调用`sleep(0)`时，则取消以前的闹钟时间（不再设置处理函数），余留值返回
+
+> `alarm`在项目中是禁止使用的，应使用`setitimer`，而且确保只有一个人（架构师）在使用。如果多线程中，更不建议使用，不得已时，应集中一个线程使用，其他线程需要定时任务时，交由它定时发送信号
+
+```c
+int setitimer(int which, const struct itimerval *new_value, struct itimerval *old_value);
+```
+
+`which`可以指定是墙上时钟，还是用户态时间，还是用户+内核时间，并且`struct itimerval`精度也会高许多，精确到微秒级（但少于时间片的精度是无意义的，一般少于10毫秒认为已比较精准了）
 
 `pause`使调用进程挂起直到捕捉到一个信号
 
@@ -3525,6 +3537,44 @@ program exit:
 - 调用该进程设置的信号处理函数；
 - 待信号处理函数返回后，sigsuspend返回。
 
+```c
+void handler(int unuse)
+{
+    printf("Catch SIGINT\n");
+}
+
+int main(void)
+{
+    sigset_t set, save, tmp, unblock;
+
+    signal(SIGINT, handler);
+
+    sigemptyset(&set);
+    sigaddset(&set, SIGINT);
+
+    sigprocmask(SIG_UNBLOCK, &set, &save); //设置SIGINT为非阻塞（其它信号不变），并保存老设置
+    sigprocmask(SIG_BLOCK, &set, &unblock); //将SIGINT为非阻塞的信号集（其它信号不变）保存到unblock中，并设置SIGINT为阻塞信号（其它信号不变）集
+
+    while (1) {
+#if 0
+        sigprocmask(SIG_SETMASK, &unblock, &tmp);//设置非阻塞信号集
+        pause();//期待SIGINT的发生
+        sigprocmask(SIG_SETMASK, &tmp, NULL);//还原
+#else
+        sigsuspend(&unblock);
+#endif
+        printf("pause() return\n");
+        sleep(3);
+        printf("sleep() return\n");
+    }
+    sigprocmask(SIG_SETMASK, &save, NULL);
+
+    return 0;
+}
+```
+
+代码中，被注释掉的意思，就是`sigsuspend(&unblock)`的功能，只不过，后者更具有原子操作
+
 另一个应用是等待一个信号处理程序设置一个全局变量，下面用于捕捉中断信号和退出信号，仅当退出信号时，才唤醒主例程
 
 ```c
@@ -3642,7 +3692,79 @@ WAIT_CHILD(void)
 
 如果在等待信号发生时希望去休眠，则使用`sigsuspend`是非常适当的，但在等待期间希望调用其他系统函数，在单线程环境下没有好办法
 
+## 防止僵进程
+```c
+void handler(int unuse)
+{
+    pid_t pid;
+
+    while (1) {
+        pid = waitpid(-1, NULL, WNOHANG);
+        if (pid == 0 || pid == -1) {
+            break;
+        }
+    }
+}
+
+int main(void)
+{
+    int i;
+    pid_t pid;
+
+    signal(SIGCHLD, handler);
+
+    for (i = 0; i < 6; i++) {
+        pid = fork();
+        /* if error */
+        if (pid == 0) {
+            return 0;
+        }
+    }
+
+    while (1) {
+        sleep(2);
+        printf("xxx\n");
+    }
+
+    return 0;
+}
+```
+
+`handler`中每次响应，都检查所有`waitpid`，这是一种可靠模式(不仅仅适用于此)，如果信号丢失了，也不会有问题，在处理过程中，来信号了，会阻塞，也不会有问题
+
+```c
+int main(void)
+{
+    int i;
+    pid_t pid;
+    struct sigaction act;
+
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NOCLDWAIT;
+    sigaction(SIGCHLD, &act, NULL);
+
+    for (i = 0; i < 6; i++) {
+        pid = fork();
+        /* if error */
+        if (pid == 0) {
+            return 0;
+        }
+    }
+
+    while (1) {
+        pause();
+    }
+
+    return 0;
+}
+```
+
+设置特殊的`sa_flags`
+
 ## abort函数
+> 项目中禁止使用
+
 ```c
 #include <stdlib.h>
 void abort(void);
@@ -3745,6 +3867,8 @@ system(const char *cmdstring)   /* with appropriate signal handling */
 ```
 
 ## sleep函数
+> 项目中禁止使用
+
 ```c
 #include <unistd.h>
 unsigned int sleep(unsigned int seconds);
@@ -3758,7 +3882,7 @@ unsigned int sleep(unsigned int seconds);
 
 第一种情况返回0，第二种情况返回未休眠完的秒数
 
-一种可靠实现，使用`alarm`实现，但这并不是必须的，两个函数可能相互影响
+一种可靠实现，使用`alarm`实现，但这并不是必须的(linux下未使用`alarm`实现)，两个函数可能相互影响
 
 ```c
 static void
@@ -3832,6 +3956,21 @@ char *strsignal(intsigno);
 int sig2str(intsigno,char *str);
 int str2sig(const char *str,int *signop);
 ```
+
+线程
+=======
+原则上，能用进程时，不使用线程
+
+- 使用线程，共享同一进程中数据，有太多竞争，而使用互斥与同步，会增加开发成本，导致性能下降
+- 线程中，如果存在内存泄漏，即使线程终止，内存并未回收，而进程出现这种情况时，将其进程终止，所有资源得到回收
+- Intel提倡使用线程，因为线程不用切换页表，在多核CPU中，共享cache，能提高性能
+
+> “同步”术语在不同语境下的解释：
+> - 同步与异步，后者多指不可预测的行为执行，如信号、多进程、多线程，而前者表示确定的代码行为
+> - 同步与互斥，后者主要指加锁，而前者表示按确定次序访问资源
+
+
+
 
 
 
