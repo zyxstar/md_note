@@ -3071,7 +3071,7 @@ again:
 
 ![img](../../imgs/apue_40.png)
 
-`rand`如果作为随机数，不可重入问题不大，但作为加密使用时，就有问题。`rand_r`是可重入版本（一般后面`_r`的为可重入版本）
+`rand`如果作为随机数，不可重入问题不大，但作为加密使用时，就有问题。`rand_r`是可重入版本（一般后面`_r`的为可重入版本[或称线程安全]）（另，如果要随机种子，使用进程号反而优于时间）
 
 即使使用这些可重入函数，但由于 __每个线程只有一个`errno`__，所以信号处理程序可能会修改其原先值，作为一个通用规则，在调用上述函数时，在调用前保存`errno`，在调用后恢复`errno`
 
@@ -3966,12 +3966,137 @@ int str2sig(const char *str,int *signop);
 - Intel提倡使用线程，因为线程不用切换页表，在多核CPU中，共享cache，能提高性能
 
 > “同步”术语在不同语境下的解释：
+>
 > - 同步与异步，后者多指不可预测的行为执行，如信号、多进程、多线程，而前者表示确定的代码行为
-> - 同步与互斥，后者主要指加锁，而前者表示按确定次序访问资源
+> - 同步与互斥，后者主要指加锁（主要是建议锁，非强制锁），而前者表示按确定次序访问资源
+
+## 线程标识
+`pthread_t`数据类型，在linux上基本是一个指针
+
+```c
+#include <pthread.h>
+int pthread_equal(pthread_t tid1 ,pthread_t tid2 );
+//Returns: nonzero if equal, 0 otherwise
+
+pthread_t pthread_self(void);
+//Returns: the thread ID of the calling thread
+```
+
+## 线程的创建
+```c
+#include <pthread.h>
+int pthread_create(pthread_t *restrict tidp ,
+                   const pthread_attr_t *restrict attr ,
+                   void *(* start_rtn )(void *), void *restrict arg);
+//Returns: 0 if OK, error number on failure
+```
+
+`attr`除是设置分离状态时需要使用，一般情况下为`NULL`
+
+这里传递指针类型的`arg`需要讲究
+
+<!-- run -->
+
+```c
+#include <pthread.h>
+#include <stdio.h>
+#define THREAD_NUM 9
+
+void *jobs(void *ind){
+    printf("in jobs(), ind = %d\n", (int)ind);
+    return NULL;
+}
+
+int main(void){
+    pthread_t tid[THREAD_NUM];
+    int i;
+
+    for (i = 0; i < THREAD_NUM; i++) {
+        pthread_create(tid + i, NULL, jobs, (void *)i);
+    }
+
+    printf("in main()\n");
+    pthread_exit(NULL);
+}
+```
+
+- 如果不使用`(void *)i`将数据传递过去，而使用`(void *)&i`，则可以子线程真正得到数据时，地址`i`中的值已发生变化，但直接将整形值放到指针类型中传递则不会有问题，但如果参数不是整型等可以放在指针类型中的数据时，只能妥协使用`malloc`，但`free`可能就在子线程中了，破坏了谁分配谁释放的原则
+- `main`线程使用`pthread_exit(NULL)`退出时，整个进程并不会退出（`main`中使用`return 0`则整个进程退出），直到所有线程均退出时，进程才退出
+- 线程创建并不保证哪个线程先运行，新创建线程继承调用线程的浮点环境和信号屏蔽字，但该线程的未决信号集被清除
+
+## 线程终止
+任一线程调用了`exit/_Exit/_exit`，整个进程就会终止，类似的，如果信号的默认动作是终止进程，那么，把信号发送到线程会终止整个进程
+
+```c
+#include <pthread.h>
+void pthread_exit(void *rval_ptr);
+int pthread_join(pthread_t thread ,void **rval_ptr);
+//Returns: 0 if OK, error number on failure
+```
+
+如果线程被取消，则`rval_ptr`指定的内存单元为`PTHREAD_CANCELED`。通过`pthread_join`将等待指定线程终止，并获取终止状态
+
+> 线程返回的指针所指向的内存，必须是调用方可以访问得到的
+
+```c
+#include <pthread.h>
+int pthread_cancel(pthread_t tid);
+//Returns: 0 if OK, error number on failure
+```
+
+不建议使用`pthread_cancel`
+
+```c
+#include <pthread.h>
+void pthread_cleanup_push(void (* rtn)(void *), void *arg);
+void pthread_cleanup_pop(int execute );
+```
+
+与进程的`atexit`类似，用于注册线程清理处理程序，执行顺序与注册时顺序相反。执行时机为：
+
+- 调用`pthread_exit`时，特别注意在线程中使用`return`是不会执行清理程序的
+- 响应取消请求时
+- 用非零`execute`参数调用`pthread_cleanup_pop`时
+
+![img](../../imgs/apue_00.png)
+
+```c
+#include <pthread.h>
+int pthread_detach(pthread_t tid);
+//Returns: 0 if OK, error number on failure
+```
+
+设置线程的分离状态，以后线程自己完成后将不必`join`，也不能`join`，最好是在创建它的线程与被创建线程都运行一下`pthread_detach`，确保不管谁先运行，均能保证被分离了（最好使用这种方式，而不是在创建线程时使用`pthread_attr_t`）
+
+## 线程同步
+### 互斥量
+使用互斥量（mutex）接口保护数据
+
+```c
+#include <pthread.h>
+int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr );
+int pthread_mutex_destroy(pthread_mutex_t * mutex);
+//Both return: 0 if OK, error number on failure
+```
+
+创建时可使用宏，`pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER`来初始化一个互斥量，但结束时也需要`pthread_mutex_destroy`
+
+```c
+#include <pthread.h>
+int pthread_mutex_lock(pthread_mutex_t *mutex);
+int pthread_mutex_trylock(pthread_mutex_t * mutex);
+int pthread_mutex_unlock(pthread_mutex_t *mutex);
+//All return: 0 if OK, error number on failure
+```
+
+上面三个函数是不会被信号打断的，失败也不会设置`errno`
+
+
+### 避免死锁
 
 
 
-
+私有数据为兼容设计，全新项目不建议使用
 
 
 ## 函数
@@ -3987,7 +4112,7 @@ int str2sig(const char *str,int *signop);
 
 
 <!--
-gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
+gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
 
 休闲食品
 联合办宴
@@ -3996,31 +4121,23 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c
 
 
 
-
-restart.c中ctrl\不起作用
-
-为什么不使用SIGCHLD的回调中wait
-
-core文件在哪 怎么用
-
-
-开始增加对信号排队的支持sigqueue ?? 普通信号还是一次
-
 /usr/local/bin/ld: unrecognized option '--hash-style=gnu'
 /usr/local/bin/ld: use the --help option for usage information
 
 
-    sigaddset(&act.sa_mask, SIGINT);重复 无效
-    sigaction(SIGINT, &act, &save);
 
 树莓派
 
-执行信号异步处理时，是否为当前线程
+
+1. crontab实现
+2. timer线程通知实现
+3. timeout
+3. malloc bug重现
+4. write pipe多大
+5. 斯坦福多线程实现
 
 
-abort为什么两次kill
--->
-
+ -->
 
 
 
