@@ -3968,7 +3968,7 @@ int str2sig(const char *str,int *signop);
 > “同步”术语在不同语境下的解释：
 >
 > - 同步与异步，后者多指不可预测的行为执行，如信号、多进程、多线程，而前者表示确定的代码行为
-> - 同步与互斥，后者主要指加锁（主要是建议锁，非强制锁），而前者表示按确定次序访问资源
+> - 线程同步机制，指加锁（主要是建议锁[互斥量、读写锁]，非强制锁）、条件变量等机制，按确定次序访问资源
 
 ## 线程标识
 `pthread_t`数据类型，在linux上基本是一个指针
@@ -4058,7 +4058,7 @@ void pthread_cleanup_pop(int execute );
 - 响应取消请求时
 - 用非零`execute`参数调用`pthread_cleanup_pop`时
 
-![img](../../imgs/apue_00.png)
+![img](../../imgs/apue_42.png)
 
 ```c
 #include <pthread.h>
@@ -4070,7 +4070,7 @@ int pthread_detach(pthread_t tid);
 
 ## 线程同步
 ### 互斥量
-使用互斥量（mutex）接口保护数据
+使用互斥量（mutex）接口保护数据，操作系统只是锁住互斥量，而并不是真正的对数据访问做串行化，如果允许某个线程在没有得到锁的情况下（或通过其它手段），也访问共享资源，还是会出现数据不一致
 
 ```c
 #include <pthread.h>
@@ -4093,7 +4093,100 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 
 
 ### 避免死锁
+- 自死锁，A加锁，A引用B，在A未解锁之前，B还加锁，导致自死锁
+> - 解决办法是，强调设计规范：
+> - 比如内核设计，设计出三类函数：用户态函数，接口函数，内核函数；
+> - 用户态可访问接口，接口可直接访问资源，也可通过内核访问资源
+> - 接口不能访问接口，内核不能访问接口
+> - 将 __互斥量设计在接口__ 上
+> - 比如栈的实现，必备的接口是入栈与出栈，如果设计一个是否栈空的接口，则不能让出栈接口直接调用它，而应设计一个是否栈空的普通函数，出栈接口调用这个普通函数，而否栈空的接口也使用它
 
+- ABBA死锁，多个线程同时访问多个资源，一个锁住了A资源，试图加锁B资源，而另一个线程此时已加锁了B资源，并试图加锁A资源，两个线程进入死锁状态
+> - 解决办法是，强调对资源的访问顺序，但如果资源是环型的，典型的如 __哲学家就餐__ 问题
+> - 学院派做法是，尝试一次加两把锁，加不上的话，就放弃两把锁，并尝试休眠随机时间，再次尝试
+> - 实践派做法是，牺牲性能，增加锁的粒度，一次把所有资源加上锁，如内核大锁
+
+### pthread_mutex_timedlock函数
+```c
+#include <pthread.h>
+#include <time.h>
+int pthread_mutex_timedlock(pthread_mutex_t *restrictmutex,const struct timespec *restricttsptr);
+//Returns: 0 if OK, error number on failure
+```
+
+### 读写锁
+建议不使用读写锁，写锁容易饿死
+
+### 条件变量
+条件变量是线程可用的另一种同步机制，典型的模式是 __生产者消费者__
+
+> 其实有时候，使用队列，生产数据入队列，消费数据出队列，队列满或空时，则阻塞，并且对出入队列进行加锁，也可以满足一些场景
+
+```c
+#include <pthread.h>
+int pthread_cond_init(pthread_cond_t *restrict cond, const pthread_condattr_t *restrict attr);
+int pthread_cond_destroy(pthread_cond_t *cond);
+//Both return: 0 if OK, error number on failure
+
+int pthread_cond_wait(pthread_cond_t *restrict cond, pthread_mutex_t *restrict mutex);
+int pthread_cond_timedwait(pthread_cond_t *restrict cond,
+                           pthread_mutex_t *restrict mutex,
+                           const struct timespec *restrict tsptr);
+//Both return: 0 if OK, error number on failure
+
+int pthread_cond_signal(pthread_cond_t *cond);
+int pthread_cond_broadcast(pthread_cond_t *cond);
+//Both return: 0 if OK, error number on failure
+```
+
+`wait`信号时，依赖一个`mutex`，但`wait`意味着有可能休眠，而在`wait`之前，又需要先`lock`住这个`mutex`，持锁休眠是会导致死锁的，所以`wait`并不是真正的持锁休眠，下面的代码，在语义上是等价的，后者没有时间窗，是原子操作
+
+```c
+    while (1) {
+        pthread_mutex_lock(&mutex);
+#if 0
+        while (data == 0) {
+            unlock(&mutex);
+            wait(&cond_j);
+            lock(&mutex);
+        }
+#else
+        while (data == 0) {
+            pthread_cond_wait(&cond_j, &mutex);
+        }
+#endif
+```
+
+另外，为什么使用`while (data == 0)`，而不是`if (data == 0)`，是因为会产生 __惊群现象__，到时候会N个线程得到唤醒，但最终却只有一个线程可以拿到数据，所以需要`while`再次确认是否需要`wait`
+
+当然，完全可以使用`mutex`来保持双方同步，但有可能违反谁加锁就谁解锁的规范，并有可能导致程序不能正常退出。而`wait/signal`更像是 __通知机制__，不像互斥量需要成对出现
+
+### 屏障
+屏障barrier是用户协调多个线程并行工作的同步机制，屏障允许每个线程等待，直到所有的合作线程都到达某一点，然后从该点继续执行（`join`就是一种屏障）
+
+```c
+#include <pthread.h>
+int pthread_barrier_init(pthread_barrier_t *restrict barrier,
+                         const pthread_barrierattr_t *restric tattr,
+                         unsigned int count);
+int pthread_barrier_destroy(pthread_barrier_t *barrier);
+//Both return: 0 if OK, error number on failure
+
+int pthread_barrier_wait(pthread_barrier_t *barrier);
+//Returns: 0 or PTHREAD_BARRIER_SERIAL_THREAD if OK, error number on failure
+```
+
+初始化时，`count`指定必须到达屏障线程数目，`wait`表示，线程已完成工作，准备等所有其他线程赶来
+
+线程控制
+========
+## 线程限制
+
+
+
+递归锁不得已才使用
+
+明锁（队列，顺序锁）
 
 
 私有数据为兼容设计，全新项目不建议使用
