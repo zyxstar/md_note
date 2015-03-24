@@ -4181,6 +4181,60 @@ int pthread_barrier_wait(pthread_barrier_t *barrier);
 线程控制
 ========
 ## 线程限制
+通过`sysconf(_SC_THREAD_THREADS_MAX)`可得到单个进程可以创建的最大线程数
+
+## 线程属性
+```c
+#include <pthread.h>
+int pthread_attr_init(pthread_attr_t * attr );
+int pthread_attr_destroy(pthread_attr_t *attr );
+//Both return: 0 if OK, error number on failure
+
+int pthread_attr_getdetachstate(const pthread_attr_t *restrict attr , int *detachstate);
+int pthread_attr_setdetachstate(pthread_attr_t * attr ,int detachstate);
+//Both return: 0 if OK, error number on failure
+```
+
+基本上可以设置的就是`detachstate`，并且还有替代方案，其它的属性，缓冲区、栈等的设置，最好不用
+
+```c
+int makethread(void *(*fn)(void *), void *arg){
+    int  err;
+    pthread_t  tid;
+    pthread_attr_t  attr;
+    err = pthread_attr_init(&attr);
+    if (err != 0)
+        return(err);
+    err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (err == 0)
+        err = pthread_create(&tid, &attr, fn, arg);
+    pthread_attr_destroy(&attr);
+    return(err);
+}
+```
+
+### 更多的线程属性
+并发度的设置，在linux上是无效的，内核线程与用户级线程是一对一的
+
+## 同步属性
+### 互斥量属性
+```c
+#include <pthread.h>
+int pthread_mutexattr_init(pthread_mutexattr_t * attr );
+int pthread_mutexattr_destroy(pthread_mutexattr_t *attr );
+//Both return: 0 if OK, error number on failure
+
+int pthread_mutexattr_getpshared(const pthread_mutexattr_t *restrict attr ,int *restrict pshared);
+int pthread_mutexattr_setpshared(pthread_mutexattr_t *attr ,int pshared);
+//Both return: 0 if OK, error number on failure
+
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *restrict attr ,int *restrict type );
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr ,int type );
+//Both return: 0 if OK, error number on failure
+```
+
+
+
 
 
 
