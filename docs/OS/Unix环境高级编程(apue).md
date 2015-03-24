@@ -3067,7 +3067,7 @@ again:
     ｜         <-|
 ```
 
-下面的函数是可重入的，并称为异步信号安全，除了可重入以外，在信号处理操作期间，它会阻塞任何会引起不一致的信号发送
+下面的函数是可重入的，并称为 __异步信号安全__，除了可重入以外，在信号处理操作期间，它会阻塞任何会引起不一致的信号发送
 
 ![img](../../imgs/apue_40.png)
 
@@ -4233,17 +4233,114 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr ,int type );
 //Both return: 0 if OK, error number on failure
 ```
 
+互斥量类型行为
+
+![img](../../imgs/apue_43.png)
+
+## 重入
+如果一个函数在相同的时间点可以被多个线程安全的调用，称该函数是线程安全的
+
+很多函数并不是线程安全的，因为它们返回的数据存放在静态的内存缓冲区，但操作系统可能提供了线程安全的版本，在名字最后加了`_r`
+
+- `getgrgid_r`
+- `localtime_r`
+- `getgrnam_r`
+- `readdir_r`
+- `getlogin_r`
+- `strerror_r`
+- `getpwnam_r`
+- `strtok_r`
+- `getpwuid_r`
+- `ttyname_r`
+- `gmtime_r`
+
+如果一个函数对多个线程来说是可重入的，就是 __线程安全__ 的，但不能说明对信号处理程序来说也是可重入的。(如果异步信号处理程序的重入是安全的，则说函数是 __异步信号安全__ 的)
+
+## 线程特定数据
+为兼容设计，如`errno`在线程出现以前定义为进程上下文中全局可访问的整数，但在`#include <pthread.h>`后，则重新定义为线程私有数据。
+
+全新项目不建议使用，新线程需要私有数据时，完全可以使用`malloc`
+
+## 取消选项
+可取消状态和可取消类型，影响着线程在响应`pthread_cancel`函数调用时所呈现的行为
+
+```c
+#include <pthread.h>
+int pthread_setcancelstate(intstate,int *oldstate);
+//Returns: 0 if OK, error number on failure
+```
+
+`pthread_cancel`调用并不等待线程终止，只是请求发出，线程还是继续运行，直到线程到达某个取消点
+
+![img](../../imgs/apue_44.png)
+
+## 线程和信号
+如果既需要多进程，也需要多线程时，应该先`fork`进程，再创建线程
+
+进程中的信号是传递给单个线程的，如果一个信号与硬件故障相关，该信号一般发送到该事件的线程中去，而其他信号则被发送到任意一个线程
+
+可使用`ptherd_sigmask`来屏蔽线程的信号响应
+
+```c
+#include <signal.h>
+int pthread_sigmask(inthow,const sigset_t *restrict set,sigset_t *restrict oset);
+//Returns: 0 if OK, error number on failure
+int sigwait(const sigset_t *restrict set,int *restrict signop);
+//Returns: 0 if OK, error number on failure
+```
+
+`sigwait`将从进程中移除处于挂起等待状态的信号，其它的还排除，等待下次调用
+
+可以让所有线程都阻塞信号，只让一个线程处理这些信号
+
+```c
+sigset_t set;
+int signo;
+
+sigemptyset(&set);
+sigaddset(&set, SIGINT);
+
+while (1) {
+    sigwait(&set, &signo);
+    if (signo == SIGINT) {
+        printf("Catch SIGINT\n");
+    }
+}
+```
+
+或者在子线程中再次去掉屏蔽
+
+```c
+sigset_t set;
+signal(SIGINT, handler);
+
+sigemptyset(&set);
+sigaddset(&set, SIGINT);
+pthread_sigmask(SIG_UNBLOCK, &set, NULL);
+```
+
+发送信号给线程
+
+```c
+#include <signal.h>
+int pthread_kill(pthread_t thread,int signo);
+//Returns: 0 if OK, error number on failure
+```
+
+## 线程和IO
+为了原子操作，使用`pread/pwrite`
 
 
 
-
+进程间通信
+==========
+## 管道
 
 递归锁不得已才使用
 
 明锁（队列，顺序锁）
 
 
-私有数据为兼容设计，全新项目不建议使用
 
 
 ## 函数
