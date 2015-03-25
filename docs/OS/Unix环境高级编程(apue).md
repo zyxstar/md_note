@@ -3968,7 +3968,7 @@ int str2sig(const char *str,int *signop);
 > “同步”术语在不同语境下的解释：
 >
 > - 同步与异步，后者多指不可预测的行为执行，如信号、多进程、多线程，而前者表示确定的代码行为
-> - 线程同步机制，指加锁（主要是建议锁[互斥量、读写锁]，非强制锁）、条件变量等机制，按确定次序访问资源
+> - 线程同步机制，指加锁（主要是建议锁[互斥量、读写锁]，非强制锁）、条件变量(cond)、信号量(Semophore))等机制，按确定次序访问资源
 
 ## 线程标识
 `pthread_t`数据类型，在linux上基本是一个指针
@@ -4115,7 +4115,25 @@ int pthread_mutex_timedlock(pthread_mutex_t *restrictmutex,const struct timespec
 ```
 
 ### 读写锁
-建议不使用读写锁，写锁容易饿死
+建议不使用读写锁（又叫共享-独占锁），写锁容易饿死(好像已解决，当读写锁处于读模式锁住状态时，如果有另外线程试图以写模式加锁，读写锁通常会阻塞随后的读模式锁请求)
+
+读写锁非常适合对数据结构读的次数远大于写的情况
+
+```c
+#include <pthread.h>
+int pthread_rwlock_init(pthread_rwlock_t *restrict rwlock ,const pthread_rwlockattr_t *restrict attr );
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock );
+//Both return: 0 if OK, error number on failure
+
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock );
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock );
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock );
+//All return: 0 if OK, error number on failure
+
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock );
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock );
+//Both return: 0 if OK, error number on failure
+```
 
 ### 条件变量
 条件变量是线程可用的另一种同步机制，典型的模式是 __生产者消费者__
@@ -4155,6 +4173,8 @@ int pthread_cond_broadcast(pthread_cond_t *cond);
             pthread_cond_wait(&cond_j, &mutex);
         }
 #endif
+        //...
+    }
 ```
 
 另外，为什么使用`while (data == 0)`，而不是`if (data == 0)`，是因为会产生 __惊群现象__，到时候会N个线程得到唤醒，但最终却只有一个线程可以拿到数据，所以需要`while`再次确认是否需要`wait`
@@ -4213,8 +4233,14 @@ int makethread(void *(*fn)(void *), void *arg){
 }
 ```
 
-### 更多的线程属性
+### 线程并发度
 并发度的设置，在linux上是无效的，内核线程与用户级线程是一对一的
+
+```c
+#include <pthread.h>
+int pthread_setconcurrency(int new_level);
+int pthread_getconcurrency(void);
+```
 
 ## 同步属性
 ### 互斥量属性
@@ -4233,9 +4259,35 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr ,int type );
 //Both return: 0 if OK, error number on failure
 ```
 
+`pthread_mutexattr_setpshared`修改 __进程共享__ 属性，`pshared`为`PTHREAD_PROCESS_PRIVATE`时允许线程库提供更有效互斥量实现，`PTHREAD_PROCESS_SHARED`时多个进程共享的内存区域中分配的互斥量就可以用于这些进程的同步
+
+```c
+#include <pthread.h>
+int pthread_mutexattr_gettype(const pthread_mutexattr_t *restrict attr, int *restrict type);
+int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
+//Both return: 0 if OK, error number on failure
+```
+
+类型互斥量属性：
+
+- `PTHREAD_MUTEX_NORMAL`linux上一般为此，标准的互斥量类型，不做任何特殊的错误检查或死锁检测
+- `PTHREAD_MUTEX_ERRORCHECK`提供错误检查
+- `PTHREAD_MUTEX_RECURSIVE`递归锁，允许同一线程在互斥量解锁之前对该互斥量进行多次加锁，它维护一个计数，在解锁次数和加锁次数不相同的情况下不会释放锁（递归锁不得已才使用）
+- `PTHREAD_MUTEX_DEFAULT`
+
 互斥量类型行为
 
 ![img](../../imgs/apue_43.png)
+
+- 一个避免递归锁的做法（通过接口设计改善）
+
+![img](../../imgs/apue_47.png)
+
+![img](../../imgs/apue_48.png)
+
+
+
+
 
 ## 重入
 如果一个函数在相同的时间点可以被多个线程安全的调用，称该函数是线程安全的
@@ -4264,6 +4316,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr ,int type );
 ## 取消选项
 可取消状态和可取消类型，影响着线程在响应`pthread_cancel`函数调用时所呈现的行为
 
+> `pthread_cancel`建议不使用
+
 ```c
 #include <pthread.h>
 int pthread_setcancelstate(intstate,int *oldstate);
@@ -4275,8 +4329,6 @@ int pthread_setcancelstate(intstate,int *oldstate);
 ![img](../../imgs/apue_44.png)
 
 ## 线程和信号
-如果既需要多进程，也需要多线程时，应该先`fork`进程，再创建线程
-
 进程中的信号是传递给单个线程的，如果一个信号与硬件故障相关，该信号一般发送到该事件的线程中去，而其他信号则被发送到任意一个线程
 
 可使用`ptherd_sigmask`来屏蔽线程的信号响应
@@ -4327,16 +4379,75 @@ int pthread_kill(pthread_t thread,int signo);
 //Returns: 0 if OK, error number on failure
 ```
 
+## 线程与进程
+如果既需要多进程，也需要多线程时，应该先`fork`进程，再创建线程
+
+
 ## 线程和IO
 为了原子操作，使用`pread/pwrite`
 
 
-
 进程间通信
 ==========
-## 管道
+与其网络间通信说是机器间通信，不如说是进程间通信
 
-递归锁不得已才使用
+如果需要大内存，并且用完直接释放（直接设置`sbrk`，而不是`free`），可使用`mmap`。其实也可`fork`一个进程，去`malloc`一个大内存，父子间进行进程间通信，用完后`free`，再终止该进程
+
+## 管道
+- 历史上它是半双工的，现在某些系统提供双工，但为了移植性，认为它是半双工的
+- 只能在具有公共祖先的进程之间使用，通常管道由一个进程创建，然后该进程调用`fork`，此后父子进程可应用该管道
+> 当你在管道线中键入一个由shell执行的命令序列时，shell为每一条命令单独创建一进程，然后将前一条命令进程的标准输出用管道与后一条命令的标准输入相连接
+
+```c
+#include <unistd.h>
+int pipe(int fd[2] );
+//Returns: 0 if OK,−1 on error
+```
+
+`fstat`函数对管道每一端返回一个`FIFO`类型的文件描述符，可用`S_ISFIFO`宏来测试管道
+
+`fd[0]`为读而打开，`fd[1]`为写而打开，后者的输出是前者的输入
+
+![img](../../imgs/apue_45.png)
+
+![img](../../imgs/apue_46.png)
+
+```c
+#define BUFSIZE 64
+int main(void){
+    pid_t pid;
+    int fd[2];
+    int ret;
+    char buf[BUFSIZE];
+
+    pipe(fd);
+
+    pid = fork();
+    /* if error */
+    if (pid == 0) {
+        close(fd[0]);
+        write(fd[1], "hello pipe\n", 11);
+        close(fd[1]);
+
+        return 0;
+    }
+
+    close(fd[1]);
+    ret = read(fd[0], buf, BUFSIZE);
+    write(1, buf, ret);
+    close(fd[0]);
+
+    return 0;
+}
+```
+
+如果写关闭，则读端最后读到0，指示达到了文件结束处；如果读关闭，写端还继续写，则产生`SIGPIPE`信号，如果忽略该信号或捕捉该信号并从其处理程序返回，则返回-1，`errno`为`EPIPE`
+
+
+
+
+
+
 
 明锁（队列，顺序锁）
 
@@ -4367,6 +4478,14 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
 
 /usr/local/bin/ld: unrecognized option '--hash-style=gnu'
 /usr/local/bin/ld: use the --help option for usage information
+
+
+sig_promask设置了block sigint
+当在sigint响应函数中重新了unblock 会立即响应吗?
+
+书中的[wait/tell]child [wait/tell]parent能否使用?
+
+
 
 
 
