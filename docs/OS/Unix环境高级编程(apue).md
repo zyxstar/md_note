@@ -3968,7 +3968,7 @@ int str2sig(const char *str,int *signop);
 > “同步”术语在不同语境下的解释：
 >
 > - 同步与异步，后者多指不可预测的行为执行，如信号、多进程、多线程，而前者表示确定的代码行为
-> - 线程同步机制，指加锁（主要是建议锁[互斥量、读写锁]，非强制锁）、条件变量(cond)、信号量(Semophore))等机制，按确定次序访问资源
+> - 线程同步机制，指加锁（主要是建议锁[互斥量、读写锁]，非强制锁）、条件变量(cond)、信号量(semaphore))等机制，按确定次序访问资源
 
 ## 线程标识
 `pthread_t`数据类型，在linux上基本是一个指针
@@ -4485,7 +4485,7 @@ sig_promask设置了block sigint
 
 书中的[wait/tell]child [wait/tell]parent能否使用?
 
-
+semaphore
 
 
 
