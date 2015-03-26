@@ -2365,6 +2365,7 @@ while (getppid() != 1)
 
 但浪费了CPU时间，为了避免竞争条件和轮询，多个进程间需要某种信号机制
 
+### TELL/WAIT实现1
 一个`TELL/WAIT`可能被使用的地方(可用信号实现，也可用管道实现)
 
 ```c
@@ -4091,6 +4092,14 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 
 上面三个函数是不会被信号打断的，失败也不会设置`errno`
 
+```c
+#include <pthread.h>
+#include <time.h>
+int pthread_mutex_timedlock(pthread_mutex_t *restrictmutex,const struct timespec *restricttsptr);
+//Returns: 0 if OK, error number on failure
+```
+
+带超时设计的互斥量
 
 ### 避免死锁
 - 自死锁，A加锁，A引用B，在A未解锁之前，B还加锁，导致自死锁
@@ -4105,14 +4114,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex);
 > - 解决办法是，强调对资源的访问顺序，但如果资源是环型的，典型的如 __哲学家就餐__ 问题
 > - 学院派做法是，尝试一次加两把锁，加不上的话，就放弃两把锁，并尝试休眠随机时间，再次尝试
 > - 实践派做法是，牺牲性能，增加锁的粒度，一次把所有资源加上锁，如内核大锁
-
-### pthread_mutex_timedlock函数
-```c
-#include <pthread.h>
-#include <time.h>
-int pthread_mutex_timedlock(pthread_mutex_t *restrictmutex,const struct timespec *restricttsptr);
-//Returns: 0 if OK, error number on failure
-```
 
 ### 读写锁
 建议不使用读写锁（又叫共享-独占锁），写锁容易饿死(好像已解决，当读写锁处于读模式锁住状态时，如果有另外线程试图以写模式加锁，读写锁通常会阻塞随后的读模式锁请求)
@@ -4180,6 +4181,21 @@ int pthread_cond_broadcast(pthread_cond_t *cond);
 另外，为什么使用`while (data == 0)`，而不是`if (data == 0)`，是因为会产生 __惊群现象__，到时候会N个线程得到唤醒，但最终却只有一个线程可以拿到数据，所以需要`while`再次确认是否需要`wait`
 
 当然，完全可以使用`mutex`来保持双方同步，但有可能违反谁加锁就谁解锁的规范，并有可能导致程序不能正常退出。而`wait/signal`更像是 __通知机制__，不像互斥量需要成对出现
+
+### 自旋锁
+自旋锁不会引起调用者睡眠，如果自旋锁已经被别的执行单元持有，调用者就一直循环在那里看是否该自旋锁的持有者已经释放了锁，"自旋"一词就是因此而得名。自旋锁适用于锁使用者保持锁时间比较短的情况，使用自旋锁需要注意有可能造成的死锁情况
+
+```c
+#include <pthread.h>
+int pthread_spin_init(pthread_spinlock_t *lock ,int pshared);
+int pthread_spin_destroy(pthread_spinlock_t *lock );
+//Both return: 0 if OK, error number on failure
+
+int pthread_spin_lock(pthread_spinlock_t *lock );
+int pthread_spin_trylock(pthread_spinlock_t *lock );
+int pthread_spin_unlock(pthread_spinlock_t *lock );
+//All return: 0 if OK, error number on failure
+```
 
 ### 屏障
 屏障barrier是用户协调多个线程并行工作的同步机制，屏障允许每个线程等待，直到所有的合作线程都到达某一点，然后从该点继续执行（`join`就是一种屏障）
@@ -4286,9 +4302,6 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 ![img](../../imgs/apue_48.png)
 
 
-
-
-
 ## 重入
 如果一个函数在相同的时间点可以被多个线程安全的调用，称该函数是线程安全的
 
@@ -4312,6 +4325,59 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *attr, int type);
 为兼容设计，如`errno`在线程出现以前定义为进程上下文中全局可访问的整数，但在`#include <pthread.h>`后，则重新定义为线程私有数据。
 
 全新项目不建议使用，新线程需要私有数据时，完全可以使用`malloc`
+
+> 如果需要线程全局的数据，用来保持类似闭包的数据，还是有必要的
+
+```c
+#include <limits.h>
+#include <string.h>
+#include <pthread.h>
+#include <stdlib.h>
+
+#define MAXSTRINGSZ 4096
+
+static pthread_key_t key;
+static pthread_once_t init_done = PTHREAD_ONCE_INIT;
+pthread_mutex_t env_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+extern char **environ;
+
+static void
+thread_init(void)
+{
+    pthread_key_create(&key, free);
+}
+
+char *
+getenv(const char *name)
+{
+    int     i, len;
+    char    *envbuf;
+
+    pthread_once(&init_done, thread_init);
+    pthread_mutex_lock(&env_mutex);
+    envbuf = (char *)pthread_getspecific(key);
+    if (envbuf == NULL) {
+        envbuf = malloc(MAXSTRINGSZ);
+        if (envbuf == NULL) {
+            pthread_mutex_unlock(&env_mutex);
+            return(NULL);
+        }
+        pthread_setspecific(key, envbuf);
+    }
+    len = strlen(name);
+    for (i = 0; environ[i] != NULL; i++) {
+        if ((strncmp(name, environ[i], len) == 0) &&
+          (environ[i][len] == '=')) {
+            strncpy(envbuf, &environ[i][len+1], MAXSTRINGSZ-1);
+            pthread_mutex_unlock(&env_mutex);
+            return(envbuf);
+        }
+    }
+    pthread_mutex_unlock(&env_mutex);
+    return(NULL);
+}
+```
 
 ## 取消选项
 可取消状态和可取消类型，影响着线程在响应`pthread_cancel`函数调用时所呈现的行为
@@ -4394,7 +4460,7 @@ int pthread_kill(pthread_t thread,int signo);
 如果需要大内存，并且用完直接释放（直接设置`sbrk`，而不是`free`），可使用`mmap`。其实也可`fork`一个进程，去`malloc`一个大内存，父子间进行进程间通信，用完后`free`，再终止该进程
 
 ## 管道
-- 历史上它是半双工的，现在某些系统提供双工，但为了移植性，认为它是半双工的
+- 历史上它是半双工的，现在某些系统提供双工，但为了移植性，认为它是半双工的(需要双向通信时，打开两个管道)
 - 只能在具有公共祖先的进程之间使用，通常管道由一个进程创建，然后该进程调用`fork`，此后父子进程可应用该管道
 > 当你在管道线中键入一个由shell执行的命令序列时，shell为每一条命令单独创建一进程，然后将前一条命令进程的标准输出用管道与后一条命令的标准输入相连接
 
@@ -4443,13 +4509,71 @@ int main(void){
 
 如果写关闭，则读端最后读到0，指示达到了文件结束处；如果读关闭，写端还继续写，则产生`SIGPIPE`信号，如果忽略该信号或捕捉该信号并从其处理程序返回，则返回-1，`errno`为`EPIPE`
 
+上面例子是直接对管道描述符调用`read/write`，更好的方法是将描述符复制为 __标准输入和标准输出__
 
+```c
+dup2(fd[0], STDIN_FILENO);//把fd[0]复制到标准输入
+```
 
+### TELL/WAIT实现2
+```c
+static int  pfd1[2], pfd2[2];
 
+void
+TELL_WAIT(void)
+{
+    if (pipe(pfd1) < 0 || pipe(pfd2) < 0)
+        err_sys("pipe error");
+}
 
+void
+TELL_PARENT(pid_t pid)
+{
+    if (write(pfd2[1], "c", 1) != 1)
+        err_sys("write error");
+}
 
+void
+WAIT_PARENT(void)
+{
+    char    c;
 
-明锁（队列，顺序锁）
+    if (read(pfd1[0], &c, 1) != 1)
+        err_sys("read error");
+
+    if (c != 'p')
+        err_quit("WAIT_PARENT: incorrect data");
+}
+
+void
+TELL_CHILD(pid_t pid)
+{
+    if (write(pfd1[1], "p", 1) != 1)
+        err_sys("write error");
+}
+
+void
+WAIT_CHILD(void)
+{
+    char    c;
+
+    if (read(pfd2[0], &c, 1) != 1)
+        err_sys("read error");
+
+    if (c != 'c')
+        err_quit("WAIT_CHILD: incorrect data");
+}
+```
+
+## popen/pclose函数
+```c
+#include <stdio.h>
+FILE *popen(const char *cmdstring,const char *type );
+//Returns: file pointer if OK, NULL on error
+int pclose(FILE *fp );
+//Returns: termination status ofcmdstring,or −1 on error
+```
+
 
 
 
@@ -4459,6 +4583,7 @@ int main(void){
 
 ```
 
+<!--
 ![img](../../imgs/apue_00.png)
 
 
@@ -4466,7 +4591,7 @@ int main(void){
 
 
 
-<!--
+
 gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
 
 休闲食品
@@ -4485,7 +4610,21 @@ sig_promask设置了block sigint
 
 书中的[wait/tell]child [wait/tell]parent能否使用?
 
-semaphore
+
+Mutex是一把钥匙，一个人拿了就可进入一个房间，出来的时候把钥匙交给队列的第一个。一般的用法是用于串行化对critical section代码的访问，保证这段代码不会被并行的运行。
+
+Semaphore是一件可以容纳N人的房间，如果人不满就可以进去，如果人满了，就要等待有人出来。对于N=1的情况，称为binary semaphore。一般的用法是，用于限制对于某一资源的同时访问。
+
+在有的系统中Binary semaphore与Mutex是没有差异的。在有的系统上，主要的差异是mutex一定要由获得锁的进程来释放。而semaphore可以由其它进程释 放（这时的semaphore实际就是个原子的变量，大家可以加或减），因此semaphore可以用于进程间同步。Semaphore的同步功能是所有 系统都支持的，而Mutex能否由其他进程释放则未定，因此建议mutex只用于保护critical section。而semaphore则用于保护某变量，或者同步。
+
+mutex就是一个binary semaphore （值就是0或者1）。但是他们的区别又在哪里呢？主要有两个方面：
+
+* 初始状态不一样：mutex的初始值是1（表示锁available），而semaphore的初始值是0（表示unsignaled的状态）。随后的操 作基本一样。mutex_lock和sem_post都把值从0变成1，mutex_unlock和sem_wait都把值从1变成0（如果值是零就等 待）。初始值决定了：虽然mutex_lock和sem_wait都是执行V操作，但是sem_wait将立刻将当前线程block住，直到有其他线程 post；mutex_lock在初始状态下是可以进入的。
+* 用法不一样（对称 vs. 非对称）：这里说的是“用法”。Semaphore实现了signal，但是mutex也有signal（当一个线程lock后另外一个线程 unlock，lock住的线程将收到这个signal继续运行）。在mutex的使用中，模型是对称的。unlock的线程也要先lock。而 semaphore则是非对称的模型，对于一个semaphore，只有一方post，另外一方只wait。就拿上面的厕所理论来说，mutex是一个钥 匙不断重复的使用，传递在各个线程之间，而semaphore择是一方不断的制造钥匙，而供另外一方使用（另外一方不用归还）。
+
+前面的实验证明，mutex确实能够做到post和wait的功能，只是大家不用而已，因为它是“mutex”不是semaphore。
+
+要 让一个thread在背景不断的执行，最简单的方式就是在该thread执行无穷回圈，如while(1) {}，这种写法虽可行，却会让CPU飙高到100%，因为CPU一直死死的等，其实比较好的方法是，背景平时在Sleep状态，当前景呼叫背景时，背景马 上被唤醒，执行该做的事，做完马上Sleep，等待前景呼叫。当背景sem_wait()时，就是马上处于Sleep状态，当前景sem_post() 时，会马上换起背景执行，如此就可避免CPU 100%的情形了。
 
 
 
