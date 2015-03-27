@@ -1995,7 +1995,67 @@ Lecture 15
 - Semaphore类型其实是一个指向不完全类型的指针，所以传参时，并不是拷贝，而是共享某种结构体
 - `SemaphoreNew(-,1);`如果第2个参数改成0，则一开始就等待某线程发出Signal，改成>1，则表示有多个资源可供使用，但如果用来限制临界区访问的，通常是代码中的模式
 - 尽可能让"临界区"小，否则会影响并发性
+- 下面是linux可运行版本
 
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+
+#define NAMESIZE 32
+
+struct AgentInfo{
+    int agent_id;
+    int *num_tickets_p;
+};
+
+static sem_t sem;
+
+static void *sell_tickets(void *arg){
+    struct AgentInfo *st_info = arg;
+    while(1){
+        sem_wait(&sem);
+        if(*st_info->num_tickets_p == 0){
+            sem_post(&sem);
+            break;
+        }
+        printf("Agent %d sells a ticket %d\n", st_info->agent_id, *st_info->num_tickets_p);
+        (*st_info->num_tickets_p)--;
+        sem_post(&sem);
+
+        if((rand() % 100) > 90)
+            sleep(1);
+    }
+    printf("Agent %d done!\n", st_info->agent_id);
+    free(st_info);
+    return NULL;
+}
+
+int main(){
+    int numAgents = 10;
+    int numTickets = 150;
+    int i;
+    struct AgentInfo *st_info;
+    pthread_t tid[numAgents];
+    srand(time(NULL));
+    sem_init(&sem, 0, 1);
+
+    for(i = 0; i < numAgents; i++){
+        st_info = malloc(sizeof(struct AgentInfo));
+        st_info->agent_id = i;
+        st_info->num_tickets_p = &numTickets;
+        pthread_create(tid + i, NULL, sell_tickets, (void *)st_info);
+    }
+
+    for(i = 0; i < numAgents; i++)
+        pthread_join(tid[i], NULL);
+
+    sem_destroy(&sem);
+    return 0;
+}
+```
 
 Lecture 16
 ==========
@@ -2044,6 +2104,63 @@ Lecture 16
 - 上例是使用`Semaphore`来模拟锁，而本例则使用它来进行线程间通信
 - 可以把`emptyBuffers`的设为4，不会影响代码的正确性，也不会死锁，只是影响了并发性；设为1，则相当于同步调用；设为0则会死锁；设为超过8，则会覆盖未被读的数据
 - 把`fullBuffers`的设为大于0，则会读到未写的数据
+- 下面是linux可运行的版本
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+
+#define BUFSIZE 8
+
+static char buffer[BUFSIZE];
+static sem_t empty_buffers;
+static sem_t full_buffers;
+
+static void *writer(void *unuse){
+    int i;
+    for(i=0; i<40; i++){
+        char c = rand()%26 + 'A';
+        sem_wait(&empty_buffers);
+        buffer[i%BUFSIZE] = c;
+        sem_post(&full_buffers);
+    }
+    return NULL;
+}
+
+static void *reader(void *unuse){
+    int i;
+    for(i=0; i<40; i++){
+        sem_wait(&full_buffers);
+        char c = buffer[i%BUFSIZE];
+        sem_post(&empty_buffers);
+        putchar(c);
+    }
+    return NULL;
+}
+
+int main(){
+    pthread_t tid[2];
+    srand(time(NULL));
+    sem_init(&empty_buffers, 0, BUFSIZE);
+    sem_init(&full_buffers, 0, 0);
+
+    pthread_create(tid, NULL, writer, NULL);
+    pthread_create(tid + 1, NULL, reader, NULL);
+
+    pthread_join(tid[0], NULL);
+    pthread_join(tid[1], NULL);
+
+    sem_destroy(&empty_buffers);
+    sem_destroy(&full_buffers);
+
+    printf("\n");
+    return 0;
+}
+```
+
 
 ## 五个哲学家就餐
 
@@ -2088,6 +2205,71 @@ Lecture 16
     - 启发法1：可以只允许 __最多同时两个人__ 吃饭，因为三个人需要6个叉子，资源不够
     - 启发法2(本例所采用)：也可以阻止一位哲学家获得叉子，那么剩下的 __四个人尝试__ 获得叉子，至少有一个能得到两个叉子，这种并发性最好
 
+- 下面是linux可运行的版本
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#include <stdlib.h>
+#include <semaphore.h>
+
+#define PH_COUNT 5
+
+static sem_t forks[PH_COUNT];
+static sem_t num_allowed_to_eat;
+
+static void *philosopher(void *arg){
+    int id = (int)arg;
+    int i;
+    printf("id %d begin!\n", id);
+    for(i=0; i<3; i++){
+
+        if((rand() % 100) > 90)
+            sleep(1);
+        printf("%d think\n", id);
+
+        sem_wait(&num_allowed_to_eat);
+
+        sem_wait(&forks[id]);
+        sem_wait(&forks[(id + 1) % PH_COUNT]);
+
+        if((rand() % 100) > 90)
+            sleep(1);
+        printf("%d eat\n", id);
+
+        sem_post(&forks[id]);
+        sem_post(&forks[(id + 1) % PH_COUNT]);
+
+        sem_post(&num_allowed_to_eat);
+    }
+    printf("id %d done!\n", id);
+    return NULL;
+}
+
+int main(){
+    pthread_t tid[PH_COUNT];
+    int i;
+    srand(time(NULL));
+
+    sem_init(&num_allowed_to_eat, 0, PH_COUNT - 1);
+    for(i = 0; i< PH_COUNT; i++)
+        sem_init(forks + i, 0, 1);
+
+    for(i = 0; i< PH_COUNT; i++)
+        pthread_create(tid + i, NULL, philosopher, (void *)i);
+
+    for(i = 0; i< PH_COUNT; i++)
+        pthread_join(tid[i], NULL);
+
+    for(i = 0; i< PH_COUNT; i++)
+        sem_destroy(forks + i);
+
+    sem_destroy(&num_allowed_to_eat);
+
+    return 0;
+}
+```
 
 
 Lecture 17
@@ -2098,9 +2280,6 @@ Lecture 17
 <!--language: c-->
 
     #include "thead_107.h"
-
-    Semaphore forks[] = {1,1,1,1,1};
-    Semaphore numAllowedToEat = 4;
 
     int DownloadSingleFile(const char *server, const char *path);
 

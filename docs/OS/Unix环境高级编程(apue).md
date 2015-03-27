@@ -4610,6 +4610,10 @@ sig_promask设置了block sigint
 
 书中的[wait/tell]child [wait/tell]parent能否使用?
 
+sem_wait 不会惊群 如初始化时有值，则可以直接wait
+非posix标准
+
+
 
 Mutex是一把钥匙，一个人拿了就可进入一个房间，出来的时候把钥匙交给队列的第一个。一般的用法是用于串行化对critical section代码的访问，保证这段代码不会被并行的运行。
 
