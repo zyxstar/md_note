@@ -1004,6 +1004,8 @@ unalias la                        #取消别名
 echo -n                           #不换行，默认换行
 echo -e "a\tb\tc"                 #翻译转义，否则原样输出
 
+echo ${PAGER:-more}               #如果变量PAGER定义则其非空，则使用，否则使用字符串more
+
 ```
 
 ## Shell脚本

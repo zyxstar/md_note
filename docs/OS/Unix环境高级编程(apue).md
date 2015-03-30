@@ -4574,6 +4574,102 @@ int pclose(FILE *fp );
 //Returns: termination status ofcmdstring,or −1 on error
 ```
 
+上节使用`dup2()`来复制标准输入或输出，可以利用现有命令来组成程序，它的模式一般为，`fork`子进程，`dup2`到标准IO，`execlp`shell命令
+
+<!-- run -->
+
+```c
+#include <unistd.h>
+#include <stdio.h>
+/* cat /etc/passwd | grep ftp */
+int main(void){
+    pid_t pid;
+    int fd[2];
+
+    pipe(fd);
+
+    /* cat */
+    pid = fork();
+    /* if error */
+    if (pid == 0) {
+        if (fd[1] != 1) {
+            dup2(fd[1], 1);
+            close(fd[1]);
+        }
+        close(fd[0]);
+        execlp("cat", "cat", "/etc/passwd", NULL);
+        perror("cat: /etc/passwd");
+        return 1;
+    }
+
+    /* grep */
+    pid = fork();
+    if (pid == 0) {
+        if (fd[0] != 0) {
+            dup2(fd[0], 0);
+            close(fd[0]);
+        }
+        close(fd[1]);
+        execlp("grep", "grep", "ftp", NULL);
+        perror("grep: ftp");
+        return 1;
+    }
+
+    close(fd[0]);
+    close(fd[1]);
+
+    wait(NULL);
+    wait(NULL);
+
+    return 0;
+}
+```
+
+注意这里不能使用两个进程（即只`fork`一次），将会导致孤儿进程组，或切入后台进程组，导致非预想状态
+
+为了方便这种常见的操作，提供了`popen()`
+
+<!-- run -->
+
+```c
+#include <stdio.h>
+#define BUFSIZE 128
+
+int main(void){
+    FILE *fp;
+    char buf[BUFSIZE];
+
+    fp = popen("cat /etc/passwd | grep ftp", "r");
+    /* if error */
+
+    fgets(buf, BUFSIZE, fp);
+    printf("\033[31m%s\033[0m\n", buf);
+
+    pclose(fp);
+
+    return 0;
+}
+```
+
+`pclose()`关闭标准IO流，等待命令执行结束，然后返回shell的终止状态，如果shell不能被执行，则`pclose`返回的终止状态与shell已执行`exit`一样
+
+## 协同进程
+过滤程序从标准输入读取数据，对其进行适当处理后写到标准输出。几个过滤程序通常在shell管道命令行中线性的连接。当一个程序产生某个过滤程序的输入，同时又读取该过滤程序的输出时，则该过滤程序成为协同进程
+
+协同进程通常在shell后台运行，其标准输入和标准输出通过管理连接到另一个程序
+
+当使用标准IO时，请及时使用`fflush`，以防缓冲区问题导致死锁
+
+## FIFO
+命名管道，可以`mkfifo(1)`创建，也可使用下面函数
+
+```c
+#include <sys/stat.h>
+int mkfifo(const char * path ,mode_tmode);
+int mkfifoat(int fd ,const char *path ,mode_tmode);
+//Both return: 0 if OK, −1 on error
+```
+
 
 
 
@@ -4593,6 +4689,9 @@ int pclose(FILE *fp );
 
 
 gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
+gcc -ansi -I../include -Wall -DLINUX -D_GNU_SOURCE  pipe2.c -o pipe2  -L../lib -lapue
+
+../lib/error.c
 
 休闲食品
 联合办宴
@@ -4608,10 +4707,6 @@ gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
 sig_promask设置了block sigint
 当在sigint响应函数中重新了unblock 会立即响应吗?
 
-书中的[wait/tell]child [wait/tell]parent能否使用?
-
-sem_wait 不会惊群 如初始化时有值，则可以直接wait
-非posix标准
 
 
 
