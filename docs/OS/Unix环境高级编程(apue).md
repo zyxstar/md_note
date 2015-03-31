@@ -4460,6 +4460,8 @@ int pthread_kill(pthread_t thread,int signo);
 
 如果需要大内存，并且用完直接释放（直接设置`sbrk`，而不是`free`），可使用`mmap`。其实也可`fork`一个进程，去`malloc`一个大内存，父子间进行进程间通信，用完后`free`，再终止该进程
 
+如果需要进程间通信，__优先__ 使用管道，其次为FIFO，再次为套接字，不得以，且需要大数据通信时，才考虑共享内存（sysV IPC的消息队列基本不用考虑，信号量谨慎使用）
+
 ## 管道
 - 历史上它是半双工的，现在某些系统提供双工，但为了移植性，认为它是半双工的(需要双向通信时，打开两个管道)
 - 只能在具有公共祖先的进程之间使用，通常管道由一个进程创建，然后该进程调用`fork`，此后父子进程可应用该管道
@@ -4712,7 +4714,7 @@ key_t ftok(const char * path ,int id );
 //Returns: key if OK, (key_t)−1 on error
 ```
 
-`path`必须引用一个现存的文件，当产生键时，只使用`id`参数的低8位
+`path`必须引用一个现存的文件(并且是可访问到，但不一定是可读写)，当产生键时，只使用`id`参数的低8位
 
 三个`get`(`msgget`,`semget`,`shmget`)都有两个类似的参数，一个`key`和一个整型`flag`，如果`key`为`IPC_PRIVATE`或`flag`指定了`IPC_CREAT`位，则创建一个新的IPC结构
 
@@ -4759,6 +4761,8 @@ int msgctl(int msqid, int cmd ,struct msqid_ds *buf );
 - `IPC_SET`按`buf`中值，设置队列相关状态
 - `IPC_RMID`删除该消息队列以及仍在该队列中的所有数据，这种删除 __立即生效__
 
+执行`msgget`,`semget`,`shmget`时，`flag`是按位与的，创建标识与权限标识均由它表示，如`msgid = msgget(key, IPC_CREAT | 0666)`
+
 ```c
 #include <sys/msg.h>
 int msgsnd(int msqid,const void *ptr,size_t nbytes ,int flag);
@@ -4797,6 +4801,208 @@ ssize_t msgrcv(int msqid,void *ptr,size_t nbytes ,long type ,int flag);
 `msgrcv`成功执行时，内核也更新`msqid_ds`结构
 
 ## semaphore信号量
+主要应用场景：
+
+- 加锁，并且可以用于进程间同步（也可用于线程间），并且是基于整数计数的，可以先解锁再加锁。但此场景，可使用文件记录锁来代替
+- 提交任务，如PV操作，典型的场景是 __生产者消费者__ 模式，（但该模式的最好方案却是使用队列[非消息队列，可用管道来实现]）
+- 做流控，给每个客户端限速，在指定时间间隔里，对每个客户端发放一定token（每个token可指定流量大小），并且规划好单位时间内，共放发的token（防止单一客户端累积大量token，然后在某个时间内全部用完，导致其他客户端无流量可用）
+- 通过对信号量数组的操作，方便实现 __栅栏同步__ 模式，可使用 线程同步中的屏障 来实现
+
+缺点是：
+
+- 信号的创建`semget`是独立于它的初始化`semctl`(该函数同时也可以设置获取状态，删除等功能)，不能原子的创建一个信号量集合，并且对该集合中各个信号量赋初值
+- 当程序意外终止时，并不会释放已经分配给它的信号量，一可以导致清理问题，二可以导致其它进程的死锁
+
+```c
+#include <sys/sem.h>
+int semget(key_t key,int nsems,int flag);
+//Returns: semaphore ID if OK,−1 on error
+```
+
+`nsems`是创建数量，如果是客户进程，可引用现有集合，将`nsems`指定为0
+
+```c
+#include <sys/sem.h>
+int semctl(int semid, int semnum, int cmd,... /* union semun arg */ );
+//Returns: (see following)
+
+union semun {
+    int  val; /* for SETVAL */
+    struct semid_ds *buf;  /* for IPC_STAT and IPC_SET */
+    unsigned short *array; /* for GETALL and SETALL */
+};
+```
+
+这也是一个垃圾筒函数，`cmd`可以为
+
+- `IPC_STAT/IPC_SET`，使用`arg.buf`来设置或获取
+- `IPC_RMID`删除信号量集合，这种删除是立即发生的，仍使用此信号量集合的进程，试图对信号量集合操作时，将出错返回`EIDRM`，当删除时，无需指定`semnum`，一般 __习惯上__ 传入`-1`表示不会被使用到
+- `GETVAL/SETVAL`，由`arg.val`指定
+- `GETALL/SETALL`，由`arg.array`指定，设置信号数组
+
+```c
+#include <sys/sem.h>
+int semop(int semid,struct sembuf semoparray[], size_t nops);
+//Returns: 0 if OK,−1 on error
+
+struct sembuf {
+    unsigned short sem_num;  /* member # in set (0, 1, ..., nsems-1) */
+    short  sem_op; /* operation (negative, 0, or positive) */
+    short  sem_flg; /* IPC_NOWAIT, SEM_UNDO */
+};
+```
+
+`semoparray`是一个指向一个由`sembuf`结构表示的信号量操作数组，`sembuf.sem_num`指向信号集合的下标，`sembuf.sem_op`可为正负数，分别表示释放或获取资源
+
+如果在进程终止时，它占用了经由信号量分配的资源，只要为信号量操作指定了`SEM_UNDO`标志，然后分配资源（如op -1），内核将记录，分配给调用进程多少资源，当进程终止时，内核将检验该进程是否还有尚未处理的信号调整值，如有，按调整值对相应信号量值进行处理（但如果是任务提交类的需求，不适合使用undo设置）
+
+实现的一个栅栏同步的例子：
+
+```c
+#include <sys/types.h>
+#include <sys/ipc.h>
+#include <sys/sem.h>
+#include <unistd.h>
+
+#include <stdio.h>
+
+#define PROC_NUM   6
+
+static int dec(int semid, int ind){
+    struct sembuf buf;
+
+    buf.sem_num = ind;
+    buf.sem_op = -1;
+    buf.sem_flg = 0;
+
+    return semop(semid, &buf, 1);
+}
+
+static int inc(int semid, int ind){
+    struct sembuf buf;
+
+    buf.sem_num = ind;
+    buf.sem_op = 1;
+    buf.sem_flg = 0;
+
+    return semop(semid, &buf, 1);
+}
+
+static void jobs(int semid, int ind){
+    int i;
+
+    srand(getpid());
+
+    for (i = 0; i < 10; i++) {
+        dec(semid, ind);
+        sleep((unsigned)rand() % 5 + 1);
+        printf("%d ", ind);
+        fflush(stdout);
+        inc(semid, PROC_NUM);
+    }
+}
+
+static int wait_all(int semid){
+    struct sembuf buf;
+
+    buf.sem_num = PROC_NUM;
+    buf.sem_op = -PROC_NUM;
+    buf.sem_flg = 0;
+
+    return semop(semid, &buf, 1);
+}
+
+int main(void){
+    pid_t pid;
+    int i;
+    int semid;
+    unsigned short init_arr[PROC_NUM + 1];
+    struct sembuf buf[PROC_NUM];
+
+    semid = semget(IPC_PRIVATE, PROC_NUM + 1, 0600);
+    /* if error */
+
+    for (i = 0; i < PROC_NUM; i++) {
+        init_arr[i] = 1;
+    }
+    init_arr[i] = 0;
+    semctl(semid, -1, SETALL, init_arr);
+
+    for (i = 0; i < PROC_NUM; i++) {
+        pid = fork();
+        /* if error */
+        if (pid == 0) {
+            jobs(semid, i);
+            return 0;
+        }
+    }
+
+    /* init op_arr */
+    for (i = 0; i < PROC_NUM; i++) {
+        buf[i].sem_num = i;
+        buf[i].sem_op = 1;
+        buf[i].sem_flg = 0;
+    }
+
+    for (i = 0; i < 10; i++) {
+        wait_all(semid);
+        printf("\n");
+        semop(semid, buf, PROC_NUM);
+    }
+
+    for (i = 0; i < PROC_NUM; i++) {
+        wait(NULL);
+    }
+
+    return 0;
+}
+```
+
+## 共享内存
+它需要额外的一些同步技术（如信号量）来确保不会发生资源竞争
+
+```c
+#include <sys/shm.h>
+int shmget(key_t key,size_t size,int flag);
+//Returns: shared memory ID if OK,−1 on error
+```
+
+`size`以字节为单位，一般取为系统页长的整倍数，如4096
+
+```c
+#include <sys/shm.h>
+int shmctl(int shmid,int cmd,struct shmid_ds *buf);
+//Returns: 0 if OK,−1 on error
+```
+
+`cmd`为`IPC_RMID`时，删除共享存储段，但不同于前面两个，此时只是标记删除，等最后一个进程终止时（或与段分离），才真正删除
+
+```c
+#include <sys/shm.h>
+void *shmat(int shmid,const void *addr,int flag);
+//Returns: pointer to shared memory segment if OK,−1 on error
+```
+
+一般不指定`addr`的地址，直接使用`NULL`，由系统选择地址，`flag`可指定`SHM_RDONLY`是否为只读
+
+```c
+#include <sys/shm.h>
+int shmdt(const void *addr);
+//Returns: 0 if OK,−1 on error
+```
+
+`adrr`为`shmat`返回的地址
+
+共享内存所在位置
+
+![img](../../imgs/apue_51.png)
+
+
+
+## POSIX信号量
+
+
+
 
 
 
