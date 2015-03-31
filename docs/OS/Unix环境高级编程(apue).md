@@ -4688,6 +4688,116 @@ prog3 < fifo1 & prog1 < infile | tee fifo1 | prog2
 
 ![img](../../imgs/apue_49.png)
 
+## XSI IPC (SysV IPC)
+> 有其他选择时，不考虑该类IPC
+
+有三种IPC，消息队列、信号量、共享内存，可通过`ipcs(1)/ipcrm(1)`查看/编辑当前ipc的情况
+
+### 标识符和键
+每个内核中的IPC结构，都用一个非负整数的标识符加以引用，如为了对一个消息队列发送或取消息，只需要知道其队列标识符(identifier)。当一个IPC结构被创建，以后又被删除时，与这种结构相关的标识符连续加1，直至达到一个整型数的最大正值，然后回转到0
+
+标识符是IPC对象的 __内部名__，为了使多个合作进程能够在同一个IPC对象上会合，需要提供一个 __外部名__ 方案，为此使用键(key)
+
+无论何时创建IPC结构，都应指定一个键，类型是`key_t`，通常定义在`<sys/types.h>`，为长整型，键由内核变换成标识符
+
+> 如果引用头文件`<sys/types.h>`，请将它放在引用头文件的首部
+
+- `IPC_PRIVATE`键可用于父子/兄弟进程间通信
+- 在一个公用头文件中定义一个客户进程和服务器进程都认可的键，然后服务器进程指定此键创建一个新的IPC结构(确保不跟已有冲突)
+- 客户进程和服务器进程认同一个路径名和项目ID（`unsigned char`），使用`ftok`产生一个键
+
+```c
+#include <sys/ipc.h>
+key_t ftok(const char * path ,int id );
+//Returns: key if OK, (key_t)−1 on error
+```
+
+`path`必须引用一个现存的文件，当产生键时，只使用`id`参数的低8位
+
+三个`get`(`msgget`,`semget`,`shmget`)都有两个类似的参数，一个`key`和一个整型`flag`，如果`key`为`IPC_PRIVATE`或`flag`指定了`IPC_CREAT`位，则创建一个新的IPC结构
+
+为了确保不是引用现行的一个IPC结构，必须在`flag`中同时指定`IPC_CREAT`和`IPC_EXCL`，如果已存在，会出错，返回`EEXIST`
+
+### 权限结构
+每一个IPC结构设置了一个`ipc_perm`结构（`<sys/ipc.h>`），该结构规定了权限和所有者
+
+```c
+struct ipc_perm {
+    uid_t  uid;  /* owner’s effective user ID */
+    gid_t  gid;  /* owner’s effective group ID */
+    uid_t  cuid; /* creator’s effective user ID */
+    gid_t  cgid; /* creator’s effective group ID */
+    mode_t mode; /* access modes */
+    ...
+};
+```
+
+在创建时，所有字段都是赋初值，可调用`msgctl/semctl/shmctl`修改这些值，但调用进程必须是IPC的创建者或超级用户，`mode`除了不存在执行权限，其它同文件权限
+
+### 优缺点
+进程创建了一个消息队列，在该队列中放入消息，然后终止，但该消息队列及其内容并不会被删除（如遇进程异常终止，则存在清理问题），与此相比，当最后访问管道的进程终止时，管道就完全的删除了（对于FIFP也如此，留在FIFP中数据此时全部被删除，只是名字仍保存在文件系统中）
+
+IPC另一个问题是，它在文件系统中没有名字，不存在文件描述符，不能使用`select/poll`，使得难以使用多个IPC结构，以及在文件或设备IO中使用IO函数(即不能使一个服务器进程等待将要放在两个消息队列任一个中的消息)
+
+![img](../../imgs/apue_50.png)
+
+## 消息队列
+`msgget`用于创建一个新队列或打开一个现存有队列，`msgsnd`将新消息添加到队列尾端，`msgrcv`用于从队列中取消息，我们并不一定要以先进先出的次序取消息，也可按消息类型字段取消息
+
+```c
+#include <sys/msg.h>
+int msgget(key_t key,int flag);
+//Returns: message queue ID if OK, −1 on error
+
+int msgctl(int msqid, int cmd ,struct msqid_ds *buf );
+//Returns: 0 if OK,−1 on error
+```
+
+`msgctl`对队列执行多种操作(垃圾桶函数)，以下三条`cmd`适用于信号量与共享内存
+
+- `IPC_STAT`取得队列状态，放在`buf`中
+- `IPC_SET`按`buf`中值，设置队列相关状态
+- `IPC_RMID`删除该消息队列以及仍在该队列中的所有数据，这种删除 __立即生效__
+
+```c
+#include <sys/msg.h>
+int msgsnd(int msqid,const void *ptr,size_t nbytes ,int flag);
+//Returns: 0 if OK,−1 on error
+```
+
+`ptr`指向一个 __变长结构体__，可定义为（接受端也使用相同的结构体）
+
+```c
+struct msgbuf {
+   long mtype;       /* message type, must be > 0 */
+   char mtext[1];    /* message data */
+};
+```
+
+`nbytes`说明数据缓冲区的长度，是上述结构体中除去`mtype`后的字节长度
+
+`flag`值可以指定为`IPC_NOWAIT`，设置非阻塞标志，若消息队列已满，则使得`msgsnd`立即出错返回`EAGAIN`，否则则进程阻塞，直到有空间可以容纳发送的信息（或系统删除了此队列，或捕捉到一个信号`EINTR`）
+
+`msgsnd`成功返回，与消息队列相关的`msqid_ds`结构得到更新，以标明发出该调用的进程ID`msg_lspid`、进行该调用的时间`msg_stime`，并指示队列中增加了一条`msg-qnum`
+
+```c
+#include <sys/msg.h>
+ssize_t msgrcv(int msqid,void *ptr,size_t nbytes ,long type ,int flag);
+//Returns: size of data portion of message if OK, −1 on error
+```
+
+此处的`ptr`指向的结构体同`msgsnd`，`nbytes`说明数据缓冲区的长度，`type`是指定想要哪一种消息
+
+- ==0，返回队列中第一个消息
+- >0，返回队列中消息类型为type的第一个消息，即发送方定义的变长结构体的`mtype`成员的值
+- <0，返回队列中消息类型值小于或等于type绝对值的消息，如果有若干个，则取最小的消息，常见的设计是，保留一个值以内的消息类型，比如1000以内为系统内容管理类消息，目前只有一个接受端来处理，则时`type==-1000`即可，将来，各种管理消息多了，可分别设置不同的接受端来处理，从而增加了系统弹性
+
+`flag`可设置`MSG_NOERROR`，当返回的消息大于`nbytes`，则该消息被截断，如果不设置，而消息又太长，则出错返回`E2BIG`（消息仍在队列中）；可设置`IPC_NOWAIT`，使操作不阻塞
+
+`msgrcv`成功执行时，内核也更新`msqid_ds`结构
+
+## semaphore信号量
+
 
 
 ## 函数
