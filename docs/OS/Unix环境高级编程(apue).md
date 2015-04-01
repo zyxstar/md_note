@@ -4858,6 +4858,8 @@ struct sembuf {
 
 实现的一个栅栏同步的例子：
 
+<!-- run -->
+
 ```c
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -4998,11 +5000,296 @@ int shmdt(const void *addr);
 ![img](../../imgs/apue_51.png)
 
 
-
 ## POSIX信号量
+```c
+#include <semaphore.h>
+sem_t *sem_open(const char * name,int oflag ,... /* mode_t mode,
+unsigned int value */ );
+//Returns: Pointer to semaphore if OK,SEM_FAILED on error
+
+int sem_close(sem_t *sem );
+//Returns: 0 if OK,−1 on error
+
+int sem_unlink(const char *name);
+//Returns: 0 if OK,−1 on error
+```
+
+
+```c
+#include <semaphore.h>
+int sem_trywait(sem_t * sem );
+int sem_wait(sem_t *sem );
+//Both return: 0 if OK, −1 on error
+
+#include <time.h>
+int sem_timedwait(sem_t *restrict sem ,const struct timespec *restrict tsptr );
+//Returns: 0 if OK,−1 on error
+
+int sem_post(sem_t *sem );
+//Returns: 0 if OK,−1 on error
+```
+
+```c
+#include <semaphore.h>
+int sem_init(sem_t *sem ,int pshared,unsigned int value);
+//Returns: 0 if OK,−1 on error
+
+int sem_destroy(sem_t * sem );
+//Returns: 0 if OK,−1 on error
+```
+
+```c
+#include <semaphore.h>
+int sem_getvalue(sem_t *restrict sem ,int *restrict valp );
+//Returns: 0 if OK,−1 on error
+```
+
+用它实现的栅栏同步
+
+```c
+#include <sys/types.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <semaphore.h>
+#include <unistd.h>
+
+#include <stdio.h>
+#include <errno.h>
+
+#define PROC_NUM   6
+
+static void jobs(int ind){
+    int i;
+    sem_t *self, *parent;
+    char name_self[16];
+    char name_parent[16];
+
+    snprintf(name_self, 16, "mysem%d", ind);
+    self = sem_open(name_self, 0);
+    /* if error */
+
+    snprintf(name_parent, 16, "mysem%d", PROC_NUM);
+    parent = sem_open(name_parent, 0);
+    /* if error */
+
+    srand(getpid());
+
+    for (i = 0; i < 10; i++) {
+        sem_wait(self);
+        sleep((unsigned)rand() % 5 + 1);
+        printf("%d ", ind);
+        fflush(stdout);
+        sem_post(parent);
+    }
+}
+
+static int wait_all(sem_t *sem){
+    int i = 0;
+    int ret;
+
+    while (i < PROC_NUM) {
+        ret = sem_wait(sem);
+        if (ret == -1) {
+            if (errno == EINTR) {
+                continue;
+            }
+            return -1;
+        }
+
+        i++;
+    }
+    return 0;
+}
+
+int main(void){
+    pid_t pid;
+    int i, j;
+    sem_t *sem[PROC_NUM + 1];
+    char name[PROC_NUM + 1][16];
+
+    for (i = 0; i < PROC_NUM; i++) {
+        snprintf(name[i], 16, "mysem%d", i);
+        sem[i] = sem_open(name[i], O_CREAT, 0600, 1);
+        /* if error */
+    }
+    snprintf(name[i], 16, "mysem%d", i);
+    sem[i] = sem_open(name[i], O_CREAT, 0600, 0);
+    /* if error */
+
+    for (i = 0; i < PROC_NUM; i++) {
+        pid = fork();
+        /* if error */
+        if (pid == 0) {
+            jobs(i);
+            return 0;
+        }
+    }
+
+    for (i = 0; i < 10; i++) {
+        wait_all(sem[PROC_NUM]);
+        printf("\n");
+        for (j = 0; j < PROC_NUM; j++) {
+            sem_post(sem[j]);
+        }
+    }
+
+    for (i = 0; i < PROC_NUM; i++) {
+        wait(NULL);
+    }
+
+    for (i = 0; i < PROC_NUM + 1; i++) {
+        sem_close(sem[i]);
+    }
+
+    return 0;
+}
+```
 
 
 
+高级IO
+=======
+
+## 非阻塞IO
+__低速系统调用__ 是可以会使进程 __永远阻塞__ 的一类系统调用：
+
+- 如果某些文件类型（如管道、终端设备和网络设备）的数据并不存在，则读操作可能会使调用者永远阻塞
+- 如果数据不能立即被上述同样类型的文件接受（由于在管道中无空间、网络流控制等），则写操作也会使调用者永远阻塞
+- 在某种条件发生之前，打开某些类型的文件会被阻塞（如打开一个终端设备可能需等到与之连接的调制解调器应答，如又在没有其他进程已用读模式打开该FIFO时若以只写模式打开FIFO，也要等待）
+- 对已加上强制性记录锁的文件进行读、写
+
+> 虽然读写磁盘文件会使调用者在短暂时间内阻塞，并不能将与磁盘IO有关的系统调用视为低速
+
+__非阻塞IO__ 可使我们调用`open/read/write`这样的IO操作，并使这些操作不会永远阻塞，如果操作不能完成，则调用立即出错返回。它比较占内存
+
+__优先使用多线程__，非阻塞作为最后手段
+
+> 裸机一般使用轮询+非阻塞，虽然占CPU资源，但这是必须的
+
+给定的描述符有两种方法对其指定非阻塞IO
+
+- 如果调用`open`，可指定`O_NONBLOCK`标志
+- 对已打开的描述符，调用`fcntl`，使用`O_NONBLOCK`标志 (注意先获取再设置)
+
+```c
+flags = fcntl(fdr, F_GETFL);
+flags |= O_NONBLOCK;
+fcntl(fdr, F_SETFL, flags);
+```
+
+> 如果以非阻塞写到终端，将可以出现许多个`EAGAIN`
+
+## 记录锁
+当一个进程正在读或修改文件的某个部分时，可以阻止其他进程修改同一文件区，其实并不存在真正的记录，只是一个 与 __进程__ 相关的 __字节范围锁__
+
+- 它只是建议锁，文件还是可以直接被操作的
+- 它是一个区域锁，只锁部分字节
+- 它支持读写锁
+- 同一进程对同一文件（是真正的文件，不是描述符）的不同范围进行加锁，重叠部分的新锁代替旧锁，不同进程对同一文件已加锁部分再加锁（`F_SETLKW`）需要等待，(`F_SETLK`直接返回，`errno`为`EACCES/EAGAIN`)
+- 一个进程可以对一个文件的多个区域锁
+- 进程终止时（包括意外退出），或该进程对文件`close`时，锁释放
+
+```c
+fd1 = open(pathname, ...);
+read_lock(fd1, ...);
+fd2 = dup(fd1);
+close(fd2);
+```
+
+> `close(fd2)`后，在`fd1`上设置的锁也被释放，将`dup`换成`open`，效果一样，如下
+
+```c
+fd1 = open(pathname, ...);
+read_lock(fd1, ...);
+fd2 = open(pathname, ...)
+close(fd2);
+```
+
+- `fork`时，子进程 __不继承__ 这个锁 （因为不是同一进程）
+- `exec`时，__继承__ 这个锁（还在同一进程内），需注意发生死锁的情况（如果先`fork`再`exec`就不用担心死锁），如果对一个文件描述符设置了`close-on-exec`标志，则相应文件所有锁被释放
+- 当内核检测到死锁时，会选择一个进程收到出错返回
+
+它也是通过`fcntl`来进行操作，`cmd`为`F_GETLK/F_SETLK/F_SETLKW`（`W`为等待），第三个参数是指向`flock`结构的指针
+
+```c
+struct flock {
+   ...
+   short l_type;    /* Type of lock: F_RDLCK,
+                       F_WRLCK, F_UNLCK */
+   short l_whence;  /* How to interpret l_start:
+                       SEEK_SET, SEEK_CUR, SEEK_END */
+   off_t l_start;   /* Starting offset for lock */
+   off_t l_len;     /* Number of bytes to lock */
+   pid_t l_pid;     /* PID of process blocking our lock
+                       (F_GETLK only) */
+   ...
+};
+```
+
+锁区域由`l_start`和`l_len`指定，以下表示锁全文件
+
+```c
+struct flock lock;
+lock.l_type = F_WRLCK;
+lock.l_whence = SEEK_SET;
+lock.l_start = 0;
+lock.l_len = 0;
+fcntl(fd, F_SETLKW, &lock);
+```
+
+`F_GETLK`不会报告调用进程自己持有的锁
+
+## STREAMS
+是SysV提供的，不建议使用，完全可以用套接字代替
+
+## IO多路转接
+它是多任务与轮询（非阻塞）之间的一个折衷
+
+### select/pselect函数
+```c
+#include <sys/select.h>
+int select(int maxfdp1, fd_set *restrict readfds,
+           fd_set *restrict writefds, fd_set *restrict exceptfds ,
+           struct timeval *restrict tvptr);
+//Returns: count of ready descriptors, 0 on timeout, −1 on error
+```
+
+- `tvptr`为NULL时，则阻塞等待，除非指定的描述符中的一个已准备好或捕捉到一个信号`EINTR`
+- `tvptr->tv_sec == 0 && tvptr->tv_usec == 0`立即返回
+- 其它的则指定等待的超时时间，在等待中可被捕捉的信号中断
+
+参数`readfds/writefds/exceptfds`是指向描述符的指针，说明关心的可读、可写或异常条件的各个描述符，存放在`fd_set`类型中，有关的操作如下：
+
+```c
+#include <sys/select.h>
+int FD_ISSET(int fd ,fd_set *fdset );
+//Returns: nonzeroif fd is in set, 0 otherwise
+void FD_CLR(intfd ,fd_set *fdset );
+void FD_SET(intfd ,fd_set *fdset );
+void FD_ZERO(fd_set *fdset );
+```
+
+当`select`返回时，用`FD_ISSET`来测试该集中给定位是否仍旧值，存在表示该描述符可以被操作
+
+
+
+
+`select`可实现`sleep`的功能，不是基于信号的，所以比较推荐
+
+```c
+int sec;
+struct timeval tv;
+
+tv.tv_sec = sec;
+tv.tv_usec = 0;
+select(0, NULL, NULL, NULL, &tv);
+```
+
+
+
+
+## 信号驱动的IO
+这种信号对每个进程而言只有1个，那么在接到此信号时进程无法判断哪一个描述符已准备好可以进行IO，为了确定是哪一个，仍需将多个描述符都设置为非阻塞的，并顺序执行IO
 
 
 
@@ -5046,7 +5333,7 @@ Mutex是一把钥匙，一个人拿了就可进入一个房间，出来的时候
 
 Semaphore是一件可以容纳N人的房间，如果人不满就可以进去，如果人满了，就要等待有人出来。对于N=1的情况，称为binary semaphore。一般的用法是，用于限制对于某一资源的同时访问。
 
-在有的系统中Binary semaphore与Mutex是没有差异的。在有的系统上，主要的差异是mutex一定要由获得锁的进程来释放。而semaphore可以由其它进程释 放（这时的semaphore实际就是个原子的变量，大家可以加或减），因此semaphore可以用于进程间同步。Semaphore的同步功能是所有 系统都支持的，而Mutex能否由其他进程释放则未定，因此建议mutex只用于保护critical section。而semaphore则用于保护某变量，或者同步。
+在有的系统中Binary semaphore与Mutex是没有差异的。在有的系统上，主要的差异是mutex一定要由获得锁的进程来释放。而semaphore可以由其它进程释放（这时的semaphore实际就是个原子的变量，大家可以加或减），因此semaphore可以用于进程间同步。Semaphore的同步功能是所有 系统都支持的，而Mutex能否由其他进程释放则未定，因此建议mutex只用于保护critical section。而semaphore则用于保护某变量，或者同步。
 
 mutex就是一个binary semaphore （值就是0或者1）。但是他们的区别又在哪里呢？主要有两个方面：
 
@@ -5059,6 +5346,8 @@ mutex就是一个binary semaphore （值就是0或者1）。但是他们的区�
 
 
 
+
+
 树莓派
 
 
@@ -5068,6 +5357,27 @@ mutex就是一个binary semaphore （值就是0或者1）。但是他们的区�
 3. malloc bug重现
 4. write pipe多大
 5. 斯坦福多线程实现
+
+
+策略与机制
+
+自底向上设计 确保每个功能是完备的
+上层负责协调各个功能 去完成更大的功能
+
+
+
+多任务
+多进程 多线程
+
+IO
+IO多路转接 信号驱动IO 多线程 非阻塞IO
+
+进程间通信
+管道 FIFO 套接字 共享内存（消息队列不考虑）
+
+进程间加锁
+文件记录锁 semaphore
+
 
 
  -->
