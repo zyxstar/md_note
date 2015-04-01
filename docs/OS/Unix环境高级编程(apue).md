@@ -4074,6 +4074,8 @@ int pthread_detach(pthread_t tid);
 ### 互斥量
 使用互斥量（mutex）接口保护数据，操作系统只是锁住互斥量，而并不是真正的对数据访问做串行化，如果允许某个线程在没有得到锁的情况下（或通过其它手段），也访问共享资源，还是会出现数据不一致
 
+> 当一个线程对普通互斥量加锁，另一个线程去解锁（不占用时解锁），并且互斥量类型为递归和检查错误时，会产生错误，可考虑使用信号量来实现一个可自己加锁，另一线程解锁的机制
+
 ```c
 #include <pthread.h>
 int pthread_mutex_init(pthread_mutex_t *restrict mutex, const pthread_mutexattr_t *restrict attr );
@@ -5001,6 +5003,9 @@ int shmdt(const void *addr);
 
 
 ## POSIX信号量
+POSIX信号量有命名和未命名的，差异在于创建和销毁的形式上，未命名信号量只存在于内存中，并要求能使用信号量的进程必须可以访问内存，意味着只能用于同一进程的不同线程，或不同进程中已映射相同内存内容到它们地址空间中的线程；命名信号量可通过名字访问，可在不同进程间使用
+
+
 ```c
 #include <semaphore.h>
 sem_t *sem_open(const char * name,int oflag ,... /* mode_t mode,
@@ -5014,6 +5019,9 @@ int sem_unlink(const char *name);
 //Returns: 0 if OK,−1 on error
 ```
 
+如果进程没有调用`sem_close`而退出，那么内核将自动关闭任何打开的信号量，但不会影响信号量的状态，类似的，如果调用了，信号量的值也不受影响，没有XSI中UNDO机制
+
+`sem_unlink`是删除信号量名字，如果有打开的引用，将延迟到最后一个打的引用关闭
 
 ```c
 #include <semaphore.h>
@@ -5029,6 +5037,9 @@ int sem_post(sem_t *sem );
 //Returns: 0 if OK,−1 on error
 ```
 
+它是通过`sem_wait/sem_post`来实现减1和加1的操作，没有XSI中可以实现加减N的做法
+
+
 ```c
 #include <semaphore.h>
 int sem_init(sem_t *sem ,int pshared,unsigned int value);
@@ -5038,13 +5049,17 @@ int sem_destroy(sem_t * sem );
 //Returns: 0 if OK,−1 on error
 ```
 
+上面两个函数实现未名的信号量的创建与销毁
+
 ```c
 #include <semaphore.h>
 int sem_getvalue(sem_t *restrict sem ,int *restrict valp );
 //Returns: 0 if OK,−1 on error
 ```
 
-用它实现的栅栏同步
+除非有额外的同步机制，否则`sem_getvalue`得到的值，可以已经被改变了，只适用于调试
+
+用POSIX信号量实现的栅栏同步
 
 ```c
 #include <sys/types.h>
