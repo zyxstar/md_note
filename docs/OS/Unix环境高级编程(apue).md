@@ -5,7 +5,7 @@
 本章所说的函数经常被称为 __不带缓冲的IO__，指每个`read`和`write`都调用内核中的一个 __系统调用__，其实还存在一个内核的缓冲区高速缓存，`read`和`write`的数据都要被内核缓冲，此处的不带缓冲，指的是在用户的进程中对这两个函数不会自动缓冲
 
 ## 文件描述符
-在依从POSIX的应用程序中，幻数0,1,2应当替换成符号常量`STDIN_FILENO`,`STDOUT_FILENO`,`STDERR_FILENO`(被定义在`<unistd.h>`中)
+在依从POSIX的应用程序中，幻数0,1,2应当替换成符号常量`STDIN_FILENO`,`STDOUT_FILENO`,`STDERR_FILENO`(被定义在`<unistd.h>`中)，虽然它们是不同的文件描述符，但却指向同一个文件－终端
 
 文件描述符的变化范围为0~`OPEN_MAX`
 
@@ -5286,10 +5286,7 @@ void FD_ZERO(fd_set *fdset );
 
 当`select`返回时，用`FD_ISSET`来测试该集中给定位是否仍旧值，存在表示该描述符可以被操作
 
-
-
-
-`select`可实现`sleep`的功能，不是基于信号的，所以比较推荐
+`select`中间三个参数，任意一个或全部都可是空指针，表示对相应状态并不关心，如全部为空可可实现`sleep`的功能，不是基于信号的，而且可以精确到微秒，所以比较推荐(__网络超时也可使用这种方式__，而不是使用`alarm`)
 
 ```c
 int sec;
@@ -5300,11 +5297,123 @@ tv.tv_usec = 0;
 select(0, NULL, NULL, NULL, &tv);
 ```
 
+第一个参数`maxfdp1`表示 __最大描述符加1__，在三个描述符集中找出最大描述符编号值，然后加1
 
+`select`有三个可能返回值：
 
+- -1表示出错，所指定的描述符都没有准备好时捕捉到一个信号，在此情况下，不修改其中任何描述符集
+- 0表示没有描述符准备好，而且指定的时间已超时，此时所有描述符集被清0
+- 正返回值表示已准备好的描述符数，是三个描述符集中准备好的描述符数之和，同一描述符如同时读写都准备好了，计数为2
+
+__准备好__ 的意思是：
+
+- 对读集中的一个描述符的`read`操作将不会阻塞，则描述符是准备好的。如果在一个描述符上碰到了文件结尾处，则`select`认为该描述符是可读的(准备好)，然后调用`read`时将返回0。（文件结束不是异常状态）
+- 对写集中的一个描述符的`write`操作将不会阻塞，则描述符是准备好的
+- 异常状态集中的一个描述符有一个未决异常状态（在网络连接上到达的带外数据，或处于数据包模式的伪终端上发生了某些状态），则描述符是准备好的
+- 对于读、写和异常状态，普通文件描述符总是返回准备好
+
+POSIX定义了`pselect`
+
+```c
+#include <sys/select.h>
+int pselect(int maxfdp1, fd_set *restrict readfds,
+            fd_set *restrict writefds, fd_set *restrict exceptfds ,
+            const struct timespec *restrict tsptr ,
+            const sigset_t *restrict sigmask);
+//Returns: count of ready descriptors, 0 on timeout, −1 on error
+```
+
+`tsptr`使用了`struct timespec`，可以表示纳秒级别的精准度（还需要硬件要求）；可使用信号屏蔽字，如果为空，则与`select`相同，否则，在调用`pselect`时，以原子操作方式屏蔽相关信号，在返回时恢复以前信号
+
+### poll函数
+它起源于SysV，与STREAMS相关，但可用于任何类型的文件描述符
+
+```c
+#include <poll.h>
+int poll(struct pollfd fdarray [], nfds_t nfds ,int timeout);
+//Returns: count of ready descriptors, 0 on timeout, −1 on error
+
+struct pollfd {
+    int  fd; /* file descriptor to check, or <0 to ignore */
+    short  events; /* events of interest on fd */
+    short  revents;  /* events that occurred on fd */
+};
+```
+
+它不是为每个状态（可读、可写和异常）构造一个描述符，而是构造一个`pollfd`结构数组，每个数组元素指定一个描述符编号以及对其所关心的状态
+
+![img](../../imgs/apue_52.png)
+
+前面四行是有关读，接着是有关写，最后是测试异常状态，最后三行是由内核在返回时设置的，无须`events`中指定
+
+当一个描述符被挂断`POLLHUP`后，就不能写向该描述符，但仍可能从中读到数据
+
+`timeout`说明愿意等待多少时间
+
+- -1永远阻塞，当所指定的描述符中的一个已准备好，或捕捉到一个信号时则返回（如捕捉到一个信号，则返回-1，`errno`为`EINTR`
+- 0不等待，立即返回，得到多个描述符的状态而不阻塞`poll`函数的轮询方法
+- >0等待`timeout`毫秒
+
+文件结束与挂断之间区别，如果正从终端输入数据，并键入文件结束字符，`POLLIN`被打开，于是就可读文件结束指示(`read`返回0)，`POLLHUP`在`revents`中没有打开。如果正读调制解调器，并且电话线已挂断，则在`revents`中将接到`POLLHUP`
+
+`select`和`poll`的可中断性，在SYR4下，如果指定了`SA_RESTART`，那么则是自动再启动的，但本书的各平台是不重启动的
+
+### epoll
+```c
+#include <sys/epoll.h>
+int epoll_create(int size);
+int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
+int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
+```
 
 ## 信号驱动的IO
 这种信号对每个进程而言只有1个，那么在接到此信号时进程无法判断哪一个描述符已准备好可以进行IO，为了确定是哪一个，仍需将多个描述符都设置为非阻塞的，并顺序执行IO
+
+- 调用`sigaction`为`SIGIO`信号建立信号处理程序
+- 以命令`F_SETOWN`调用`fcntl`来设置进程ID和进程组ID，它们将接收对于该描述符的信号
+- 以命令`F_SETFL`调用`fcntl`来设置`O_ASYNC`文件状态标志，使在该描述符上可以进行信号驱动的IO (不建议直接`open`时指定`O_ASYNC`)
+
+```c
+signal(SIGIO, handler);
+fdr = open("f1", O_RDONLY);
+
+fcntl(fdr, F_SETOWN, getpid());
+
+flags = fcntl(fdr, F_GETFL);
+flags |= O_ASYNC;
+fcntl(fdr, F_SETFL, flags);
+```
+
+- 如果需要自定义信号，则需要使用`F_SETSIG`
+
+```c
+signal(SIGUSR1, handler);
+fdr = open("f1", O_RDONLY);
+
+fcntl(fdr, F_SETOWN, getpid());
+fcntl(fdr, F_SETSIG, SIGUSR1);
+
+flags = fcntl(fdr, F_GETFL);
+flags |= O_ASYNC;
+fcntl(fdr, F_SETFL, flags);
+```
+
+## readv/writev函数
+用于在一次函数调用中读、写多个非连续缓冲区，有时也将这两个函数称为散布读和聚集写
+
+```c
+#include <sys/uio.h>
+ssize_t readv(int fd ,const struct iovec *iov,int iovcnt );
+ssize_t writev(int fd ,const struct iovec *iov,int iovcnt );
+//Both return: number of bytes read or written, −1 on error
+
+struct iovec {
+    void  *iov_base; /* starting address of buffer */
+    size_t  iov_len; /* size of buffer */
+};
+```
+
+
 
 
 
@@ -5381,7 +5490,8 @@ mutex就是一个binary semaphore （值就是0或者1）。但是他们的区�
 
 文件接口 更是语义,却没有语法支持
 
-
+不过多考虑调用者的方便，如select中的maxfdp1
+也存在垃圾筒函数，一个函数完成多个职责，如fcntl
 
 
 多任务
