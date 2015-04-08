@@ -5367,8 +5367,8 @@ int epoll_create(int size);
 int epoll_ctl(int epfd, int op, int fd, struct epoll_event *event);
 int epoll_wait(int epfd, struct epoll_event * events, int maxevents, int timeout);
 ```
-
-## 信号驱动的IO
+## 异步IO
+### 信号驱动的IO
 这种信号对每个进程而言只有1个，那么在接到此信号时进程无法判断哪一个描述符已准备好可以进行IO，为了确定是哪一个，仍需将多个描述符都设置为非阻塞的，并顺序执行IO
 
 - 调用`sigaction`为`SIGIO`信号建立信号处理程序
@@ -5399,6 +5399,113 @@ flags = fcntl(fdr, F_GETFL);
 flags |= O_ASYNC;
 fcntl(fdr, F_SETFL, flags);
 ```
+
+### POSIX异步IO
+```c
+#include <aio.h>
+int aio_read(struct aiocb *aiocb);
+int aio_write(struct aiocb *aiocb);
+//Both return: 0 if OK,−1 on error
+
+struct aiocb {
+    int  aio_fildes; /* file descriptor */
+    off_t  aio_offset; /* file offset for I/O */
+    volatile void *aio_buf;  /* buffer for I/O */
+    size_t  aio_nbytes; /* number of bytes to transfer */
+    int  aio_reqprio; /* priority */
+    struct sigevent aio_sigevent; /* signal information */
+    int  aio_lio_opcode; /* operation for list I/O */
+};
+
+struct sigevent {
+    int  sigev_notify; /* notify type */
+    int  sigev_signo; /* signal number */
+    union sigval sigev_value;  /* notify argument */
+    void (*sigev_notify_function)(union sigval); /* notify function */
+    pthread_attr_t *sigev_notify_attributes; /* notify attrs */
+};
+```
+
+异步IO操作必须显式的指定偏移量，它并不影响由操作系统维护的文件偏移量，只要不在同一进程里把异步IO和传统IO混用在同一个文件上，就不会导致问题。如果使用异步IO向一个追加模式打开的文件中写入数据，`aio_offset`会被忽略
+
+应用程序使用`aio_reqprio`为异步IO请求顺序（只是建议，非强制）
+
+`aio_sigevent`中`sigev_notify`是控制通知类型
+
+- `SIGEV_NONE`异步IO请求完成后，不通知进程
+- `SIGEV_SIGNAL`完成后，产生由`sigev_signo`指定的信号，如果应用程序已选择捕捉信号，且在信号处理程序（`sigaction`）的时候指定了`SA_SIGINFO`标志，那么该信号将被入队，信号处理程序会传送`siginfo`结构，该结构的`si_value`字段被设置为`sigev_value`
+- `SIGEV_THREAD`完成时，由`sigev_notify_function`指定的函数被调用，`sigev_value`是参数，除非`sigev_notify_attributes`字段被设定为pthread属性结构的地址，且该结构指定了一个另外的线程属性，否则该函数将在 __分离状态__ 下的一个单独的线程中执行
+
+IO操作在等待时，必须确保AIO控制块和数据缓冲区保持稳定，它们对应的内存必须始终是合法的，除非IO操作完成，否则不能被复用
+
+```c
+#include <aio.h>
+int aio_fsync(intop,struct aiocb *aiocb);
+//Returns: 0 if OK,−1 on error
+```
+
+`op`参数为`O_DSYNC`操作执行起来像`fdatasync`一样，为`O_SYNC`则像`fsync`一样
+
+为了获知一个异步读、写、同步操作的完成状态，需要调用`aio_error`
+
+```c
+#include <aio.h>
+int aio_error(const struct aiocb *aiocb);
+//Returns: (see following)
+```
+
+- `0`异步操作成功完成，需要调用`aio_return`获取操作返回值
+- `-1`调用失败，由`errno`说明原因
+- `EINPROGRESS`操作仍在等待
+
+```c
+#include <aio.h>
+ssize_t aio_return(const struct aiocb *aiocb);
+//Returns: (see following)
+```
+
+直到异步完成前，需要小心调用`aio_return`，操作完成之前的结果是未定义的，还需要小心对每个异步操作只调用一次，一旦调用后，就释放了包含IO操作返回值的记录
+
+如果调用本身失败，则返回-1，并设置`errno`，其它情况下，返回`read/write/fsync`被成功调用时可能返回的结果
+
+如果完成了所有事务时，还有异步操作未完成时，可调用`aio_suspend`来阻塞进程，进到操作完成
+
+```c
+#include <aio.h>
+int aio_suspend(const struct aiocb *const list[], intnent, const struct timespec *timeout);
+//Returns: 0 if OK,−1 on error
+```
+
+- 如果被信号打断，返回-1，`errno`为`EINTR`
+- 超时返回-1，`errno`为`EAGAIN`，不想设置超时，传空指针为`timeout`
+- 有任何`list`中的IO操作完成将返回0
+
+```c
+#include <aio.h>
+int aio_cancel(int fd,struct aiocb *aiocb);
+//Returns: (see following)
+```
+
+在指定的文件描述符上取消未完成的异步IO，如果`aiocb`为NULL，则尝试所有该文件上的异步IO操作，返回为
+
+- `AIO_ALLDONE`所有操作在尝试取消它们之前已完成
+- `AIO_CANCELED`所有要求的操作被取消
+- `AIO_NOTCANCELED`至少有一个要求的操作没被取消
+- `-1`调用失败，设置`errno`
+
+如果操作不能被取消，相应AIO控制不会因为它的调用而被修改
+
+```c
+#include <aio.h>
+int lio_listio(int mode, struct aiocb *restrict const list[restrict],
+               int nent, struct sigevent *restrict sigev);
+//Returns: 0 if OK,−1 on error
+```
+
+`mode`为`LIO_WAIT`为同步，此时`sigev`忽略；为`LIO_NOWAIT`时，将IO请求入队后，立即返回，IO操作完成后，按`sigev`指定，被异步地通知（或者在AIO块中设置通知），`sigev`的通知是在 __所有__ IO操作完成后发送的
+
+`aiocb`中的`aio_lio_opcode`在此处有了作用，`LIO_READ/LIO_WRITE/LIO_NOP`将对不同的AIO传给`aio_read/aio_write`来处理
+
 
 ## readv/writev函数
 用于在一次函数调用中读、写多个非连续缓冲区，有时也将这两个函数称为 __散布读__ 和 __聚集写__
