@@ -5426,8 +5426,130 @@ struct iovec {
 这两个函数功能是读写指定的N字节数据，并处理返回值小于要求值的情况，它们按需多次调用`read/write`直至读写了N字节数据
 
 ```c
-
+ssize_t readn(int fd ,void *buf,size_tnbytes );
+ssize_t writen(int fd ,void *buf,size_tnbytes );
+//Both return: number of bytes read or written, −1 on error
 ```
+
+具体实现
+
+```c
+ssize_t             /* Read "n" bytes from a descriptor  */
+readn(int fd, void *ptr, size_t n)
+{
+    size_t      nleft;
+    ssize_t     nread;
+
+    nleft = n;
+    while (nleft > 0) {
+        if ((nread = read(fd, ptr, nleft)) < 0) {
+            if (nleft == n)
+                return(-1); /* error, return -1 */
+            else
+                break;      /* error, return amount read so far */
+        } else if (nread == 0) {
+            break;          /* EOF */
+        }
+        nleft -= nread;
+        ptr   += nread;
+    }
+    return(n - nleft);      /* return >= 0 */
+}
+
+ssize_t             /* Write "n" bytes to a descriptor  */
+writen(int fd, const void *ptr, size_t n)
+{
+    size_t      nleft;
+    ssize_t     nwritten;
+
+    nleft = n;
+    while (nleft > 0) {
+        if ((nwritten = write(fd, ptr, nleft)) < 0) {
+            if (nleft == n)
+                return(-1); /* error, return -1 */
+            else
+                break;      /* error, return amount written so far */
+        } else if (nwritten == 0) {
+            break;
+        }
+        nleft -= nwritten;
+        ptr   += nwritten;
+    }
+    return(n - nleft);      /* return >= 0 */
+}
+```
+
+若已读写了一些数据后出错，则这两个函数返回已传输的数据量，而非出错返回，与此类似，在读时如达到文件尾，而且在此之前已成功地读了一些数据，但尚未满足所要求的量，则`readn`返回已复制到调用者缓冲区中的字节数
+
+## 存储映射IO
+> 它可以用来申请大容量的内存，并在使用后直接归还给系统（不增加`sbrk`）
+
+使一个磁盘文件与存储空间中的一个缓冲区相映射，于是当从缓冲区中取数据，就相当于读文件中的相应字节，将数据存入缓冲区，则相应字节自动地写入文件，这样可以在不使用`read/write`的情况下执行IO
+
+```c
+#include <sys/mman.h>
+void *mmap(void *addr ,size_t len,int prot ,int flag,int fd ,off_t off);
+//Returns: starting address of mapped region if OK, MAP_FAILED on error
+```
+
+`addr`用于指定映射存储区的起始地址，通常将其设置为0，表示由系统选择映射区的起始地址，此函数返回地址是该映射的起始地址
+
+`fd`指要被映射文件的描述符，先要打开该文件，`len`是映射的字节数，`off`是映射字节在文件中的起始偏移量，通常应当是系统虚存页长度的倍数（通常指定0）。
+
+`port`说明对映射存储区的保护要求，可任意组合的按位或，但不能超过文件`open`模式的访问权限，如文件是只读打开的，不能指定为`PORT_WRITE`
+
+![img](../../imgs/apue_53.png)
+
+映射存储区位于堆和栈之间，但各种实现可能不尽相同
+
+![img](../../imgs/apue_54.png)
+
+上图中的`起始地址`，是`mmap`的返回值
+
+`flag`参数说明：
+
+- `MAP_FIXED`返回值必须等于`addr`，这不利于可移植性，不鼓励使用，如果未指定定此标志，而且`addr`不为0，则内核认为是一种建议，不保证会使用所要求的地址
+- `MAP_SHARED`本进程对映射区所进行的存储操作的配置，存储操作修改映射文件
+- `MAP_PRIVATE`对映射区的存储操作导致创建该映射文件的一个私有副本，所以后来对该映射区的引用都是引用该副本，而不是原始文件（可用于调试程序）
+
+假定文件长12字节，而系统页长512字节，则系统通常提供512字节的映射区，其后500字节设置为0，可以修改它，但任何变动都 __不会__ 在文件中反映出来
+
+如果企图存数据到`mmap`指定为只读的映射区时，产生`SIGSEGV`信号，如果访问映射区的某个部分，而在访问时这一部分实际上已不存在，则产生`SIGBUG`信号
+
+调用`fork`后，子进程继承存储映射区，但`exec`则不继承
+
+`mprotect`更改一个现存映射区的权限
+
+```c
+#include <sys/mman.h>
+int mprotect(void *addr ,size_t len, int prot );
+//Returns: 0 if OK,−1 on error
+```
+
+`msync`将该页冲洗到被映射的文件中，如果映射是私有的，则不修改被映射的文件
+
+```c
+#include <sys/mman.h>
+int msync(void *addr ,size_t len, int flags );
+//Returns: 0 if OK,−1 on error
+```
+
+`flags`为`MS_ASYNC`或`MS_SYNC`中一个，表示是否阻塞冲洗
+
+进程终止或调用了`munmap`之后，存储映射区就自动解除映射，关闭文件描述符则 __不解除__ 映射区，调用它，并 __不会__ 使映射区内容写到磁盘文件上，对于`MAP_SHARED`区磁盘文件的更新，在写到存储映射区时按内核虚存算法自动进行，在解除了映射后，对于`MAP_PRIVATE`存储区的修改被丢弃
+
+```c
+#include <sys/mman.h>
+int munmap(void *addr ,size_tlen);
+//Returns: 0 if OK,−1 on error
+```
+
+
+守护进程
+===========
+
+
+
 
 ## 函数
 ```c
