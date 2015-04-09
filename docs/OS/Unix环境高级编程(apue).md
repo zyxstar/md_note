@@ -5591,6 +5591,9 @@ writen(int fd, const void *ptr, size_t n)
 ## 存储映射IO
 > 它可以用来申请大容量的内存，并在使用后直接归还给系统（不增加`sbrk`）
 
+> 父子间进程通信时，可以将文件映射为`/dev/zero`，得到的内存相当于 __共享内存__（shm），或使用匿名存储映射`if ((area = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0)) == MAP_FAILED)`
+
+
 使一个磁盘文件与存储空间中的一个缓冲区相映射，于是当从缓冲区中取数据，就相当于读文件中的相应字节，将数据存入缓冲区，则相应字节自动地写入文件，这样可以在不使用`read/write`的情况下执行IO
 
 ```c
@@ -5650,6 +5653,9 @@ int msync(void *addr ,size_t len, int flags );
 int munmap(void *addr ,size_tlen);
 //Returns: 0 if OK,−1 on error
 ```
+
+
+
 
 
 守护进程
