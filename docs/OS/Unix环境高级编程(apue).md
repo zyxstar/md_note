@@ -5654,14 +5654,146 @@ int munmap(void *addr ,size_tlen);
 //Returns: 0 if OK,−1 on error
 ```
 
-
-
-
-
 守护进程
 ===========
+所有用户层守护进程都是进程组的组长进程，以及会话的首进程，而且是这些进程组和会话中的唯一进程，大多数守护进程的父进程是init进程
 
+## 编程规则
+- 首先调用`umask`将文件模式创建屏蔽字设置为0，由继承得来的文件模式创建屏蔽字可能会拒绝某些权限
+- 调用`fork`，然后使父进程退出，第一，如果以shell启动该守护进程，shell认为该命令已执行完毕，第二，子进程继承了父进程的进程组ID，但具有一个新的进程ID，保证了子进程不是一个进程组的组长进程，方便`setsid`调用
+- 调用`setsid`以创建一个新会话，成为新会话的首进程，成为新进程组的组长进程，没有控制终端
+- 将当前工作目录更改为根目录（如果守护进程的当前工作目录在一个装配文件系统中，方便该文件系统的拆缷）
+- 关闭不再需要的文件描述符
+- 某些守护进程打开/dev/null使其具有文件描述符0/1/2，任何试图读写标准IO都不会产生任何效果
 
+```c
+void daemonize(const char *cmd){
+    int                 i, fd0, fd1, fd2;
+    pid_t               pid;
+    struct rlimit       rl;
+    struct sigaction    sa;
+
+    /*
+     * Clear file creation mask.
+     */
+    umask(0);
+
+    /*
+     * Get maximum number of file descriptors.
+     */
+    if (getrlimit(RLIMIT_NOFILE, &rl) < 0)
+        err_quit("%s: can't get file limit", cmd);
+
+    /*
+     * Become a session leader to lose controlling TTY.
+     */
+    if ((pid = fork()) < 0)
+        err_quit("%s: can't fork", cmd);
+    else if (pid != 0) /* parent */
+        exit(0);
+    setsid();
+
+    /*
+     * Ensure future opens won't allocate controlling TTYs.
+     */
+    sa.sa_handler = SIG_IGN;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = 0;
+    if (sigaction(SIGHUP, &sa, NULL) < 0)
+        err_quit("%s: can't ignore SIGHUP", cmd);
+    if ((pid = fork()) < 0)
+        err_quit("%s: can't fork", cmd);
+    else if (pid != 0) /* parent */
+        exit(0);
+
+    /*
+     * Change the current working directory to the root so
+     * we won't prevent file systems from being unmounted.
+     */
+    if (chdir("/") < 0)
+        err_quit("%s: can't change directory to /", cmd);
+
+    /*
+     * Close all open file descriptors.
+     */
+    if (rl.rlim_max == RLIM_INFINITY)
+        rl.rlim_max = 1024;
+    for (i = 0; i < rl.rlim_max; i++)
+        close(i);
+
+    /*
+     * Attach file descriptors 0, 1, and 2 to /dev/null.
+     */
+    fd0 = open("/dev/null", O_RDWR);
+    fd1 = dup(0);
+    fd2 = dup(0);
+
+    /*
+     * Initialize the log file.
+     */
+    openlog(cmd, LOG_CONS, LOG_DAEMON);
+    if (fd0 != 0 || fd1 != 1 || fd2 != 2) {
+        syslog(LOG_ERR, "unexpected file descriptors %d %d %d",
+          fd0, fd1, fd2);
+        exit(1);
+    }
+}
+```
+
+## 出错记录
+- 内核例程可以调用`log`函数，任何一个用户进程通过打开`/dev/klog`设备就可读到这些信息
+- 大多数用户进程（守护进程）调用`syslog(3)`函数以产生日志消息，这使消息发送至UNIX域数据报套接字`/dev/log`
+- 通过TCP/IP网络连接此主机的用户进程将日志发向UDP端口514
+
+`syslogd`守护进程读取三种格式的日志消息，此守护进程在启动时读一个配置文件`/etc/syslog.conf`，决定了不同种类的消息应送向何处
+
+![img](../../imgs/apue_55.png)
+
+```c
+#include <syslog.h>
+void openlog(const char *ident, int option, int facility);
+void syslog(int priority, const char *format, ...);
+void closelog(void);
+int setlogmask(int maskpri);
+//Returns: previous log priority mask value
+```
+
+其中`openlog/closelog`都是可选的，如果不调用`openlog`，则在第一次调用`syslog`时，自动调用它，`closelog`只关闭曾被用于与`syslogd`守护进程通信的描述符
+
+`ident`它将加至每则日志消息中，一般为程序名，`option`参数是指定许多选项的位屏蔽
+
+![img](../../imgs/apue_56.png)
+
+`facility`让配置文件说明，来自不同设施的消息将以不同的方式进行处理，如果不调用`openlog`，或`facility`为0时，那么在调用`syslog`时，将作为`priority`参数使用
+
+![img](../../imgs/apue_57.png)
+
+`syslog`产生一个日志消息，其`priority`是`facility`和`level`的组合
+
+![img](../../imgs/apue_58.png)
+
+`format`以及参数传到`vsprintf`函数以便进行格式化，每个`%m`被代换成`strerror`
+
+`setlogmask`用于设置进程的记录优先级屏蔽字，它返回之前的屏蔽字，除非消息的优先级已在记录优先级屏蔽字中设置，否则消息不被记录，通过宏`LOG_MASK/LOG_UPTO`来设置屏蔽字
+
+除了`syslog`，许多平台提供一种变体处理可变参数列表
+
+```c
+#include <syslog.h>
+#include <stdarg.h>
+void vsyslog(int priority,const char *format ,va_list arg);
+```
+
+## 单实例守护进程
+如果守护进程需要访问一设备，而该设备驱动程序将阻止多次打开在`/dev`目录下的相应设备节点，那么这就达到了任何时候只运行守护进程一个副本的要求
+
+文件锁和记录锁机制是一种方法的基础，如果每一个守护进程创建一个文件，并且在整个文件上加一把锁，那就只允许创建一把这样的写锁，所以在此之后试图再创建一把这样的写锁将失败，以此向后续守护进程副本指明已有一个副本正在运行
+
+## 守护进程的惯例
+- 如果守护进程使用锁文件，那么该文件通常存放在`/var/run`目录中，锁文件的名字通常是`<name>.pid`
+- 如果支持配置选项，那么配置文件通常存放在`/etc`目录中，配置文件的名字通常是`<name>.conf`
+- 守护进程可以用命令行启动，但通常由系统初始化脚本（`/etc/rc*`或`/etc/init.d/*`）启动的，如果守护进程时，应当自动地重新启动它，可在`/etc/inittab`中为该守护进程包括`_respawn`记录项，这样，`init`将重启动该守护进程
+- 配置文件只在守护进程启动时才读它，如果更改了配置文件，需要重启守护进程
 
 
 ## 函数
