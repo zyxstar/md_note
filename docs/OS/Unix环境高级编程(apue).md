@@ -5508,6 +5508,8 @@ int lio_listio(int mode, struct aiocb *restrict const list[restrict],
 
 
 ## readv/writev函数
+> 用户态很少用，驱动或裸机可能会用
+
 用于在一次函数调用中读、写多个非连续缓冲区，有时也将这两个函数称为 __散布读__ 和 __聚集写__
 
 ```c
@@ -5523,6 +5525,8 @@ struct iovec {
 ```
 
 ## readn/writen函数
+> 非标准库方法
+
 管道、FIFO以及某些设备，终端、网络和STREAMS设备有下列性质：
 
 - 一次`read`操作所返回的数据可能少于所要求的数据，即使还没达到文件尾端也可能是这样，这不是一个错误，应当继续读该设备
@@ -5589,6 +5593,8 @@ writen(int fd, const void *ptr, size_t n)
 若已读写了一些数据后出错，则这两个函数返回已传输的数据量，而非出错返回，与此类似，在读时如达到文件尾，而且在此之前已成功地读了一些数据，但尚未满足所要求的量，则`readn`返回已复制到调用者缓冲区中的字节数
 
 ## 存储映射IO
+> 用户态也很少使用，主要用于驱动、或制作加载器（编写插件）
+
 > 它可以用来申请大容量的内存，并在使用后直接归还给系统（不增加`sbrk`）
 
 > 父子间进程通信时，可以将文件映射为`/dev/zero`，得到的内存相当于 __共享内存__（shm），或使用匿名存储映射`if ((area = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_ANON | MAP_SHARED, -1, 0)) == MAP_FAILED)`
@@ -5628,6 +5634,9 @@ void *mmap(void *addr ,size_t len,int prot ,int flag,int fd ,off_t off);
 
 调用`fork`后，子进程继承存储映射区，但`exec`则不继承
 
+> `mmap`后，在对内存的写不能超过文件本身的长度(多余部分在文件中是体现不出来的)，如需要修改文件的长度（映射区长度），需使用`truncate()`
+
+
 `mprotect`更改一个现存映射区的权限
 
 ```c
@@ -5653,6 +5662,126 @@ int msync(void *addr ,size_t len, int flags );
 int munmap(void *addr ,size_tlen);
 //Returns: 0 if OK,−1 on error
 ```
+
+### 编写加载器
+假设`add.plugin`是编译好的动态库，内有一个方法签名是`int func(int, int)`，并且通过`objdump -D`得知该方法的地址偏移是`0x3e0`
+
+```c
+int fd;
+char *ptr;
+int (*funcp)(int, int);
+
+fd = open("add.plugin", O_RDONLY);
+if (fd == -1) {
+    perror("add.plugin");
+    return 1;
+}
+
+ptr = mmap(NULL, 4096, PROT_EXEC | PROT_READ, MAP_PRIVATE, fd, 0);
+/* if error */
+
+/* cal offset by yourself */
+funcp = (void *)(ptr + 0x3e0);
+printf("%d\n", funcp(33, 66));
+
+munmap(ptr, 4096);
+
+close(fd);
+```
+
+将动态库加载到`mmap`分配的内存，并设置可读与可执行权限，再将函数指针指向该分配地址加上通过`objdump`看到的地址偏移量（也可通过解析elf格式的符号表）
+
+更好的办法是使用`dlopen/dlsym`
+
+### 编写插件
+系统提供的动态加载，原理也是通过`mmap`映射
+
+```c
+#include <dlfcn.h>
+void *dlopen(const char *filename, int flag);
+char *dlerror(void);
+void *dlsym(void *handle, const char *symbol);
+int dlclose(void *handle);
+```
+
+如果插件间有依赖，可将`flag`设置为`RTLD_GLOBAL`，将符号映射到全局空间
+
+```c
+/* (2 [] 2) [] 9 = 13 */
+int main(void)
+{
+    DIR *dir;
+    struct dirent *entry;
+    char **name;
+    void **handle;
+    int (**func)(int, int);
+    int (**sym)(void);
+    int plugin_nr;
+    int i, j;
+    char path[PATH_LEN];
+
+    dir = opendir("./plugin");
+
+    plugin_nr = 0;
+    while (1) {
+        entry = readdir(dir);
+        if (entry == NULL) {
+            break;
+        }
+        if (isplugin(entry->d_name)) {
+            plugin_nr++;
+        }
+    }
+
+    name = malloc(sizeof(*name) * plugin_nr);
+    /* if error */
+    handle = malloc(sizeof(*handle) * plugin_nr);
+    /* if error */
+    func = malloc(sizeof(*func) * plugin_nr);
+    /* if error */
+    sym = malloc(sizeof(*sym) * plugin_nr);
+    /* if error */
+
+    seekdir(dir, 0);
+    i = 0;
+    while (1) {
+        entry = readdir(dir);
+        if (entry == NULL) {
+            break;
+        }
+        if (isplugin(entry->d_name)) {
+            name[i++] = strdup(entry->d_name);
+        }
+    }
+
+    closedir(dir);
+
+    for (i = 0; i < plugin_nr; i++) {
+        snprintf(path, PATH_LEN, "./plugin/%s", name[i]);
+        handle[i] = dlopen(path, RTLD_LAZY);
+        /* if error */
+        func[i] = dlsym(handle[i], "op");
+        sym[i] = dlsym(handle[i], "symbol");
+    }
+
+    for (i = 0; i < plugin_nr; i++) {
+        for (j = 0; j < plugin_nr; j++) {
+            if (func[j](func[i](2, 2), 9) == 13) {
+                printf("(2 %c 2) %c 9 = 13\n", sym[i](), sym[j]());
+            }
+        }
+    }
+
+    for (i = 0; i < plugin_nr; i++) {
+        dlclose(handle[i]);
+    }
+
+    return 0;
+}
+```
+
+> 注意没有`free`，如果不想插件影响主程序时，可考虑插件以子进程方式运行
+
 
 守护进程
 ===========
@@ -5792,14 +5921,393 @@ void vsyslog(int priority,const char *format ,va_list arg);
 ## 守护进程的惯例
 - 如果守护进程使用锁文件，那么该文件通常存放在`/var/run`目录中，锁文件的名字通常是`<name>.pid`
 - 如果支持配置选项，那么配置文件通常存放在`/etc`目录中，配置文件的名字通常是`<name>.conf`
-- 守护进程可以用命令行启动，但通常由系统初始化脚本（`/etc/rc*`或`/etc/init.d/*`）启动的，如果守护进程时，应当自动地重新启动它，可在`/etc/inittab`中为该守护进程包括`_respawn`记录项，这样，`init`将重启动该守护进程
+- 守护进程可以用命令行启动，但通常由系统初始化脚本（`/etc/rc*`或`/etc/init.d/*`）启动的，如果守护进程终止时，应当 __自动地重新启动__ 它，可在`/etc/inittab`中为该守护进程包括`respawn`记录项，这样，`init`将重启动该守护进程
 - 配置文件只在守护进程启动时才读它，如果更改了配置文件，需要重启守护进程
 
+网络IPC 套接字
+=============
+网络编程三大注意事项
+
+- 本地字节序（一般是小端）与网络序（大端）之间转换，通过`htons/htonl`和`ntohl/ntohs`来转换（ascii字符是单字节的，不存在大小端问题；或者类似http均以字符串表示数据，就不存在转换）
+- 数据类型，使用`uint32_t/uint16_t`等，而不是直接使用`int`
+- 结构体填充问题，使用紧凑模式，防止内存对齐，需要编译器支持(缺点是移植性差)，gcc中（`info gcc`），使用`__attribute__ ((__packed__))`
+
+> 常用手册`man 7 ip/socket/unix/tcp/udp`
+
+## 套接字描述符
+
+```c
+#include <sys/socket.h>
+int socket(int domain,int type,int protocol);
+//Returns: file (socket) descriptor if OK,−1 on error
+```
+
+`domain`以`AF_`开头，代表地址族，常见的有
+
+- `AF_INET` ipv4因特网域
+- `AF_INET6` ipv6因特网域
+- `AF_UNIX/AF_LOCAL` UNIX域
+- `AF_IPX` NetWare协议族
+- `AF_UNSPEC` 未指定
+
+`type`指套接字类型
+
+- `SOCK_STREAM` 流式套接字，典型的是TCP，有序的、可靠的（可靠的意思是，接收到的肯定是正确的，之前的也是正确的，但并非表示一定送达）、面向连接的字节流（流的概念即不存在固定大小，可能发送端发送N次，而接受端对应的是M次）
+- `SOCK_DGRAM` 报式套接字，典型的是UDP，固定长度、无连接、不可靠的报文传递
+- `SOCK_SEQPACKET` 介于流式与报式之间的，固定长度、有序、可靠、面向连接的报文传递
+- `SOCK_RAW` IP协议的数据报接口
+- `SOCK_PACKET` 最原始的链路层套接字，比如wireshark等工具所使用的
+
+`protocol`通常是0，表示选择默认协议，如`SOCK_STREAM`是TCP，`SOCK_DGRAM`是UDP，常见协议
+
+- `IPPROTO_IP` IPv4 Internet Protocol
+- `IPPROTO_IPV6` IPv6 Internet Protocol (optional in POSIX.1)
+- `IPPROTO_ICMP` Internet Control Message Protocol
+- `IPPROTO_RAW` Raw IP packets protocol (optional in POSIX.1)
+- `IPPROTO_TCP` Transmission Control Protocol
+- `IPPROTO_UDP` User Datagram Protocol
+
+
+```c
+#include <sys/socket.h>
+int shutdown(int sockfd,int how);
+//Returns: 0 if OK,−1 on error
+```
+
+除了`close`，它也可以关闭套接字，`how`可标识只关闭读写某一端
+
+### 将套接字与地址关联
+```c
+#include <sys/socket.h>
+int bind(int sockfd,const struct sockaddr *addr, socklen_t len);
+//Returns: 0 if OK,−1 on error
+```
+
+`struct sockaddr`是一个抽象类型，在使用不同地址族时，类型不一样，如在`AF_INET`使用`struct sockaddr_in`类型，而在`AF_UNIX`则使用`struct sockaddr_un`类型，但它们都有第一个字段类型为`sa_family_t`的，并配合`socklen_t`用于标识具体的协议地址类型，并且在使用时，需要强制转换
+
+```c
+int sd;
+int ret;
+struct sockaddr_in myend;
+
+sd = socket(AF_INET, SOCK_STREAM, 0);
+myend.sin_family = AF_INET;
+myend.sin_port = SERVER_PORT;
+inet_pton(AF_INET, SERVER_IP, &myend.sin_addr);
+ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
+```
+
+
+## 建立连接
+```c
+#include <sys/socket.h>
+int listen(int sockfd,int backlog);
+//Returns: 0 if OK,−1 on error
+```
+
+`backlog`一般使用5~100之间，通常使用20，它为系统该进程所要入队的未完成连接请求数量（即对方已`connect`返回了，而本方还未`accept`返回的），该值只是建议值，具体是系统决定
+
+```c
+#include <sys/socket.h>
+int accept(int sockfd,struct sockaddr *restrict addr, socklen_t *restrict len);
+//Returns: file (socket) descriptor if OK,−1 on error
+```
+
+其中`len`必须初始化，它即是输入又是输出
+
+如果没有连接请求在等待，则它会 __阻塞__ 直到一个请求到来
+
+
+## 数据传输
+除了`read/write`还有更细控制的数据传输
+
+```c
+#include <sys/socket.h>
+ssize_t send(int sockfd,const void *buf,size_t nbytes,int flags);
+//Returns: number of bytes sent if OK,−1 on error
+ssize_t sendto(int sockfd,const void *buf,size_t nbytes,int flags,
+               const struct sockaddr *destaddr,socklen_t destlen);
+//Returns: number of bytes sent if OK,−1 on error
+```
+
+
+```c
+#include <sys/socket.h>
+ssize_t recv(int sockfd,void *buf,size_t nbytes,int flags);
+//Returns: length of message in bytes, 0 if no messages areavailable and peer has done an orderly shutdown,or −1 on error
+
+ssize_t recvfrom(int sockfd,void *restrict buf,size_t len,int flags,
+                 struct sockaddr *restrict addr,socklen_t *restrict addrlen);
+//Returns: length of message in bytes,0 if no messages areavailable and peer has done an orderly shutdown,or −1 on error
+```
+
+`flags`，常见如下：
+
+- `MSG_OOB`支持带外数据（不常用）
+- `MSG_PEEK`返回数据包内容而不真正取走数据包，偷看数据用于确定数据报大小，用于报式传输（不常用）
+- `MSG_WAITALL`等待所有数据都可用才返回，用于流式传输（可用）
+- `MSG_DONTWAIT`启动非阻塞（可用）
+
+
+
+
+
+## 进程池实现
+- 维护一个进程做任务的次数，超过阀值则退出，利于减少内在泄漏
+- 双方通过通信来决定是否回收或新增进程，而不是父进程轮询子进程状态，父子间通信最好使用本地套接字（不得已时考虑管道，但此处需要父子双方维护具名FIFO，子进程意外退出时，反而不利清理，而考虑使用消息队列，只使用一个队列，并且利用了它的消息分拣）
+
+```c
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <netinet/in.h>
+#include <netinet/ip.h>
+#include <arpa/inet.h>
+#include <time.h>
+#include <signal.h>
+#include <unistd.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+
+#include "comm.h"
+#include "debug.h"
+
+#define BUFSIZE  64
+
+#ifdef DEBUG
+#define PROC_NR_MAX        6
+#define PROC_FREE_NR_MIN   2
+#define PROC_FREE_NR_MAX   5
+#define PROC_NR_PER_FORK   3
+#define TIMES_MAX          2
+#else
+#define PROC_NR_MAX        100
+#define PROC_FREE_NR_MIN   10
+#define PROC_FREE_NR_MAX   60
+#define PROC_NR_PER_FORK   20
+#define TIMES_MAX          100
+#endif
+
+enum child_status {ST_QUIT, ST_FREE, ST_BUSY};
+
+struct msgbuf_st {
+    long dest;
+    long src;
+    enum child_status status;
+};
+
+static int min(int a, int b)
+{
+    return a < b ? a : b;
+}
+
+static void jobs(int sd, int msgid)
+{
+    int newsd;
+    struct sockaddr_in hisend;
+    socklen_t hislen;
+    char buf[BUFSIZE];
+    time_t cur;
+    struct tm *cur_tm;
+    int ret;
+    struct msgbuf_st msgbuf;
+    int times = 0;
+
+    while (1) {
+        hislen = sizeof(hisend); /* must init */
+        newsd = accept(sd, (struct sockaddr *)&hisend, &hislen);
+        /* if error */
+        times++;
+        debug("%d busy, times = %d\n", getpid(), times);
+
+        msgbuf.dest = 1;
+        msgbuf.src = getpid();
+        msgbuf.status = ST_BUSY;
+        msgsnd(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), 0);
+        /* if error */
+
+        while (1) {
+            ret = read(newsd, buf, BUFSIZE);
+            if (ret == -1) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                perror("read(newsd)");
+                break;
+            }
+            if (ret == 0) {
+                break;
+            }
+
+            write(1, buf, ret);
+
+            cur = time(NULL);
+            cur_tm = localtime(&cur);
+            ret = strftime(buf, BUFSIZE, "%F %T\n", cur_tm);
+            write(newsd, buf, ret);
+        }
+
+        close(newsd);
+
+        if (times >= TIMES_MAX) {
+            debug("%d quit, times = %d\n", getpid(), times);
+            msgbuf.dest = 1;
+            msgbuf.src = getpid();
+            msgbuf.status = ST_QUIT;
+            msgsnd(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), 0);
+            /* if error */
+            break;
+        }
+
+        debug("%d free, times = %d\n", getpid(), times);
+        msgbuf.dest = 1;
+        msgbuf.src = getpid();
+        msgbuf.status = ST_FREE;
+        msgsnd(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), 0);
+        /* if error */
+        debug("%d recv free, times = %d\n", getpid(), times);
+
+        msgrcv(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), getpid(), 0);
+        if (msgbuf.status == ST_QUIT) {
+            debug("%d recv quit, times = %d\n", getpid(), times);
+            break;
+        }
+    }
+}
+
+static int proc_remain(int sd, int msgid, int *proc_nr, int *proc_free_nr)
+{
+    int num;
+    int i;
+    pid_t pid;
+
+    debug("call proc_remain, proc_nr = %d, proc_free_nr = %d\n", *proc_nr, *proc_free_nr);
+
+    if (*proc_free_nr >= PROC_FREE_NR_MIN) {
+        debug("proc_remain return, proc_nr = %d, proc_free_nr = %d\n", *proc_nr, *proc_free_nr);
+        return 0;
+    }
+
+    num = min(PROC_NR_PER_FORK, PROC_NR_MAX - *proc_nr);
+    for (i = 0; i < num; i++) {
+        pid = fork();
+        if (pid == -1) {
+            break;
+        }
+        if (pid == 0) {
+            jobs(sd, msgid);
+            exit(0);
+        }
+    }
+
+    *proc_nr += i;
+    *proc_free_nr += i;
+    debug("proc_remain return, proc_nr = %d, proc_free_nr = %d\n", *proc_nr, *proc_free_nr);
+    return i;
+}
+
+int main(void)
+{
+    int sd;
+    int msgid;
+    int ret;
+    struct sockaddr_in myend;
+    struct sigaction act;
+    int proc_nr, proc_free_nr;
+    struct msgbuf_st msgbuf;
+
+    act.sa_handler = SIG_IGN;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = SA_NOCLDWAIT;
+    sigaction(SIGCHLD, &act, NULL);
+
+    msgid = msgget(IPC_PRIVATE, 0600);
+    /* if error */
+
+    sd = socket(AF_INET, SOCK_STREAM, 0);
+    /* if error */
+
+    myend.sin_family = AF_INET;
+    myend.sin_port = SERVER_PORT;
+    inet_pton(AF_INET, SERVER_IP, &myend.sin_addr);
+    ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
+    if (ret == -1) {
+        perror("bind()");
+        close(sd);
+        return 1;
+    }
+
+    listen(sd, 20);
+
+    //jobs(sd, msgid);
+    proc_nr = 0, proc_free_nr = 0;
+    proc_remain(sd, msgid, &proc_nr, &proc_free_nr);
+
+    while (1) {
+        debug("main: proc_nr = %d, proc_free_nr = %d\n", proc_nr, proc_free_nr);
+        msgrcv(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), 1, 0);
+        /* if error */
+        switch (msgbuf.status) {
+        case ST_QUIT:
+            debug("main: %d quit\n", msgbuf.src);
+            proc_nr--;
+            proc_remain(sd, msgid, &proc_nr, &proc_free_nr);
+            break;
+        case ST_FREE:
+            debug("main: %d free\n", msgbuf.src);
+            msgbuf.dest = msgbuf.src;
+            msgbuf.src = 1;
+            if (proc_free_nr >= PROC_FREE_NR_MAX) {
+                msgbuf.status = ST_QUIT;
+                debug("main: send quit to %d\n", msgbuf.dest);
+                proc_nr--;
+            } else {
+                msgbuf.status = ST_FREE;
+                debug("main: send free to %d\n", msgbuf.dest);
+                proc_free_nr++;
+            }
+            msgsnd(msgid, &msgbuf, sizeof(long) + sizeof(enum child_status), 0);
+            break;
+        case ST_BUSY:
+            debug("main: %d busy\n", msgbuf.src);
+            proc_free_nr--;
+            proc_remain(sd, msgid, &proc_nr, &proc_free_nr);
+            break;
+        }
+    }
+
+    /* destroy msgid */
+
+    close(sd);
+
+    return 0;
+}
+```
+
+> 改成线程池时，就不需要任务计数了，反正线程退出也资源回收意义不大
 
 ## 函数
 ```c
 
 ```
+
+
+
+
+socket称为半层
+upd比ip没多多少东西
+停等模式写UDP
+
+listen设置侦听模式，帮助三次握手？
+connect会阻塞吗？会
+stream时，read write会阻塞吗？
+如果手工write不大于1500字节，窗口滑动还有意义吗？
+汉字为什么不要转换网络序？
+
+不同网段间通信使用IP地址，同网址内通信使用MAC地址，当需要向不同网段主机发消息时，通过ARP将到到IP地址对应的MAC，此时应该是路由器，它接收包后，再ARP时，得到另一个MAC（可能是另一个路由），这样经过N次ARP，而每次IP地址相同，但MAC不相同的转换，最终到达真实的IP地址（即ARP查询并转发后，原始的MAC是看不到的）
 
 <!--
 ![img](../../imgs/apue_00.png)
@@ -5807,8 +6315,9 @@ void vsyslog(int priority,const char *format ,va_list arg);
 
 
 
+CFLAGS=-wall
 
-
+ssh -qTfnN -D 7070@...  [socket v5]
 
 gcc -I../include/ ../lib/error.c ../lib/prexit.c times1.c -lpthread
 gcc -ansi -I../include -Wall -DLINUX -D_GNU_SOURCE  pipe2.c -o pipe2  -L../lib -lapue
