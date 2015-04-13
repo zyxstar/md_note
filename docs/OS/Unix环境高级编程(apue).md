@@ -5954,11 +5954,11 @@ int socket(int domain,int type,int protocol);
 
 - `SOCK_STREAM` 流式套接字，典型的是TCP，有序的、可靠的（可靠的意思是，接收到的肯定是正确的，之前的也是正确的，但并非表示一定送达）、面向连接的字节流（流的概念即不存在固定大小，可能发送端发送N次，而接受端对应的是M次）
 - `SOCK_DGRAM` 报式套接字，典型的是UDP，固定长度、无连接、不可靠的报文传递
-- `SOCK_SEQPACKET` 介于流式与报式之间的，固定长度、有序、可靠、面向连接的报文传递
-- `SOCK_RAW` IP协议的数据报接口
+- `SOCK_SEQPACKET` 流控制传输协议（SCTP)介于流式与报式之间的，固定长度、有序、可靠、面向连接的报文传递
+- `SOCK_RAW` IP协议的数据报接口，提供一个数据报接口用于直接访问下面的网络层，使用这个接口时，应用程序负责构造自己的协议首部，因为TCP/UPD等被绕过了(创建它时,需要超级用户权限,防止恶意程序绕过安全机制创建报文)
 - `SOCK_PACKET` 最原始的链路层套接字，比如wireshark等工具所使用的
 
-`protocol`通常是0，表示选择默认协议，如`SOCK_STREAM`是TCP，`SOCK_DGRAM`是UDP，常见协议
+`protocol` __通常是0__，表示选择默认协议，如`SOCK_STREAM`是TCP，`SOCK_DGRAM`是UDP，常见协议
 
 - `IPPROTO_IP` IPv4 Internet Protocol
 - `IPPROTO_IPV6` IPv6 Internet Protocol (optional in POSIX.1)
@@ -5967,6 +5967,9 @@ int socket(int domain,int type,int protocol);
 - `IPPROTO_TCP` Transmission Control Protocol
 - `IPPROTO_UDP` User Datagram Protocol
 
+使用文件描述符函数处理套接字时行为
+
+![img](../../imgs/apue_59.png)
 
 ```c
 #include <sys/socket.h>
@@ -5974,7 +5977,89 @@ int shutdown(int sockfd,int how);
 //Returns: 0 if OK,−1 on error
 ```
 
-除了`close`，它也可以关闭套接字，`how`可标识只关闭读写某一端
+禁止套接字上的输入/输出，`how`可标识只关闭读写某一端:
+
+- `SHUT_RD`关闭读端
+- `SHUT_WR`关闭写端
+- `SHUT_RDWR`关闭读写端
+
+`close`只在最后一个活动引用被关闭时才释放网络端点，如`dup`了，套接字直到关闭了最后一个引用它的文件描述符才会被释放，而`shutdown`允许一个套接字处于不活动状态，无论引用它的文件描述符的数目是多少
+
+## 寻址
+### 字节序
+![img](../../imgs/apue_60.png)
+
+网络协议指定了字节序，因此异构计算机能够交换协议信息而不会混淆字节序，TCP/IP协议栈采用 __大端字节序__，地址用网络字节序表示，所以应用程序需要在处理器的字节序与网络字节序之间的转换
+
+```c
+#include <arpa/inet.h>
+uint32_t htonl(uint32_t hostint32 );
+//Returns: 32-bit integer in network byte order
+uint16_t htons(uint16_t hostint16 );
+//Returns: 16-bit integer in network byte order
+uint32_t ntohl(uint32_t netint32);
+//Returns: 32-bit integer in host byte order
+uint16_t ntohs(uint16_t netint16);
+//Returns: 16-bit integer in host byte order
+```
+
+### 地址格式
+地址标识了特定通信域中的套接字端点，为了使不同格式的地址能够被传入到套接字函数，地址被强制转换成通用地址结构`struct sockaddr`。
+
+它是一个抽象类型，在使用不同地址族时，类型不一样，如在`AF_INET`使用`struct sockaddr_in`类型，而在`AF_UNIX`则使用`struct sockaddr_un`类型，但它们都有第一个字段类型为`sa_family_t`的，并在`bind()`中`socklen_t len`来确定类型长度，用于标识具体的协议地址类型
+
+```c
+struct sockaddr {
+    sa_family_t   sa_family;    /* address family */
+    char          sa_data[14]; /* variable-length address */
+    ...
+};
+
+struct sockaddr_in {
+    sa_family_t    sin_family; /* address family: AF_INET */
+    in_port_t      sin_port;   /* port in network byte order */
+    struct in_addr sin_addr;   /* internet address */
+};
+
+struct sockaddr_un {
+    sa_family_t  sun_family;               /* AF_UNIX */
+    char         sun_path[UNIX_PATH_MAX];  /* pathname */
+};
+```
+
+需要打印人能理解的地址格式，下面用于二进制地址格式与点分十进制字符串之间的相互转换（仅用于IPv4）
+
+```c
+in_addr_t inet_addr(const char *cp);
+char *inet_ntoa(struct in_addr in);
+```
+
+但功能相似的下面函数，支持IPv4与IPv6
+
+```c
+#include <arpa/inet.h>
+const char *inet_ntop(int domain,const void *restrict addr ,
+                      char *restrict str,socklen_t size );
+//Returns: pointer to address string on success, NULL on error
+int inet_pton(int domain,const char *restrict str,
+              void *restrict addr );
+//Returns: 1 on success, 0 if the format is invalid, or −1 on error
+```
+
+`inet_ntop`将网络字节序的二进制转换成文本字符串格式，`inet_pton`将字符串格式转换成字节序的二进制地址，`domain`可选`AF_INET/AF_INET6`，`size`有两个常数，`INET_ADDRSTRLEN/INET6_ADDRSTRLEN`定义了足够大空间存放文本字符串
+
+### 地址查询
+这些函数返回的网络配置信息可以存在许多地方，如`/etc/hosts`或`/etc/services`等，或通过DNS或NIS，无论这些信息放在何处，这些函数同样能够访问它们
+
+```c
+#include <netdb.h>
+struct hostent *gethostent(void);
+//Returns: pointer if OK,NULL on error
+void sethostent(int stayopen );
+void endhostent(void);
+```
+
+
 
 ### 将套接字与地址关联
 ```c
@@ -5983,7 +6068,7 @@ int bind(int sockfd,const struct sockaddr *addr, socklen_t len);
 //Returns: 0 if OK,−1 on error
 ```
 
-`struct sockaddr`是一个抽象类型，在使用不同地址族时，类型不一样，如在`AF_INET`使用`struct sockaddr_in`类型，而在`AF_UNIX`则使用`struct sockaddr_un`类型，但它们都有第一个字段类型为`sa_family_t`的，并配合`socklen_t`用于标识具体的协议地址类型，并且在使用时，需要强制转换
+
 
 ```c
 int sd;
@@ -6297,6 +6382,13 @@ int main(void)
 
 
 
+
+
+
+
+<!--
+![img](../../imgs/apue_00.png)
+
 socket称为半层
 upd比ip没多多少东西
 停等模式写UDP
@@ -6308,12 +6400,6 @@ stream时，read write会阻塞吗？  write不会阻塞（底层会不会发不
 汉字为什么不要转换网络序？
 
 不同网段间通信使用IP地址，同网址内通信使用MAC地址，当需要向不同网段主机发消息时，通过ARP将到到IP地址对应的MAC，此时应该是路由器，它接收包后，再ARP时，得到另一个MAC（可能是另一个路由），这样经过N次ARP，而每次IP地址相同，但MAC不相同的转换，最终到达真实的IP地址（即ARP查询并转发后，原始的MAC是看不到的）
-
-<!--
-![img](../../imgs/apue_00.png)
-
-
-
 
 CFLAGS=-wall
 
