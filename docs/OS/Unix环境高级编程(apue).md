@@ -6049,7 +6049,7 @@ int inet_pton(int domain,const char *restrict str,
 `inet_ntop`将网络字节序的二进制转换成文本字符串格式，`inet_pton`将字符串格式转换成字节序的二进制地址，`domain`可选`AF_INET/AF_INET6`，`size`有两个常数，`INET_ADDRSTRLEN/INET6_ADDRSTRLEN`定义了足够大空间存放文本字符串
 
 ### 地址查询
-这些函数返回的网络配置信息可以存在许多地方，如`/etc/hosts`或`/etc/services`等，或通过DNS或NIS，无论这些信息放在何处，这些函数同样能够访问它们
+这些函数返回的网络配置信息可以存在许多地方，如`/etc/hosts`或`/etc/services`等，或通过DNS或NIS，无论这些信息放在何处，下面这些函数同样能够访问它们
 
 ```c
 #include <netdb.h>
@@ -6057,8 +6057,131 @@ struct hostent *gethostent(void);
 //Returns: pointer if OK,NULL on error
 void sethostent(int stayopen );
 void endhostent(void);
+
+struct hostent {
+    char  *h_name; /* name of host */
+    char  **h_aliases; /* pointer to alternate host name array */
+    int  h_addrtype; /* address type */
+    int  h_length;  /* length in bytes of address */
+    char  **h_addr_list;  /* pointer to array of network addresses */
+    ...
+};
 ```
 
+返回的地址采用网络字节序，两个附加函数`gethostbyname/gethostbyaddr`被认为是过时的，而使用下面的（ubuntu不能使用??）
+
+```c
+#include <netdb.h>
+struct netent *getnetbyaddr(uint32_t net,int type );
+struct netent *getnetbyname(const char *name);
+struct netent *getnetent(void);
+//All return: pointer if OK, NULL on error
+void setnetent(int stayopen );
+void endnetent(void);
+
+struct netent {
+    char  *n_name; /* network name */
+    char  **n_aliases; /* alternate network name array pointer */
+    int  n_addrtype; /* address type */
+    uint32_t  n_net; /* network number */
+    ...
+};
+```
+
+网络号以网络字节序返回，地址类型是一个地址族常量，如`AF_INET`
+
+可以将协议名字和协议号采用以下函数映射(不是协议与端口号)
+
+```c
+#include <netdb.h>
+struct protoent *getprotobyname(const char *name);
+struct protoent *getprotobynumber(int proto);
+struct protoent *getprotoent(void);
+//All return: pointer if OK, NULL on error
+void setprotoent(intstayopen );
+void endprotoent(void);
+
+struct protoent {
+    char  *p_name; /* protocol name */
+    char  **p_aliases;  /* pointer to alternate protocol name array */
+    int  p_proto; /* protocol number */
+    ...
+};
+```
+
+下面的函数是服务与端口的映射
+
+```c
+#include <netdb.h>
+struct servent *getservbyname(const char *name,const char *proto);
+struct servent *getservbyport(int port ,const char *proto);
+struct servent *getservent(void);
+//All return: pointer if OK, NULL on error
+void setservent(int stayopen );
+void endservent(void);
+
+struct servent {
+    char  *s_name; /* service name */
+    char  **s_aliases;  /* pointer to alternate service name array */
+    int  s_port;  /* port number */
+    char  *s_proto; /* name of protocol */
+    ...
+};
+```
+
+POSIX.1允许应用程序将一个主机名字和服务名字映射到一个地址或者相反
+
+```c
+#include <sys/socket.h>
+#include <netdb.h>
+int getaddrinfo(const char *restrict host ,
+                const char *restrict service ,
+                const struct addrinfo *restrict hint ,
+                struct addrinfo **restrict res);
+//Returns: 0 if OK, nonzer oerror code on error
+void freeaddrinfo(struct addrinfo *ai );
+
+struct addrinfo {
+    int  ai_flags; /* customize behavior */
+    int  ai_family; /* address family */
+    int  ai_socktype; /* socket type */
+    int  ai_protocol; /* protocol */
+    socklen_t  ai_addrlen; /* length in bytes of address */
+    struct sockaddr *ai_addr;  /* address */
+    char  *ai_canonname; /* canonical name of host */
+    struct addrinfo *ai_next;  /* next in list */
+    ...
+};
+```
+
+需要提供主机名字、服务名字，或者两者都提供，或者某一名字为NULL，主机名字可以是一个节点名或点分十进制表示的主机地址，`res`是返回值，`hint`是一个用于过滤地址的模板，仅使用前四个字段，剩余字段必须为0，指针为空
+
+`ai_flags`可选
+
+![img](../../imgs/apue_61.png)
+
+调用失败，使用下面函数得到错误消息
+
+```c
+#include <netdb.h>
+const char *gai_strerror(int error );
+//Returns: a pointer to a string describing the error
+```
+
+下面函数将地址转换成主机名或服务名
+
+```c
+#include <sys/socket.h>
+#include <netdb.h>
+int getnameinfo(const struct sockaddr *restrict addr ,socklen_t alen ,
+                char *restrict host ,socklen_t hostlen ,
+                char *restrict service ,socklen_t servlen ,int flags );
+//Returns: 0 if OK, nonzero on error
+```
+
+`addr`被转换成主机名或服务名，如果`host`非空，它指向一个长度为`hostlen`字节的缓冲区中，`service`同理，`flags`如下
+
+![img](../../imgs/apue_62.png)
 
 
 ### 将套接字与地址关联
@@ -6068,7 +6191,10 @@ int bind(int sockfd,const struct sockaddr *addr, socklen_t len);
 //Returns: 0 if OK,−1 on error
 ```
 
-
+- 在进程所运行的机器上，指定的地址必须有效，不能指定一个其他机器上的地址
+- 地址必须和创建套接字时的地址族所支持的格式相匹配
+- 端口号必须不小于1024，除非该进程为超级用户
+- 一般只有套接字端点能够与地址绑定，尽管有些协议允许多重绑定
 
 ```c
 int sd;
@@ -6082,8 +6208,43 @@ inet_pton(AF_INET, SERVER_IP, &myend.sin_addr);
 ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
 ```
 
+如果IP地址为`INADDR_ANY`，套接字端点可以被绑定到本机所有的系统网络接口（可以收到本机所安装的所有网卡的数据包），如果调用`connection`或`listen`，但没有绑定地址到一个套接字，系统会选一个地址并将其绑定到套接字
+
+调用`getsockname`来发现绑定到一个套接字地址??
+
+```c
+#include <sys/socket.h>
+int getsockname(int sockfd ,struct sockaddr *restrict addr ,
+                socklen_t *restrict alenp);
+//Returns: 0 if OK,−1 on error
+```
+
+`alenp`指向整数的指针，即输入也输出，用于指定缓冲区`addr`大小，也返回设置后的大小。如果当前没有绑定该套接字的地址，其结果没有定义
+
+如果套接字已经和对方连接，调用`getpeername`找到对方的地址
+
+```c
+#include <sys/socket.h>
+int getpeername(int sockfd ,struct sockaddr *restrict addr ,
+                socklen_t *restrict alenp);
+//Returns: 0 if OK,−1 on error
+```
 
 ## 建立连接
+如果处理的是面向连接的网络服务（`SOCK_STREAM`或`SOCK_SEQPACKET`），在开始交换数据以前，需要在请求服务的进程套接字与提供服务的进程套接字之间建立一个连接，可以用`connect`建立一个连接
+
+```c
+#include <sys/socket.h>
+int connect(int sockfd ,const struct sockaddr *addr ,socklen_t len);
+//Returns: 0 if OK,−1 on error
+```
+
+如果`sockfd`没有绑定到一个地址，`connection`会给调用者绑定一个默认地址（默认网卡）
+
+当服务器等待连接队列中没足够空间，可以sleep一段时间，再重试的连接，sleep的时间可采用指数补偿算法
+
+__它也可用于 `SOCK_DGRAM`，每次传报文时不需要再提供地址，另仅接收来自指定地址的报文__
+
 ```c
 #include <sys/socket.h>
 int listen(int sockfd,int backlog);
@@ -6098,13 +6259,16 @@ int accept(int sockfd,struct sockaddr *restrict addr, socklen_t *restrict len);
 //Returns: file (socket) descriptor if OK,−1 on error
 ```
 
-其中`len`必须初始化，它即是输入又是输出
+返回值是另一个套接字描述符，它连接到调用`connection`的客户端，它与原始套接字`sockfd`具有相同的套接字类型和地址族，传给`accept`的原始套接字没有关联到这个连接，而是继续保持可用状态并接受其他连接请求
 
-如果没有连接请求在等待，则它会 __阻塞__ 直到一个请求到来
+如果不关心客户端标识，后两参数可设为NULL，但如果传入`adrr`，则`len`必须初始化，它即是输入又是输出
 
+如果没有连接请求在等待，则它会 __阻塞__ 直到一个请求到来，如果`sockfd`处于非阻塞模式，则它返回-1，将并`errno`设置为`EAGAIN`或`EWOULDBLOCK`
+
+另服务器可使用`poll/select`等待一个请求的到来，一个带等待处理的连接请求套接字会以可读的方式出现
 
 ## 数据传输
-除了`read/write`还有更细控制的数据传输
+除了`read/write`还有更细控制的数据传输，如想指定选项、从多个客户端接收数据包或发送带外数据，则需要下面的函数
 
 ```c
 #include <sys/socket.h>
@@ -6113,8 +6277,37 @@ ssize_t send(int sockfd,const void *buf,size_t nbytes,int flags);
 ssize_t sendto(int sockfd,const void *buf,size_t nbytes,int flags,
                const struct sockaddr *destaddr,socklen_t destlen);
 //Returns: number of bytes sent if OK,−1 on error
+
+#include <sys/socket.h>
+ssize_t sendmsg(int sockfd ,const struct msghdr *msg,int flags );
+//Returns: number of bytes sent if OK,−1 on error
+
+struct msghdr {
+    void  *msg_name; /* optional address */
+    socklen_t  msg_namelen; /* address size in bytes */
+    struct iovec *msg_iov;  /* array of I/O buffers */
+    int  msg_iovlen; /* number of elements in array */
+    void  *msg_control; /* ancillary data */
+    socklen_t  msg_controllen; /* number of ancillary bytes */
+    int  msg_flags; /* flags for received message */
+    ...
+};
 ```
 
+`flags`，常见如下：
+
+- `MSG_OOB`支持带外数据（不常用）
+- `MSG_WAITALL`等待所有数据都可用才返回，用于流式传输（可用）
+- `MSG_DONTWAIT`启动非阻塞（可用）
+- `MSG_DONTROUTE`不将数据路由出本地网络
+
+如果`send`成功返回，并不必然表示连接另一端的进程接收数据，所保证的仅是数据已无错误地发送到网络上
+
+对于报文，如果单个报文超过协议所支持的最大尺寸，`send`失败并将`errno`设为`EMSGSIZE`，对于字节流协议，`send`会阻塞直到整个数据被传输
+
+`sendto`允许在无连接的套接字上指定一个目标地址，对于面向连接的套接字，目标地址是忽略的，因为目标地址蕴涵在连接中，对于无连接的套接字，不能使用`send`，除非在调用`connect`时预先设定了目标地址，或采用了`sendto`来提供另外一种发送报文方式
+
+调用带结构体`msghdr`的`sendmsg`来指定多重缓冲区传输数据，这和`writev`很相似
 
 ```c
 #include <sys/socket.h>
@@ -6124,18 +6317,23 @@ ssize_t recv(int sockfd,void *buf,size_t nbytes,int flags);
 ssize_t recvfrom(int sockfd,void *restrict buf,size_t len,int flags,
                  struct sockaddr *restrict addr,socklen_t *restrict addrlen);
 //Returns: length of message in bytes,0 if no messages areavailable and peer has done an orderly shutdown,or −1 on error
+
+ssize_t recvmsg(int sockfd ,struct msghdr *msg,int flags );
+//Returns: length of message in bytes,0 if no messages areavailable and peer has done an orderly shutdown,or −1 on error
 ```
 
 `flags`，常见如下：
 
 - `MSG_OOB`支持带外数据（不常用）
 - `MSG_PEEK`返回数据包内容而不真正取走数据包，偷看数据用于确定数据报大小，用于报式传输（不常用）
+- `MSG_TRUNC`即使报文被截断，要求返回的是报文的实际长度
 - `MSG_WAITALL`等待所有数据都可用才返回，用于流式传输（可用）
-- `MSG_DONTWAIT`启动非阻塞（可用）
 
+如果发送者已调用`shutdown`来结束传输，或者网络协议支持默认的顺序关闭并且发送端已关闭，那么当所有数据接收完毕后，`recv`返回0
 
+`recvfrom`通常用于无连接套接字
 
-
+`recvmsg`类似`readv`
 
 ## 进程池实现
 - 维护一个进程做任务的次数，超过阀值则退出，利于减少内在泄漏
