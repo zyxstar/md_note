@@ -6350,7 +6350,55 @@ int setsockopt(int sockfd ,int level ,int option ,const void *val,socklen_t len)
 
 `level`标识了选项应用的协议，如果是通用的套接字层选项，则为`SOL_SOCKET`，对于TCP选项，则是`IPPROTO_TCP`，对于IP选项，则是`IPPROTO_IP`
 
+![img](../../imgs/apue_63.png)
 
+其中`SO_REUSEADDR`比较常用，允许绑定同一地址
+
+```c
+val = 1;
+setsockopt(sd, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val));
+```
+
+查看选项的当前值
+
+```c
+#include <sys/socket.h>
+int getsockopt(int sockfd,int level,int option,void *restrict val,
+               socklen_t *restrict lenp);
+//Returns: 0 if OK,−1 on error
+```
+
+## 带外数据
+与普通数据相比，它允许更高优先级的数据传输，带外数据先行传输，即使传输队列已有数据，TCP支持，但UPD不支持。
+
+TCP将带外数据称为紧急数据，且只支持一个字节的紧急数据，需要`send`时指定`MSG_OOB`标志，如果带外字节数超过一个时，__最后__ 一个字节视为紧急数据字节
+
+如果套接字安排了信号的产生，那么紧急数据被接收时，会发送`SIGUSR`信号，在`fcntl`中使用`F_SETOWN`来设置一个套接字的所有权，如果是正数则指定进程ID，如果为负值则指进程组ID（`F_GETOWN`得到当关套接字的所有权）
+
+如果采用套接字选项`SO_OOBINLINE`可以普通数据中接收紧急数据，下面函数判断是否已到达紧急标记
+
+```c
+#include <sys/socket.h>
+int sockatmark(int sockfd);
+//Returns: 1 if at mark, 0 if not at mark,−1 on error
+```
+
+当下一个要读取的字节在紧急标志处时，返回1
+
+使用`select`时会返回一个文件描述符并且有一个待处理的异常条件。可以在普通数据流上接收紧急数据，也可以在其中一个`recv`函数中采用`MSG_OOB`标志在其他队列数据之前接收紧急数据
+
+## 非阻塞和异步IO
+`recv`没有数据可用时会阻塞等待，而当套接字输出队列没有足够空间来发送消息时，`send`会阻塞。在套接字非阻塞模式下，行为会改变，这些函数不会阻塞而是会失败，`errno`设置为`EAGAIN`，当这种情况发生时，可使用`poll/select`判断能否接收或传输数据
+
+基于套接字的异步IO中，当从套接字中读取数据时，或者当套接字写队列中空间变得可用时，可以安排要发送的信号`SIGIO`
+
+- 建立套接字所有权，这样信号可以被传递到合适的进程
+    - `fcntl`中使用`F_SETOWN` 或
+    - `ioctl`中使用`FIOSETOWN` 或
+    - `ioctl`中使用`SIOCSPGRP`
+- 通知套接字当IO操作不会阻塞时发信号
+    - `fcntl`中使用`F_SETFL`，并且启用文件标志`O_ASYNC` 或
+    - `ioctl`中使用`FIOASYNC`
 
 ## 进程池实现
 - 维护一个进程做任务的次数，超过阀值则退出，利于减少内在泄漏
