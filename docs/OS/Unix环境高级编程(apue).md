@@ -6335,6 +6335,23 @@ ssize_t recvmsg(int sockfd ,struct msghdr *msg,int flags );
 
 `recvmsg`类似`readv`
 
+## 套接字选项
+可以获取或设置三种选项：
+
+- 通用选项，工作在所有套接字类型上
+- 在套接字层次管理的选项，但是依赖于下层协议的支持
+- 特定于某协议的选项，为每个协议所独有
+
+```c
+#include <sys/socket.h>
+int setsockopt(int sockfd ,int level ,int option ,const void *val,socklen_t len);
+//Returns: 0 if OK,−1 on error
+```
+
+`level`标识了选项应用的协议，如果是通用的套接字层选项，则为`SOL_SOCKET`，对于TCP选项，则是`IPPROTO_TCP`，对于IP选项，则是`IPPROTO_IP`
+
+
+
 ## 进程池实现
 - 维护一个进程做任务的次数，超过阀值则退出，利于减少内在泄漏
 - 双方通过通信来决定是否回收或新增进程，而不是父进程轮询子进程状态，父子间通信最好使用本地套接字（不得已时考虑管道，但此处需要父子双方维护具名FIFO，子进程意外退出时，反而不利清理，而考虑使用消息队列，只使用一个队列，并且利用了它的消息分拣）
