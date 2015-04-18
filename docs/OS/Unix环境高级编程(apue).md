@@ -205,7 +205,9 @@ while (1) {
 }
 ```
 
-所以上述的代码除了检查`errno == EINTR`，其它出错均不必或无法处理
+所以上述的代码除了检查`errno == EINTR`，其它出错均不必或无法处理。
+
+__如果`read/write`的结果与预期不一致，首先需要把出错处理给添加上__
 
 ## write函数
 ```c
@@ -1041,7 +1043,7 @@ char *getcwd(char *buf,size_tsize);
 
 标准IO库
 ========
-> 不要混用标准IO与底层IO，确保风格一致
+> 不要混用标准IO与底层IO，确保风格一致，不能以需要混用时，确保在标准IO输出后，执行`fflush()`
 ## 流和FILE对象
 流的定向决定了所读、写的字符是单字还是多字节的，当一个流最初被创建时，并没有定向，在其流上使用一个多字节IO函数（`wchar.h`），则将该流的定向设置为 __宽定向__ 的，如使用一个单字节IO函数，则将该流的定向设置为 __字节定向__ 的。`freopen()`清除一个流的定向，`fwide()`设置流的定向
 
@@ -5787,6 +5789,8 @@ int main(void)
 ===========
 所有用户层守护进程都是进程组的组长进程，以及会话的首进程，而且是这些进程组和会话中的唯一进程，大多数守护进程的父进程是init进程
 
+> `man 3 daemon`中`int daemon(int nochdir, int noclose);`一个非POSIX标准的函数，方便设置守护进程
+
 ## 编程规则
 - 首先调用`umask`将文件模式创建屏蔽字设置为0，由继承得来的文件模式创建屏蔽字可能会拒绝某些权限
 - 调用`fork`，然后使父进程退出，第一，如果以shell启动该守护进程，shell认为该命令已执行完毕，第二，子进程继承了父进程的进程组ID，但具有一个新的进程ID，保证了子进程不是一个进程组的组长进程，方便`setsid`调用
@@ -5794,6 +5798,7 @@ int main(void)
 - 将当前工作目录更改为根目录（如果守护进程的当前工作目录在一个装配文件系统中，方便该文件系统的拆缷）
 - 关闭不再需要的文件描述符
 - 某些守护进程打开/dev/null使其具有文件描述符0/1/2，任何试图读写标准IO都不会产生任何效果
+- 因为无控制终端，无交互，所以与控制终端相关的信号，可用来通知进程去读取更新了的配置文件
 
 ```c
 void daemonize(const char *cmd){
@@ -5874,7 +5879,9 @@ void daemonize(const char *cmd){
 - 大多数用户进程（守护进程）调用`syslog(3)`函数以产生日志消息，这使消息发送至UNIX域数据报套接字`/dev/log`
 - 通过TCP/IP网络连接此主机的用户进程将日志发向UDP端口514
 
-`syslogd`守护进程读取三种格式的日志消息，此守护进程在启动时读一个配置文件`/etc/syslog.conf`，决定了不同种类的消息应送向何处
+> 其实守护进程最好不以root用户运行，但一些服务（ftpd）需要21端口，是需要root权限的，所以，一般是以root运行后，再切到普通用户。而普通用户写系统日志时，又需要root权限，此时是通过调用`syslog`写日志，实现原理是，通过UNIX域套接字，与`syslogd`通信，由后者写入日志，达到了守护进程的权限最小化
+
+`syslogd`守护进程读取三种格式的日志消息，此守护进程在启动时读一个配置文件`/etc/syslog.conf`(`/etc/rsyslog.conf`)，决定了不同种类的消息应送向何处（最好配置到不同机器上，保证了日志不被篡改）
 
 ![img](../../imgs/apue_55.png)
 
@@ -5935,6 +5942,8 @@ void vsyslog(int priority,const char *format ,va_list arg);
 > 常用手册`man 7 ip/socket/unix/tcp/udp`
 
 ## 套接字描述符
+> 套接字是一个抽象文件描述，最常见的是传输层的套接字（TCP、UDP），也可以是链路层套接字(使用`SOCK_PACKET`，比如制作ICMP包)
+
 
 ```c
 #include <sys/socket.h>
@@ -5984,6 +5993,12 @@ int shutdown(int sockfd,int how);
 - `SHUT_RDWR`关闭读写端
 
 `close`只在最后一个活动引用被关闭时才释放网络端点，如`dup`了，套接字直到关闭了最后一个引用它的文件描述符才会被释放，而`shutdown`允许一个套接字处于不活动状态，无论引用它的文件描述符的数目是多少
+
+### 数据报场景
+- 程序逻辑上每次通信如果包的大小是确定的，数据报合适
+- 广播与多播，不存在连接，只能数据报
+- 实时性强的通信（视频会议）
+- 单报通信，如DNS
 
 ## 寻址
 ### 字节序
@@ -6400,6 +6415,319 @@ int sockatmark(int sockfd);
     - `fcntl`中使用`F_SETFL`，并且启用文件标志`O_ASYNC` 或
     - `ioctl`中使用`FIOASYNC`
 
+## UNIX域套接字
+> 如果使用网络套接字，绑定`127.0.0.1`进行通信，__没有网卡也能通信__，但它的效率不如域套接字，它们并不执行协议处理，不需要添加或删除报头，无需计算检验和，不产生顺序号，无需发送确认报文
+
+UNIX域套接字提供流和数据报两种，数据报也是 __可靠的__
+
+使用它而不使用管道的优势是，它能支持 __消息分拣__，并且是 __全双工的__
+
+### 流的接收端
+```c
+int main(void)
+{
+    int sd, newsd;
+    struct sockaddr_un myend;
+    int ret;
+    char buf[BUFSIZE];
+
+    sd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sd == -1) {
+        perror("socket()");
+        return 1;
+    }
+
+    myend.sun_family = AF_UNIX;
+    snprintf(myend.sun_path, UNIX_PATH_MAX, "sock_recv");
+    unlink(myend.sun_path);
+    ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
+    if (ret == -1) {
+        perror("bind()");
+        return 1;
+    }
+
+    listen(sd, 20);
+
+    newsd = accept(sd, NULL, NULL);
+    /* if error */
+
+    while (1) {
+        ret = read(newsd, buf, BUFSIZE);
+        /* if error */
+        if (ret == 0) {
+            break;
+        }
+
+        write(1, buf, ret);
+
+        write(newsd, "OK\n", 3);
+    }
+
+    close(newsd);
+    close(sd);
+
+    return 0;
+}
+```
+
+- 在`bind()`后，将产生一个`sock_recv`的socket类型的文件，如果将文件已在，是不能用的，所以要先`unlink()`（不确定`SO_REUSEADDR`的效果），后面就直接`read/write`，与一般网络socket无异
+
+### 流的发送端
+```c
+int main(void)
+{
+    int sd;
+    struct sockaddr_un hisend;
+    int ret;
+    char buf[BUFSIZE];
+
+    sd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (sd == -1) {
+        perror("socket()");
+        return 1;
+    }
+
+    hisend.sun_family = AF_UNIX;
+    snprintf(hisend.sun_path, UNIX_PATH_MAX, "sock_recv");
+    ret = connect(sd, (struct sockaddr *)&hisend, sizeof(hisend));
+    if (ret == -1) {
+        perror("connect()");
+        return 1;
+    }
+
+    while (1) {
+        ret = read(0, buf, BUFSIZE);
+        /* if error */
+        if (ret == 0) {
+            break;
+        }
+
+        write(sd, buf, ret);
+
+        ret = read(sd, buf, BUFSIZE);
+        write(1, buf, ret);
+    }
+
+    close(sd);
+
+    return 0;
+}
+```
+
+- `connect(sd, (struct sockaddr *)&hisend, sizeof(hisend));`则连接到那个套接字了
+
+### 数据报接收端
+```c
+int main(void)
+{
+    int sd;
+    struct sockaddr_un myend, hisend;
+    socklen_t hislen;
+    int ret;
+    char buf[BUFSIZE];
+    time_t cur;
+    struct tm *cur_tm;
+
+    sd = socket(AF_UNIX, SOCK_DGRAM, 0);
+    /* if error */
+
+    myend.sun_family = AF_UNIX;
+    snprintf(myend.sun_path, UNIX_PATH_MAX, "sock_recv");
+    unlink(myend.sun_path);
+    ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
+    if (ret == -1) {
+        perror("bind()");
+        return 1;
+    }
+
+    hislen = sizeof(hisend);
+    while (1) {
+        ret = recvfrom(sd, buf, BUFSIZE, 0, (struct sockaddr *)&hisend, &hislen);
+        write(1, buf, ret);
+
+        cur = time(NULL);
+        cur_tm = localtime(&cur);
+        ret = strftime(buf, BUFSIZE, "%F %T\n", cur_tm);
+        sendto(sd, buf, ret, 0, (struct sockaddr *)&hisend, hislen);
+    }
+
+    close(sd);
+
+    return 0;
+}
+```
+
+- 需要使用`recvfrom`接收数据，并得到`hisend`地址，并通过`sendto`发送过去
+
+### 数据报发送端
+```c
+int main(void)
+{
+    int sd;
+    struct sockaddr_un myend, hisend;
+    int ret;
+    char buf[BUFSIZE];
+
+    sd = socket(AF_UNIX, SOCK_DGRAM, 0);
+    /* if error */
+
+    hisend.sun_family = AF_UNIX;
+    snprintf(hisend.sun_path, UNIX_PATH_MAX, "sock_recv");
+
+    myend.sun_family = AF_UNIX;
+    snprintf(myend.sun_path, UNIX_PATH_MAX, "sock_send");
+    unlink(myend.sun_path);
+    ret = bind(sd, (struct sockaddr *)&myend, sizeof(myend));
+    if (ret == -1) {
+        perror("bind()");
+        return 1;
+    }
+
+    while (1) {
+        ret = read(0, buf, BUFSIZE);
+        /* if error */
+        if (ret == 0) {
+            break;
+        }
+
+        sendto(sd, buf, ret, 0, (struct sockaddr *)&hisend, sizeof(hisend));
+
+        ret = read(sd, buf, BUFSIZE);
+        write(1, buf, ret);
+    }
+
+    close(sd);
+
+    return 0;
+}
+```
+
+- 不管是流还是数据报，发送端其实都需要`bind()`，只是在网络套接字，在第一次发送时（流为`connect`，数据报为`sendto`），由系统 __自动绑定__ 了一个端口，而域套接字使用文件，无法自动绑定，需要 __手工绑定__
+
+- 如果数据报可以单方使用`connect`（无需对方响应），则可方便程序编写，它将限定本端与对方端的收发绑定，过滤无效数据，并可直接使用`read/write`
+
+```c
+int main(void)
+{
+    int sd;
+    struct sockaddr_in myend, hisend;
+    socklen_t hislen;
+    time_t cur;
+    struct tm *cur_tm;
+    char buf[BUFSIZE];
+    int ret;
+
+    sd = socket(AF_INET, SOCK_DGRAM, 0);
+    /* if error */
+
+    hisend.sin_family = AF_INET;
+    hisend.sin_port = SERVER_PORT;
+    inet_pton(AF_INET, SERVER_IP, &hisend.sin_addr);
+    ret = connect(sd, (struct sockaddr *)&hisend, sizeof(hisend));
+    /* if error */
+
+    hislen = sizeof(hisend);
+    while (1) {
+        ret = read(0, buf, BUFSIZE);
+        /* if error */
+        if (ret == 0) {
+            break;
+        }
+
+        write(sd, buf, ret);
+
+        ret = read(sd, buf, BUFSIZE);
+        /* if error */
+
+        write(1, buf, ret);
+    }
+
+    close(sd);
+
+    return 0;
+}
+```
+
+## 链路层套接字
+> `man 7 packet`
+
+> 链路层拦截，需加一个hub，就可以得到所有经过它的数据，在链路层收发最好使用两个套接字，一个用于收，另一个用于发
+
+```c
+int main(int argc, char **argv)
+{
+        int sd;
+        struct sockaddr_ll sll;
+        int ret;
+        struct packet_mreq mreq;
+        int ifindex;
+        FILE *fp;
+        unsigned char buf[BUFSIZE];
+
+        if (argc != 3) {
+                fprintf(stderr, "argment...\n");
+                return 1;
+        }
+
+        fp = fopen(argv[2], "a");
+        if (fp == NULL) {
+                perror(argv[2]);
+                goto fopen_output_err;
+        }
+
+        sd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));
+        if (sd == -1) {
+                perror("socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL))");
+                goto socket_err;
+        }
+
+        ifindex = if_nametoindex(argv[1]);
+
+        sll.sll_family = AF_PACKET;
+        sll.sll_protocol = htons(ETH_P_ALL);
+        sll.sll_ifindex = ifindex;
+        ret = bind(sd, (struct sockaddr *)&sll, sizeof(sll));
+        if (ret == -1) {
+                perror("bind()");
+                goto bind_err;
+        }
+
+        mreq.mr_ifindex = ifindex;
+        mreq.mr_type = PACKET_MR_PROMISC;
+        ret = setsockopt(sd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq, sizeof(mreq));
+        if (ret == -1) {
+                perror("setsockopt(PACKET_MR_PROMISC)");
+                goto setsockopt_PROMISC_err;
+        }
+
+        while (1) {
+                ret = read(sd, buf, BUFSIZE);
+                print_packet(fp, buf, ret);
+        }
+
+        close(sd);
+        fclose(fp);
+
+        return 0;
+
+setsockopt_PROMISC_err:
+bind_err:
+        close(sd);
+socket_err:
+        fclose(fp);
+fopen_output_err:
+        return 1;
+}
+```
+
+- `sd = socket(AF_PACKET, SOCK_RAW, htons(ETH_P_ALL));`中`ETH_P_ALL`是拦截所有以太帧
+- `mreq.mr_type = PACKET_MR_PROMISC;`为混杂模式，所有到达该网卡的包都接收，不是该模式时，则不是目标地址的包则丢弃
+- `setsockopt(sd, SOL_PACKET, PACKET_ADD_MEMBERSHIP, &mreq, sizeof(mreq));`设混杂模式加入到组
+- 结构体`struct sockaddr_ll`的`sll_addr`是mac地址（收包时可以不看，但发包时必须指定）
+
+
+杂项
+========
 ## 进程池实现
 - 维护一个进程做任务的次数，超过阀值则退出，利于减少内在泄漏
 - 双方通过通信来决定是否回收或新增进程，而不是父进程轮询子进程状态，父子间通信最好使用本地套接字（不得已时考虑管道，但此处需要父子双方维护具名FIFO，子进程意外退出时，反而不利清理，而考虑使用消息队列，只使用一个队列，并且利用了它的消息分拣）
@@ -6637,6 +6965,150 @@ int main(void)
 
 > 改成线程池时，就不需要任务计数了，反正线程退出也资源回收意义不大
 
+## 显存
+显示器的文件位于`/dev/fb<no>`，如果有多个显示器，则存在多个framebuffer文件
+
+> 编写驱动时，`ioctl()`中的`request`常位于内核头文件`/usr/src/kernels/2.6.32-358.el6.x86_64/include/linux/*.h`
+
+> 在内核中，虚拟地址一般用指针，而物理地址则用`unsigned long`来表示
+
+```c
+int main(void){
+    int fd;
+    int ret;
+    char *fbp;
+
+    fd = open("/dev/fb0", O_RDWR);
+    if (-1 == fd) {
+        perror("open");
+        exit(1);
+    }
+
+    /* get fb_var_screeninfo */
+    ret = ioctl(fd, FBIOGET_VSCREENINFO, &var);
+    if (-1 == ret) {
+        perror("ioctl(var)");
+        close(fd);
+        exit(1);
+    }
+
+    bpp = var.bits_per_pixel / 8;
+
+    /* get fb_fix_screeninfo */
+    ioctl(fd, FBIOGET_FSCREENINFO, &fix);
+    if (-1 == ret) {
+        perror("ioctl(var)");
+        close(fd);
+        exit(1);
+    }
+
+    /* get framebuffer start address */
+    fbp = mmap(NULL, fix.smem_len, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+    if ((void *) - 1 == fbp) {
+        perror("mmap");
+        close(fd);
+        exit(1);
+    }
+
+    /* set background */
+    memset(fbp, 0, fix.smem_len);
+
+    /* set a pixel */
+    //memset(fbp + 9000, 0xff, bpp);
+
+    memset(fbp, 0xff, fix.smem_len);
+    set_square(fbp, 400, 300, 500, 400, 0);
+
+    ret = munmap(fbp, fix.smem_len);
+    if (-1 == ret) {
+        perror("munmap");
+        close(fd);
+        exit(1);
+    }
+
+    close(fd);
+
+    return 0;
+}
+```
+
+- 将显存文件`/dev/fd0`，`ioctl`进行属性获取，再通过`mmap`映射到用户空间内存，以后针对该内存的读写，就是对显存的读写
+
+```c
+struct fb_var_screeninfo {
+    __u32 xres;                     /* visible resolution           */
+    __u32 yres;
+    __u32 xres_virtual;             /* virtual resolution           */
+    __u32 yres_virtual;
+    __u32 xoffset;                  /* offset from virtual to visible */
+    __u32 yoffset;                  /* resolution                   */
+
+    __u32 bits_per_pixel;           /* guess what                   */
+    __u32 grayscale;                /* != 0 Graylevels instead of colors */
+
+    struct fb_bitfield red;         /* bitfield in fb mem if true color, */
+    struct fb_bitfield green;       /* else only length is significant */
+    struct fb_bitfield blue;
+    struct fb_bitfield transp;      /* transparency                 */
+
+    __u32 nonstd;                   /* != 0 Non standard pixel format */
+
+    __u32 activate;                 /* see FB_ACTIVATE_*            */
+    __u32 height;                   /* height of picture in mm    */
+    __u32 width;                    /* width of picture in mm     */
+
+    __u32 accel_flags;              /* (OBSOLETE) see fb_info.flags */
+
+    /* Timing: All values in pixclocks, except pixclock (of course) */
+    __u32 pixclock;                 /* pixel clock in ps (pico seconds) */
+    __u32 left_margin;              /* time from sync to picture    */
+    __u32 right_margin;             /* time from picture to sync    */
+    __u32 upper_margin;             /* time from sync to picture    */
+    __u32 lower_margin;
+    __u32 hsync_len;                /* length of horizontal sync    */
+    __u32 vsync_len;                /* length of vertical sync      */
+    __u32 sync;                     /* see FB_SYNC_*                */
+    __u32 vmode;                    /* see FB_VMODE_*               */
+    __u32 rotate;                   /* angle we rotate counter clockwise */
+    __u32 reserved[5];              /* Reserved for future compatibility */
+};
+
+struct fb_bitfield {
+    __u32 offset;                   /* beginning of bitfield        */
+    __u32 length;                   /* length of bitfield           */
+    __u32 msb_right;                /* != 0 : Most significant bit is */
+                                    /* right */
+};
+
+struct fb_fix_screeninfo {
+    char id[16];                    /* identification string eg "TT Builtin" */
+    unsigned long smem_start;       /* Start of frame buffer mem */
+                                    /* (physical address) */
+    __u32 smem_len;                 /* Length of frame buffer mem */
+    __u32 type;                     /* see FB_TYPE_*                */
+    __u32 type_aux;                 /* Interleave for interleaved Planes */
+    __u32 visual;                   /* see FB_VISUAL_*              */
+    __u16 xpanstep;                 /* zero if no hardware panning  */
+    __u16 ypanstep;                 /* zero if no hardware panning  */
+    __u16 ywrapstep;                /* zero if no hardware ywrap    */
+    __u32 line_length;              /* length of a line in bytes    */
+    unsigned long mmio_start;       /* Start of Memory Mapped I/O   */
+                                    /* (physical address) */
+    __u32 mmio_len;                 /* Length of Memory Mapped I/O  */
+    __u32 accel;                    /* Indicate to driver which     */
+                                    /*  specific chip/card we have  */
+    __u16 reserved[3];              /* Reserved for future compatibility */
+};
+```
+
+- `xres/yres`分辨率
+- `red/green/blue`表示采用的RGB模式
+- `bits_per_pixel`每像素N比特，需除以8，得到字节
+- `smem_len`空间大小
+- `line_length`每行字节数
+
+
+
 ## 函数
 ```c
 
@@ -6655,6 +7127,7 @@ int main(void)
 socket称为半层
 upd比ip没多多少东西
 停等模式写UDP
+keepalive保持心跳，有可能反而一个长连接断开
 
 listen设置侦听模式，帮助三次握手？
 connect会阻塞吗？会
@@ -6738,7 +7211,7 @@ IO
 IO多路转接 信号驱动IO 多线程 非阻塞IO
 
 进程间通信
-管道 FIFO 套接字 共享内存（消息队列不考虑）
+管道 FIFO 域套接字[能消息分拣] 共享内存 消息队列[能消息分拣]
 
 进程间加锁
 文件记录锁 semaphore
