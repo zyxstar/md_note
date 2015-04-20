@@ -381,6 +381,37 @@ int main(){
 }
 ```
 
+## 共用体
+在网络传输时（使用紧凑模式），可使用共用体，方便不同的指令（`major/minor`）使用同一个结构体
+
+```c
+#define PACKET_SIZE     1480
+#define PADSIZE         (PACKET_SIZE - 2)
+
+struct __attribute__ ((__packed__)) msg_st {
+    uint32_t dest;
+    uint32_t src;
+    uint8_t message[0];
+};
+
+struct __attribute__ ((__packed__)) packet_st {
+    uint8_t major;
+    uint8_t minor;
+    union {
+        uint32_t id;
+        uint8_t salt[0];
+        uint8_t encrypt[0];
+        uint8_t ack;
+        struct msg_st msg;
+        uint32_t list[0];
+        uint8_t pad[PADSIZE];
+    };
+};
+```
+
+使用的类型都是无符号的整型（8，16，32位），最后的`pad`是用于填充共用体大小，它的大小为网络以太帧的大小（1480）减去`major`和`minor`的大小
+
+
 ## 有关宏
 - 没有数据类型，方便公用代码提炼
 - 只是替换，没有栈空间分配与函数调用，速度上优于函数
