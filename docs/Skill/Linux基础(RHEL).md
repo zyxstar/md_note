@@ -932,6 +932,9 @@ xargs
             #等同于
             ls -alt $(find . -name *.php)
 
+            -n 能确定命令使用的参数个数,下面一次传递一个参数
+            ls *.php | xargs -n 1 ls -alt
+
 ```
 
 > `except`可用于写交互性的脚本
