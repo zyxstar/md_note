@@ -91,7 +91,7 @@ ctrl c             中止任务执行
 ctrl z             任务转至后面，挂起状态
 ctrl a             shell中输入命令时，光标跳到最前
 ctrl e             shell中输入命令时，光标跳到最后
-ctrl u             shell中输入命令时，删除所有输入
+ctrl u             shell中输入命令时，删除一行
 
 ctrl s             暂停屏幕输入
 ctrl q             恢复屏幕输入
@@ -268,7 +268,7 @@ grep "<key>" <path/to/file>
     -G, --basic-regexp        PATTERN is a basic regular expression (BRE)
     -P, --perl-regexp         PATTERN is a Perl regular expression
 
-    -v, --invert-match        select non-matching lines
+    -v, --invert-match        select non-matching lines(不匹配的)
     #将配置文件中注释行和空行去掉显示
     cat /etc/dhcpd/dhcpd.conf | grep -v "^#" | grep -v "^$"
 
@@ -1041,13 +1041,57 @@ done
 [[ cmd || cmd ]]
 [[ $z =~ "o" ]]
 
-#数学运算
-expr
-
-$(($x+$y))
-$[$x+$y]
-let x=$x+1
 ```
+
+## 数学运算
+```shell
+bc
+                                  # echo "(6+3)*2" |bc
+                                  # echo "3+4;5*2;5^2;18/4" |bc
+                                  # echo "scale=2;15/4" |bc
+                                  # echo "ibase=16;A7" |bc
+                                  # echo "ibase=2;11111111" |bc
+                                  # echo "ibase=16;obase=2;B5-A4" |bc
+                                  # bc calc.txt
+
+expr
+                                  # expr 6 + 3
+                                  > 9
+                                  # expr 2 /* 3    （有转义符号）
+                                  > 6
+
+                                  # a=3
+                                  # expr $a+5      （无空格）
+                                  > 3+5
+                                  # expr $a + 5    （有空格）
+                                  > 8
+                                  # expr length "abc"
+                                  > 3
+                                  # expr substr "abcdefgh" 2 3  (从1开始计数)
+                                  > bcd
+                                  # expr index "abcdef" cd      (从1开始计数)
+                                  > 3
+
+echo
+                                  # echo $((3+5))
+                                  > 8
+
+                                  # x=2;y=3
+                                  # echo $(($x+$y))
+                                  > 5
+
+                                  # echo $x+$y | bc
+                                  > 5
+
+                                  # echo $[$x+$y]
+                                  > 5
+
+let
+                                  # let x=$x+1
+                                  # echo $x
+                                  > 3
+```
+
 
 ## 杂项
 ```shell
@@ -1062,6 +1106,10 @@ mount -t ntfs-3g <NTFS Partition> <Mount Point>
 sed -n '5,10p' /etc/passwd        #只查看文件的第5行到第10行。
 uniq                              # -d 只显示重复的行 -u 只显示唯一的行
 sort names | uniq -d              #显示在names文件中哪些行出现了多次
+     -r                           #正常排序的反序
+     -n                           #按数字次序排序
+     -f                           #大小写混合在一起排序
+
 
 tr                                #翻译
                                   #转换大小写
@@ -1081,6 +1129,11 @@ lsusb                             #检查USB
 iwconfig                          #检测无线
 iwlist
 
+stty -echo                        #禁止回显
+stty echo                         #打开回显
+
+stty igncr                        #忽略回车符
+stty -igncr                       #恢复回车符
 ```
 
 
