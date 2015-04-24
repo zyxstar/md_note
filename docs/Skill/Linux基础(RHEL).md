@@ -223,6 +223,81 @@ cat
           #列出两个文件的内容.执行对输出的搜索.统计结果行的个数
           cat file1 file2 | grep word | wc -1
 
+od        #查看特殊格式的文件内容。通过指定该命令的不同选项可以以十进制、八进制、十六进制和ASCII码来显示文件
+    -A    #指定地址基数(最左侧一栏），包括：
+     d    #十进制
+     o    #八进制（系统默认值）
+     x    #十六进制
+     n    #不打印位移值
+
+    -t    #指定数据的显示格式，主要的参数有(除了选项c都可以跟一个十进制数n，指定每个显示值所包含的字节数)：
+     c    #ASCII字符或反斜杠序列
+     d    #有符号十进制数
+     f    #浮点数
+     o    #八进制（系统默认值为02）
+     u    #无符号十进制数
+     x    #十六进制数
+
+          #od -Ax -tcx1 file.txt
+          #echo /etc/passwd |od
+          >0000000 062457 061564 070057 071541 073563 005144
+          >0000014
+
+          #echo /etc/passwd |od -A x -x
+          >000000 652f 6374 702f 7361 7773 0a64
+          >00000c
+
+          #echo /etc/passwd |od -A x -t x1
+          >000000 2f 65 74 63 2f 70 61 73 73 77 64 0a
+          >00000c
+
+          #echo /etc/passwd |od -A x -t x1 -t c    #常用
+          >000000  2f  65  74  63  2f  70  61  73  73  77  64  0a
+                    /   e   t   c   /   p   a   s   s   w   d  \n
+          >00000c
+
+xxd
+          #echo /etc/passwd |xxd
+          >0000000: 2f65 7463 2f70 6173 7377 640a            /etc/passwd.
+
+          #echo /etc/passwd |xxd -g1               #常用
+          >0000000: 2f 65 74 63 2f 70 61 73 73 77 64 0a              /etc/passwd.
+
+          #echo "0000000: 2f 65 74 63 2f 70 61 73 73 77 64 0a" |xxd -r
+          >/etc/passwd
+
+          #echo /etc/passwd |xxd -b
+          >0000000: 00101111 01100101 01110100 01100011 00101111 01110000  /etc/p
+          >0000006: 01100001 01110011 01110011 01110111 01100100 00001010  asswd.
+
+          #echo /etc/passwd |xxd -c4
+          >0000000: 2f65 7463  /etc
+          >0000004: 2f70 6173  /pas
+          >0000008: 7377 640a  swd.
+
+          #echo /etc/passwd |xxd -i
+          >0x2f, 0x65, 0x74, 0x63, 0x2f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x0a
+
+          #xxd -i file.txt
+          >unsigned char file_txt[] = {
+            0x2f, 0x65, 0x74, 0x63, 0x2f, 0x70, 0x61, 0x73, 0x73, 0x77, 0x64, 0x0a
+          };
+          unsigned int file_txt_len = 12;
+
+          #echo /etc/passwd |xxd -p
+          >2f6574632f7061737377640a
+
+hexdump
+          #echo /etc/passwd |hexdump
+          >0000000 652f 6374 702f 7361 7773 0a64
+          >000000c
+
+          #echo /etc/passwd |hexdump -C            #常用
+          >00000000  2f 65 74 63 2f 70 61 73 73 77 64 0a              |/etc/passwd.|
+          >0000000c
+
+echo -e "\x68\x65\x6c\x6c\x6f"   #16进制转换到字符串
+
 less      #分屏，可前翻
           #space下一页；b上一页；enter下一行；q退出；G最后；g最前
           #?<keyword>查找光标之前关键字；/<keyword>查找光标之后
@@ -1075,14 +1150,11 @@ expr
 echo
                                   # echo $((3+5))
                                   > 8
-
                                   # x=2;y=3
                                   # echo $(($x+$y))
                                   > 5
-
                                   # echo $x+$y | bc
                                   > 5
-
                                   # echo $[$x+$y]
                                   > 5
 
@@ -1090,6 +1162,12 @@ let
                                   # let x=$x+1
                                   # echo $x
                                   > 3
+
+akw
+                                  # awk 'BEGIN{a=3+2;print a}'
+                                  > 5
+                                  # awk 'BEGIN{a=(3+2)*2;print a}'
+                                  > 10
 ```
 
 
