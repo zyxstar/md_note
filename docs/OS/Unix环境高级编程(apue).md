@@ -1296,7 +1296,7 @@ int snprintf(char *restrict buf,size_tn, const char *restrictformat, ...);
 
 `sprintf`在数组的尾端 __自动__ 加一个`null`字节(尾0)，但该字节长度 __不包括在返回值__ 中。该函数有可能造成`buf`指向的缓冲区的溢出，调用者有责任确保该缓冲区足够大
 
-`snprintf`解决缓冲区溢出问题，缓冲区长度是一个显式参数，超过的任何字符都会被丢弃，返回的是写入缓冲区的字符数，同上，不包括`null`字节，若发生错误，则返回负值
+`snprintf`解决缓冲区溢出问题，缓冲区长度是一个显式参数，超过的任何字符都会被丢弃，返回的是写入缓冲区的字符数，同上，不包括`null`字节(尾0)，若发生错误，则返回负值
 
 `%[flags][fldwidth][precision][lenmodifier]convtype`
 

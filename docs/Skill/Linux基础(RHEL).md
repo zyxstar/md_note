@@ -310,9 +310,10 @@ head
 
 tree      #树形显示目录
 fdisk -l  #查看硬盘分区情况
-du        #显示当前目录中对象占磁盘大小
+du        #显示当前 目录 中 各子目录 占磁盘大小
     -s    #显示当前目录占磁盘大小
     -h    #人性化显示
+    -a    #包括 文件
     --max-depth=1  #设置显示深度
 df        #查看文件系统使用情况
     -h    #人性化显示
@@ -337,6 +338,7 @@ getfacl   #查看文件权限
 grep "<key>" <path/to/file>
     --color  #高亮
     -n       #显示行号
+    -r       #递归
 
     -E, --extended-regexp     PATTERN is an extended regular expression (ERE)
     -F, --fixed-strings       PATTERN is a set of newline-separated fixed strings
@@ -346,6 +348,8 @@ grep "<key>" <path/to/file>
     -v, --invert-match        select non-matching lines(不匹配的)
     #将配置文件中注释行和空行去掉显示
     cat /etc/dhcpd/dhcpd.conf | grep -v "^#" | grep -v "^$"
+
+    grep "key" ./*  #查找当前目录所有文件
 
 find <path>
     -name "pattern"
@@ -1212,6 +1216,16 @@ stty echo                         #打开回显
 
 stty igncr                        #忽略回车符
 stty -igncr                       #恢复回车符
+
+
+insmod
+rmmod
+lsmod
+dmesg
+
+mknod <filenm> c 80 0
+
+debian kernal api has doc
 ```
 
 
