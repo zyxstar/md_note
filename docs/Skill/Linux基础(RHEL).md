@@ -19,7 +19,6 @@ RHEL的经典版本：5.8和6.4
 /           根目录
 /boot       存放程序启动所必须的文件
             /boot/vmlinuz-3.2.0-61vm-generic-pae    内核文件
-            uname -a                                显示系统信息
             /boot/grub/*                            引导程序
 /var        系统中经常需要变化的一些文件
             /var/tmp 程序运行时使用的临时文件，删除可能会出错
@@ -47,6 +46,19 @@ RHEL的经典版本：5.8和6.4
 /sys        用来代替/proc的
 /opt        主机额外安装软件所放的目录
 /srv        一些服务启动后，这些服务所需访问的数据目录
+
+```
+
+## 显示系统信息
+```shell
+uname -a
+lsb_release -a     #发布版本
+getconf LONG_BIT   #查看操作系统位数
+
+cat /etc/*-release
+cat /proc/version
+cat /proc/cupinfo
+cat /proc/meminfo
 
 ```
 
@@ -141,6 +153,7 @@ man       #man是分章节的
 info <command>
           #将info手册转存为文本
           info make -o make.txt -s
+
 
 ```
 
@@ -255,6 +268,8 @@ od        #查看特殊格式的文件内容。通过指定该命令的不同选
           >000000  2f  65  74  63  2f  70  61  73  73  77  64  0a
                     /   e   t   c   /   p   a   s   s   w   d  \n
           >00000c
+
+          #系统先以十六进制并以小端表示数据，如ab表示为6261，然后再依次换算成对应的十进制25185或八进制061141
 
 xxd
           #echo /etc/passwd |xxd
@@ -392,8 +407,9 @@ cp <src> <dest>
 
 ## 移动
 ```shell
-mv <src> <dest>
-         #需要重命名，只需在同目录下执行就行
+mv <src> <dest>     #需要重命名，只需在同目录下执行就行
+
+find -type f|grep 'jpg'|xargs rename 's/\.jpg$/\.png/'  #批量重命名
 ```
 
 ## 删除
@@ -886,7 +902,7 @@ pstree
    -u   #列出每个 process 的所属帐号名称
 ```
 
-## 查看系统状态
+## 查看运行时系统状态
 ```shell
 top
    -d   #后面可以接秒数，就是整个程序画面升级的秒数。默认是 5 秒；
@@ -938,6 +954,7 @@ vmstat -p <分割槽>             #与磁碟有关
 free    #内存空间
    -m   #字节单位为M
    -t   #在输出的最终结果，显示实体内存与 swap 的总量
+
 ```
 
 
