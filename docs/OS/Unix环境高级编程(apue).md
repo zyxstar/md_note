@@ -7109,6 +7109,69 @@ struct fb_fix_screeninfo {
 - `line_length`每行字节数
 
 
+终端IO
+========
+终端IO有两种不同的工作模式:
+
+- 规范模式输入处理：终端以行为单位进行处理，对于每个读要求，终端驱动程序最多返回一行
+- 非规范模式输入处理：输入字符并不组成行。
+
+如不特殊处理，默认是规范模式，若将shell标准输入重定向到终端，每次`read`最多返回一行；而如vi则使用非规范模式，并且可以自定义特殊字符，如Ctrl+D成为滚动半上屏幕
+
+POSIX.1定义了11个特殊输入字符，其中9个可以改变
+
+终端设备由内核中的终端驱动程序控制的，每个终端设置有一个输入队列和一个输出队列
+
+![img](../../imgs/apue_64.png)
+
+- 如果打开了回显，则在输入队列和输出队列之间有一个隐含的连接
+- 输入队列的长度`MAX_INPUT`是有限值，填满时，大多数UNIX系统回显响铃字符
+- 另一个输入限制`MAX_CANON`，它是一个规范输入行中的最大字节数
+- 虽然输出队列通常也是有限长度，但当输出将要填满时，内核使写进程休眠直到写队列中有可用空间
+- 使用`tcflush`函数刷清输入或输出队列；`tcsetattr`只有在 __输出队列为空__ 时才改变一个终端设备的属性
+
+大多数UNIX系统在一个 终端行规程 的模块中进行规范处理
+
+![img](../../imgs/apue_65.png)
+
+## termios.h
+
+所有检测和更改的终端设备特性都包含在`termios`结构中
+
+```c
+#include <termios.h>
+struct termios {
+    tcflag_t  c_iflag; /* input flags */
+    tcflag_t  c_oflag; /* output flags */
+    tcflag_t  c_cflag; /* control flags */
+    tcflag_t  c_lflag; /* local flags */
+    cc_t  c_cc[NCCS]; /* control characters */
+};
+```
+
+![img](../../imgs/apue_66.png)
+
+![img](../../imgs/apue_67.png)
+
+![img](../../imgs/apue_68.png)
+
+![img](../../imgs/apue_69.png)
+
+![img](../../imgs/apue_70.png)
+
+虽然只有13个函数，但`tcgetattr/tcsetattr`能处理大约70种不同的标志，对于终端设备有大量选项可供使用
+
+![img](../../imgs/apue_71.png)
+
+## 特殊输入字符
+![img](../../imgs/apue_72.png)
+
+不能更改的换行`\n`和回车`\r`，将`c_cc`数组中某项设置为`_POSIX_VDISABLE`的值，则禁用相应的特殊字符
+
+
+
+
+
 
 ## 函数
 ```c
