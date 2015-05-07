@@ -7168,7 +7168,48 @@ struct termios {
 
 不能更改的换行`\n`和回车`\r`，将`c_cc`数组中某项设置为`_POSIX_VDISABLE`的值，则禁用相应的特殊字符
 
+```c
+#include "apue.h"
+#include <termios.h>
 
+int main(void){
+    struct termios  term;
+    long            vdisable;
+
+    if (isatty(STDIN_FILENO) == 0)
+        err_quit("standard input is not a terminal device");
+
+    if ((vdisable = fpathconf(STDIN_FILENO, _PC_VDISABLE)) < 0)
+        err_quit("fpathconf error or _POSIX_VDISABLE not in effect");
+
+    if (tcgetattr(STDIN_FILENO, &term) < 0) /* fetch tty state */
+        err_sys("tcgetattr error");
+
+    term.c_cc[VINTR] = vdisable;    /* disable INTR character */
+    term.c_cc[VEOF]  = 2;           /* EOF is Control-B */
+
+    if (tcsetattr(STDIN_FILENO, TCSAFLUSH, &term) < 0)
+        err_sys("tcsetattr error");
+
+    exit(0);
+}
+```
+
+## 获得和设置终端属性
+```c
+#include <termios.h>
+int tcgetattr(int fd ,struct termios *termptr);
+int tcsetattr(int fd ,int opt,const struct termios *termptr);
+//Both return: 0 if OK, −1 on error
+```
+
+`opt`可选:
+
+- `TCSANOW`更改立即发生
+- `TCSADRAIN`发送了所有输出后更改才发生
+- `TCSAFLUSH`发送了所有输出后更改才发生，更进一步，在更改发生时未读的所有输入数据都被删除
+
+## 终端选项标志
 
 
 
@@ -7177,8 +7218,6 @@ struct termios {
 ```c
 
 ```
-
-
 
 
 

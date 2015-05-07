@@ -1065,6 +1065,43 @@ git push origin master
 ```
 
 
+Git subtree试用
+===============
+有多个android项目，一个web项目。android项目依赖于某个ide，通过编译在其`bin`目录下产生一个`.apk`文件；而该文件需要放在互联网上供用户下载，下载目录位于web项目的某个`download`的文件夹下，因为存在多个android项目，即最终会有多个`.apk`文件存放在该目录下。
+
+项目设置如下：
+
+```shell
+#前置条件
+#git@gitcafe.com:zyxstar/web.git         #web项目
+#git@gitcafe.com:zyxstar/android1.git    #android1项目
+#git@gitcafe.com:zyxstar/android2.git    #android2项目
+#git@gitcafe.com:zyxstar/resource.git    #所有需要下载的资源，也设置一个git（它可以只是一个在远程的一个库）
+#resource.git中，设置好.gitignore，将无关的文件与目录过滤掉
+
+
+#切到android1项目目录下，增加一个resource.git作为远程版本库
+git remote add resource git@gitcafe.com:zyxstar/resource.git
+#将resource作为本项目的bin子目录存在
+git subtree add --prefix=Music/bin --squash resource master
+#假设编译生成了一个.apk文件，并已commit(可选择android1本身是否需要push)
+git subtree pull --prefix=Music/bin --squash resource master
+git subtree push --prefix=Music/bin resource master
+#如果push不成功，尝试强推
+git push resource `git subtree split --prefix=Music/bin`:master --force
+
+
+#切到web项目下，增加一个resource.git作为远程版本库
+git remote add resource git@gitcafe.com:zyxstar/resource.git
+#将resource作为本项目的download子目录存在
+git subtree add --prefix=public/download --squash resource master
+#将资源pull到下载目录
+git subtree pull --prefix=public/download --squash resource master
+#提交web项目
+git push origin master
+```
+
+
 GitHub
 ======
 - [Generating SSH keys](https://help.github.com/articles/generating-ssh-keys/)
