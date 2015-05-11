@@ -1998,9 +1998,9 @@ opt mouse dclick       #文档
 ARM
 =======
 ```
-  版本     cpu                  SOC
+内核版本   Soc版本号           芯片型号
   V4      arm7                S3C44B0
-  V4T     arm920T             S3C2410/2440
+  V4T     arm920T             S3C2410/2440/2416
   V5      arm10
   V6      arm1176             S3C6410
           arm1136
@@ -2008,17 +2008,24 @@ ARM
   V6K     arm11MP
 
   V7      arm-cortex-a
-              a8              S5PV210
-              a9              Exynos4412   4核
-              a9              Imax6Q       4核
-              a9              OMAP4460     2核
-              a7+a15          Exynos5410
-              a50             a53/a57
+              a8              S5PV210              平板2核
+                              S5PC100              手机2核
+              a9              Exynos4418           平板4核
+                              Exynos4412           手机4核
+                              Imax6Q               4核
+                              OMAP4460             2核
+              a7              Exynos5410(a7+a15)   低性能低功耗
+                              全志A10/A20/A31
+              a15             Exynos5410(a7+a15)   高性能高功耗
+                              Exynos5250/5450
+              a53/57          高能骁龙815/410       64位
+                              iphone5S             64位
           arm-cortex-m
               m3              STM32f10x
-              m4              STM32F40x
-              m7              STM32F7xx
-         arm-cortex-r
+              m0/m0+                               低功耗
+              m4              STM32F40x            增加了浮点运算dsp
+              m7              STM32F7xx            物联网 低功耗
+          arm-cortex-r
               r4/r6
 ```
 
