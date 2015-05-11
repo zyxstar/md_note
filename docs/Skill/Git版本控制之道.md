@@ -1082,10 +1082,10 @@ Git subtree试用
 
 #切到android1项目目录下，增加一个resource.git作为远程版本库
 git remote add resource git@gitcafe.com:zyxstar/resource.git
-#将resource作为本项目的bin子目录存在
+#将resource作为本项目的bin子目录存在（如果已经存在，则不必执行）
 git subtree add --prefix=Music/bin --squash resource master
 #假设编译生成了一个.apk文件，并已commit(可选择android1本身是否需要push)
-git subtree pull --prefix=Music/bin --squash resource master
+git subtree pull --prefix=Music/bin --squash resource master #如果不想pull,以后只能强推了
 git subtree push --prefix=Music/bin resource master
 #如果push不成功，尝试强推
 git push resource `git subtree split --prefix=Music/bin`:master --force
@@ -1093,7 +1093,7 @@ git push resource `git subtree split --prefix=Music/bin`:master --force
 
 #切到web项目下，增加一个resource.git作为远程版本库
 git remote add resource git@gitcafe.com:zyxstar/resource.git
-#将resource作为本项目的download子目录存在
+#将resource作为本项目的download子目录存在（如果已经存在，则不必执行）
 git subtree add --prefix=public/download --squash resource master
 #将资源pull到下载目录
 git subtree pull --prefix=public/download --squash resource master

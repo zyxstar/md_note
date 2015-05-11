@@ -7209,10 +7209,99 @@ int tcsetattr(int fd ,int opt,const struct termios *termptr);
 - `TCSADRAIN`发送了所有输出后更改才发生
 - `TCSAFLUSH`发送了所有输出后更改才发生，更进一步，在更改发生时未读的所有输入数据都被删除
 
-## 终端选项标志
+## stty命令
+在命令行可用`stty(1)`命令进行检查和更改，是前6个函数的接口，执行`-a`选项
 
+```shell
+stty -a
+```
 
+```
+speed 38400 baud; rows 30; columns 99; line = 0;
+intr = ^C; quit = ^\; erase = ^?; kill = ^U; eof = ^D; eol = <undef>; eol2 = <undef>;
+swtch = <undef>; start = ^Q; stop = ^S; susp = ^Z; rprnt = ^R; werase = ^W; lnext = ^V; flush = ^O;
+min = 1; time = 0;
+-parenb -parodd cs8 -hupcl -cstopb cread -clocal -crtscts
+-ignbrk -brkint -ignpar -parmrk -inpck -istrip -inlcr -igncr icrnl ixon -ixoff -iuclc -ixany
+-imaxbel -iutf8
+opost -olcuc -ocrnl onlcr -onocr -onlret -ofill -ofdel nl0 cr0 tab0 bs0 vt0 ff0
+isig icanon iexten echo echoe echok -echonl -noflsh -xcase -tostop -echoprt echoctl echoke
+```
 
+选项名前若有连字符，则表示该选项禁用
+
+## 波特率函数
+波特率baud rate指 "位/秒"（bits per second），虽然大多数终端设备对输入和输出使用同一波特率，但只要硬件许可，可将它们设置为两个不同值
+
+```c
+#include <termios.h>
+speed_t cfgetispeed(const struct termios *termptr);
+speed_t cfgetospeed(const struct termios *termptr);
+//Both return: baud rate value
+int cfsetispeed(struct termios *termptr,speed_t speed);
+int cfsetospeed(struct termios *termptr,speed_t speed);
+//Both return: 0 if OK, −1 on error
+```
+
+两个`cfget`返回值以及两个`cfset`的`speed`是以下常量：B50, B75, B110, B134, B150, B200, B300, B600, B1200, B1800, B2400, B4800, B9600, B19200, B38400。常量B0表示挂断，如果输出波特率指定为B0，则调制解调器的控制线就不再起作用
+
+## 行控制函数
+```c
+#include <termios.h>
+int tcdrain(intfd );
+int tcflow(int fd ,int action );
+int tcflush(intfd ,int queue);
+int tcsendbreak(int fd ,int duration);
+//All four return: 0 if OK,−1 on error
+```
+
+其中`fd`引用一个终端设备，否则出错返回，`errno`为`ENOTTY`
+
+- `tcdrain`等待所有输出都被发送
+- `tcflow`用于对输入和输出流控制进行控制，`action`为：
+    + `TCOOFF` 输出被挂起
+    + `TCOON` 重新启动以前被挂起的输出
+    + `TCIOFF` 系统发送一个STOP字符，使终端设备暂停发送数据
+    + `TCION` 系统发送一个START字符，使终端设备恢复发送数据
+- `tcflush`刷清（抛弃）输入缓冲区或输出缓冲区，`eueue`参数为：
+    + `TCIFLUSH` 刷清输入队列
+    + `TCOFLUSH` 刷清输出队列
+    + `TCIOFLUSH` 刷清输入输出队列
+- `tcsendbreak`在一个指定的时间区间内发送连续的0位流，若`duration`为0，则此种发送延续0.25至0.5秒之间
+
+## 终端标识
+在大多数UNIX系统中，控制终端的名字是`/dev/tty`，但为了提高移植性，下面函数用来确定控制终端的名字
+
+```c
+#include <stdio.h>
+char *ctermid(char *ptr);
+//Returns: pointer to name of controlling terminal on success, pointer to empty string on error
+```
+
+`ptr`指向一个至少`L_ctermid`字节的数组，调用后，名字就存在该数组中
+
+```c
+#include <unistd.h>
+int isatty(int fd );
+//Returns: 1 (true) if terminal device, 0 (false) otherwise
+char *ttyname(int fd );
+//Returns: pointer to pathname of terminal,NULL on error
+```
+
+前者在文件描述符引用一个终端设备时返回真，后者返回在该文件描述符上打开的终端设备的路径名
+
+## 规范模式
+发一个读请求，输入完一行后，终端驱动程序即返回，下面几个条件都造成读返回：
+
+- 所要求的字节数已读到时，读返回，无需读一个完整的行，如果读了部分行，那么也不会丢失任何信息，下一次读从前一次读的停止处开始
+- 当读到一个行定界符时，如`NL/EOL/EOL2/EOF`（如设置`ICRNL`，但未设置`IGNCR`，则`CR`与`NL`一样；`EOF`在终端驱动程序对其进行处理后即被删除，其余4个字符则作为该行最后一个字符返回给调用者 __即读到的行是包含换行符的（除了EOF）__），在规范模式下解释为 “行结束”
+- 如果捕捉到信号而且该函数并不自动重启动，则读也返回，__即发生了`EINTR`时__
+
+`getpass(3)`的实现
+
+```c
+
+```
 
 ## 函数
 ```c

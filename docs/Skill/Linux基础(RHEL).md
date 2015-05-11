@@ -59,7 +59,7 @@ cat /etc/*-release
 cat /proc/version
 cat /proc/cupinfo
 cat /proc/meminfo
-
+cat /proc/interrupts
 ```
 
 ## 分区设备
@@ -75,7 +75,6 @@ SCSI硬盘
 使用`ls /dev/hd*`，`ls /dev/sd*`查看
 
 ## 分区建议
-
 ```
 /boot ext3 200M
       swap 4096M
@@ -87,6 +86,23 @@ SCSI硬盘
 > 要记得 `/lib` 不可以与 `/` 分别放在不同的 partition
 
 使用`sudo fdisk -l`可查看硬盘分区(partition)情况，`df -h`查看文件系统使用情况，`du -sh /path/to` 统计指定目录的大小
+
+### 分区与格式化
+```shell
+parted /dev/sdb
+
+fdisk /dev/sdb
+  l  #列出分区类型
+  p  #显示
+  d  #删除
+  n  #创建 1扇区512字节，1柱8M
+  t  #改变分区类型
+  w  #保存退出
+
+mkfs -t ext3 /dev/sdb1
+mkfs.vfat -F 32 /dev/sdb1  #格式化分区，不能格式化设备
+sync  #确保格式化完成
+```
 
 ## 快捷键
 ```
@@ -403,6 +419,8 @@ cp <src> <dest>
     -v   #verbose
     -i   #ineractive
     -a   #权限也复制
+
+watch du <target> -h -d 0 #通过不停的监视目标目录的大小来确定复制进度
 ```
 
 ## 移动
@@ -634,6 +652,9 @@ curl -O http://cgi2.tky.3web.ne.jp/~zzh/screen1.JPG
 curl -O http://cgi2.tky.3web.ne.jp/~zzh/screen[1-10].JPG
 #下载多个目录下的文件
 curl -O http://cgi2.tky.3web.ne.jp/~{zzh,nick}/[001-201].JPG
+
+#302跟踪
+curl -L -O http://download.savannah.gnu.org/releases/nmh/nmh-1.1-RC4.tar.gz
 
 #断点续传，比如我们下载screen1.JPG中，突然掉线了，我们就可以这样开始续传
 curl -c -O http://cgi2.tky.3wb.ne.jp/~zzh/screen1.JPG
@@ -1972,6 +1993,33 @@ ctrl i                 #当前格式化
 cmd shift o            #显示open quikly
 opt mouse dclick       #文档
 
+```
+
+ARM
+=======
+```
+  版本     cpu                  SOC
+  V4      arm7                S3C44B0
+  V4T     arm920T             S3C2410/2440
+  V5      arm10
+  V6      arm1176             S3C6410
+          arm1136
+          arm1156
+  V6K     arm11MP
+
+  V7      arm-cortex-a
+              a8              S5PV210
+              a9              Exynos4412   4核
+              a9              Imax6Q       4核
+              a9              OMAP4460     2核
+              a7+a15          Exynos5410
+              a50             a53/a57
+          arm-cortex-m
+              m3              STM32f10x
+              m4              STM32F40x
+              m7              STM32F7xx
+         arm-cortex-r
+              r4/r6
 ```
 
 <script>
