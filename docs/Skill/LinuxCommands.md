@@ -109,6 +109,8 @@ cut [options] file1 file2  #从一个或多个文件中删除所选列或字段
 cut -d: -f3 cut_test.txt (基于":"作为分隔符，同时返回field 3中的数据) *field从0开始计算。
 cut -d: -f1,3 cut_test.txt (基于":"作为分隔符，同时返回field 1和3中的数据)
 cut -d: -c1,5-10 cut_test.txt(返回第1个和第5-10个字符)
+
+cut只擅长处理“以一个字符间隔”的文本内容
 ```
 
 # grep
@@ -292,6 +294,71 @@ G命令告诉sed从holding buffer中取得该行，然后把它放回到pattern 
 
 WE所在的行被移动并追加到包含CT行的后面。
 /> sed -e '/WE/{h;d;}' -e '/CT/{G;}' testfile
+
+第二行到第三行间的所有WE被替换为wee
+/> sed -n '2,3s/WE/wee/p' testfile
+
+判断空格与tab键
+/> sed -n l tab_space.txt
+
+
+
+删除某行
+     /> sed '1d' ab             #删除第一行
+     /> sed '$d' ab             #删除最后一行
+     /> sed '1,2d' ab           #删除第一行到第二行
+     /> sed '2,$d' ab           #删除第二行到最后一行
+
+显示某行
+     /> sed -n '1p' ab          #显示第一行
+     /> sed -n '$p' ab          #显示最后一行
+     /> sed -n '1,2p' ab        #显示第一行到第二行
+     /> sed -n '2,$p' ab        #显示第二行到最后一行
+
+使用模式进行查询
+     /> sed -n '/ruby/p' ab     #查询包括关键字ruby所在所有行
+     /> sed -n '/\$/p' ab       #查询包括关键字$所在所有行，使用反斜线\屏蔽特殊含义
+
+增加一行或多行字符串
+     /> sed '1a drink tea' ab   #第一行后增加字符串"drink tea"
+     /> sed '1,3a drink tea' ab #第一行到第三行后增加字符串"drink tea"
+     /> sed '1a drink tea\nor coffee' ab   #第一行后增加多行，使用换行符\n
+
+代替一行或多行
+     /> sed '1c Hi' ab          #第一行代替为Hi
+     /> sed '1,2c Hi' ab        #第一行到第二行代替为Hi
+
+就地插入
+     /> sed -i '$a bye' ab         #在文件ab中最后一行直接输入"bye"
+
+替换两个或多个空格为一个空格
+     /> sed 's/[ ][ ]*/ /g' file_name
+
+替换两个或多个空格为分隔符:
+     /> sed 's/[ ][ ]*/:/g' file_name
+
+如果空格与tab共存时用下面的命令进行替换
+替换成空格
+     /> sed 's/[[:space:]][[:space:]]*/ /g' filename
+
+替换成分隔符:
+     /> sed 's/[[:space:]][[:space:]]*/:/g' filename
+
+替换单引号为空
+     /> sed 's/'"'"'//g'
+     /> sed 's/'\''//g'
+     /> sed s/\'//g
+
+快速一行命令:
+    's//.$//g'         删除以句点结尾行
+    '-e /abcd/d'       删除包含abcd的行
+    's/[][][]*/[]/g'   删除一个以上空格,用一个空格代替
+    's/^[][]*//g'      删除行首空格
+    's//.[][]*/[]/g'   删除句号后跟两个或更多的空格,用一个空格代替
+    '/^$/d'            删除空行
+    's/^.//g'          删除第一个字符,区别  's//.//g'删除所有的句点
+    's/COL/(.../)//g'  删除紧跟COL的后三个字母
+    's/^////g'         删除路径中第一个/
 ```
 
 # awk
@@ -301,11 +368,11 @@ WE所在的行被移动并追加到包含CT行的后面。
     /> awk '{action}' filename
     /> awk 'pattern {action}' filename
 
-   /> awk '/Mary/' employees   #打印所有包含模板Mary的行。
+    /> awk '/Mary/' employees   #打印所有包含模板Mary的行。
 
  #打印文件中的第一个字段，这个域在每一行的开始，缺省由空格或其它分隔符。
     /> awk '{print $1}' employees
- /> awk '/Sally/{print $1, $2}' employees #打印包含模板Sally的行的第一、第二个域字段。
+    /> awk '/Sally/{print $1, $2}' employees #打印包含模板Sally的行的第一、第二个域字段。
 
  2.  awk的格式输出：
     awk中同时提供了print和printf两种打印输出的函数，其中print函数的参数可以是变量、数值或者字符串。字符串必须用双引号引用，参数用逗号分隔。如果没有逗号，参数就串联在一起而无法区分。这里，逗号的作用与输出文件的分隔符的作用是一样的，只是后者是空格而已。下面给出基本的转码序列：
@@ -379,6 +446,11 @@ awk中默认的记录分隔符是回车，保存在其内建变量ORS和RS中。
 
  /> awk '$5 ~ /\.[7-9]+/' testfile     #第五个域字段匹配包含.(点)，后面是7-9的数字。
 /> awk '$8 ~ /[0-9][0-9]$/{print $8}' testfile  #第八个域以两个数字结束的打印。
+
+原地修改
+awk '{print $1>"urfile"}' urfile
+而不是
+awk '{print $1}' urfile >urfile #重定向输出部分先执行， 即先把urfile清空了。
 ```
 
 # crontab
@@ -421,4 +493,51 @@ usage:  crontab [-u user] file
        一般这种问题的使用方法如下:
        0 2 * * * ( su - USERNAME -c "export LANG=en_US; /home/oracle/yb2.5.1/apps/admin/1.sh"; ) > /tmp/1.log 2>&1
        如果打算执行多条语句, 他们之间应使用分号进行分割. 注: 以上语句必须在root的帐户下执行.
+```
+
+
+## join
+```
+join---实现两个文件中记录的连接操作，连接操作将两个文件中具有相同域的记录选择出来，再将这些记录所有的域放到一行（包含来自两个文件的所有域）
+join [选项] 文件1 文件2
+选项 意义
+-a1或-a2 除了显示以共同域进行连接的结果外，-a1表示还显示第1个文件中没有共同域的记录，-a2则表示显示第2个文件中没有共同域的记录
+-i 比较域内容时，忽略大小写差异
+-o 设置结果显示的格式
+-t 改变域分隔符
+-v1或-v2  跟-a选项类似，但是，不显示以共同域进行连接的结果
+
+-1和-2 -1用于设置文件1用于连接的域，-2用于设置文件2用于连接的域
+当两个文件进行连接时，文件1中的记录可能在文件2中找不到共同域，反过来，文件2中也可能存这在样的记录，join命令的结果默认是不显示这些未进行连接的记录的
+-a和-v选项就是用于显示这些未进行连接的记录，-a1和-v1指显示文件1中的未连接记录，而-a2和-v2指显示文件2中的未连接记录
+-a和-v选项的区别在于：-a选项显示以共同域进行连接的结果，而-v选项则不显示这些记录
+
+当两个文件进行连接时，文件1中的记录可能在文件2中找不到共同域，反过来，文件2中也可能存在这样的记录，join命令的结果默认是不显示这些未进行连接的记录的
+-a和-v选项就是用于显示这些未进行连接的记录，-a1和-v1指显示文件1中的未连接记录，而-a2和-v2指显示文件2中的未连接记录
+-a和-v选项的区别在于：-a选项显示以共同域进行连接的结果，而-v选项则不显示这些记录
+
+join命令默认显示连接记录在两个文件中的所有域，而且是按顺序来显示的。-o选项用于改变结果显示的格式
+join命令默认比较文件1和文件2的第1域，如果我们需要通过其他域进行连接，就需要使用-1和-2选项，-1用于设置文件1用于连接的域，-2用于设置文件2用于连接的域
+join -t: -i -1 3 -2 1 TEACHER1.db TEACHER_HOBBY.db
+```
+
+## paste
+```
+paste命令用于将文本文件或标准输出中的内容粘贴到新的文件，它可以将来自于不同文件的数据粘贴到一起，形成新的文件
+paste  [选项] 文件1 文件2
+选项 意义
+-d 默认域分隔符是空格或Tab键，设置新的域分隔符
+-s 将每个文件粘贴成一行
+- 从标准输入中读取数据
+
+paste命令的“-”选项比较特殊，当paste命令从标准输入中读取数据时，“-”选项才起作用
+eg：[root@jselab shell-book]# ls | paste -d" " - - - - -                  #从标准输入读取数据
+anotherres.sh array_eval2.sh colon.sh example execerr.sh          #每行显示5个文件名
+execin.sh exec.sh FILE1 FILE2 forever.sh
+hfile loggg loggg1 loopalias.sh matrix.sh
+newfile nokillme.sh part1 part2 part3
+parttotal refor.sh reif.sh selfkill.sh sleep10.sh
+sleep55.sh stack.sh subsenv.sh subsep.sh subsig.sh
+subsparallel.sh subspipe.sh subsvar.sh TEACHER.db test.sh
+testvar.sh traploop.sh
 ```
