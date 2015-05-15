@@ -390,7 +390,8 @@ find <path>
     ls -alt $(find . -name *.php)
     ls -alt `find . -name *.php`
     #统计所有c文件的行数总和，不包括空行
-    find . -name "*.c" |xargs cat|grep -v ^$|wc -l
+    find . -name "*.c" | xargs cat | grep -v ^$ | wc -l
+    find . -name "*.c" | xargs cat | sed '/^$/d' | wc -l
 
     -i               #llignore
     -o               #or
@@ -1236,6 +1237,22 @@ tr                                #翻译
                                   cat /etc/passwd | tr [a-z] [A-Z]
                                   #计算
                                   echo "1 2 3 4 5" | tr " " "+" | bc
+                                  #删除文件file中出现的换行'\n'、制表'\t'字符
+                                  cat file | tr -d "\n\t" > new_file
+                                  #删除空行 -s 删除所有重复出现字符序列，只保留第一个；即将重复出现字符串压缩为一个字符串。
+                                  cat file | tr -s "\n" > new_file
+                                  #把路径变量中的冒号":"，替换成换行符"\n"
+                                  echo $PATH | tr -s ":" "\n"
+
+dd                                #快速创建大文件
+                                  #dd if=/dev/zero of=test bs=1M count=1000
+                                  #创建空洞文件
+                                  #dd if=/dev/zero of=test bs=1M count=0 seek=100000
+                                  #把第一个硬盘的前 512 个字节存为一个文件：
+                                  dd if=/dev/hda of=disk.mbr bs=512 count=1
+                                  #修复硬盘(直接使用标准IO导致I/O错误时)
+                                  dd if=/dev/sda of=/dev/sda
+
 
 split                             #按行数或字节数拆分文件
 csplit                            #由正则来分割文件
