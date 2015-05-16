@@ -2014,6 +2014,7 @@ opt mouse dclick       #文档
 
 ARM
 =======
+## ARM版本
 ```
 内核版本   Soc版本号           芯片型号
   V4      arm7                S3C44B0
@@ -2045,6 +2046,365 @@ ARM
           arm-cortex-r
               r4/r6
 ```
+
+## 启动和Emmc启动
+
+### 查看sd卡
+```shell
+fdisk -l
+```
+
+将会出现下面的描述，表示位于/dev/sdb
+
+```
+Disk /dev/sdb: 7948 MB, 7948206080 bytes
+```
+
+### 对sd卡进行分区
+exynos4412的bootloader必须在该sd卡起始偏移512字节
+
+```
+ /dev/sdb #整个sd卡是个线性空间
+ [512bytes-bootloader---|-----分区-rom----------|-]
+                        /dev/sdb1 #此部分才是可以挂载的
+```
+
+```shell
+fdisk /dev/sdb
+```
+
+```
+Command (m for help): d
+Selected partition 1
+
+Command (m for help): d
+No partition is defined yet!
+
+Command (m for help): p
+
+Disk /dev/sdb: 7948 MB, 7948206080 bytes
+81 heads, 10 sectors/track, 19165 cylinders
+Units = cylinders of 810 * 512 = 414720 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+   Device Boot      Start         End      Blocks   Id  System
+
+Command (m for help): n
+Command action
+   e   extended
+   p   primary partition (1-4)
+p
+Partition number (1-4): 1
+First cylinder (1-19165, default 1): 3
+Last cylinder, +cylinders or +size{K,M,G} (3-19165, default 19165): 
+Using default value 19165
+
+Command (m for help): p
+
+Disk /dev/sdb: 7948 MB, 7948206080 bytes
+81 heads, 10 sectors/track, 19165 cylinders
+Units = cylinders of 810 * 512 = 414720 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x00000000
+
+   Device Boot      Start         End      Blocks   Id  System
+/dev/sdb1               3       19165     7761015   83  Linux
+
+Command (m for help): t
+Selected partition 1
+Hex code (type L to list codes): b
+Changed system type of partition 1 to b (W95 FAT32)
+
+Command (m for help): w
+The partition table has been altered!
+
+Calling ioctl() to re-read partition table.
+
+WARNING: Re-reading the partition table failed with error 16: 设备或资源忙.
+The kernel still uses the old table. The new table will be used at
+the next reboot or after you run partprobe(8) or kpartx(8)
+
+WARNING: If you have created or modified any DOS 6.x
+partitions, please see the fdisk manual page for additional
+information.
+Syncing disks.
+```
+
+- `d`是删除分区，`p`是打印信息，`n`是创建分区；
+- First cylinder是表示分区起始柱面（一柱面大约8M），此处填3，前面部分用于存放bootloader（此处有可能是起始扇区，一扇区大约512字节，计算时需要注意）
+- 此时默认文件格式是linux的，通过`t`，再输入`b`，得到fat32格式
+- 输入`w`退出
+
+接下来格式化该sd卡的sdb1分区
+
+```shell
+mkfs.vfat -F 32 /dev/sdb1
+```
+
+### 烧写sd卡
+拷贝光盘B中images文件夹到sdb1
+
+```
+cp -rf images /media/F4C9-ED1D/
+```
+
+解压`tools.tar.bz2`，得到可执行文件`write4412boot`，执行它，本质是将boot烧写到指定位置
+
+```
+./write4412boot /media/F4C9-ED1D/images/Superboot4412.bin /dev/sdb
+```
+
+### 配置FriendlyARM.ini
+配置FriendlyARM.ini，用于指定刷何种操作系统。然后将sd卡放入开发板，切换为非Emmc启动，重新启动，刷机完成后，切换回Emmc即可
+
+
+## 交叉编译器
+得到`arm-linux-gcc.tar.tgz`文件，进行解压
+
+配置环境变量，将其下的`bin`的绝对地址加入到`PATH`中
+
+```shell
+vim ~/.bashrc
+    PATH=/path/to/arm-linux-gcc/4.5.1/bin:$PATH
+
+source ~/.bashrc #或 . ~/.bashrc 以确保当前终端就可用
+```
+
+取得当前版本
+
+```shell
+arm-linux-gcc -v
+```
+
+> 缺库`ld-linux.so.2`时，进行`yum install ld-linux.so.2`
+
+> 如果ubuntu系统出现`/bin/bash` 命令找不到错误，`sudo apt-get install ia32-libs`
+
+## 配置minicom
+板子开发需要用到串口调试，原理是开发板与PC通过串口连接，双方通过`/dev/ttyS0`(PC上真实串口)或`/dev/ttyUSB0`(PC机上使用USB转串口时)文件进行读写。使用`minicom`能方便这一过程
+
+```shell
+minicom -s
+```
+
+- 选择`Serial port setup`
+- 在弹出窗口中，选择`A`，输入`/dev/ttyS0`或`/dev/ttyUSB0`
+- 选择`E`，确保为`115200 8N1`
+- 选择`F/G`，关闭硬件/软件控制
+- 回车，退出弹窗，然后选择`Save setup as dfl`
+- 最后，选择`Exit from Minicom`
+
+## Uboot烧制与调试
+### Uboot流程
+得到`uboot201210.tar.tgz`文件，进行解压
+
+- `./arch`是所支持的架构，如x86,arm等
+- `./arch/arm/cpu/armv7/exynos/`本开发板的cpu
+- `./board/samsung/tiny4412/`本开发板的board BSP
+
+uboot的第一阶段执行流程：
+
+1. `./arch/arm/cpu/Start.S` #它与具体cpu型号无关
+2. `./board/samsung/tiny4412/lowlevel_init.S` #开发中对板子的修改，需要编写它
+3. `./board/samsung/tiny4412/clock_init_tiny4412.S`
+4. `./board/samsung/tiny4412/mem_init_tiny4412.S`
+5. `./board/samsung/tiny4412/tiny4412.c`
+
+第二阶段则执行`./arch/arm/cpu/armv7/exynos/`下的相关代码，如`clock.c,nand.c`等
+
+### Make相关
+在解压的当前目录
+
+```shell
+vim Makefile
+    160 CROSS_COMPILE ?=arm-linux-
+```
+
+会在`config.mk`中被使用到
+
+```shell
+vim config.mk
+    104 AS      = $(CROSS_COMPILE)as
+    105 LD      = $(CROSS_COMPILE)ld
+    106 CC      = $(CROSS_COMPILE)gcc
+    107 CPP     = $(CC) -E
+    108 AR      = $(CROSS_COMPILE)ar
+    109 NM      = $(CROSS_COMPILE)nm
+    110 LDR     = $(CROSS_COMPILE)ldr
+    111 STRIP   = $(CROSS_COMPILE)strip
+    112 OBJCOPY = $(CROSS_COMPILE)objcopy
+    113 OBJDUMP = $(CROSS_COMPILE)objdump
+    114 RANLIB  = $(CROSS_COMPILE)RANLIB  
+```
+
+执行make配置，`vim boards.cfg`查看开发板型号、cpu、board之间的一些对应表
+
+```shell
+make tiny4412_config 
+```
+
+关闭MMU功能，并修改提示符
+
+```shell
+vim include/configs/tiny4412.h
+    311 //#define CONFIG_ENABLE_MMU
+    312 #undef CONFIG_ENABLE_MMU
+    255 #define CONFIG_SYS_PROMPT  "[zyx@Uboot]# "
+```
+
+修改链接地址，本开发板中DDR地址位于`0x40000000`-`0x80000000`，默认情况下是开启MMU的，所以链接地址是`0xc3e00000`
+
+```shell
+vim board/samsung/tiny4412/config.mk
+    CONFIG_SYS_TEXT_BASE = 0x43e00000
+```
+
+接下来make文件，使用4个任务同时进行
+
+```shell
+make -j4
+```
+
+> 缺库`libz.so.1`时，`yum install zlib.i686`
+
+### 烧制Uboot
+上述make完成后，会产生`u-boot`一个可执行文件
+
+```shell
+file u-boot
+```
+
+```
+u-boot: ELF 32-bit LSB shared object, ARM, version 1 (SYSV), statically linked, not stripped
+```
+
+可以看到是ARM架构的ELF文件，它的组成示意如下
+
+```
+u-boot=[ELF head][u-boot.bin]
+```
+
+`[ELF head]`用于记录它的依赖包等情况，后面`[u-boot.bin]`，而烧制uboot时，还没有操作系统，无法认识`[ELF head]`，只能使用`[u-boot.bin]`部分，其实刚才make后，就生成了一个无`[ELF head]`的一个文件`u-boot.bin`
+
+> 可以使用`hexdump -C`去看一下，两者确实只差一个`[ELF head]`
+
+开发板不能直接使用刚才的`u-boot.bin`，必须在它之前加上三星的安全与签名等模块，切换到`./sd_fuse/tiny4412`，执行`sd_fusing.sh`将自动加上（该脚本需要分析一下，大量使用了`dd`）
+
+```shell
+cd ./sd_fuse/tiny4412
+./sd_fusing.sh /dev/sdb
+sync
+```
+
+> 如果提示`Block device size ??? is too large`，去修改`sd_fusing.sh`第二段，将`if [ ${BDEV_SIZE} -gt 32000000 ]; then`数字部分调大点
+
+### 调试Uboot
+1. 把sd卡插入开发板
+2. 开发板切换为sd卡启动 
+3. 用串口把开发板和pc链接
+4. 检查`minicom`的配置
+5. 给开发板上电，在`minicom`中观察启动信息
+
+```shell
+minicom
+```
+
+- `ctrl+a`进入菜单项，`w`切换是否自动换行，`q`退出
+
+常用命令如下
+
+```
+?       - alias for 'help'                                                      
+base    - print or set address offset                                           
+bdinfo  - print Board Info structure                                            
+boot    - boot default, i.e., run 'bootcmd'                                     
+bootd   - boot default, i.e., run 'bootcmd'                                     
+bootelf - Boot from an ELF image in memory                                      
+bootm   - boot application image from memory                                    
+bootp   - boot image via network using BOOTP/TFTP protocol                      
+bootvx  - Boot vxWorks from an ELF image                                        
+chpart  - change active partition                                               
+cmp     - memory compare                                                        
+coninfo - print console devices and information                                 
+cp      - memory copy                                                           
+crc32   - checksum calculation                                                  
+dcache  - enable or disable data cache                                          
+dnw     - dnw     - initialize USB device and ready to receive for Windows serv)
+                                                                                
+echo    - echo args to console                                                  
+editenv - edit environment variable                                             
+emmc    - Open/Close eMMC boot Partition                                        
+env     - environment handling commands                                         
+exit    - exit script                                                           
+ext2format- ext2format - disk format by ext2                                    
+                                                                                
+ext2load- load binary file from a Ext2 filesystem                               
+ext2ls  - list files in a directory (default /)                                 
+ext3format- ext3format - disk format by ext3                                    
+                                                                                
+false   - do nothing, unsuccessfully                                            
+fastboot- fastboot- use USB Fastboot protocol                                   
+                                                                                
+fatformat- fatformat - disk format by FAT32                                     
+                                                                                
+fatinfo - fatinfo - print information about filesystem                          
+fatload - fatload - load binary file from a dos filesystem                      
+                                                                                
+fatls   - list files in a directory (default /)                                 
+fdisk   - fdisk for sd/mmc.                                                     
+                                                                                
+go      - start application at address 'addr'                                   
+help    - print command description/usage                                       
+icache  - enable or disable instruction cache                                   
+iminfo  - print header information for application image                        
+imxtract- extract a part of a multi-image                                       
+itest   - return true/false on integer compare                                  
+loadb   - load binary file over serial line (kermit mode)                       
+loads   - load S-Record file over serial line                                   
+loady   - load binary file over serial line (ymodem mode)                       
+loop    - infinite loop on address range                                        
+md      - memory display                                                        
+mm      - memory modify (auto-incrementing address)                             
+mmc     - MMC sub system                                                        
+mmcinfo - mmcinfo <dev num>-- display MMC info                                  
+movi    - movi  - sd/mmc r/w sub system for SMDK board                          
+mtdparts- define flash/nand partitions                                          
+mtest   - simple RAM read/write test                                            
+mw      - memory write (fill)                                                   
+nfs     - boot image via network using NFS protocol                             
+nm      - memory modify (constant address)                                      
+ping    - send ICMP ECHO_REQUEST to network host                                
+printenv- print environment variables                                           
+reginfo - print register information                                            
+reset   - Perform RESET of the CPU                                              
+run     - run commands in an environment variable                               
+saveenv - save environment variables to persistent storage                      
+setenv  - set environment variables                                             
+showvar - print local hushshell variables                                       
+sleep   - delay execution for some time                                         
+source  - run script from memory                                                
+test    - minimal test like /bin/sh                                             
+tftpboot- boot image via network using TFTP protocol                            
+true    - do nothing, successfully                                              
+usb     - USB sub-system                                                        
+version - print monitor version  
+```
+
+- `md`查看内存，`.b`以8位查看，`.w`以16位查看(short)，`.l`以32位查看(int)
+- `fdisk`针对sd卡与Emmc查看创建分，`-p`查看，`-c`创建，<device_num>通过启动画面可看到sd与Emmc对应的设备号，如`MMC Device 0: 30608 MB`
+- >创建分区是为Android定制的，它有四个分区，`system:data:cache:storage`，前三个是linux文件格式(0x83)，而`storage`是fat32的(0x0c)，`kernel/bootloader/ramdisk`存在于 __未划__ 的分区中(分区是会按柱面对齐)
+- 格式化不同文件格式的分区，需要不同的`format`，如`fatformat mmc 1:1`或`ext3format mmc 1:4`
+- 不同的linux提供的VFS，在这里，针对不同的文件格式分区，需要不同的`ls`，如`fatls mmc 0 /images`或`ext2ls mmc 1:2 /`
+- `fatload/ext2load`将rom中的文件load指定的内存地址，方便被`bootm`引导执行
+> `fatload mmc 0 0x50000000 /images/linux/zimage`，`bootm 0x50000000`
+
+
+
+
+
 
 <script>
 
