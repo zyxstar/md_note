@@ -51,7 +51,7 @@ RHEL的经典版本：5.8和6.4
 
 ## 显示系统信息
 ```shell
-uname -a
+uname -a -r
 lsb_release -a     #发布版本
 getconf LONG_BIT   #查看操作系统位数
 
@@ -1280,7 +1280,7 @@ dmesg
 
 mknod <filenm> c 80 0
 
-debian kernal api has doc
+debian kernel api has doc
 ```
 
 
@@ -2198,6 +2198,8 @@ minicom -s
 - 最后，选择`Exit from Minicom`
 
 ## Uboot烧制与调试
+> Uboot中使用16进，即使不加0x，也是16进制
+
 ### Uboot流程
 得到`uboot201210.tar.tgz`文件，进行解压
 
@@ -2393,16 +2395,274 @@ usb     - USB sub-system
 version - print monitor version  
 ```
 
-- `md`查看内存，`.b`以8位查看，`.w`以16位查看(short)，`.l`以32位查看(int)
+- `md`查看内存，`.b`以8位查看(char)，`.w`以16位查看(short)，`.l`以32位查看(int)
 - `fdisk`针对sd卡与Emmc查看创建分，`-p`查看，`-c`创建，<device_num>通过启动画面可看到sd与Emmc对应的设备号，如`MMC Device 0: 30608 MB`
-- >创建分区是为Android定制的，它有四个分区，`system:data:cache:storage`，前三个是linux文件格式(0x83)，而`storage`是fat32的(0x0c)，`kernel/bootloader/ramdisk`存在于 __未划__ 的分区中(分区是会按柱面对齐)
+- >创建分区是为Android定制的，它有四个分区，`system:data:cache:storage`，前三个是linux文件格式是ext2的(0x83)，而`storage`是fat32的(0x0c)，`kernel/bootloader/ramdisk`存在于 __未划__ 的分区中(分区是会按柱面对齐)
 - 格式化不同文件格式的分区，需要不同的`format`，如`fatformat mmc 1:1`或`ext3format mmc 1:4`
 - 不同的linux提供的VFS，在这里，针对不同的文件格式分区，需要不同的`ls`，如`fatls mmc 0 /images`或`ext2ls mmc 1:2 /`
 - `fatload/ext2load`将rom中的文件load指定的内存地址，方便被`bootm`引导执行
 > `fatload mmc 0 0x50000000 /images/linux/zimage`，`bootm 0x50000000`
 
+- `bdinfo`显示板子参数 
 
+```                                                  
+arch_number = 0x00001200    开发板id，bootloader中内核id必须与此一致
+boot_params = 0x40000100    开发板启动参数的地址，bootloader传给内核的，(/proc/cmdline 是x86的启动参数)
+DRAM bank   = 0x00000000    内存开始地址与大小
+-> start    = 0x40000000
+-> size     = 0x10000000
+DRAM bank   = 0x00000001
+-> start    = 0x50000000
+-> size     = 0x10000000
+DRAM bank   = 0x00000002
+-> start    = 0x60000000
+-> size     = 0x10000000
+DRAM bank   = 0x00000003
+-> start    = 0x70000000
+-> size     = 0x0FF00000
+ethaddr     = 00:40:5c:26:0a:5b
+ip_addr     = 192.168.0.20
+baudrate    = 0 bps
+TLB addr    = 0x3FFF0000    
+relocaddr   = 0x43E00000    uboot的链接地址，也是uboot的运行地址
+reloc off   = 0x00000000
+irq_sp      = 0x43CFBF58
+sp start    = 0x43CFBF50
+FB base     = 0x00000000
+```
 
+### 下载文件到开发板
+- uart 串口方式
+- fatload
+
+```
+[zyx@Uboot] # fatload mmc 0:1 0x50000000 /doc/arm.bin                           
+Partition1: Start Address(0x7d82), Size(0x3bbc57b)                              
+reading /doc/arm.bin                                                            
+                                                                                
+688 bytes read                                                                  
+[zyx@Uboot] # go 50000000                                                       
+## Starting application at 0x50000000 ...                                       
+## Application terminated, rc = 0x1
+```
+
+- tftp 网络方式
+    + pc端安装tftp服务，并存在arm.bin裸机程序
+    + 开发板执行`tftp 0x50000000 arm.bin`写入指定地址0x50000000
+    + 开发板需要`setenv serverip 192.168.4.254`,`setenv ipaddr 192.168.4.20`,`saveenv`
+- dnw  USB方式
+    + pc端安装dnw发送端（切换到`tools/dnw-linux`下进行`make`，出现警告要修复，`vim src/driver/secbulk.c`,`to_write = min((int)len, BULKOUT_BUFFER_SIZE);`，再运行`make install`）
+    + 如果想卸载:.....[看一下Makefile]
+    + pc与开发板通过usb连接
+    + 开发板`dnw 0x50000000`，pc执行`dnw arm.bin`，开发板`go 50000000`
+
+```
+[zyx@Uboot] # dnw 50000000
+Insert a OTG cable into the connector! 
+OTG cable Connected!      
+Now, Waiting for DNW to transmit data   
+Download Done!! Download Address: 0x50000000, Download Filesize:0x2b0  
+Checksum is being calculated. 
+Checksum O.K.                      
+```
+
+```
+[root@localhost class]# dnw arm.bin 
+load address: 0x57E00000
+Writing data...
+100%  0x000002BA bytes (0 K)
+speed: 0.004160M/S
+```
+
+```
+[zyx@Uboot] # go 50000000                                                       
+## Starting application at 0x50000000 ...
+## Application terminated, rc = 0x1
+```
+
+### Uboot环境变量
+```shell
+printenv           #简写pr
+echo $bootdelay
+```
+
+```
+baudrate=115200
+bootcmd=movi read kernel 0 40008000;movi read rootfs 0 41000000 100000;bootm 400
+bootdelay=3
+ethaddr=00:40:5c:26:0a:5b  
+gatewayip=192.168.0.1      
+ipaddr=192.168.0.20        
+netmask=255.255.255.0      
+serverip=192.168.0.10      
+```
+
+```shell
+setenv bootdelay 10   #临时有效
+setenv bootdelay      #删除
+saveenv               #保存在sd卡中
+```
+
+- `bootargs`内核参数 uboot值将放到`bdinfo`的`boot_params = 0x40000100`地址中，供内核使用，包含 文件系统位置，驱动选择参...
+- `bootcmd`自动操作(倒计时结束后执行的操作)，如`set bootcmd "echo $bootdelay;fatls mmc 0:1;fdisk -p 1;" `
+
+### shell脚本
+pc上编写脚本test.sh，需要额外加一个头，方便uboot识别
+
+```shell
+uboot_tiny4412/tools/mkimage -A arm -O linux -T script -C none -n "uboot_script" -d test.sh test.img
+```
+
+下载到开发板
+
+```shell
+dnw 50000000
+source 50000000
+```
+
+## 编译内核
+### 给x86下的换内核
+
+```shell
+[root@pc]tar -xvf linux-3.10.5.tar.xz
+[root@pc]cd linux-3.10.5
+[root@pc]make 
+[root@pc]make modules_install
+[root@pc]make install
+[root@pc]reboot
+```
+
+### 编译内核
+```shell
+tar -xvf linux3.5.tar.bz2
+cd linux-3.5_for_qt4  
+cp exynos4412_config .config
+make -j4
+#编译完成的内核在<linux_src>/arch/arm/boot/zImage
+```
+
+由于ddr位于`0x40000000`-`0x80000000`，内核必须下载至少`0x40008000`位置
+
+```
+zImage
+---------------              至少0x40008000
+16k translation table
+16k bootargs 位于0x40000100
+---------------              内存起始0x40000000
+```
+
+```shell
+[zyx@Uboot]# dnw 40008000
+[root@pc]#dnw <linux_src>/arch/arm/boot/zImage
+[zyx@Uboot]# bootm 40008000
+```
+
+会运行内核，但由于找不到根目录，将会异常
+
+## busybox
+使用busybox来制作文件系统，挂载根目录
+
+> android使用toolbox
+
+```shell
+[root@pc]tar -xvf busybox-1.21.1.tar.bz2
+[root@pc]cd busybox-1.21.1
+[root@pc]make defconfig
+[root@pc]make menuconfig
+#如果出现ncurse相关错误  yum install ncurse* 
+```
+
+具体配置如下，需将busybox编译成静态库，并设置好arm编译器前缀，并勾选必要的内核使用的命令
+
+![img](../../imgs/busybox_config_01.png)
+
+![img](../../imgs/busybox_config_02.png)
+
+![img](../../imgs/busybox_config_03.png)
+
+![img](../../imgs/busybox_config_04.png)
+
+![img](../../imgs/busybox_config_05.png)
+
+```shell
+[root@pc]make -j4
+[root@pc]make install
+[root@pc]cd _install/
+[root@pc]mkdir home root var mnt tmp sys dev proc #创建必要目录
+[root@pc]cp ../examples/bootfloppy/etc/ . -rf     #复制etc
+[root@pc]cp ~/class_t/4.5.1/arm-none-linux-gnueabi/lib/ . -rf  #复制lib
+```
+
+## 搭建nfs
+
+```shell
+[root@pc _install]mkdir /tomcat_root
+[root@pc _install]chmod 777 /tomcat_root
+[root@pc _install]cp * /tomcat_root -rf
+[root@pc _install]cd /tomcat_root
+[root@pc]vim etc/profile #登录用户时执行
+    echo "#######################"
+    echo "#######################"
+    echo "#######################"
+    echo "#######################"
+    echo "Welcom To My FileSystem"
+    echo "#######################"
+    echo "#######################"
+    echo "#######################"
+    echo "#######################"
+    #在/dev/下创建设备节点
+    mdev -s
+    export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+    #\W会被替换为当前工作路径
+    export PS1="[root@uplooking \W]# "
+    export HOME=/root
+[root@pc]vim etc/init.d/rcS #由init进程执行
+[root@pc]vim etc/fstab #mount -a
+    proc   /proc proc   defaults  0 0
+    sysfs  /sys  sysfs  defaults  0 0
+    tmpfs  /tmp  tmpfs  defaults  0 0
+```
+
+配置nfs服务器
+
+```shell
+[root@pc]vim /etc/exports
+    /tomcat_root *(rw,no_root_squash,sync)
+```
+
+关闭防火墙，启动服务
+
+```shell
+[root@pc]service iptables stop
+[root@pc]setup #永久关闭
+   --->防火墙设置
+    [ ]开启防火墙
+[root@pc]setenforce 0 #关闭selinux
+[root@pc]vim /etc/selinux/config #永久关闭
+    SELINUX=disabled
+[root@pc]service nfs restart
+```
+
+## 网络文件系统作为根目录
+```shell
+[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.4.254:/tomcat_root ip=192.168.4.20 console=ttySAC0 lcd=S70
+[zyx@Uboot]save
+```
+
+用网线把开发板和pc链接，并配置pc与开发板处于同一网段（pc如果是虚拟机时，需要使用桥接模式）
+
+```
+[zyx@Uboot]dnw 40008000
+[root@pc]dnw <linux_src>/arch/arm/boot/zImage
+
+[zyx@Uboot]dnw 41000000
+[root@pc]dnw ramdisk-u.img
+
+[zyx@Uboot]bootm 40008000 41000000
+
+#如果成功minicom会出现如下shell，可运行busybox命令
+[root@uplooking \]# 
+```
 
 
 
@@ -2414,3 +2674,20 @@ version - print monitor version
 })();
 
 </script>
+
+<!-- 
+
+自己串口
+ruby 内容输出到stdout
+dd
+
+hexdump 8 16 32 
+
+
+
+
+
+
+
+
+ -->
