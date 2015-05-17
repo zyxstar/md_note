@@ -1089,6 +1089,8 @@ vim /etc/sysconfig/i18n
 LANG="zh_CN.GB18030"              #当前系统的语言环境变量设置
 SUPPORTED="zh_CN.GB18030:zh_CN:zh:en_US.UTF-8:en_US:en"  #系统支持哪些字符集
 SYSFONT="latarcyrheb-sun16"       #系统终端字符的字体
+
+yum install "@Chinese Support"
 ```
 
 设置时区与同步时间
@@ -2593,7 +2595,12 @@ zImage
 [root@pc]cp ~/class_t/4.5.1/arm-none-linux-gnueabi/lib/ . -rf  #复制lib
 ```
 
-## 搭建nfs
+分析`busybox-1.21.1/init/`目录下文件，这是`init`进程的源代码
+
+嵌入式系统由`linuxrc`启动，调用`init.d/rcS`
+
+## 搭建nfs服务
+将busybox中的`_install`目录下文件复制到nfs的指定目录
 
 ```shell
 [root@pc _install]mkdir /tomcat_root
@@ -2612,12 +2619,13 @@ zImage
     echo "#######################"
     #在/dev/下创建设备节点
     mdev -s
+    #export是确保子进程也能使用
     export PATH=/bin:/sbin:/usr/bin:/usr/sbin
     #\W会被替换为当前工作路径
     export PS1="[root@uplooking \W]# "
     export HOME=/root
-[root@pc]vim etc/init.d/rcS #由init进程执行
-[root@pc]vim etc/fstab #mount -a
+[root@pc]vim etc/init.d/rcS     #由init进程执行，不修改
+[root@pc]vim etc/fstab          #mount -a时使用，在etc/init.d/rcS中
     proc   /proc proc   defaults  0 0
     sysfs  /sys  sysfs  defaults  0 0
     tmpfs  /tmp  tmpfs  defaults  0 0
@@ -2644,8 +2652,10 @@ zImage
 ```
 
 ## 网络文件系统作为根目录
+本着先使用网络系统，再使用本地系统的原则进行
+
 ```shell
-[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.4.254:/tomcat_root ip=192.168.4.20 console=ttySAC0 lcd=S70
+[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.0.254:/tomcat_root ip=192.168.0.20 console=ttySAC0 lcd=S70
 [zyx@Uboot]save
 ```
 
