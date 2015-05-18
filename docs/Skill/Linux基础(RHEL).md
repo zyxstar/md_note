@@ -2655,7 +2655,7 @@ zImage
 本着先使用网络系统，再使用本地系统的原则进行
 
 ```shell
-[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.0.254:/tomcat_root ip=192.168.0.20 console=ttySAC0 lcd=S70
+[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.4.252:/tomcat_root ip=192.168.4.20 console=ttySAC0 lcd=S70
 [zyx@Uboot]save
 ```
 
