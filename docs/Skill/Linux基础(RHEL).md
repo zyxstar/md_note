@@ -280,7 +280,7 @@ od        #查看特殊格式的文件内容。通过指定该命令的不同选
           >000000 2f 65 74 63 2f 70 61 73 73 77 64 0a
           >00000c
 
-          #echo /etc/passwd |od -A x -t x1 -t c    #常用
+          #echo /etc/passwd |od -A x -t x1 -t c    #常用 2个十六进制为一个字节
           >000000  2f  65  74  63  2f  70  61  73  73  77  64  0a
                     /   e   t   c   /   p   a   s   s   w   d  \n
           >00000c
@@ -340,6 +340,12 @@ tail
 head
 
 tree      #树形显示目录
+    -a    #显示所有 文件
+    -d    #只显示 目录
+    -f    #显示全路径
+    -h    #人性化
+    -C    #颜色
+    -L    #层级
 fdisk -l  #查看硬盘分区情况
 du        #显示当前 目录 中 各子目录 占磁盘大小
     -s    #显示当前目录占磁盘大小
@@ -2100,7 +2106,7 @@ Command action
 p
 Partition number (1-4): 1
 First cylinder (1-19165, default 1): 3
-Last cylinder, +cylinders or +size{K,M,G} (3-19165, default 19165): 
+Last cylinder, +cylinders or +size{K,M,G} (3-19165, default 19165):
 Using default value 19165
 
 Command (m for help): p
@@ -2241,13 +2247,13 @@ vim config.mk
     111 STRIP   = $(CROSS_COMPILE)strip
     112 OBJCOPY = $(CROSS_COMPILE)objcopy
     113 OBJDUMP = $(CROSS_COMPILE)objdump
-    114 RANLIB  = $(CROSS_COMPILE)RANLIB  
+    114 RANLIB  = $(CROSS_COMPILE)RANLIB
 ```
 
 执行make配置，`vim boards.cfg`查看开发板型号、cpu、board之间的一些对应表
 
 ```shell
-make tiny4412_config 
+make tiny4412_config
 ```
 
 关闭MMU功能，并修改提示符
@@ -2307,7 +2313,7 @@ sync
 
 ### 调试Uboot
 1. 把sd卡插入开发板
-2. 开发板切换为sd卡启动 
+2. 开发板切换为sd卡启动
 3. 用串口把开发板和pc链接
 4. 检查`minicom`的配置
 5. 给开发板上电，在`minicom`中观察启动信息
@@ -2321,83 +2327,83 @@ minicom
 常用命令如下
 
 ```
-?       - alias for 'help'                                                      
-base    - print or set address offset                                           
-bdinfo  - print Board Info structure                                            
-boot    - boot default, i.e., run 'bootcmd'                                     
-bootd   - boot default, i.e., run 'bootcmd'                                     
-bootelf - Boot from an ELF image in memory                                      
-bootm   - boot application image from memory                                    
-bootp   - boot image via network using BOOTP/TFTP protocol                      
-bootvx  - Boot vxWorks from an ELF image                                        
-chpart  - change active partition                                               
-cmp     - memory compare                                                        
-coninfo - print console devices and information                                 
-cp      - memory copy                                                           
-crc32   - checksum calculation                                                  
-dcache  - enable or disable data cache                                          
+?       - alias for 'help'
+base    - print or set address offset
+bdinfo  - print Board Info structure
+boot    - boot default, i.e., run 'bootcmd'
+bootd   - boot default, i.e., run 'bootcmd'
+bootelf - Boot from an ELF image in memory
+bootm   - boot application image from memory
+bootp   - boot image via network using BOOTP/TFTP protocol
+bootvx  - Boot vxWorks from an ELF image
+chpart  - change active partition
+cmp     - memory compare
+coninfo - print console devices and information
+cp      - memory copy
+crc32   - checksum calculation
+dcache  - enable or disable data cache
 dnw     - dnw     - initialize USB device and ready to receive for Windows serv)
-                                                                                
-echo    - echo args to console                                                  
-editenv - edit environment variable                                             
-emmc    - Open/Close eMMC boot Partition                                        
-env     - environment handling commands                                         
-exit    - exit script                                                           
-ext2format- ext2format - disk format by ext2                                    
-                                                                                
-ext2load- load binary file from a Ext2 filesystem                               
-ext2ls  - list files in a directory (default /)                                 
-ext3format- ext3format - disk format by ext3                                    
-                                                                                
-false   - do nothing, unsuccessfully                                            
-fastboot- fastboot- use USB Fastboot protocol                                   
-                                                                                
-fatformat- fatformat - disk format by FAT32                                     
-                                                                                
-fatinfo - fatinfo - print information about filesystem                          
-fatload - fatload - load binary file from a dos filesystem                      
-                                                                                
-fatls   - list files in a directory (default /)                                 
-fdisk   - fdisk for sd/mmc.                                                     
-                                                                                
-go      - start application at address 'addr'                                   
-help    - print command description/usage                                       
-icache  - enable or disable instruction cache                                   
-iminfo  - print header information for application image                        
-imxtract- extract a part of a multi-image                                       
-itest   - return true/false on integer compare                                  
-loadb   - load binary file over serial line (kermit mode)                       
-loads   - load S-Record file over serial line                                   
-loady   - load binary file over serial line (ymodem mode)                       
-loop    - infinite loop on address range                                        
-md      - memory display                                                        
-mm      - memory modify (auto-incrementing address)                             
-mmc     - MMC sub system                                                        
-mmcinfo - mmcinfo <dev num>-- display MMC info                                  
-movi    - movi  - sd/mmc r/w sub system for SMDK board                          
-mtdparts- define flash/nand partitions                                          
-mtest   - simple RAM read/write test                                            
-mw      - memory write (fill)                                                   
-nfs     - boot image via network using NFS protocol                             
-nm      - memory modify (constant address)                                      
-ping    - send ICMP ECHO_REQUEST to network host                                
-printenv- print environment variables                                           
-reginfo - print register information                                            
-reset   - Perform RESET of the CPU                                              
-run     - run commands in an environment variable                               
-saveenv - save environment variables to persistent storage                      
-setenv  - set environment variables                                             
-showvar - print local hushshell variables                                       
-sleep   - delay execution for some time                                         
-source  - run script from memory                                                
-test    - minimal test like /bin/sh                                             
-tftpboot- boot image via network using TFTP protocol                            
-true    - do nothing, successfully                                              
-usb     - USB sub-system                                                        
-version - print monitor version  
+
+echo    - echo args to console
+editenv - edit environment variable
+emmc    - Open/Close eMMC boot Partition
+env     - environment handling commands
+exit    - exit script
+ext2format- ext2format - disk format by ext2
+
+ext2load- load binary file from a Ext2 filesystem
+ext2ls  - list files in a directory (default /)
+ext3format- ext3format - disk format by ext3
+
+false   - do nothing, unsuccessfully
+fastboot- fastboot- use USB Fastboot protocol
+
+fatformat- fatformat - disk format by FAT32
+
+fatinfo - fatinfo - print information about filesystem
+fatload - fatload - load binary file from a dos filesystem
+
+fatls   - list files in a directory (default /)
+fdisk   - fdisk for sd/mmc.
+
+go      - start application at address 'addr'
+help    - print command description/usage
+icache  - enable or disable instruction cache
+iminfo  - print header information for application image
+imxtract- extract a part of a multi-image
+itest   - return true/false on integer compare
+loadb   - load binary file over serial line (kermit mode)
+loads   - load S-Record file over serial line
+loady   - load binary file over serial line (ymodem mode)
+loop    - infinite loop on address range
+md      - memory display
+mm      - memory modify (auto-incrementing address)
+mmc     - MMC sub system
+mmcinfo - mmcinfo <dev num>-- display MMC info
+movi    - movi  - sd/mmc r/w sub system for SMDK board
+mtdparts- define flash/nand partitions
+mtest   - simple RAM read/write test
+mw      - memory write (fill)
+nfs     - boot image via network using NFS protocol
+nm      - memory modify (constant address)
+ping    - send ICMP ECHO_REQUEST to network host
+printenv- print environment variables
+reginfo - print register information
+reset   - Perform RESET of the CPU
+run     - run commands in an environment variable
+saveenv - save environment variables to persistent storage
+setenv  - set environment variables
+showvar - print local hushshell variables
+sleep   - delay execution for some time
+source  - run script from memory
+test    - minimal test like /bin/sh
+tftpboot- boot image via network using TFTP protocol
+true    - do nothing, successfully
+usb     - USB sub-system
+version - print monitor version
 ```
 
-- `md`查看内存，`.b`以8位查看(char)，`.w`以16位查看(short)，`.l`以32位查看(int)
+- `md`查看内存，`.b`以8位查看(char,2个16进制)，`.w`以16位查看(short,4个16进制)，`.l`以32位查看(int,8个16进制)
 - `fdisk`针对sd卡与Emmc查看创建分，`-p`查看，`-c`创建，<device_num>通过启动画面可看到sd与Emmc对应的设备号，如`MMC Device 0: 30608 MB`
 - >创建分区是为Android定制的，它有四个分区，`system:data:cache:storage`，前三个是linux文件格式是ext2的(0x83)，而`storage`是fat32的(0x0c)，`kernel/bootloader/ramdisk`存在于 __未划__ 的分区中(分区是会按柱面对齐)
 - 格式化不同文件格式的分区，需要不同的`format`，如`fatformat mmc 1:1`或`ext3format mmc 1:4`
@@ -2405,9 +2411,9 @@ version - print monitor version
 - `fatload/ext2load`将rom中的文件load指定的内存地址，方便被`bootm`引导执行
 > `fatload mmc 0 0x50000000 /images/linux/zimage`，`bootm 0x50000000`
 
-- `bdinfo`显示板子参数 
+- `bdinfo`显示板子参数
 
-```                                                  
+```
 arch_number = 0x00001200    开发板id，bootloader中内核id必须与此一致
 boot_params = 0x40000100    开发板启动参数的地址，bootloader传给内核的，(/proc/cmdline 是x86的启动参数)
 DRAM bank   = 0x00000000    内存开始地址与大小
@@ -2425,7 +2431,7 @@ DRAM bank   = 0x00000003
 ethaddr     = 00:40:5c:26:0a:5b
 ip_addr     = 192.168.0.20
 baudrate    = 0 bps
-TLB addr    = 0x3FFF0000    
+TLB addr    = 0x3FFF0000
 relocaddr   = 0x43E00000    uboot的链接地址，也是uboot的运行地址
 reloc off   = 0x00000000
 irq_sp      = 0x43CFBF58
@@ -2438,13 +2444,13 @@ FB base     = 0x00000000
 - fatload
 
 ```
-[zyx@Uboot] # fatload mmc 0:1 0x50000000 /doc/arm.bin                           
-Partition1: Start Address(0x7d82), Size(0x3bbc57b)                              
-reading /doc/arm.bin                                                            
-                                                                                
-688 bytes read                                                                  
-[zyx@Uboot] # go 50000000                                                       
-## Starting application at 0x50000000 ...                                       
+[zyx@Uboot] # fatload mmc 0:1 0x50000000 /doc/arm.bin
+Partition1: Start Address(0x7d82), Size(0x3bbc57b)
+reading /doc/arm.bin
+
+688 bytes read
+[zyx@Uboot] # go 50000000
+## Starting application at 0x50000000 ...
 ## Application terminated, rc = 0x1
 ```
 
@@ -2460,16 +2466,16 @@ reading /doc/arm.bin
 
 ```
 [zyx@Uboot] # dnw 50000000
-Insert a OTG cable into the connector! 
-OTG cable Connected!      
-Now, Waiting for DNW to transmit data   
-Download Done!! Download Address: 0x50000000, Download Filesize:0x2b0  
-Checksum is being calculated. 
-Checksum O.K.                      
+Insert a OTG cable into the connector!
+OTG cable Connected!
+Now, Waiting for DNW to transmit data
+Download Done!! Download Address: 0x50000000, Download Filesize:0x2b0
+Checksum is being calculated.
+Checksum O.K.
 ```
 
 ```
-[root@localhost class]# dnw arm.bin 
+[root@localhost class]# dnw arm.bin
 load address: 0x57E00000
 Writing data...
 100%  0x000002BA bytes (0 K)
@@ -2477,7 +2483,7 @@ speed: 0.004160M/S
 ```
 
 ```
-[zyx@Uboot] # go 50000000                                                       
+[zyx@Uboot] # go 50000000
 ## Starting application at 0x50000000 ...
 ## Application terminated, rc = 0x1
 ```
@@ -2492,11 +2498,11 @@ echo $bootdelay
 baudrate=115200
 bootcmd=movi read kernel 0 40008000;movi read rootfs 0 41000000 100000;bootm 400
 bootdelay=3
-ethaddr=00:40:5c:26:0a:5b  
-gatewayip=192.168.0.1      
-ipaddr=192.168.0.20        
-netmask=255.255.255.0      
-serverip=192.168.0.10      
+ethaddr=00:40:5c:26:0a:5b
+gatewayip=192.168.0.1
+ipaddr=192.168.0.20
+netmask=255.255.255.0
+serverip=192.168.0.10
 ```
 
 ```shell
@@ -2528,7 +2534,7 @@ source 50000000
 ```shell
 [root@pc]tar -xvf linux-3.10.5.tar.xz
 [root@pc]cd linux-3.10.5
-[root@pc]make 
+[root@pc]make
 [root@pc]make modules_install
 [root@pc]make install
 [root@pc]reboot
@@ -2537,7 +2543,7 @@ source 50000000
 ### 编译内核
 ```shell
 tar -xvf linux3.5.tar.bz2
-cd linux-3.5_for_qt4  
+cd linux-3.5_for_qt4
 cp exynos4412_config .config
 make -j4
 #编译完成的内核在<linux_src>/arch/arm/boot/zImage
@@ -2571,7 +2577,7 @@ zImage
 [root@pc]cd busybox-1.21.1
 [root@pc]make defconfig
 [root@pc]make menuconfig
-#如果出现ncurse相关错误  yum install ncurse* 
+#如果出现ncurse相关错误  yum install ncurse*
 ```
 
 具体配置如下，需将busybox编译成静态库，并设置好arm编译器前缀，并勾选必要的内核使用的命令
@@ -2635,6 +2641,7 @@ zImage
 
 ```shell
 [root@pc]vim /etc/exports
+    #no_root_squash表示root用户进入后，还是root权限，sync表示每次创建更新就会同步
     /tomcat_root *(rw,no_root_squash,sync)
 ```
 
@@ -2671,7 +2678,7 @@ zImage
 [zyx@Uboot]bootm 40008000 41000000
 
 #如果成功minicom会出现如下shell，可运行busybox命令
-[root@uplooking \]# 
+[root@uplooking \]#
 ```
 
 
@@ -2685,19 +2692,17 @@ zImage
 
 </script>
 
-<!-- 
+<!--
 
 自己串口
 ruby 内容输出到stdout
 dd
 
-hexdump 8 16 32 
 
 
 
+"trim_trailing_white_space_on_save": true,
+"ensure_newline_at_eof_on_save": true,
 
 
-
-
-
- -->
+-->
