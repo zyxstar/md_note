@@ -42,6 +42,7 @@
 # Skill
 - [Linux基础(RHEL).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FLinux%25E5%259F%25BA%25E7%25A1%2580%2528RHEL%2529.md) <span>2014-09-27</span>
 - [Git版本控制之道.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FGit%25E7%2589%2588%25E6%259C%25AC%25E6%258E%25A7%25E5%2588%25B6%25E4%25B9%258B%25E9%2581%2593.md) <span>2014-10-29</span>
+- [Make项目管理.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FMake%25E9%25A1%25B9%25E7%259B%25AE%25E7%25AE%25A1%25E7%2590%2586.md) <span>2015-05-09</span>
 - [UnitTesting.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FUnitTesting.md) <span>2010-07-26</span>
 - [DataBase.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FDataBase.md) <span>2009-10-25</span>
 - [LinuxCommands.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FSkill%2FLinuxCommands.md) <span></span>
