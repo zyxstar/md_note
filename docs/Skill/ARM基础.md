@@ -520,9 +520,11 @@ source 50000000
 [root@pc]tar -xvf linux-3.10.5.tar
 [root@pc]cd linux-3.10.5
 [root@pc]make menuconfig
+[root@pc]vim .config
+  124 CONFIG_SYSFS_DEPRECATED_V2=y
 [root@pc]make dep
 [root@pc]make clean
-[root@pc]make
+[root@pc]make bzImage
 [root@pc]make modules
 [root@pc]make modules_install
 [root@pc]make install
@@ -672,3 +674,7 @@ busybox
 [root@uplooking \]#
 ```
 
+
+
+朱老师
+=============
