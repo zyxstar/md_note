@@ -655,9 +655,11 @@ busybox
 本着先使用网络系统，再使用本地系统的原则进行
 
 ```shell
-[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.4.252:/tomcat_root ip=192.168.4.20 console=ttySAC0 lcd=S70
+[zyx@Uboot]set bootargs root=/dev/nfs nfsroot=192.168.4.118:/tomcat_root ip=192.168.4.119 console=ttySAC0 lcd=S70
 [zyx@Uboot]save
 ```
+
+> uboot中相关的网络也配置好（gatewayip,serverip,ipaddr等）
 
 用网线把开发板和pc链接，并配置pc与开发板处于同一网段（pc如果是虚拟机时，需要使用桥接模式）
 
@@ -674,7 +676,318 @@ busybox
 [root@uplooking \]#
 ```
 
+## 制作本地根
+- 内核：zImage
+- 根：rootfs.img
+
+需要把 根目录 变成 镜像
+
+```shell
+./tools/linux_tools/make_ext4fs -s -l 512M -L linux rootfs.img /tomcat_root/
+
+#  -s 按实际大小来算
+#  -l 镜像最大大小 分区是512M
+#  -L linux linux系统
+#  -a root  android系统
+```
+
+产生的`rootfs.img`大约30M
+
+将`linux_images.tar.bz2`解压到sd卡的`images\`中
+
+把`zImage`和`rootfs.img`复制到sd卡`images\Linux\`中
+
+```shell
+cp linux-3.5_for_qt4/arch/arm/boot/zImage /media/88DE-4A63/images/Linux/ 
+cp /rootfs.img /media/88DE-4A63/images/Linux/
+```
+
+修改刷机配置文件`FriendlyARM.ini`
+
+```shell
+vim FriendlyARM.ini
+Linux-BootLoader = Superboot4412.bin
+Linux-Kernel = Linux/zImage
+Linux-CommandLine = root=/dev/mmcblk0p1 rootfstype=ext4 console=ttySAC0,115200 init=/linuxrc  ctp=2 skipcali=y lcd=S70
+Linux-RamDisk = Linux/ramdisk-u.img
+Linux-RootFs-InstallImage = Linux/rootfs.img
+
+#Linux-CommandLine 就是 bootargs
+#Linux-RootFs-InstallImage = Linux/rootfs.img 将根解压到 root=/dev/mmcblk0p1中
+#加一个lcd=S70 | HD70   普通|高清屏
+#Linux-RamDisk是一个临时根，是uboot作的
+```
+
+烧制sd卡
+
+```shell
+tools/write4412boot /media/88DE-4A63/images/Superboot4412.bin /dev/sdb
+```
+
+刷完切换为emmc启动
+
+> 由于负载不大，所以启动时，内核会关闭CPU3,CPU2,CPU1，只保留CPU0
+
+## 挂载nfs目录
+开发板中
+
+```shell
+ifconfig eth0 192.168.4.119   
+mount -t nfs -o nolock,rw 192.168.4.118:/tomcat_root /mnt
+chroot /mnt/
+#切换mnt下目录为根
+#缺任何命令时，ln /bin/busybox /bin/chroot -s
+exit #退出刚才切入的根
+```
+
+ARM架构
+=========
+> 参照ARM_Architecture_Reference_Manual.pdf p39
+
+Byte 8 bits
+Halfword 16 bits
+Word 32 bits
+
+- a8共有7种模式
+- a9还有一个安全模式
+
+- system模式存在，但没人用过
+
+
+- arm中寄存器是32位 or 64位
+- 32位机是数据总线，寄存器大小，与地址总线无关
+
+## 寄存器
+
+- r13 SP stack pointer
+
+内存的布局，sp指向当前正在运行的进程的栈地址，意味着进程切换时，也需要cpu去修改sp指向
+
+```plain
+4G--------
+   kernel
+3G--------
+        
+        <-------sp 当前正在运行的进程的栈地址（进程切换时，也会修改sp）
+        ----4   sp-1
+        ----4   sp-1
+        <-------sp
+
+  -------heap
+  -------xxx.so
+  -------rodata
+  -------data
+  -------text
+   application
+0G--------
+```
+
+- r14 LR link register
+- r15 PC process counter
+
+```plain
+a(){
+  ------------    进入a函数时，将LR的值保存在SP中（保证嵌套时，LR不会被覆盖）
+  ------------
+  ------------    函数结束时，把LR值恢复，PC=LR的值，则执行函数返回后的代码
+}
+
+b(){
+  ------------
+  ------------
+  a();            先将下一条指令放在LR中，然后改变PC，使PC=a，则执行a函数
+  ------------
+```
+
+> - arm在函数传参、返回值、保存返回地址，均使用寄存器，只有局部变量使用栈
+> - 而x86中上述的值均使用栈来保存
+
+- cpsr
+- spsr
+
+## 流水线
+- arm9   5级流水线
+- arm11  8级流水线
+- a8     13级流水线
+- a9     12级流水线
+
+预取指判断？？
+
+## 指令集
+- arm指令集     32位
+- thumb指令集   16位     armV7 m系列
+- thumb2指令集  32/16位
+- java字节码
+
+## 哈佛与冯诺依曼
+
+- 哈佛（安全性高，性能高）
+
+```
+  cpu_core  --->  I-cache(一级 指令cache)
+                                      ------> cache(二级统一cache)----->  ddr
+            --->  D-cache(一级 数据cache)
+```
+
+- 冯诺依曼
+
+```
+  cpu_core  --->  cache(一级统一cache) ------> cache(二级统一cache)----->  ddr
+```
+
+- a8单核 自带二级cache
+
+```
+   a8_core-->D-cache         |
+                 ---->cache--|->ddr
+          -->I-cache         |
+```
+
+- a9多核 不带二级cache，方便多个核共享一个二级cache
+
+```
+   a9_core-->D-cache |         
+          -->I-cache |         
+   a9_core-->D-cache |         
+          -->I-cache |         
+                 ----|->cache---->ddr
+   a9_core-->D-cache |         
+          -->I-cache |         
+   a9_core-->D-cache |         
+          -->I-cache |    
+```
+
+- cpu = cpu_core + mmu + 协处理器 + cache + tcm...
+    + cache 通过行，组等方式访问
+    + tcm 紧耦合性内存 通过地址访问（指针） 与访问寄存器一样快
+    + 协处理器: cp11(浮点VFP) cp10(图形NEON) cp14(DEBUG) cp15(控制CTRL)....
+     
+    
+
+
+ARM汇编
+=========
+> - 内嵌汇编编译器：armcc(keil内部集成)， gcc
+> - 编译过程
+>     - gcc   x.c  x.s  优化在此发生，为了防止优化，请使用`volatile`
+>     - as    x.s  x.o
+>     - ld    x.o  x
+
+## 汇编指令
+> pdf??
+
+- 立即数，被编译到指令当中的数据
+    + 本身小于等于255
+    + 经过循环右移偶数位之后小于等于255
+    + 按位取反之后符合上面
+
+- 输出变量，对于汇编而言的，汇编对这个变量只能写不能读
+- 输入变量，对于汇编而言的，汇编对这个变量只能读不能写
+- 输入变量，输出变量，输入输出变量的具体寄存器名由编译时指定，可通过`arm-linux-gcc -S`来生成汇编查看
+
+> 绑定寄存器变量，使用立即数赋值
+
+```c
+#include <stdio.h>
+
+int main(void){
+  register unsigned int a asm("r0");
+  asm volatile(
+    "mov r0, #4\n"
+  );
+  printf("r0 = %x\n", a);
+  return 0;
+}
+```
+
+> 声明输入输出变量，使用 下标 来访问
+
+```c
+#include <stdio.h>
+
+int main(void){
+  int in = 40;
+  int out = 23;
+
+  asm volatile(
+    "mov %0, %1\n"
+    :"=&r"(out) //声明输出变量
+    :"r"(in) //声明输入变量
+    :
+  );
+  printf("in = %d\n", in);
+  printf("out = %d\n", out);
+  return 0;
+}
+```
+
+对应汇编如下，将下标转换为寄存器
+
+```assembly
+#APP
+@ 7 "03in_out.c" 1
+  mov r4, r3
+
+@ 0 "" 2
+  str r4, [fp, #-20]
+```
+
+
+> 声明输入输出变量，使用 名称 来访问
+
+```c
+#include <stdio.h>
+
+int main(void){
+  int a = 5;
+  int b = 6;
+  int swap;
+
+  asm volatile(
+    "mov %[swap], %[a]\n"
+    "mov %[a], %[b]\n"
+    "mov %[b], %[swap]\n"
+
+    :[a]"+r"(a),[b]"+r"(b),[swap]"+r"(swap) 
+    :
+    :
+  );
+  printf("a = %d\n", a);
+  printf("b = %d\n", b);
+  return 0;
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 朱老师
 =============
+ifconfig eth0 192.168.4.119   
+mount -t nfs -o nolock,rw 192.168.4.118:/tomcat_root /mnt
