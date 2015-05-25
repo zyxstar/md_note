@@ -1230,12 +1230,12 @@ make的运行
 ## make的退出码
 - 0 —— 表示成功执行。
 - 1 —— 如果make运行时出现任何错误，其返回1。
-- 2 —— 如果你使用了make的`-q`选项，并且make使得一些目标不需要更新，那么返回2。
+- 2 —— 如果使用了make的`-q`选项，并且make使得一些目标不需要更新，那么返回2。
 
 ## 指定Makefile
-前面我们说过，GNU make找寻默认的Makefile的规则是在当前目录下依次找三个文件——`GNUmakefile`、`makefile`和`Makefile`。其按顺序找这三个文件，一旦找到，就开始读取这个文件并执行。
+GNU make找寻默认的Makefile的规则是在当前目录下依次找三个文件——`GNUmakefile`、`makefile`和`Makefile`。其按顺序找这三个文件，一旦找到，就开始读取这个文件并执行。
 
-当前，我们也可以给make命令指定一个特殊名字的Makefile。要达到这个功能，我们要使用make的`-f`或是`--file`参数（`--makefile`参数也行）。例如，我们有个makefile的名字是`aaa.mk`，那么，我们可以这样来让make来执行这个文件：
+当前，也可以给make命令指定一个特殊名字的Makefile。要达到这个功能，我们要使用make的`-f`或是`--file`参数（`--makefile`参数也行）。例如，我们有个makefile的名字是`aaa.mk`，那么，我们可以这样来让make来执行这个文件：
 
 ```shell
 make –f aaa.mk

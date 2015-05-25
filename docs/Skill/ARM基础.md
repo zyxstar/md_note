@@ -698,7 +698,7 @@ busybox
 把`zImage`和`rootfs.img`复制到sd卡`images\Linux\`中
 
 ```shell
-cp linux-3.5_for_qt4/arch/arm/boot/zImage /media/88DE-4A63/images/Linux/ 
+cp linux-3.5_for_qt4/arch/arm/boot/zImage /media/88DE-4A63/images/Linux/
 cp /rootfs.img /media/88DE-4A63/images/Linux/
 ```
 
@@ -732,7 +732,7 @@ tools/write4412boot /media/88DE-4A63/images/Superboot4412.bin /dev/sdb
 开发板中
 
 ```shell
-ifconfig eth0 192.168.4.119   
+ifconfig eth0 192.168.4.119
 mount -t nfs -o nolock,rw 192.168.4.118:/tomcat_root /mnt
 chroot /mnt/
 #切换mnt下目录为根
@@ -742,7 +742,7 @@ exit #退出刚才切入的根
 
 ARM架构
 =========
-> 参照ARM_Architecture_Reference_Manual.pdf p39
+> 参照[ARM_Architecture_Reference_Manual.pdf](../../data/ARM_Architecture_Reference_Manual.pdf) p39
 
 Byte 8 bits
 Halfword 16 bits
@@ -767,7 +767,7 @@ Word 32 bits
 4G--------
    kernel
 3G--------
-        
+
         <-------sp 当前正在运行的进程的栈地址（进程切换时，也会修改sp）
         ----4   sp-1
         ----4   sp-1
@@ -805,13 +805,37 @@ b(){
 - cpsr
 - spsr
 
+### ARM寄存器的别名
+
+```table
+Reg#|  APCS|  意义
+----|------|------
+R0  |a1    | 工作寄存器
+R1  |a2    | "
+R2  |a3    | "
+R3  |a4    | "
+R4  |v1    | 必须保护
+R5  |v2    | "
+R6  |v3    | "
+R7  |v4    | "
+R8  |v5    | "
+R9  |v6    | "
+R10 |sl    | 栈限制
+R11 |fp    | 桢指针
+R12 |ip    | 内部过程调用寄存器
+R13 |sp    | 栈指针
+R14 |lr    | 连接寄存器
+R15 |pc    | 程序计数器
+```
+
+
 ## 流水线
 - arm9   5级流水线
 - arm11  8级流水线
 - a8     13级流水线
 - a9     12级流水线
 
-预取指判断？？
+流水线多了，最怕指令跳转导致的流水线重新构建，arm对此增加了预取指判断
 
 ## 指令集
 - arm指令集     32位
@@ -846,23 +870,23 @@ b(){
 - a9多核 不带二级cache，方便多个核共享一个二级cache
 
 ```
-   a9_core-->D-cache |         
-          -->I-cache |         
-   a9_core-->D-cache |         
-          -->I-cache |         
+   a9_core-->D-cache |
+          -->I-cache |
+   a9_core-->D-cache |
+          -->I-cache |
                  ----|->cache---->ddr
-   a9_core-->D-cache |         
-          -->I-cache |         
-   a9_core-->D-cache |         
-          -->I-cache |    
+   a9_core-->D-cache |
+          -->I-cache |
+   a9_core-->D-cache |
+          -->I-cache |
 ```
 
 - cpu = cpu_core + mmu + 协处理器 + cache + tcm...
     + cache 通过行，组等方式访问
     + tcm 紧耦合性内存 通过地址访问（指针） 与访问寄存器一样快
     + 协处理器: cp11(浮点VFP) cp10(图形NEON) cp14(DEBUG) cp15(控制CTRL)....
-     
-    
+
+
 
 
 ARM汇编
@@ -874,18 +898,15 @@ ARM汇编
 >     - ld    x.o  x
 
 ## 汇编指令
-> pdf??
+> [arm常用指令.pdf](../../data/arm常用指令.pdf)
 
-- 立即数，被编译到指令当中的数据
-    + 本身小于等于255
+
+
+##　绑定寄存器
+- 立即数，被编译到指令当中的数据:
+    + 本身小于等于255 (一条指令32位，所以指令中的数据就最大可以存8位)
     + 经过循环右移偶数位之后小于等于255
     + 按位取反之后符合上面
-
-- 输出变量，对于汇编而言的，汇编对这个变量只能写不能读
-- 输入变量，对于汇编而言的，汇编对这个变量只能读不能写
-- 输入变量，输出变量，输入输出变量的具体寄存器名由编译时指定，可通过`arm-linux-gcc -S`来生成汇编查看
-
-> 绑定寄存器变量，使用立即数赋值
 
 ```c
 #include <stdio.h>
@@ -894,13 +915,27 @@ int main(void){
   register unsigned int a asm("r0");
   asm volatile(
     "mov r0, #4\n"
+    :
+    :
+    :"r0"
   );
   printf("r0 = %x\n", a);
   return 0;
 }
 ```
 
-> 声明输入输出变量，使用 下标 来访问
+## 输入输出变量
+- 输出变量，对于汇编而言的，汇编对这个变量只能写不能读
+- 输入变量，对于汇编而言的，汇编对这个变量只能读不能写
+- 输入变量，输出变量，输入输出变量的具体寄存器名由编译时指定，可通过`arm-linux-gcc -S`来生成汇编查看
+- `=`:代表输出变量
+- `+`:代表输入输出变量
+- `r`:操作方式是寄存器
+- `m`:操作方式是内存
+- `&`:代表输出变量和输入变量　__不共用__ 寄存器
+- 三个冒号，第一行用于声明　`输出`　或　`输入输出`　变量；第二行用于声明　`输入`　变量；第三行用于　__保护__ 上面代码块中显示使用过的寄存器，使用内存的需要标识`memory`
+
+- 声明输入输出变量，使用 `下标` 来访问
 
 ```c
 #include <stdio.h>
@@ -932,8 +967,7 @@ int main(void){
   str r4, [fp, #-20]
 ```
 
-
-> 声明输入输出变量，使用 名称 来访问
+- 声明输入输出变量，使用 `名称` 来访问
 
 ```c
 #include <stdio.h>
@@ -941,14 +975,14 @@ int main(void){
 int main(void){
   int a = 5;
   int b = 6;
-  int swap;
+  int c; //temp
 
   asm volatile(
-    "mov %[swap], %[a]\n"
+    "mov %[c], %[a]\n"
     "mov %[a], %[b]\n"
-    "mov %[b], %[swap]\n"
+    "mov %[b], %[c]\n"
 
-    :[a]"+r"(a),[b]"+r"(b),[swap]"+r"(swap) 
+    :[a]"+r"(a),[b]"+r"(b),[c]"+r"(c)
     :
     :
   );
@@ -958,36 +992,447 @@ int main(void){
 }
 ```
 
+## 64位加法
+- 除了`比较指令`和直接操作`cpsr`的指令，其他指令要影响`cpsr`标志位就必须加`s`
+- 利用`adds`和`adc`，`adds`后有进位，`cpsr_C`的标志位就为1
+- 如果要实现更大位的相加，`adc`也可以使用`s`后缀
+
+```c
+#include <stdio.h>
+
+int main(void){
+  int a, b;
+
+  //0x0000000400000005
+  //0x00000008ffffffff
+  //0x0000000d00000004
+  asm volatile(
+    "mov r0, #5\n"
+    "mvn r1, #0\n"       //r1=~0;
+    "adds %0, r0, r1\n"  //cpsr_C=1
+    "mov r0, #4\n"
+    "mov r1, #8\n"
+    "adc %1, r0, r1\n"   //%1=r0+r1+C
+    :"=&r"(a), "=&r"(b)
+    :
+    :"r0", "r1"
+  );
+
+  printf("%#010x%08x\n", b, a);
+  return 0;
+}
+```
+
+## 64位减法
+- 利用`subs`和`sbc`，`subs`有借位后，`cpsr_C`的标志位就为0
+
+```c
+#include <stdio.h>
+
+int main(void){
+  int a, b;
+
+  //0x0000000900000004
+  //0x0000000400000005
+  //0x00000004ffffffff
+
+  __asm__ __volatile__(
+    "mov r0, #4\n"
+    "mov r1, #5\n"
+    "subs %0, r0, r1\n"   //clear C
+    "mov r0, #9\n"
+    "mov r1, #4\n"
+    "sbc %1, r0, r1\n"    //%1=r0-r1-!C
+    :"=&r"(a), "=&r"(b)
+    :
+    :"r0", "r1"
+  );
+
+  printf("%#010x%08x\n", b, a);
+  return 0;
+}
+```
+
+## 乘加/乘减
+- 方便数学上的西格玛计算
+
+```c
+#include <stdio.h>
+
+int main(void){
+#if 0
+       i = 0;
+  c =  ∑    i * i
+       i<100
+
+  i = 0;
+  while(i < 100)｛
+  　　　mla r2, r0, r0, r2
+  　　　i++;
+  ｝
+#endif
+  int a;
+
+  asm volatile(
+    "mov r0, #3\n"
+    "mov r1, #4\n"
+    "mov r2, #5\n"
+    //"mla %0, r0, r1, r2\n"  //%0=r2+r0*r1
+    "mls %0, r0, r1, r2\n"    //%0=r2-r0*r1
+    :"=&r"(a)
+    :
+    :"r0", "r1", "r2"
+  );
+
+  printf("a = %d\n", a);
+  return 0;
+}
+```
+
+## 位操作
+- 清零操作`bic`
+
+比如有个控制LED的寄存器，第`n`位为`1`则该位对应的灯亮
+
+```
+LENCON |= 1 << n;              #c语言
+orr LENCON, LENCON, 1 << n     #汇编
+```
+
+如果想第`n`与`n+1`位为零，即相邻两位要清零，相邻两位表达为`bin11`，即十进制的`3`
+
+```
+LEDCON &= ~(3 << n);          #c语言
+
+mvn r0, 3 << n                #汇编1
+and LEDCON, LEDCON, r0
+
+bic LEDCON, LEDCON, 3 << n    #汇编2
+```
+
+- bit反转`rbit`
+
+```c
+int main(void){
+  int bic, rbit = 0x12345678;
+
+  asm volatile(
+    "mov r0, #0xff\n"
+    "mov r1, #(3 << 2)\n"  //1100  3 << 2
+    "bic %0, r0, r1\n"     //%3=r0&(~r1)
+    "rbit %1, %1\n"
+    :"=r"(bic), "+r"(rbit)
+    :
+    :"r0", "r1"
+  );
+
+  printf("bic = %x\n", bic);
+  printf("rbit = %x\n", rbit);
+
+  return 0;
+}
+```
+
+- 左移右移
+    + `lsl` 逻辑左移
+    + `lsr` 逻辑右移
+    + `asr` 算术右移，空出位以符号位补充，不存在算术左移，`asl`将翻译成`lsl`
+    + `ror` 循环右移
+
+
+## 大小端转换
+```c
+#include <stdio.h>
+
+int main(void){
+  int a = 0x12345678;
+
+  //htonl  ntohl
+  asm volatile(
+    "rev %0, %0\n"     //32位
+    :"+r"(a)
+  );
+
+  printf("a = %x\n", a);
+
+  a = 0x1234;
+  //htons ntohs
+  asm volatile(
+    "rev16 %0, %0\n"   //16位
+    :"+r"(a)
+  );
+
+  printf("a = %x\n", a);
+  return 0;
+}
+
+```
+
+## 读写cpsr
+- `mrs`读`cpsr`
+- `msr`写`cpsr`，user模式只能修改`NZCVQ`位
+
+```c
+#include <stdio.h>
+
+int main(void){
+  int c;
+  asm volatile(
+    "mrs %0, cpsr\n"  //%0=cpsr
+    :"=&r"(c)
+  );
+
+  printf("c = %x\n", c);
+
+  //N=0 Z=0 C=0 V=0 Q
+  asm volatile(
+    "mov r0, #3\n"
+    "adds r0, r0, #0\n"
+    :::"r0"
+  );
+
+  asm volatile(
+    "mrs %0, cpsr\n"  //%0=cpsr
+    :"=&r"(c)
+  );
+
+  printf("c = %x\n", c);
+
+  asm volatile(
+    "mrs r0, cpsr\n"
+    "mvn r1, #0\n"
+    "orr r0, r0, r1\n"
+    "msr cpsr, r0\n"  //cpsr=r0
+    :::"r0", "r1"
+  );
+
+  asm volatile(
+    "msr cpsr, #0xff\n"
+  );
+
+  asm volatile(
+    "mrs %0, cpsr\n"  //%0=cpsr
+    :"=&r"(c)
+  );
+
+  printf("c = %x\n", c);
+  return 0;
+}
+```
+
+## 内存操作
+### 普通变量
+```c
+  int a = 4;
+  asm volatile(
+    "ldr r0, %0\n"   //r0=*addr
+    "add r0, r0, #1\n"
+    "str r0, %0\n"   //*addr=r0
+    :
+    :"m"(a)
+    :"r0", "memory"
+  );
+  printf("a = %d\n", a);
+```
+
+### 数组操作1
+```c
+  int b[3] = {0, 1, 2};
+
+  asm volatile(
+    "add %0, %0, #1\n"
+    "add %1, %1, #1\n"
+    "add %2, %2, #1\n"
+    :"+r"(b[0]), "+r"(b[1]), "+r"(b[2])
+    :
+    :
+  );
+
+  int i;
+  for(i = 0; i < 3; i++)
+    printf("b[%d] = %d\n", i, b[i]);
+```
+
+### 数组操作2
+```c
+  int b[3] = {0, 1, 2};
+
+  asm volatile(
+    "mov r0, %0\n"
+    "ldr r1, [r0]\n"   //r1=*r0
+    "add r1, r1, #4\n"
+    "str r1, [r0]\n"   //*r0=r1
+
+    "add r0, r0, #4\n" //地址移4位
+    "ldr r1, [r0]\n"
+    "add r1, r1, #4\n"
+    "str r1, [r0]\n"
+
+    "add r0, r0, #4\n"
+    "ldr r1, [r0]\n"
+    "add r1, r1, #4\n"
+    "str r1, [r0]\n"
+    :
+    :"r"(b)
+    :"r0", "r1"
+  );
+
+  int i;
+  for(i = 0; i < 3; i++)
+    printf("b[%d] = %d\n", i, b[i]);
+```
+
+### 数组操作3
+```c
+  int b[3] = {0, 1, 2};
+
+  asm volatile(
+    "mov r0, %0\n"
+
+    "ldr r1, [r0]\n"     //r1=*r0
+    "add r1, r1, #3\n"
+    "str r1, [r0], #4\n" //*r0=r1 r0+=4 修改值后 直接地址移动　上面两条指令合并成一条
+
+    "ldr r1, [r0]\n"     //r1=*r0
+    "add r1, r1, #3\n"
+    "str r1, [r0], #4\n" //*r0=r1 r0+=4
+
+    "ldr r1, [r0]\n"     //r1=*r0
+    "add r1, r1, #3\n"
+    "str r1, [r0], #4\n" //*r0=r1 r0+=4
+    :
+    :"r"(b)
+    :"r0", "r1"
+  );
+
+  int i;
+  for(i = 0; i < 3; i++)
+    printf("b[%d] = %d\n", i, b[i]);
+```
+
+### 数组操作4
+```c
+  int b[3] = {0, 1, 2};
+
+  asm volatile(
+    "mov r0, %0\n"
+    "ldr r1, [r0]\n"
+    "add r1, r1, #2\n"
+    "str r1, [r0]\n"
+
+    "ldr r1, [r0, #4]\n"   //r1=*(r0+4) 不改变数据基地址，通过位移来访问
+    "add r1, r1, #2\n"
+    "str r1, [r0, #4]\n"
+
+    "ldr r1, [r0, #8]\n"   //r1=*(r0+8)
+    "add r1, r1, #2\n"
+    "str r1, [r0, #8]\n"
+    :
+    :"r"(b)
+    :"r0", "r1"
+  );
+
+  int i;
+  for(i = 0; i < 3; i++)
+    printf("b[%d] = %d\n", i, b[i]);
+```
+
+### 数组操作5
+```c
+  int b[3] = {0, 1, 2};
+
+  asm volatile(
+    "mov r0, %0\n"
+    "ldr r1, [r0]\n"
+    "add r1, r1, #5\n"
+    "str r1, [r0]\n"
+
+    "ldr r1, [r0, #4]!\n"    //r0+=4 r1=*r0 直接地址移动　再取值　也是两条指令合并成一条
+    "add r1, r1, #5\n"
+    "str r1, [r0]\n"
+
+    "ldr r1, [r0, #4]!\n"    //r0+=4 r1=*r0
+    "add r1, r1, #5\n"
+    "str r1, [r0]\n"
+    :
+    :"r"(b)
+    :"r0", "r1"
+  );
+
+  int i;
+  for(i = 0; i < 3; i++)
+    printf("b[%d] = %d\n", i, b[i]);
+```
+
+## 栈操作
+- c语言中入栈采用FD(满递减模式)，即`[sp]`的指向是有效空间，当需要入栈时，先`sp=sp-1`，然后再把值放到`[sp]`中；而出栈，则先出栈，后`sp=sp+1`
 
 
 
 
 
 
+## 原子操作
+- c语言中类型修饰符为`atomic_t`
+- 汇编中使用`ldrex`和`strex`，并依据`cmp`来判断是否修改成功，不成功则重新执行
+
+```c
+atomic_t a;
+
+atomic_add(a, 1);
+
+int atomic_add(int a, int b){
+  asm volatile(
+    "again:\n"
+    "ldrex r0, %0\n"
+    "add r0, r0, %1\n"
+    "strex r1, r0, %0\n"
+    "cmp r1, #0\n"
+    "bne again\n"
+    :
+    :"m"(a), "r"(b)
+    :
+  );
+}
+```
+
+## 比较指令
+
+## 跳转指令
+`b`最多只能跳转32M字节
+
+
+## 未定义指令
+将产生一条`SIGILL        4       Core    Illegal Instruction`信号
+
+```c
+#include <stdio.h>
+
+int main(void){
+  //内嵌的指令是处在代码段
+  asm volatile(
+    ".word 0x77777777\n"
+  );
+
+  return 0;
+}
+```
 
 
 
 
 
+<script>
+
+(function(){
+    if(typeof expand_toc !== 'function') setTimeout(arguments.callee,500);
+    else expand_toc('md_toc',1);
+})();
+
+</script>
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-朱老师
-=============
-ifconfig eth0 192.168.4.119   
+<!--
+ifconfig eth0 192.168.4.119
 mount -t nfs -o nolock,rw 192.168.4.118:/tomcat_root /mnt
+-->
