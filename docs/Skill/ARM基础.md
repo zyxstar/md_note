@@ -756,6 +756,7 @@ Word 32 bits
 
 - arm中寄存器是32位 or 64位
 - 32位机是数据总线，寄存器大小，与地址总线无关
+- linux内核只使用了普通中断，未使用快速中断
 
 ## 寄存器
 
@@ -1024,6 +1025,7 @@ int main(void){
 ```
 
 ## 64位减法
+- arm本身没有减法，减法是通过加法和补码（取反+1）配合得到的
 - 利用`subs`和`sbc`，`subs`有借位后，`cpsr_C`的标志位就为0
 
 ```c
@@ -1222,10 +1224,13 @@ int main(void){
 
 ## 内存操作
 ### 普通变量
+- `m`:操作方式是内存，`"m"(a)`表示`a`的地址作为输入变量
+- 第三行冒号，使用内存的需要标识`memory`
+
 ```c
   int a = 4;
   asm volatile(
-    "ldr r0, %0\n"   //r0=*addr
+    "ldr r0, %0\n"   //r0=*addr  %0是a的地址
     "add r0, r0, #1\n"
     "str r0, %0\n"   //*addr=r0
     :
@@ -1320,7 +1325,7 @@ int main(void){
     "add r1, r1, #2\n"
     "str r1, [r0]\n"
 
-    "ldr r1, [r0, #4]\n"   //r1=*(r0+4) 不改变数据基地址，通过位移来访问
+    "ldr r1, [r0, #4]\n"   //r1=*(r0+4) 不改变数据基地址,通过位移来访问
     "add r1, r1, #2\n"
     "str r1, [r0, #4]\n"
 
@@ -1367,14 +1372,81 @@ int main(void){
 ## 栈操作
 - c语言中入栈采用FD(满递减模式)，即`[sp]`的指向是有效空间，当需要入栈时，先`sp=sp-1`，然后再把值放到`[sp]`中；而出栈，则先出栈，后`sp=sp+1`
 
+### 内存方式读写栈
+- 因为`[sp]`指向的内容是有效空间，这种方式容易造成程序错误
 
+```c
+  int a;
+  
+  asm volatile(
+    "ldr %0, [sp]\n"
+    "mov r0, #10\n"
+    "str r0, [sp]\n"
+    :"=&r"(a)
+    :
+    :"r0"
+  );
 
+  printf("a = %x\n", a);
+```
 
+### push/pop操作栈
+- 入栈和出栈时寄存器需要保持从小到大的次序（否则会有警告），__低地址__ 空间的值对应 __小号__ 的寄存器（低地址空间的先出栈）
 
+```c
+  int a, b, c;
+  
+  asm volatile(
+    "mov r0, #1\n"
+    "mov r1, #2\n"
+    "mov r2, #3\n"
+    "push {r0-r2}\n"
+    "pop {r3-r4, r5}\n"
+    "mov %0, r3\n"
+    "mov %1, r4\n"
+    "mov %2, r5\n"
+    :"=&r"(a), "=&r"(b), "=&r"(c)
+    :
+    :"r0", "r1", "r2", "r3", "r4", "r5"
+  );
+
+  printf("a = %x\n", a);
+  printf("b = %x\n", b);
+  printf("c = %x\n", c);
+```
+
+### stmfd/ldmfd操作栈
+明确指出使用满递减的方式操作栈
+
+- stmfd (ST: Store, M: Multiple, F: FULL, D: Descending)
+- ldmfd (LD: Load, M: Multiple, F: FULL, D: Descending)
+
+```c
+  int a, b, c;
+  
+  asm volatile(
+    "mov r0, #1\n"
+    "mov r1, #2\n"
+    "mov r2, #3\n"
+    "stmfd sp!, {r0-r2}\n"
+    "ldmfd sp!, {r3-r4, r5}\n"
+    "mov %0, r3\n"
+    "mov %1, r4\n"
+    "mov %2, r5\n"
+    :"=&r"(a), "=&r"(b), "=&r"(c)
+    :
+    :"r0", "r1", "r2", "r3", "r4", "r5"
+  );
+
+  printf("a = %x\n", a);
+  printf("b = %x\n", b);
+  printf("c = %x\n", c);
+```
 
 ## 原子操作
 - c语言中类型修饰符为`atomic_t`
 - 汇编中使用`ldrex`和`strex`，并依据`cmp`来判断是否修改成功，不成功则重新执行
+- 内核调度的是线程（不是进程），类似锁、互斥量都是由汇编中原子操作来支持
 
 ```c
 atomic_t a;
@@ -1396,11 +1468,116 @@ int atomic_add(int a, int b){
 }
 ```
 
-## 比较指令
+## 比较指令与条件执行
+- 比较指令是不需要加`s`就能影响`cpsr`位的指令
+- 比较指令完成后，一般就需要条件执行
+- 一般语句都可加条件执行的后缀`[ne|eq|lt|gt|le|ge]`，如`mov`可以为`movne`
+
+```c
+if(a > b)     //cmp a, b       @转化为 a - b,将修改cpsr 中的 NZ 位
+  c = 7       //movgt c, #7    @N==0 Z==0
+else if(a == b)  
+  c = 9       //moveq c, #9    @Z==1
+else  
+  c = 10      //movlt c, #10   @N==1
+```
+
+```c
+  int a = 5, b = 6, c;
+
+  asm volatile(
+    "mov r0, #1\n"
+    "mov r1, #2\n"
+    "cmp r0, r1\n"
+    "movgt %0, #7\n"
+    "moveq %0, #9\n"
+    "movlt %0, #10\n"
+    :"=&r"(c)
+    :"r"(a), "r"(b)
+    :"r0", "r1"
+  );
+
+  printf("c = %d\n", c);
+```
 
 ## 跳转指令
-`b`最多只能跳转32M字节
+```c
+  int a;
+  asm volatile(
+    "mov %0, #3\n"
+    "b end\n"
+    "mov %0, #4\n"  //不会被执行到
+    "end:\n"
+    :"=&r"(a)
+  );
+```
 
+- 跳转到指定label
+- `b/bl/bx`最多只能跳转32M字节
+
+```c
+int main(void){
+  int a;
+  asm volatile(
+    "mov r0, #1\n"
+    "mov r1, #2\n"
+    "bl nihao\n"         //先把下一条指令的地址保存在lr中,然后再跳转
+    "mov %0, r0\n"
+    :"=&r"(a)::"r0", "r1"
+  );
+
+  printf("a = %d\n", a);
+  return 0;
+}
+
+asm (                   //可以位于函数外部,此处不需要加volatile
+  "nihao:\n"
+  "add r0, r0, r1\n"
+  //"mov pc, lr\n"      //把lr的值放入pc,实现了跳转
+  "bx lr\n"             //等价于上面的语句 
+);
+```
+
+## 汇编中调用C函数
+- 利用上面的跳转指令来实现函数调用
+- 根据APCS（arm过程调用标准），用来约束汇编和C/C++相互调用
+    + 传参数：`r0`, `r1`, `r2`, `r3` 如果参数个数大于4个，那么超过4个的参数放到栈（越靠后的参数越先入栈）
+    + 要求必须用满递减栈
+    + 返回值：如果返回值是32位则放到`r0`；如果64位则高32位放到`r1`，低32位放到`r0`
+
+```c
+#include <stdio.h>
+int main(void){
+  int a;
+  asm volatile(
+    "mov r0, #5\n"
+    "mov r1, #6\n"
+    "push {r0, r1}\n"    //超过4个参数的,做入栈处理
+    "mov r0, #1\n"       //该句以及下面三句,即将参数放在相应寄存器上
+    "mov r1, #2\n"
+    "mov r2, #3\n"
+    "mov r3, #4\n"
+    "bl nihao\n"         //先把下一条指令的地址保存在lr中,然后在跳转
+    //pop {r0, r1}       //函数执行完成后,需清理参数,做出栈处理,此处有bug,会覆盖寄存器值
+    "add sp, sp, #8\n"   //正确做法是,将sp+8
+    "mov %0, r0\n"
+    :"=&r"(a)::"r0", "r1"
+  );
+
+  printf("a = %d\n", a);
+  return 0;
+}
+
+int nihao(int a, int b, int c, int d, int e, int f){
+  printf("a = %d\n", a);
+  printf("b = %d\n", b);
+  printf("c = %d\n", c);
+  printf("d = %d\n", d);
+  printf("e = %d\n", e);
+  printf("f = %d\n", f);
+  return a + b + c + d + e + f;
+}
+```
 
 ## 未定义指令
 将产生一条`SIGILL        4       Core    Illegal Instruction`信号
@@ -1417,10 +1594,6 @@ int main(void){
   return 0;
 }
 ```
-
-
-
-
 
 <script>
 
