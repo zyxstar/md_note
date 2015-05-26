@@ -1377,7 +1377,7 @@ int main(void){
 
 ```c
   int a;
-  
+
   asm volatile(
     "ldr %0, [sp]\n"
     "mov r0, #10\n"
@@ -1395,7 +1395,7 @@ int main(void){
 
 ```c
   int a, b, c;
-  
+
   asm volatile(
     "mov r0, #1\n"
     "mov r1, #2\n"
@@ -1423,7 +1423,7 @@ int main(void){
 
 ```c
   int a, b, c;
-  
+
   asm volatile(
     "mov r0, #1\n"
     "mov r1, #2\n"
@@ -1476,9 +1476,9 @@ int atomic_add(int a, int b){
 ```c
 if(a > b)     //cmp a, b       @转化为 a - b,将修改cpsr 中的 NZ 位
   c = 7       //movgt c, #7    @N==0 Z==0
-else if(a == b)  
+else if(a == b)
   c = 9       //moveq c, #9    @Z==1
-else  
+else
   c = 10      //movlt c, #10   @N==1
 ```
 
@@ -1534,7 +1534,7 @@ asm (                   //可以位于函数外部,此处不需要加volatile
   "nihao:\n"
   "add r0, r0, r1\n"
   //"mov pc, lr\n"      //把lr的值放入pc,实现了跳转
-  "bx lr\n"             //等价于上面的语句 
+  "bx lr\n"             //等价于上面的语句
 );
 ```
 
@@ -1594,6 +1594,47 @@ int main(void){
   return 0;
 }
 ```
+
+## 选择排序
+```c
+#include <stdio.h>
+
+void sort(int *, int);
+int main(){
+    int i;
+    int arr[] = {3,5,7,4,2,1,9,6};
+    int len = sizeof(arr) / sizeof(int);
+    sort(arr, len);
+    for(i = 0; i < len; i++){
+        printf("%d ", arr[i]);
+    }
+    printf("\n");
+    return 0;
+}
+
+void sort(int *arr, int len){
+    int idx, i, j, temp;
+    for(i = 0; i < len - 1; i++){
+        idx = i;
+        for(j = i + 1; j < len; j++){
+            if(arr[j] < arr[idx])
+                idx = j;
+        }
+        if(i != idx){
+            temp = arr[i];
+            arr[i] = arr[idx];
+            arr[idx] = temp;
+        }
+    }
+}
+```
+
+将其中算法部分改成汇编如下：
+
+```c
+
+```
+
 
 <script>
 

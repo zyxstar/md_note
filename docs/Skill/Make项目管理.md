@@ -1243,6 +1243,292 @@ make –f aaa.mk
 如果在make的命令行是，你不只一次地使用了`-f`参数，那么，所有指定的makefile将会被连在一起传递给make执行。
 
 ## 指定目标
+一般来说，make的最终目标是makefile中的第一个目标，而其它目标一般是由这个目标连带出来的。这是make的默认行为。当然，一般来说，你的makefile中的第一个目标是由许多个目标组成，你可以指示make，让其完成你所指定的目标。
+
+任何在makefile中的目标都可以被指定成终极目标，但是除了以`-`打头，或是包含了`=`的目标，因为有这些字符的目标，会被解析成`命令行参数`或是`变量`。甚至没有被我们明确写出来的目标也可以成为make的终极目标，也就是说，只要make可以找到其隐含规则推导规则，那么这个隐含目标同样可以被指定成终极目标。
+
+有一个make的环境变量叫`MAKECMDGOALS`，这个变量中会 __存放你所指定的终极目标的列表__，如果在命令行上，你没有指定目标，那么，这个变量是空值。这个变量可以让你使用在一些比较特殊的情形下。比如下面的例子：
+
+
+```make
+sources = foo.c bar.c
+ifneq ( $(MAKECMDGOALS),clean)
+    include $(sources:.c=.d)
+endif
+```
+
+只要我们输入的命令不是`make clean`，那么makefile会自动包含`foo.d`和`bar.d`这两个makefile。
+
+即然make可以指定所有makefile中的目标，那么也包括`伪目标`，于是我们可以根据这种性质来让我们的makefile根据指定的不同的目标来完成不同的事。在Unix世界中，软件发布时，特别是GNU这种开源软件的发布时，其makefile都包含了编译、安装、打包等功能。我们可以参照这种规则来书写我们的makefile中的目标。
+
+- `all`这个伪目标是所有目标的目标，其功能一般是编译所有的目标。
+- `clean`这个伪目标功能是删除所有被make创建的文件。
+- `install`这个伪目标功能是安装已编译好的程序，其实就是把目标执行文件拷贝到指定的目标中去。
+- `print`这个伪目标的功能是例出改变过的源文件。
+- `tar`这个伪目标功能是把源程序打包备份。也就是一个tar文件。
+- `dist`这个伪目标功能是创建一个压缩文件，一般是把tar文件压成Z文件。或是gz文件。
+- `TAGS`这个伪目标功能是更新所有的目标，以备完整地重编译使用。
+- `check`和`test`这两个伪目标一般用来测试makefile的流程。
+
+## 检查规则
+有时候，我们不想让我们的makefile中的规则执行起来，我们只想检查一下我们的命令，或是执行的序列。于是我们可以使用make命令的下述参数：
+
+```shell
+-n
+--just-print
+--dry-run
+--recon
+```
+
+不执行参数，这些参数只是打印命令，不管目标是否更新，把规则和连带规则下的命令打印出来，但不执行，这些参数对于我们调试makefile很有用处。
+
+```shell
+-t
+--touch
+```
+
+这个参数的意思就是把目标文件的时间更新，但不更改目标文件。也就是说，make假装编译目标，但不是真正的编译目标，只是把目标变成已编译过的状态。
+
+```shell
+-q
+--question
+```
+
+这个参数的行为是找目标的意思，也就是说，如果目标存在，那么其什么也不会输出，当然也不会执行编译，如果目标不存在，其会打印出一条出错信息。
+
+```shell
+-W <file>
+--what-if=<file>
+--assume-new=<file>
+--new-file=<file>
+```
+
+这个参数需要指定一个文件。一般是是源文件（或依赖文件），Make会根据规则推导来运行依赖于这个文件的命令，一般来说，可以和`-n`参数一同使用，来查看这个依赖文件所发生的规则命令。
+
+另外一个很有意思的用法是结合`-p`和`-v`来输出makefile被执行时的信息
+
+## make参数
+下面列举了所有GNU make 3.80版的参数定义。其它版本和产商的make大同小异，不过其它产商的make的具体参数还是请参考各自的产品文档。
+
+```shell
+-b
+-m
+```
+
+这两个参数的作用是忽略和其它版本make的兼容性。
+
+```shell
+-B
+--always-make
+```
+
+认为所有的目标都需要更新（重编译）。
+
+```shell
+-C <dir>
+--directory=<dir>
+```
+
+指定读取makefile的目录。如果有多个`-C`参数，make的解释是后面的路径以前面的作为相对路径，并以最后的目录作为被指定目录。如：`make –C ~zyx/test –C prog`等价于`make –C ~zyx/test/prog`。
+
+```shell
+`—debug[=<options>]`
+```
+
+输出make的调试信息。它有几种不同的级别可供选择，如果没有参数，那就是输出最简单的调试信息。下面是<options>的取值：
+
+- `a` —— 也就是all，输出所有的调试信息。（会非常的多）
+- `b` —— 也就是basic，只输出简单的调试信息。即输出不需要重编译的目标。
+- `v` —— 也就是verbose，在b选项的级别之上。输出的信息包括哪个makefile被解析，不需要被重编译的依赖文件（或是依赖目标）等。
+- `i` —— 也就是implicit，输出所以的隐含规则。
+- `j` —— 也就是jobs，输出执行规则中命令的详细信息，如命令的PID、返回码等。
+- `m` —— 也就是makefile，输出make读取makefile，更新makefile，执行makefile的信息。
+
+```shell
+-d
+```
+
+相当于`--debug=a`。
+
+```shell
+-e
+--environment-overrides
+```
+
+指明环境变量的值覆盖makefile中定义的变量的值。
+
+```shell
+-f=<file>
+--file=<file>
+--makefile=<file>
+```
+
+指定需要执行的makefile。
+
+```shell
+-h
+--help
+```
+
+显示帮助信息。
+
+```shell
+-i
+--ignore-errors
+```
+
+在执行时忽略所有的错误。
+
+```shell
+-I <dir>
+--include-dir=<dir>
+```
+
+指定一个被包含makefile的搜索目标。可以使用多个`-I`参数来指定多个目录。
+
+```shell
+-j [<jobsnum>]
+--jobs[=<jobsnum>]
+```
+
+指同时运行命令的个数。如果没有这个参数，make运行命令时能运行多少就运行多少。如果有一个以上的`-j`参数，那么仅最后一个`-j`才是有效的。（注意这个参数在MS-DOS中是无用的）
+
+```shell
+-k
+--keep-going
+```
+
+出错也不停止运行。如果生成一个目标失败了，那么依赖于其上的目标就不会被执行了。
+
+```shell
+-l <load>
+--load-average[=<load]
+—max-load[=<load>]
+```
+
+指定make运行命令的负载。
+
+```shell
+-n
+--just-print
+--dry-run
+--recon
+```
+
+仅输出执行过程中的命令序列，但并不执行。
+
+```shell
+-o <file>
+--old-file=<file>
+--assume-old=<file>
+```
+
+不重新生成的指定的<file>，即使这个目标的依赖文件新于它。
+
+```shell
+-p
+--print-data-base
+```
+
+输出makefile中的所有数据，包括所有的规则和变量。这个参数会让一个简单的makefile都会输出一堆信息。如果你只是想输出信息而不想执行makefile，你可以使用`make -qp`命令。如果你想查看执行makefile前的预设变量和规则，你可以使用`make –p –f /dev/null`。这个参数输出的信息会包含着你的makefile文件的文件名和行号，所以，用这个参数来调试你的makefile会是很有用的，特别是当你的环境变量很复杂的时候。
+
+```shell
+-q
+--question
+```
+
+不运行命令，也不输出。仅仅是检查所指定的目标是否需要更新。如果是0则说明要更新，如果是2则说明有错误发生。
+
+```shell
+-r
+--no-builtin-rules
+```
+
+禁止make使用任何隐含规则。
+
+```shell
+-R
+--no-builtin-variabes
+```
+
+禁止make使用任何作用于变量上的隐含规则。
+
+```shell
+-s
+--silent
+--quiet
+```
+
+在命令运行时不输出命令的输出。
+
+```shell
+-S
+--no-keep-going
+--stop
+```
+
+取消`-k`选项的作用。因为有些时候，make的选项是从环境变量`MAKEFLAGS`中继承下来的。所以你可以在命令行中使用这个参数来让环境变量中的`-k`选项失效。
+
+```shell
+-t
+--touch
+```
+
+相当于UNIX的touch命令，只是把目标的修改日期变成最新的，也就是阻止生成目标的命令运行。
+
+```shell
+-v
+--version
+```
+
+输出make程序的版本、版权等关于make的信息。
+
+```shell
+-w
+--print-directory
+```
+
+输出运行makefile之前和之后的信息。这个参数对于跟踪嵌套式调用make时很有用。
+
+```shell
+--no-print-directory
+```
+
+禁止`-w`选项。
+
+```shell
+-W <file>
+--what-if=<file>
+--new-file=<file>
+--assume-file=<file>
+```
+
+假定目标`<file>`需要更新，如果和`-n`选项使用，那么这个参数会输出该目标更新时的运行动作。如果没有`-n`那么就像运行UNIX的`touch`命令一样，使得`<file>`的修改时间为当前时间。
+
+```shell
+--warn-undefined-variables
+```
+
+只要make发现有未定义的变量，那么就输出警告信息。
+
+隐含规则
+========
+`隐含规则`也就是一种惯例，make会按照这种`惯例`心照不喧地来运行，那怕我们的Makefile中没有书写这样的规则。例如，把[.c]文件编译成[.o]文件这一规则，你根本就不用写出来，make会自动推导出这种规则，并生成我们需要的[.o]文件。
+
+`隐含规则`会使用一些我们系统变量，我们可以改变这些系统变量的值来定制隐含规则的运行时的参数。如系统变量`CFLAGS`可以控制编译时的编译器参数。
+
+## 使用隐含规则
+如果要使用隐含规则生成你需要的目标，你所需要做的就是不要写出这个目标的规则。那么，make会试图去自动推导产生这个目标的规则和命令，如果make可以自动推导生成这个目标的规则和命令，那么这个行为就是隐含规则的自动推导。当然，隐含规则是make事先约定好的一些东西。例如，我们有下面的一个Makefile：
+
+```make
+foo : foo.o bar.o
+    cc –o foo foo.o bar.o $(CFLAGS) $(LDFLAGS)
+```
+
+
+
+
+
 
 
 
@@ -1252,4 +1538,4 @@ make –f aaa.mk
 ```
 
 
-<!-- http://blog.csdn.net/haoel/article/details/2896 -->
+<!-- http://blog.csdn.net/haoel/article/details/2897 -->
