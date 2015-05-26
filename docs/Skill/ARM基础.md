@@ -758,6 +758,46 @@ Word 32 bits
 - 32位机是数据总线，寄存器大小，与地址总线无关
 - linux内核只使用了普通中断，未使用快速中断
 
+## 存储器
+- ROM：read only memory 只读存储器
+- RAM：ramdom access memory 随机访问存储器
+- IROM：internal rom 内部ROM，指的是集成到SoC内部的ROM
+- IRAM：internal ram 内部RAM，指的是集成到SoC内部的RAM
+- DRAM：dynamic ram 动态RAM
+- SRAM：static ram 静态RAM
+- SROM：static rom？ sram and rom？
+- ONENAND/NAND: 
+- SFR：special function register
+
+### 内存与外存
+- 内存  内部存储器 用来运行程序的 RAM （DRAM SRAM DDR）
+- 外存  外部存储器 用来存储东西的 ROM （硬盘 Flash（Nand iNand···· U盘、SSD） 光盘）
+- CPU连接内存和外存的连接方式不同。内存需要直接地址访问，所以是通过地址总线&数据总线的总线式访问方式连接的（好处是直接访问，随机访问；坏处是占用CPU的地址空间，大小受限）；外存是通过CPU的外存接口来连接的（好处是不占用CPU的地址空间，坏处是访问速度没有总线式快，访问时序较复杂）
+- SoC常用外部存储器
+    + NorFlash: 总线式访问，接到SROM bank，优点是可以直接总线访问，一般用来启动。
+    + NandFlash: 分为SLC和MLC
+    + eMMC/iNand/moviNand: eMMC（embeded MMC）iNand是SanDisk公司出产的eMMC，moviNand是三星公司出产的eMMC
+    + oneNAND: 三星公司出的一种Nand
+    + SD卡/TF卡/MMC卡
+    + eSSD: embeded SSD
+    + SATA硬盘: 机械式访问、磁存储原理、SATA是接口
+- 内存
+    + SRAM  静态内存  特点就是容量小、价格高，优点是不需要软件初始化直接上电就能用
+    + DRAM  动态内存  特点就是容量大、价格低，缺点就是上电后不能直接使用，需要软件初始化后才可以使用。
+    + 单片机中：内存需求量小，而且希望开发尽量简单，适合全部用SRAM
+    + 嵌入式系统：内存需求量大，而且没有NorFlash等可启动介质
+    + PC机：    内存需求量大，而且软件复杂，不在乎DRAM的初始化开销，适合全部用DRAM
+
+
+### S5PV210地址映射
+![img](../../imgs/arm01.png)
+
+![img](../../imgs/arm02.png)
+
+![img](../../imgs/arm03.png)
+
+
+
 ## 寄存器
 
 - r13 SP stack pointer
@@ -845,6 +885,9 @@ R15 |pc    | 程序计数器
 - java字节码
 
 ## 哈佛与冯诺依曼
+程序和数据都放在内存中，且不彼此分离的结构称为冯诺依曼结构。譬如Intel的CPU均采用冯诺依曼结构。程序和数据分开独立放在不同的内存块中，彼此完全分离的结构称为哈佛结构。譬如大部分的单片机（MCS51、ARM9等）均采用哈佛结构。
+
+冯诺依曼结构中程序和数据不区分的放在一起，因此安全和稳定性是个问题，好处是处理起来简单。哈佛结构中程序（一般放在ROM、flash中）和数据（一般放在RAM中）独立分开存放，因此好处是安全和稳定性高，缺点是软件处理复杂一些（需要统一规划链接地址等）
 
 - 哈佛（安全性高，性能高）
 
@@ -1596,6 +1639,9 @@ int main(void){
 ```
 
 ## 选择排序
+
+<!-- run -->
+
 ```c
 #include <stdio.h>
 
