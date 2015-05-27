@@ -740,25 +740,9 @@ chroot /mnt/
 exit #退出刚才切入的根
 ```
 
-ARM架构
+
+存储器
 =========
-> 参照[ARM_Architecture_Reference_Manual.pdf](../../data/ARM_Architecture_Reference_Manual.pdf) p39
-
-Byte 8 bits
-Halfword 16 bits
-Word 32 bits
-
-- a8共有7种模式
-- a9还有一个安全模式
-
-- system模式存在，但没人用过
-
-
-- arm中寄存器是32位 or 64位
-- 32位机是数据总线，寄存器大小，与地址总线无关
-- linux内核只使用了普通中断，未使用快速中断
-
-## 存储器
 - ROM：read only memory 只读存储器
 - RAM：ramdom access memory 随机访问存储器
 - IROM：internal rom 内部ROM，指的是集成到SoC内部的ROM
@@ -766,41 +750,175 @@ Word 32 bits
 - DRAM：dynamic ram 动态RAM
 - SRAM：static ram 静态RAM
 - SROM：static rom？ sram and rom？
-- ONENAND/NAND: 
+- ONENAND/NAND:
 - SFR：special function register
 
-### 内存与外存
-- 内存  内部存储器 用来运行程序的 RAM （DRAM SRAM DDR）
-- 外存  外部存储器 用来存储东西的 ROM （硬盘 Flash（Nand iNand···· U盘、SSD） 光盘）
-- CPU连接内存和外存的连接方式不同。内存需要直接地址访问，所以是通过地址总线&数据总线的总线式访问方式连接的（好处是直接访问，随机访问；坏处是占用CPU的地址空间，大小受限）；外存是通过CPU的外存接口来连接的（好处是不占用CPU的地址空间，坏处是访问速度没有总线式快，访问时序较复杂）
-- SoC常用外部存储器
-    + NorFlash: 总线式访问，接到SROM bank，优点是可以直接总线访问，一般用来启动。
-    + NandFlash: 分为SLC和MLC
-    + eMMC/iNand/moviNand: eMMC（embeded MMC）iNand是SanDisk公司出产的eMMC，moviNand是三星公司出产的eMMC
-    + oneNAND: 三星公司出的一种Nand
-    + SD卡/TF卡/MMC卡
-    + eSSD: embeded SSD
-    + SATA硬盘: 机械式访问、磁存储原理、SATA是接口
-- 内存
-    + SRAM  静态内存  特点就是容量小、价格高，优点是不需要软件初始化直接上电就能用
-    + DRAM  动态内存  特点就是容量大、价格低，缺点就是上电后不能直接使用，需要软件初始化后才可以使用。
-    + 单片机中：内存需求量小，而且希望开发尽量简单，适合全部用SRAM
-    + 嵌入式系统：内存需求量大，而且没有NorFlash等可启动介质
-    + PC机：    内存需求量大，而且软件复杂，不在乎DRAM的初始化开销，适合全部用DRAM
+## 内存
+内存需要直接地址访问，所以是通过地址总线&数据总线的总线式访问方式连接的（好处是直接访问，随机访问；坏处是占用CPU的地址空间，大小受限）
 
+内部存储器 用来运行程序的 RAM （DRAM SRAM DDR）
 
-### S5PV210地址映射
+- SRAM  静态内存  特点就是容量小、价格高，优点是不需要软件初始化直接上电就能用
+- DRAM  动态内存  特点就是容量大、价格低，缺点就是上电后不能直接使用，需要软件初始化后才可以使用。
+
+单片机中：内存需求量小，而且希望开发尽量简单，适合全部用SRAM
+
+嵌入式系统：内存需求量大，而且没有NorFlash等可启动介质
+
+PC机：    内存需求量大，而且软件复杂，不在乎DRAM的初始化开销，适合全部用DRAM
+
+## 外存
+外存是通过CPU的外存接口来连接的（好处是不占用CPU的地址空间，坏处是访问速度没有总线式快，访问时序较复杂）
+
+外部存储器 用来存储东西的 ROM （硬盘 Flash（Nand iNand···· U盘、SSD） 光盘）
+
+- NorFlash: 特点是容量小，价格高，优点是可以和CPU直接总线式相连，接到SROM bank，CPU上电后可以直接读取，所以一般用作启动介质。
+- NandFlash: 分为SLC和MLC，跟硬盘一样，特点是容量大，价格低，缺点是不能总线式访问，也就是说不能上电CPU直接读取，需要CPU先运行一些初始化软件，然后通过时序接口读写。
+- eMMC/iNand/moviNand: eMMC（embeded MMC）iNand是SanDisk公司出产的eMMC，moviNand是三星公司出产的eMMC
+- oneNAND: 三星公司出的一种Nand
+- SD卡/TF卡/MMC卡
+- eSSD: embeded SSD
+- SATA硬盘: 机械式访问、磁存储原理、SATA是接口
+
+单片机：   很小容量的NorFlash + 很小容量的SRAM
+
+嵌入式系统：因为NorFlash很贵，随意现在很多嵌入式系统倾向于不用NorFlash，而直接用：外接的大容量Nand + 外接大容量DRAM + SoC内置SRAM
+
+PC机：很小容量的BIOS（NorFlash）+ 很大容量的硬盘（类似于NandFlash）+ 大容量的DRAM
+
+S5PV210启动过程
+=================
+## S5PV210地址映射
 ![img](../../imgs/arm01.png)
 
 ![img](../../imgs/arm02.png)
 
 ![img](../../imgs/arm03.png)
 
+## S5PV210启动过程
+S5PV210使用的存储方案是：外接的大容量Nand + 外接大容量DRAM + SoC内置SRAM
+
+210内置了一块96KB大小的SRAM（叫iRAM），同时还有一块内置的64KB大小的NorFlash（叫iROM）。210的启动过程大致是：
+
+- 第一步：CPU上电后先从内部IROM中读取预先设置的代码（BL0），执行。这一段IROM代码首先做了一些基本的初始化（CPU时钟、关看门狗···）（这一段IROM代码是三星出厂前设置的，三星也不知道我们板子上将来接的是什么样的DRAM，因此这一段IROM是不能负责初始化外接的DRAM的，因此这一段代码只能初始化SoC内部的东西）；然后这一段代码会判断我们选择的启动模式（我们通过硬件跳线可以更改板子的启动模式），然后从相应的外部存储器去读取第一部分启动代码（BL1，大小为16KB）到内部SRAM。
+> - BL0做了什么
+>     + 关看门狗
+>     + 初始化指令cache
+>     + 初始化栈
+>     + 初始化堆
+>     + 初始化块设备复制函数device copy function
+>     + 设置SoC时钟系统
+>     + 复制BL1到内部IRAM（16KB）
+>     + 检查BL1的校验和
+>     + 跳转到BL1去执行
+
+- 第二步：从IRAM去运行刚上一步读取来的BL1（16KB），然后执行。BL1负责初始化NandFlash，然后将BL2读取到IRAM（剩余的80KB）然后运行
+- 第三步：从IRAM运行BL2，BL2初始化DRAM，然后将OS读取到DRAM中，然后启动OS，启动过程结束。
+
+![img](../../imgs/arm04.png)
+
+![img](../../imgs/arm05.png)
+
+![img](../../imgs/arm06.png)
+
+![img](../../imgs/arm07.png)
+
+- 210内部有iROM和iRAM，因此启动时分两个阶段：内部启动阶段和外部启动阶段。对于内部启动阶段各种S5PV210的开发板都是相同的，对于外部启动阶段，不同开发板会有不同。
+- S5PV210出厂时内置了64KB iROM和96KB iRAM。iROM中预先内置烧录了一些代码（称为iROM代码），iRAM属于SRAM（不需软件初始化，上电即可使用）。210启动时首先在内部运行iROM代码，然后由iROM代码开启外部启动流程。设计成iROM和iRAM是为了支持多种外部设备启动。
+- 使用iROM启动的好处：降低BOM成本。因为iROM可以使SOC从各种外设启动，因此可以省下一块boot rom（专门用来启动的rom，一般是norflash）；支持各种校验类型的nand；可以在不使用编程器的情况下使用一种外部存储器运行程序来给另一种外部存储器编程烧录。这样生产时就不用额外购买专用编程器了，降低了量产成本
+
+## OMpin识别外部启动介质
+![img](../../imgs/arm08.png)
+
+![img](../../imgs/arm09.png)
+
+![img](../../imgs/arm10.png)
+
+> 拨码开关设置我们只需动OM5即可，其他几个根本不需要碰。需要SD启动时OM5打到GND，需要USB启动时OM5打到VCC
+
+
+ARM架构
+=========
+> 参照[ARM_Architecture_Reference_Manual.pdf](../../data/ARM_Architecture_Reference_Manual.pdf) p39
+
+arm约定
+
+- `Byte` 8 bits
+- `Halfword` 16 bits
+- `Word` 32 bits
+
+大部分arm core提供
+
+- ARM 指令集（32-bit）32位机是指数据总线，寄存器大小，与地址总线无关
+- Thumb 指令集（16-bit ）
+- Thumb2指令集（16 & 32bit）
+
+## 处理器工作模式
+a8共有7种模式(a9还有一个安全模式)
+
+- `User` : 非特权模式，大部分任务执行在这种模式
+
+- `FIQ` :   当一个高优先级（fast) 中断产生时将会进入这种模式(linux内核并未使用)
+- `IRQ` :   当一个低优先级（normal) 中断产生时将会进入这种模式
+- `Supervisor` :当复位或软中断指令执行时将会进入这种模式
+- `Abort` : 当存取异常时将会进入这种模式
+- `Undef` : 当执行未定义指令时会进入这种模式
+
+- `System` : 使用和User模式相同寄存器集的特权模式(linux内核并未使用)
+
+> 除User（用户模式）是Normal（普通模式）外，其他6种都是Privilege（特权模式）
+>
+> Privilege中除Sys模式外，其余5种为异常模式。
+>
+> 各种模式的切换，可以是程序员通过代码主动切换（通过写CPSR寄存器）；也可以是CPU在某些情况下自动切换。
+>
+> 各种模式下权限和可以访问的寄存器不同。
+
+操作系统中一般用软中断指令实现系统调用
+
+```plain
+软件：用户态------------------------------->内核态--------->用户态
+     open---->syscall---->swi/svc--------->sys_open------>open
+硬件：user模式----------------------------->svc模式------->user模式
+```
 
 
 ## 寄存器
+![img](../../imgs/arm11.png)
 
-- r13 SP stack pointer
+ARM总共有37个寄存器，但是每种模式下最多只能看到18个寄存器，其他寄存器虽然名字相同但是在当前模式不可见。
+
+对r13这个名字来说，在ARM中共有6个名叫r13（又叫sp）的寄存器，但是在每种特定处理器模式下，只有一个r13是当前可见的，其他的r13必须切换到他的对应模式下才能看到。这种设计叫影子寄存器（banked register）
+
+![img](../../imgs/arm12.png)
+
+![img](../../imgs/arm14.png)
+
+### 寄存器别名
+
+```table
+Reg#|  APCS|  意义
+----|------|------
+R0  |a1    | 工作寄存器
+R1  |a2    | "
+R2  |a3    | "
+R3  |a4    | "
+R4  |v1    | 必须保护
+R5  |v2    | "
+R6  |v3    | "
+R7  |v4    | "
+R8  |v5    | "
+R9  |v6    | "
+R10 |sl    | 栈限制
+R11 |fp    | 桢指针
+R12 |ip    | 内部过程调用寄存器
+R13 |sp    | 栈指针
+R14 |lr    | 连接寄存器
+R15 |pc    | 程序计数器
+```
+
+### r13(SP)
+stack pointer 栈指针寄存器
 
 内存的布局，sp指向当前正在运行的进程的栈地址，意味着进程切换时，也需要cpu去修改sp指向
 
@@ -823,12 +941,14 @@ Word 32 bits
 0G--------
 ```
 
-- r14 LR link register
-- r15 PC process counter
+### r14(LR)/r15(PC)
+link register 链接寄存器，用于程序返回
+
+process counter，程序指针，PC指向哪里，CPU就会执行哪条指令（所以程序跳转时就是把目标地址代码放到PC中）。整个CPU中只有一个PC
 
 ```plain
 a(){
-  ------------    进入a函数时，将LR的值保存在SP中（保证嵌套时，LR不会被覆盖）
+  ------------    进入a函数时，将LR的值保存在[SP]中（保证嵌套时，LR不会被覆盖）
   ------------
   ------------    函数结束时，把LR值恢复，PC=LR的值，则执行函数返回后的代码
 }
@@ -843,31 +963,32 @@ b(){
 > - arm在函数传参、返回值、保存返回地址，均使用寄存器，只有局部变量使用栈
 > - 而x86中上述的值均使用栈来保存
 
-- cpsr
-- spsr
+### cpsr
+程序状态寄存器 整个CPU中只有一个
 
-### ARM寄存器的别名
+![img](../../imgs/arm15.png)
 
-```table
-Reg#|  APCS|  意义
-----|------|------
-R0  |a1    | 工作寄存器
-R1  |a2    | "
-R2  |a3    | "
-R3  |a4    | "
-R4  |v1    | 必须保护
-R5  |v2    | "
-R6  |v3    | "
-R7  |v4    | "
-R8  |v5    | "
-R9  |v6    | "
-R10 |sl    | 栈限制
-R11 |fp    | 桢指针
-R12 |ip    | 内部过程调用寄存器
-R13 |sp    | 栈指针
-R14 |lr    | 连接寄存器
-R15 |pc    | 程序计数器
-```
+![img](../../imgs/arm13.png)
+
+- `N` 当程序出现了负操作会Set N，否则Clear N
+- `Z` 当程序出现了0操作会Set Z，否则Clear Z
+- `C` 如果是加法产生了进位会Set C，否则Clear C; 如果是减法产生了借位会Clear C，否则Set C
+- `V` 如果出现溢出会Set V，否则Clear V
+- `Q` 如果运算发生了饱和会Set Q，否则Clear Q
+- `J` 如果Arm执行的是java指令，则J==1
+- `E` 如果E==1,说明当前运行模式是大端，否则是小端
+- `A` 终止禁止位，如果A==1就不会发生终止
+- `I` 中断禁止位，如果I==1处理器就不会响应中断
+- `F` 快速中断禁止位，如果F==1处理器就不会响应快速中断
+- `T` 如果T==1,说明处理器正在执行thumb指令，否则就是arm指令
+- `M[4:0]` 表示当前处理器的运行模式
+
+> 用户模式只能修改CPSR的NZCVQ
+
+![img](../../imgs/arm16.png)
+
+### spsr
+整个CPU中有5个，这个寄存器用于存放当前程序状态寄存器的内容。在异常中断退出时，可以用SPSR来恢复CPSR
 
 
 ## 流水线
@@ -930,8 +1051,27 @@ R15 |pc    | 程序计数器
     + tcm 紧耦合性内存 通过地址访问（指针） 与访问寄存器一样快
     + 协处理器: cp11(浮点VFP) cp10(图形NEON) cp14(DEBUG) cp15(控制CTRL)....
 
+## 异常
+正常工作之外的流程都叫异常；异常会打断正在执行的工作，并且一般我们希望异常处理完成后继续回来执行原来的工作；中断是异常的一种
 
+所有的CPU都有 __异常向量表__，这是CPU设计时就设定好的，是硬件决定的。当异常发生时，CPU会自动动作（PC跳转到异常向量处处理异常，有时伴有一些辅助动作）
 
+- 当异常产生时, ARM core:
+    + 拷贝 `CPSR` 到 `SPSR_<mode>`
+    + 设置适当的 `CPSR` 位：
+        * 改变处理器状态进入 ARM 态
+        * 改变处理器模式进入相应的异常模式
+        * 设置中断禁止位禁止相应中断 (如果需要)
+    + 保存返回地址到 `LR_<mode>`
+    + 设置 `PC` 为相应的异常向量
+- 返回时, 异常处理需要:
+    + 从 `SPSR_<mode`>恢复`CPSR`
+    + 从`LR_<mode>`恢复`PC`
+    + Note:这些操作只能在 ARM 态执行.
+
+![img](../../imgs/arm21.png)
+
+> 以上说的是CPU设计时提供的异常向量表，一般成为一级向量表。有些CPU为了支持多个中断，还会提供二级中断向量表，处理思路类似于这里说的一级中断向量表
 
 ARM汇编
 =========
@@ -942,7 +1082,29 @@ ARM汇编
 >     - ld    x.o  x
 
 ## 汇编指令
-> [arm常用指令.pdf](../../data/arm常用指令.pdf)
+![img](../../imgs/arm17.png)
+
+![img](../../imgs/arm18.png)
+
+![img](../../imgs/arm19.png)
+
+![img](../../imgs/arm20.png)
+
+## 寻址方式
+- 寄存器寻址 `mov r1, r2`
+- 立即寻址 `mov r0, #0xFF00`
+- 寄存器移位寻址 `mov r0, r1, lsl #3`
+- 寄存器间接寻址 `ldr r1, [r2]`
+- 基址变址寻址 `ldr r1, [r2, #4]`
+- 多寄存器寻址 `ldmia r1!, {r2-r7, r12}`
+- 堆栈寻址 `stmfd sp!, {r2-r7, lr}`
+- 相对寻址 `beq <label>`
+
+## 指令后缀
+- `B`（byte）功能不变，操作长度变为8位
+- `H`（half word）功能不变，长度变为16位
+- `S`（signed）功能不变，操作数变为有符号，如 `ldr ldrb ldrh ldrsb ldrsh`
+- `S`（S标志）功能不变，影响CPSR标志位，如 `movs`
 
 
 
@@ -1556,7 +1718,7 @@ else
 ```
 
 - 跳转到指定label
-- `b/bl/bx`最多只能跳转32M字节
+- `b/bl/bx`最多只能跳转的范围[-32M, +32M-4]
 
 ```c
 int main(void){
