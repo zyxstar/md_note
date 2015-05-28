@@ -899,25 +899,25 @@ ARM总共有37个寄存器，但是每种模式下最多只能看到18个寄存�
 ```table
 Reg#|  APCS|  意义
 ----|------|------
-R0  |a1    | 工作寄存器
-R1  |a2    | "
-R2  |a3    | "
-R3  |a4    | "
-R4  |v1    | 必须保护
-R5  |v2    | "
-R6  |v3    | "
-R7  |v4    | "
-R8  |v5    | "
-R9  |v6    | "
-R10 |sl    | 栈限制
-R11 |fp    | 桢指针
-R12 |ip    | 内部过程调用寄存器
-R13 |sp    | 栈指针
-R14 |lr    | 连接寄存器
-R15 |pc    | 程序计数器
+r0  |a1    | 工作寄存器
+r1  |a2    | "
+r2  |a3    | "
+r3  |a4    | "
+r4  |v1    | 必须保护
+r5  |v2    | "
+r6  |v3    | "
+r7  |v4    | "
+r8  |v5    | "
+r9  |v6    | "
+r10 |sl    | 栈限制
+r11 |fp    | 桢指针
+r12 |ip    | 内部过程调用寄存器
+r13 |sp    | 栈指针
+r14 |lr    | 连接寄存器
+r15 |pc    | 程序计数器
 ```
 
-### r13(SP)
+### r13(sp)
 stack pointer 栈指针寄存器
 
 内存的布局，sp指向当前正在运行的进程的栈地址，意味着进程切换时，也需要cpu去修改sp指向
@@ -941,7 +941,7 @@ stack pointer 栈指针寄存器
 0G--------
 ```
 
-### r14(LR)/r15(PC)
+### r14(lr)/r15(pc)
 link register 链接寄存器，用于程序返回
 
 process counter，程序指针，PC指向哪里，CPU就会执行哪条指令（所以程序跳转时就是把目标地址代码放到PC中）。整个CPU中只有一个PC
@@ -985,7 +985,7 @@ b(){
 - `T` 如果T==1,说明处理器正在执行thumb指令，否则就是arm指令
 - `M[4:0]` 表示当前处理器的运行模式
 
-> 用户模式只能修改CPSR的NZCVQ
+> 用户模式只能修改cpsr的NZCVQ
 
 ![img](../../imgs/arm16.png)
 
@@ -1060,56 +1060,47 @@ b(){
 所有的CPU都有 __异常向量表__，这是CPU设计时就设定好的，是硬件决定的。当异常发生时，CPU会自动动作（PC跳转到异常向量处处理异常，有时伴有一些辅助动作）
 
 - 当异常产生时, ARM core:
-    + 拷贝 `CPSR` 到 `SPSR_<mode>`
-    + 设置适当的 `CPSR` 位：
-        * 改变处理器状态进入 ARM 态
+    + 拷贝 `cpsr` 到 `spsr_<mode>`
+    + 设置适当的 `cpsr` 位：
+        * 改变处理器状态进入 arm 态
         * 改变处理器模式进入相应的异常模式
         * 设置中断禁止位禁止相应中断 (如果需要)
-    + 保存返回地址到 `LR_<mode>`
-    + 设置 `PC` 为相应的异常向量
+    + 保存返回地址到 `lr_<mode>`
+    + 设置 `pc` 为相应的异常向量
 - 返回时, 异常处理需要:
-    + 从 `SPSR_<mode`>恢复`CPSR`
-    + 从`LR_<mode>`恢复`PC`
+    + 从 `spsr_<mode`>恢复`cpsr`
+    + 从`lr_<mode>`恢复`pc`
     + Note:这些操作只能在 ARM 态执行.
 
 ![img](../../imgs/arm21.png)
 
-> 以上说的是CPU设计时提供的异常向量表，一般成为一级向量表。有些CPU为了支持多个中断，还会提供二级中断向量表，处理思路类似于这里说的一级中断向量表
+> 以上说的是CPU设计时提供的异常向量表，一般成为一级向量表。有些CPU为了支持多个中断，还会提供二级中断向量表，处理思路类似于一级中断向量表
 
-ARM汇编
-=========
-> - 内嵌汇编编译器：armcc(keil内部集成)， gcc
-> - 编译过程
->     - gcc   x.c  x.s  优化在此发生，为了防止优化，请使用`volatile`
->     - as    x.s  x.o
->     - ld    x.o  x
+ARM汇编指令
+============
+- [ARM指令集详解](http://blog.csdn.net/velanjun/article/details/8719090)
+- [ARM指令集.pdf](../../data/ARM指令集.pdf)
 
-## 汇编指令
-![img](../../imgs/arm17.png)
+> 内嵌汇编编译器：armcc(keil内部集成)， gcc
 
-![img](../../imgs/arm18.png)
+编译过程
 
-![img](../../imgs/arm19.png)
+1. `gcc   x.c  x.s`  优化在此发生，为了防止优化，请使用`volatile`
+1. `as    x.s  x.o`
+1. `ld    x.o  x`
 
-![img](../../imgs/arm20.png)
+## 指令格式
+`<opcode>{<cond>}{S} <Rd>,<Rn>{,<opcode2>}`
 
-## 常见指令
-- 数据传输指令  `mov mvn`
-- 算术指令      `add sub rsb adc sbc rsc `
-- 逻辑指令      `and orr eor bic`
-- 比较指令      `cmp cmn tst teq`
-- 乘法指令      `mvl mla umull umlal smull smlal`
-- 前导零计数    `clz`
-- cpsr访问指令  `mrs msr`
-- 跳转(分支)指令 `b bl bx`
-- 访存指令       `1dr/str`单个字/半字/字节访问；`ldm/stm`多字批量访问； `swp`
-- 软中断指令     `swi`软中断指令用来实现操作系统中系统调用
-- 协处理器cp15操作指令  `mrc mcr`，语法`mcr{<cond>}   p15, <opcode_1>, <Rd>, <Crn>, <Crm>, {<opcode_2>}`
-> `mrc p15, 0, r0, c1, c0, 0`<br/>
-> `orr r0, r0, #1`<br/>
-> `mcr p15, 0, r0, c1, c0, 0`<br/>
+> 其中，`<>`内的项是必须的，`{}`内的项是可选的
 
-[ARM CP15协处理器](http://www.cnblogs.com/gaomaolin_88/archive/2010/07/16/1779183.html)
+- `opcode`  指令助记符，如ldr，str 等
+- `cond`  执行条件，如eq，ne 等
+- `S`  是否影响cpsr 寄存器的值，书写时影响cpsr，否则不影响
+- `Rd`  目标寄存器
+- `Rn`  第一个操作数的寄存器
+- `operand2`  第二个操作数
+
 
 ## 寻址方式
 - 寄存器寻址 `mov r1, r2` @`r1 = r2;`
@@ -1121,16 +1112,18 @@ ARM汇编
 - 堆栈寻址 `stmfd sp!, {r2-r7, lr}` @`r2 = *sp; sp-=4; r3 = *sp;...`
 - 相对寻址 `beq <label>` @`if (cpsr_Z) label();`
 
+
 ## 指令后缀
+
 ### 操作数长度
-- `B`（byte）功能不变，操作长度变为8位
-- `H`（half word）功能不变，长度变为16位
+- `b`（byte）功能不变，操作长度变为8位
+- `h`（half word）功能不变，长度变为16位
 
 ### 操作数有符号
-- `S`（signed）功能不变，操作数变为有符号，如 `ldr ldrb ldrh ldrsb ldrsh`
+- `s`（signed）功能不变，操作数变为有符号，如 `ldr ldrb ldrh ldrsb ldrsh`
 
-### 影响CPSR标志位
-- `S`（S标志）功能不变，影响CPSR标志位，如 `movs adds adcs`
+### 影响cpsr标志位
+- `s`（s标志）功能不变，影响cpsr标志位，如 `movs adds adcs`
 
 ### 条件执行
 ![img](../../imgs/arm22.png)
@@ -1144,39 +1137,443 @@ ARM汇编
 
 > `!`后缀必须紧跟在地址表达式后面，而地址表达式要有明确的地址偏移量。
 
-> `!`后缀不能用于R15(PC)的后面
+> `!`后缀不能用于r15(pc)的后面
 
 ### 索引后缀
-> I Icrement; A After; B Before; D Decrement
+> i icrement; a after; b before; d decrement
 
-- `IA` 事后递增，即每次传递后基址加4，指向下一个字，递增方式
-- `IB` 事先递增，即每次传递前基址加4，指向本次传送的字，递增方式
-- `DA` 事后递减，即每次传递后地址减4，指向下一个字，递减方式
-- `DB` 事前递减，即每次传递前地址减4，指向本次传送的字，递减方式
+- `ia` 事后递增，即每次传递后基址加4，指向下一个字，递增方式
+- `ib` 事先递增，即每次传递前基址加4，指向本次传送的字，递增方式
+- `da` 事后递减，即每次传递后地址减4，指向下一个字，递减方式
+- `db` 事前递减，即每次传递前地址减4，指向本次传送的字，递减方式
 
-`LDMIA R6，{R0，R4，R7} @[R6]-->R0,[R6+4]-->R4, [R6+8]-->R7`
+`ldmia r6，{r0，r4，r7} @[r6]-->r0,[r6+4]-->r4, [r6+8]-->r7`
 
-`LDMIA R6，{R0，R4，R7}^`，`^`的作用可大了：处理器同时把SPSR拷贝到CPSR中，并强制处理器回到用户模式（注意了：只在数据块传递中使用，切忌在用户模式中）
+`ldmia r6，{r0，r4，r7}^`，`^`的作用可大了：处理器同时把spsr拷贝到cpsr中，并强制处理器回到用户模式（注意了：只在数据块传递中使用，切忌在用户模式中）
 
 ### 堆栈后缀
-地址基址必须使用SP（R13）
+地址基址必须使用`sp`（r13）
 
-> F Full; D Descending; E Empty; A Ascending
+> f full; d descending; e empty; a ascending
 
 - 满栈（full stack）栈指针指向栈顶元素（即最后一个入栈的数据元素）
 - 空栈（empty stack）栈指针指向与栈顶元素相邻的一个可用数据单元，也就是说栈指针指向第一个没用使用的地址或者空位置
 
-`STMFD SP!，{R0-R5，LR}`把R0-R5和LR保存到堆栈中
+`stmfd sp!，{r0-r5，lr}`把`r0-r5`和`lr`保存到堆栈中
 
-`LDMFD SP！，{R0-R5，PC}`把数据出栈到R0-R5和PC中
+`ldmfd sp！，{r0-r5，pc}`把数据出栈到`r0-r5`和`pc`中
 
+## 数据传输指令
+- `mov` 给一个寄存器赋值
+
+```assembly
+mov r0, #10  @r0 = 10
+mov r0, r1   @r0 = r1
+```
+
+- `movt` 给一个寄存器的高16位赋值，把一个16位的op2 放到r0的[31-16]，r0的[15-0]不变，注意：op2 不能大于16位，但可以不符合立即数规则，如op2 可以是0x1234，op1 必须是可读可写的
+
+```assembly
+movt r0, #10
+movt r0, r1
+```
+
+- `mvn` 把一个数值按位取反后赋值给一个寄存器
+
+```assembly
+mvn r0，#0xff  @r0 = ~0xff
+mvn r0， r1    @r0 = ~r1
+```
+
+## 算术指令
+- `add` 计算两个数值的加法
+
+```assembly
+add r0，r0，#10  @r0 = r0 + 10
+add r0，r0，r1   @r0 = r0 + r1
+```
+
+- `adc` 带进位的加法
+
+```assembly
+adc r0，r0，#10  @r0 = r0 + 10 + c
+adc r0，r0，r1   @r0 = r0 + r1 + c
+```
+
+- `sub` 计算两个数值的减法
+
+```assembly
+sub r0，r0, #10   @r0 = r0 – 10
+sub r0, r0, r1    @r0 = r0 - r1
+```
+
+- `sbc` 带借位的减法
+
+```assembly
+sbc r0, r0, #10   @r0 = r0 – 10 - !c
+sbc r0, r0, r1    @r0 = r0 – r1 - !c
+```
+
+- `rsb` 反转减法
+
+```assembly
+rsb r0, r0, r1    @r0 = r1 – r0
+rsb r0, r0, #10   @r0 = 10 - r0
+```
+
+- `rsc` 带借位的反转减法
+
+```assembly
+rsc r0, r0, r1    @r0 = r1 – r0 - !c
+rsc r0, r0, #10   @r0 = 10 – r0 - !c
+```
+
+## 乘法指令
+- `mul` 乘法
+
+```assembly
+mul r0, r1, r2  @r0 = r1 * r2
+```
+
+- `mla` 乘加
+
+```assembly
+mul r0, r1, r2, r3  @r0 = r1 * r2 + r3
+```
+
+- `mls` 乘减
+
+```assembly
+mls r0, r1, r2, r3  @r0 = r3 – r1 * r2
+```
+
+- `umull`
+- `umlal`
+- `smull`
+- `smlal`
+
+## 位操作指令
+- `orr` 按位或
+
+```assembly
+orr r0, r0, r1   @r0 = r0 | r1
+orr r0, r0, #10  @r0 = r0 | 10
+```
+
+- `eor` 按位异或
+
+```assembly
+eor r0, r0, #10   @r0 = r0 ^ 10
+eor r0, r0, r1    @r0 = r0 ^ r1
+```
+
+- `and` 按位与
+
+```assembly
+and r0, r0, r1    @r0 = r0 & r1
+and r0, r0, #10   @r0 = r0  & 10
+```
+
+- `bic` 位取反/位清除
+
+```assembly
+bic r0, r0, r1    @r0 = r0 & (~r1)
+bic r0, r0, #10   @r0 = r0 & (~10)
+```
+
+- `lsr` 逻辑右移
+
+```assembly
+r0, lsr r1    @r0 >>> r1
+r0, lsr #10   @r0 >>> 1
+```
+
+- `lsl` 逻辑左移
+
+```assembly
+r0, lsl r1   @r0 <<< r1
+r0, lsl #1   @r0 <<< 1
+```
+
+- `asr` 算术右移
+
+```assembly
+r0, asr r1  @r0 >> r1
+r0, asr #1  @r0 >> 1
+```
+
+- `ror` 循环右移
+
+```assembly
+r0, ror r1   @(r0 >>> r1) | (r0 <<< (32 – r1))
+r0, ror #1   @(r0 >>> 1) | (r0 <<< (32 – 1))
+```
+
+- `rev` 大小端转换
+
+```assembly
+rev r0, r1   @把r1进行大小端转换，结果放到r0
+```
+
+- `rev16` 16位大小端转换
+
+```assembly
+rev16 r0, r1  @把r1的每个16位进行大小端转换，结果放到r0
+```
+
+- `revsh` 16位大小端转换并有符号扩展
+
+```assembly
+revsh r0, r1  @把r1的低16位进行大小端转换，并扩展为一个32位的有符号数
+```
+
+- `rbit` 位反转
+
+```assembly
+rbit r0, r1  @把r1进行位顺序翻转，结果放到r0
+```
+
+- `uxtb16` 无符号8 位扩展16位
+
+```assembly
+uxtb16 r0，r1  @把r1中的两个8 位数无符号扩展为两个16位数，结果放到r0
+```
+
+- `uxtb` 无符号8 位扩展32位
+
+```assembly
+uxtb8 r0，r1  @把r1中的8 位数无符号扩展为一个32位数，结果放到r0
+```
+
+- `uxth` 无符号16位扩展32位
+
+```assembly
+uxth r0，r1  @把r1中的16位数无符号扩展为一个32位数，结果放到r0
+```
+
+- `sxtb16` 有符号8 位扩展16位
+
+```assembly
+sxtb16 r0，r1  @把r1中的两个8 位数有符号扩展为两个16位数，结果放到r0
+```
+
+- `sxtb` 有符号8 位扩展32位
+
+```assembly
+sxtb8 r0，r1  @把r1中的8 位数有符号扩展为一个32位数，结果放到r0
+```
+
+- `sxth` 有符号16位扩展32位
+
+```assembly
+sxth r0，r1  @把r1中的16位数有符号扩展为一个32位数，结果放到r0
+```
+
+## 比较指令
+
+- `cmp` 比较
+
+```assembly
+cmp r0, r1   @r0 – r1 影响cpsr标志位
+cmp r0, #10  @r0 – 10 影响cpsr标志位
+```
+
+- `cmn` 负数比较指令，指令使用寄存器rn 与值加上operand2 的值，根据操作的结果更新cpsr中的相应条件标志位，以便后面的指令根据相应的条件标志来判断是否执行
+
+- `teq` 比较（按位异或）
+
+```assembly
+teq r0, r1   @r0 ^ r1 影响cpsr标志位
+teq r0, #10  @r0 ^ 10 影响cpsr标志位
+```
+
+- `tst` 比较（按位与）
+
+```assembly
+tst r0, r1   @r0 & r1 影响cpsr标志位
+tst r0, #10  @r0 & 10 影响cpsr标志位
+```
+
+## cpsr访问指令
+- `mrs` 读cpsr
+- `msr` 写cpsr
+
+## 软中断指令
+- `swi` 软中断 `swi 10`  产生软中断异常 软中断指令用来实现操作系统中系统调用
+- `svc` 等同于swi  `svc 10`  产生软中断异常
+
+## 访存指令
+- `ldr` 把数据从内存加载的寄存器(单个字/半字/字节访问)
+
+```assembly
+ldr r0, addr            @r0 = *addr
+ldr r0, =addr           @r0 = addr
+ldr r1, [r0]            @r1 = *r0
+ldr r1, [r0, #4]        @r1 = *(r0 + 4)
+ldr r1, [r0, #4]!       @r1 = *(r0 + 4); r0 += 4
+ldr r1, [r0], #4        @r1 = *r0; r0 += 4
+```
+
+- `str` 把数据从寄存器保存的内存(单个字/半字/字节访问)
+
+```assembly
+str r0, addr            @*addr = r0
+str r1, [r0]            @*r0 = r1
+str r1, [r0, #4]        @*(r0 + 4) = r1
+str r1, [r0, #4]!       @*(r0 + 4) = r1; r0 += 4
+str r1, [r0], #4        @*r0 = r1; r0 += 4
+```
+
+- `ldm` 把数据从内存加载的寄存器(多字批量访问)
+
+```assembly
+ldmfd sp!, {r0-r12, lr}  @把寄存器的值放到满递减栈中
+```
+
+- `stm` 把数据从寄存器保存的内存(多字批量访问)
+
+```assembly
+stmfd sp!, {r0-r12, lr}  @从满递减栈中把值取到寄存器
+```
+
+- `swp{cond}{B} Rd,Rm,[Rn]` 寄存器和存储器交换，用于将一个内存单元（该单元地址放在寄存器Rn中）的内容读取到一个寄存器Rd中，同时将另一个寄存器Rm 的内容写入到该内存单元中。使用swp 可实现信号量操作
+
+```assembly
+swp r1,r2,[r0]  @r1 = [r0]; [r0] = r2;
+swp r1,r1,[r0]  @temp = r1; r1 = [r0]; r[0] = temp;将r1的内容与r0指向的存储单元的内容进行交换
+```
+
+- `push` 压栈
+
+```assembly
+push {r0-r12, lr}  @把寄存器的值放到满递减栈中
+```
+
+- `pop` 出栈
+
+```assembly
+pop {r0-r12, lr}  @从满递减栈中把值取到寄存器
+```
+
+## 跳转指令
+- `b` 跳转
+
+```assembly
+b lable  @跳到lable 处执行
+```
+
+- `bl` 跳转并保存返回地址
+
+```assembly
+bl lable  @保存下一条指令的地址到lr，并跳转到lable 处执行
+```
+
+- `bx` 跳转（可切换状态）
+
+```assembly
+bx r0  @跳转到r0所指的位置执行
+```
+
+## 前导零计
+- `clz` 计算一个数值高位零的个数
+
+```assembly
+clz r0, r1  @计算r1中开头的零的个数，把计算结果放到r0
+```
+
+## 饱和
+- `qadd` 饱和加法
+
+```assembly
+qadd r0, r0, r1  @运算结果的饱和到[0x80000000,0x7fffffff]
+```
+
+- `qadd8` 饱和8位加法，每一个操作数都是寄存器，不影响q 位
+
+```assembly
+qadd8 r0, r0, r1  @r1和r2的每一个字节分别相加，饱和到[-2^7, 2^7-1]
+```
+
+- `qadd16` 饱和16位加法，每一个操作数都是寄存器，不影响q 位
+
+```assembly
+qadd16 r0, r0, r1  @r1和r2的每一个16位相加，饱和到[-2^15, 2^15-1]
+```
+
+- `qsub` 饱和减法
+
+```assembly
+qsub r0, r0, r1  @运算的结果饱和到[0x80000000,0x7fffffff]
+```
+
+- `qsub16` 饱和16位减法，每一个操作数都是寄存器，不影响q 位
+
+```assembly
+qsub16 r0, r0, r1  @r1和r2的每一个16位分别相减，饱和到[-2^15, 2^15-1]
+```
+
+- `qsub8` 饱和8 位减法，每一个操作数都是寄存器，不影响q 位
+
+```assembly
+qsub8 r0, r0, r1  @r1和r2的每一个字节分别相减，饱和到[-2^7, 2^7-1]
+```
+
+- `ssat` 有符号饱和
+
+```assembly
+ssat r0, #sat, r1  @1<=sat<=32
+@把r1饱和到[-2^(sat-1), 2^(sat-1)-1]，结果放到r0，如果饱和会置位q
+@注意：把r1饱和到sat 个位，饱和后符号不变
+```
+
+- `ssat16` 有符号16位饱和
+
+```assembly
+ssat16 r0, #sat, r1  @1<=sat<=16
+@把r1中的每一个16位饱和到[-2^(sat-1), 2^(sat-1)-1]，结果放到r0，如果饱和会置位q
+@注意：把r1中的每一个16位饱和到sat 个位，饱和后符号不变
+```
+
+- `usat` 无符号饱和
+
+```assembly
+usat r0, #sat, r1  @0<=sat<=31
+@把r1饱和到[0, 2^sat-1]，结果放到r0，如果饱和会置位q
+@注意：负数饱和到0
+```
+
+- `usat16` 无符号16位饱和
+
+```assembly
+usat16 r0, #sat, r1  @0<=sat<=31
+@把r1中的两个16位分别饱和到[0, 2^sat-1]，结果放到r0，如果饱和会置位q
+@注意：负数饱和到0
+```
+
+## 协处理器cp15操作
+- `mrc/mcr`
+
+语法`mcr{<cond>}   p15, <opcode_1>, <Rd>, <Crn>, <Crm>, {<opcode_2>}`
+
+```assembly
+mrc p15, 0, r0, c1, c0, 0
+orr r0, r0, #1
+mcr p15, 0, r0, c1, c0, 0
+```
+
+> [ARM CP15协处理器](http://www.cnblogs.com/gaomaolin_88/archive/2010/07/16/1779183.html)
+
+
+
+ARM汇编示例
+===========
 ##　绑定寄存器
 - 立即数，被编译到指令当中的数据:
     + 本身小于等于255 (一条指令32位，所以指令中的数据就最大可以存8位)
     + 经过循环右移偶数位之后小于等于255
     + 按位取反之后符合上面
     + 0x000000ff 0x00ff0000 0xf000000f 均是合法的，而0x000001ff非法
-    
+
 ```c
 #include <stdio.h>
 

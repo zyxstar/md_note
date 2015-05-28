@@ -1,6 +1,6 @@
 
 show:
-	python show_doc.py
+	python show_doc.py $(path)
 
 readme:
 	python gen_readme.py
