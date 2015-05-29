@@ -561,6 +561,8 @@ rpm -e <软件名>（不是包）
 实在卸载不了时，可强制安装`--force`，再删除
 
 ## YUM安装
+> ubuntu中使用`apt-get`安装，`apt-cache`查询
+
 ### 配置源
 ```shell
 rm -rf /etc/yum.repos.d/*      #清空目录
