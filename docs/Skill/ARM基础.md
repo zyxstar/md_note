@@ -285,7 +285,7 @@ u-boot=[ELF head][u-boot.bin]
 开发板不能直接使用刚才的`u-boot.bin`，必须在它之前加上三星的安全与签名等模块，切换到`./sd_fuse/tiny4412`，执行`sd_fusing.sh`将自动加上（该脚本需要分析一下，大量使用了`dd`）
 
 ```shell
-cd ./sd_fuse/tiny4412
+cd uboot_tiny4412/sd_fuse/tiny4412
 ./sd_fusing.sh /dev/sdb
 sync
 ```
@@ -771,7 +771,7 @@ PC机：    内存需求量大，而且软件复杂，不在乎DRAM的初始化�
 外部存储器 用来存储东西的 ROM （硬盘 Flash（Nand iNand···· U盘、SSD） 光盘）
 
 - NorFlash: 特点是容量小，价格高，优点是可以和CPU直接总线式相连，接到SROM bank，CPU上电后可以直接读取，所以一般用作启动介质。
-- NandFlash: 分为SLC和MLC，跟硬盘一样，特点是容量大，价格低，缺点是不能总线式访问，也就是说不能上电CPU直接读取，需要CPU先运行一些初始化软件，然后通过时序接口读写。
+- NandFlash: 分为SLC和MLC，跟硬盘一样，特点是容量大，价格低，缺点是不能总线式访问，也就是说不能上电CPU直接读取，需要CPU先运行一些初始化软件，然后通过时序接口读写。Nand读写以页，但擦除以块（大于页）进行
 - eMMC/iNand/moviNand: eMMC（embeded MMC）iNand是SanDisk公司出产的eMMC，moviNand是三星公司出产的eMMC
 - oneNAND: 三星公司出的一种Nand
 - SD卡/TF卡/MMC卡
@@ -833,6 +833,52 @@ S5PV210使用的存储方案是：外接的大容量Nand + 外接大容量DRAM +
 ![img](../../imgs/arm10.png)
 
 > 拨码开关设置我们只需动OM5即可，其他几个根本不需要碰。需要SD启动时OM5打到GND，需要USB启动时OM5打到VCC
+
+EXYNOS4412启动过程
+===============
+## 板子示意
+![img](../../imgs/arm26.png)
+
+- 每个CPU有32k指令缓存和32k数据缓存，4个CPU共用1M L2缓存
+- linux中可通过`taskset`来给进程指定CPU运行
+- NEON是图形协处理器
+- CPU与外设通过AXI总线连接
+- arm是内存外设统一编址，通过地址总线（指针）访问
+- MultiFormat CODEC常用是JPEG和YUV格式
+- MIPI是诺基亚制定的一个标准
+- 写驱动时，比如LED，并不直接操作它，而只驱动display controller
+- Audio DSP用于变音
+- AC-97最多16声道，而3-ch.PCM只有3声道
+- CPU及所有外设，均过过clock gating和power gating来控制
+- 本板子没的外接电源芯片，所以一直以最高电压工作
+- DMAC，用于数据搬运，不占用CPU的时钟
+- PPMU用于监测负载
+- USB 2.0 OTG是小型usb接口
+- UART串口
+- key matrix矩阵键盘
+- DRAM Controller用于产生时序，用于硬件间通信
+- SROM Controller控制Norflash
+- Emmc的分区在驱动中，不在系统中
+- 本板子外设电压使用1.8V
+- 推挽输出 vs 拉高电阻？？？？？
+
+## EXYNOS4412地址映射
+![img](../../imgs/arm23.png)
+
+- SMC静态内存控制器
+- DMC动态内存控制器
+
+## EXYNOS4412启动过程
+![img](../../imgs/arm24.png)
+
+![img](../../imgs/arm25.png)
+
+- 刚开始寄存器pc=0，指向iROM中0地址的代码，读取预先设置的指令去执行
+- 然后从相应的外部存储器去读取第一部分启动代码（BL1,bootloader的前16K）到内部SRAM，然后运行BL1代码
+- BL1代码会初始化DRAM，并加载整个bootloader到DDR
+- bootloader负责将OS加载到DDR中，然后启动OS（它会把bootloader的空间给覆盖）
+
+> 好像比S5PV210启动过程少了BL2过程？？
 
 
 ARM架构
@@ -2594,8 +2640,149 @@ void myloop(){
 }
 ```
 
-
 ## 数组
+
+裸板程序
+=========
+## 项目组成
+```plain
+.
+├── hardware.c
+├── include
+│   ├── common.h
+│   └── hardware.h
+├── ld.lds
+├── main.c
+├── Makefile
+└── start.s
+
+```
+
+- 每多一个硬件程序，就多一个`c`文件和一个在`inclue`中的`h`文件
+- `start.s`是汇编程序，使用`.global`用于声明为全局符号（将来通过`nm`查看时，类型为`T`，否则为`t`），通过`stmfd sp!, {r0-r12, lr}`保持现场，将来`ldmfd sp!, {r0-r12, pc}`用于恢复现场，`bl main`则跳转到`main()`
+
+```asm
+.global _start
+_start:
+
+        b reset
+reset:
+        stmfd sp!, {r0-r12, lr}
+        bl main
+        ldmfd sp!, {r0-r12, pc}
+```
+
+## Makefile
+```make
+TARGET          :=arm
+BIN             :=$(TARGET).bin
+START           :=start.o main.o led.o
+OBJS            :=hardware.o chip_id.o
+LD_ADDR         :=0x50000000
+LD_LDS          :=./ld.lds
+###########################################
+CROSS_COMPILE   :=arm-linux-
+
+CC              :=$(CROSS_COMPILE)gcc
+AS              :=$(CROSS_COMPILE)as
+LD              :=$(CROSS_COMPILE)ld
+OBJCOPY         :=$(CROSS_COMPILE)objcopy
+OBJDUMP         :=$(CROSS_COMPILE)objdump
+NM              :=$(CROSS_COMPILE)nm
+
+RM              :=rm -rf
+
+CFLAGS          :=-I./include -Wall
+LDFLAGS         :=
+############################################
+all:$(TARGET)
+        $(OBJCOPY) -O binary $< $(BIN)
+        $(NM) $< >System.map
+        $(RM) $<
+
+$(TARGET):$(START) $(OBJS)
+        $(LD) $^ -o $@ -Ttext $(LD_ADDR)
+clean:
+        $(RM) $(START) $(OBJS) $(BIN)
+```
+
+- 由于在uboot中需要`dwn 5000 0000`，并`go 5000 0000`，此处在链接时，需要指定`-Ttext`为`0x50000000`
+- 此处没有写`.o`文件的依赖，这是make的自动推导出来的，先去找`.s`，如果有就直接`as`，否则就找`.c`，找到后`gcc`
+- `nm`用于产生符号表，一般命名为`System.map`，可通过`strip`将符号去掉，减少文件空间
+- `objcopy`用于将链接后产生的可执行文件转化为二进制
+
+## 借用函数
+通过uboot的`System.map`查找函数的地址，通过函数指针强制转换
+
+```c
+#define udelay(us) (((void (*)(int))0x43e25e88)(us))
+#define printf(...) (((int (*)(const char *, ...))0x43e11434)(__VA_ARGS__))
+```
+
+## 跑马灯
+- 头文件
+
+> `GPM4CON`是控制寄存器，`GPM4DAT`是数据寄存器
+
+```c
+#ifndef __LED_H__
+#define __LED_H__
+
+extern void led_init(void);
+extern void led_on(int no);
+extern void led_off(int no);
+
+#define GPM4CON (*(volatile unsigned int *)(0x11000000 + 0x2e0))
+#define GPM4DAT (*(volatile unsigned int *)(0x11000000 + 0x2e4))
+
+#endif
+```
+
+- 实现文件
+
+> 查询Exynos 4412手册GPIO章节 P284
+
+```c
+#include <common.h>
+#include <led.h>
+
+void led_init(void){
+    GPM4CON &= ~0xffff; //只控制 GPM4CON[0]~GPM4CON[3] 清零
+    GPM4CON |= 0x1111;  //设置为输出 
+  
+    GPM4DAT |= 0xf;     //初始灯灭 0为开 1为灭
+}
+
+void led_on(int no){
+    if(no > 3 || no < 0) return;
+    GPM4DAT &= ~(1 << no);
+}
+
+void led_off(int no){
+    if(no > 3 || no < 0) return;
+    GPM4DAT |= (1 << no);
+}
+```
+
+- 调用程序
+
+```c
+#include <common.h>
+#include <led.h>
+
+int main(void){
+    int count = 100;
+    led_init();
+
+    while(count--){
+        led_on(count % 4);
+        udelay(500000);
+        led_off(count % 4);
+        udelay(500000);
+    }
+    return 0;
+}
+```
 
 <script>
 
@@ -2611,6 +2798,13 @@ void myloop(){
 ifconfig eth0 192.168.4.119
 mount -t nfs -o nolock,rw 192.168.4.118:/tomcat_root /mnt
 
+cd uboot_tiny4412/sd_fuse/tiny4412
+./sd_fusing.sh /dev/sdb
+sync
+
+tools/write4412boot /media/88DE-4A63/images/Superboot4412.bin /dev/sdb
 
 http://codepad.org/
 -->
+
+

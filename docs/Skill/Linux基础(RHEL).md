@@ -1267,7 +1267,7 @@ dd                                #快速创建大文件
 split                             #按行数或字节数拆分文件
 csplit                            #由正则来分割文件
 
-strip                             #将编译链接的可执行文件进行剪切，去掉中间信息
+strip                             #将编译链接的可执行文件进行剪切，去掉头部信息，通过nm将不能查看到稳中各种符号
 
 locale                            #查看系统当前locale环境变量
 
@@ -1287,6 +1287,9 @@ insmod
 rmmod
 lsmod
 dmesg
+
+taskset                           #将进程分配给指定的CPU执行
+
 
 mknod <filenm> c 80 0
 
