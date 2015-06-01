@@ -860,7 +860,7 @@ EXYNOS4412启动过程
 - SROM Controller控制Norflash
 - Emmc的分区在驱动中，不在系统中
 - 本板子外设电压使用1.8V
-- 推挽输出 vs 拉高电阻？？？？？
+- 推挽输出 vs 拉高电阻？？？？？ 晶振
 
 ## EXYNOS4412地址映射
 ![img](../../imgs/arm23.png)
@@ -2748,8 +2748,8 @@ extern void led_off(int no);
 
 void led_init(void){
     GPM4CON &= ~0xffff; //只控制 GPM4CON[0]~GPM4CON[3] 清零
-    GPM4CON |= 0x1111;  //设置为输出 
-  
+    GPM4CON |= 0x1111;  //设置为输出
+
     GPM4DAT |= 0xf;     //初始灯灭 0为开 1为灭
 }
 

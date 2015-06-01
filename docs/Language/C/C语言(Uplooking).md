@@ -585,8 +585,8 @@ int main(){
 ```shell
 gcc -E hello.c -o hello.i          #预处理
 gcc -S hello.i                     #编译，产行hello.s汇编文件
-gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
-gcc -o hello.out hello.o           #链接
+gcc -c hello.s                     #汇编as，产生hello.o二进制目标文件
+gcc -o hello hello.o               #链接ld
 ```
 
 ## GDB
