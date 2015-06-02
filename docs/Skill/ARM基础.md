@@ -1182,7 +1182,7 @@ ARM汇编指令
 - `da` 事后递减，先传输，再地址-4
 - `db` 事前递减，先地址-4，再传输
 
-`ldmia r6，{r0，r4，r7} @*r6 = r0; *(r6+4) = r4; (*r6+8) = r7`
+`ldmia r6，{r0，r4，r7} @*r6 = r0; *(r6+4) = r4; *(r6+8) = r7`
 
 ### 栈后缀
 地址基址必须使用`sp`（r13），它只是索引后缀的另一种描述
@@ -2676,8 +2676,8 @@ reset:
 ```make
 TARGET          :=arm
 BIN             :=$(TARGET).bin
-START           :=start.o main.o led.o
-OBJS            :=hardware.o chip_id.o
+START           :=start.o main.o 
+OBJS            :=hardware.o chip_id.o led.o
 LD_ADDR         :=0x50000000
 LD_LDS          :=./ld.lds
 ###########################################
@@ -2719,10 +2719,10 @@ clean:
 #define printf(...) (((int (*)(const char *, ...))0x43e11434)(__VA_ARGS__))
 ```
 
-## 跑马灯
+## 跑马灯(GPIO输出)
 - 头文件
 
-> `GPM4CON`是控制寄存器，`GPM4DAT`是数据寄存器
+> `GPM4CON`是配置寄存器，`GPM4DAT`是数据寄存器
 
 ```c
 #ifndef __LED_H__
@@ -2747,7 +2747,7 @@ extern void led_off(int no);
 #include <led.h>
 
 void led_init(void){
-    GPM4CON &= ~0xffff; //只控制 GPM4CON[0]~GPM4CON[3] 清零
+    GPM4CON &= ~0xffff; //配置 GPM4CON[0]~GPM4CON[3] 清零
     GPM4CON |= 0x1111;  //设置为输出 
   
     GPM4DAT |= 0xf;     //初始灯灭 0为开 1为灭
