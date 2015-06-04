@@ -1903,6 +1903,23 @@ R               替换当前字符及其后的字符，直至按 ESC 键
 
 <!-- http://blog.163.com/stu_shl/blog/static/599375092011639354090/ -->
 
+- 调试语法错误
+    + 做好Makefile
+    + 在项目当前目录进入vim
+    + `:cope`
+    + `:set mouse=a`
+    + `:make`
+
+- 导航代码，在项目当前目录执行`ctags -R .`
+    + 方法1 `vim -t somefun`
+    + 方法2 `vim`中在光标置于方法处`ctrl ]`进入方法实现，`ctrl o`返回
+        * `:ts`命令就能列出一个列表供用户选择
+        * `:tp`为上一个tag标记文件
+        * `:tn`为下一个tag标记文件。
+        * 若当前tags文件中用户所查找的变量或函数名只有一个，`:tp,:tn`命令不可用
+
+- 导航系统头文件，`#include <stdio.h>`光标停在`stdio.h`位置，按`gf`进入头文件，`ctrl o`返回
+
 
 Sublime快捷键
 =============
