@@ -600,6 +600,32 @@ yum search <keyword>
 yum -y remove
 yum -y erase
 ```
+### 使用163源
+```shell
+wget http://mirrors.163.com/centos/6/os/x86_64/Packages/python-iniparse-0.3.1-2.1.el6.noarch.rpm
+wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-metadata-parser-1.1.2-16.el6.x86_64.rpm
+wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-3.2.29-60.el6.centos.noarch.rpm
+wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-plugin-fastestmirror-1.1.30-30.el6.noarch.rpm
+
+rpm -aq|grep yum|xargs rpm -e --nodeps 
+
+rpm -ivh python-iniparse-0.3.1-2.1.el6.noarch.rpm 
+rpm -ivh yum-metadata-parser-1.1.2-16.el6.x86_64.rpm 
+rpm -ivh yum-3.2.29-60.el6.centos.noarch.rpm yum-plugin-fastestmirror-1.1.30-30.el6.noarch.rpm 
+
+wget http://mirrors.163.com/.help/CentOS6-Base-163.repo
+mv CentOS6-Base-163.repo /etc/yum.repos.d/
+vim /etc/yum.repos.d/CentOS6-Base-163.repo 
+  :%s/\$releasever/6/g
+  :wq
+
+yum clean all
+yum makecache
+yum update     #升级所有包，改变软件设置和系统设置,系统版本内核都升级
+yum -y upgrade #升级所有包，不改变软件设置和系统设置，系统版本升级，内核不改变
+```
+
+
 
 ## RPM vs YUM
 - 两者都安装`.rpm`结尾的软件

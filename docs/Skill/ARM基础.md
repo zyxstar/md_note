@@ -35,7 +35,7 @@ ARM版本
               r4/r6
 ```
 
-启动和Emmc启动
+用sd卡刷机
 ===============
 ## 查看sd卡
 ```shell
@@ -736,6 +736,32 @@ chroot /mnt/
 #切换mnt下目录为根
 #缺任何命令时，ln /bin/busybox /bin/chroot -s
 exit #退出刚才切入的根
+```
+
+fastboot刷机
+============
+制作启动SD卡
+
+```shell
+x210_Fusing_Tool uboot_inand.bin /dev/sdb
+```
+
+安装`android-tools`
+
+```shell
+[root@pc]fastboot devices     #查看当前连接的设备
+[root@pc]fastboot flash <xx>  #烧录具体镜像
+[root@pc]fastboot reboot      #重启系统
+```
+
+进入uboot
+
+```shell
+[zyx@Uboot]fastboot
+[root@pc]fastboot flash bootloader android4.0/uboot.bin    #烧uboot
+[root@pc]fastboot flash kernel android4.0/zImage-android   #烧linux kernel
+[root@pc]fastboot flash system android4.0/x210.img         #烧android rom
+[root@pc]fastboot reboot
 ```
 
 
