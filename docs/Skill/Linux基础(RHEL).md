@@ -602,21 +602,23 @@ yum -y remove
 yum -y erase
 ```
 ### 使用163源
+> rhel6中使用163的centos源
+
 ```shell
 wget http://mirrors.163.com/centos/6/os/x86_64/Packages/python-iniparse-0.3.1-2.1.el6.noarch.rpm
 wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-metadata-parser-1.1.2-16.el6.x86_64.rpm
 wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-3.2.29-60.el6.centos.noarch.rpm
 wget http://mirrors.163.com/centos/6/os/x86_64/Packages/yum-plugin-fastestmirror-1.1.30-30.el6.noarch.rpm
 
-rpm -aq|grep yum|xargs rpm -e --nodeps 
+rpm -aq|grep yum|xargs rpm -e --nodeps
 
-rpm -ivh python-iniparse-0.3.1-2.1.el6.noarch.rpm 
-rpm -ivh yum-metadata-parser-1.1.2-16.el6.x86_64.rpm 
-rpm -ivh yum-3.2.29-60.el6.centos.noarch.rpm yum-plugin-fastestmirror-1.1.30-30.el6.noarch.rpm 
+rpm -ivh python-iniparse-0.3.1-2.1.el6.noarch.rpm
+rpm -ivh yum-metadata-parser-1.1.2-16.el6.x86_64.rpm
+rpm -ivh yum-3.2.29-60.el6.centos.noarch.rpm yum-plugin-fastestmirror-1.1.30-30.el6.noarch.rpm
 
 wget http://mirrors.163.com/.help/CentOS6-Base-163.repo
 mv CentOS6-Base-163.repo /etc/yum.repos.d/
-vim /etc/yum.repos.d/CentOS6-Base-163.repo 
+vim /etc/yum.repos.d/CentOS6-Base-163.repo
   :%s/\$releasever/6/g
   :wq
 
@@ -625,7 +627,6 @@ yum makecache
 yum update     #升级所有包，改变软件设置和系统设置,系统版本内核都升级
 yum -y upgrade #升级所有包，不改变软件设置和系统设置，系统版本升级，内核不改变
 ```
-
 
 
 ## RPM vs YUM
@@ -1727,12 +1728,476 @@ samba的用户名必须与Linux系统的用户名一致，但密码可以不同�
   force group = zyx
 ```
 
-<!-- ## gcc几个步骤
-gcc -E hello.c -o hello.i          #预处理
-gcc -S hello.i                     #编译，产行hello.s汇编文件
-gcc -c hello.s                     #汇编，产生hello.o二进制目标文件
-gcc hello.o -o hello.out           #链接
--->
+Linux常用简介
+==================
+## Linux文件管理命令
+- `ls` 显示文件名
+- `cat` 显示文本文件内容
+- `rm` 删除文件
+- `less` 分屏显示文件
+- `cp` 复制文件
+- `mv` 更改文件名
+- `grep` 查找字符串
+- `head` 显示文件头部
+- `tail` 显示文件尾部
+- `sort` 按顺序显示文件内容
+- `uniq` 忽略文件中的重复行
+- `diff` 比较两个文件
+- `diffstat` diff结果的统计信息
+- `file` 测试文件内容
+- `echo` 显示文本
+- `date` 显示日期和时间
+- `script` 记录Linux会话信息
+- `apropos` 搜索关键字
+- `locate` 搜索文件
+- `rmdir` 删除目录
+- `chattr` 改变文件的属性
+- `cksum` 文件的CRC校验
+- `cmp` 比较文件差异
+- `split` 分割文件
+- `dirname` 显示文件除名字外的路径
+- `find` 查找目录或者文件
+- `findfs` 通过列表或用户ID查找文件系统
+- `ln` 链接文件或目录
+- `lndir` 链接目录内容
+- `lsattr` 显示文件属性
+- `od` 输出文件内容
+- `paste` 合并文件的列
+- `stat` 显示inode内容
+- `tee` 读取标准输入到标准输出并可保存为文件
+- `tmpwatch` 删除临时文件
+- `touch` 更新文件目录时间
+- `tree` 以树状图显示目录内容
+- `umask` 指定在建立文件时预设的权限掩码
+- `chmod` 设置文件或目录的访问权限
+- `chgrp` 改变文件或目录所属的群组
+- `chown` 改变文件的拥有者或群组
+- `more` 查看文件的内容
+- `md` sum：MD5函数值计算和检查
+- `awk` 模式匹配语言
+- `wc` 输出文件中的行数、单词数、字节数
+- `comm` 比较排序文件
+- `join` 将两个文件中指定栏位内容相同的行连接起来
+- `fmt` 编排文本文件
+- `tr` 转换字符
+- `col` 过滤控制字符
+- `colrm` 删除指定的行
+- `fold` 限制文件列宽
+- `iconv` 转换给定文件的编码
+- `dc` 任意精度的计算器
+- `expr` 求表达式变量的值
+- `strings` 显示文件中的可打印字符
+- `xargs` 从标准输入读入参数
+- `sum` 计算文件的校验和，以及文件占用的块数
+- `setfacl` 设定文件访问控制列表
+- `getfacl` 获取文件访问控制列表
+- `chacl` 更改文件或目录的访问控制列表
+
+## Linux磁盘管理命令
+- `df` 显示报告文件系统磁盘使用信息
+- `du` 显示目录或者文件所占的磁盘空间
+- `dd` 磁盘操作
+- `fdisk` 磁盘分区
+- `mount` 挂载文件系统
+- `umount` 卸载文件系统
+- `mkfs` 建立各种文件系统
+- `mkfs` ext2：建立一个Ext2/Ext3文件系统
+- `mkbootdisk` 建立启动盘
+- `fsck` 检查文件系统
+- `blockdev` 从命令行调用区块设备控制程序
+- `hdparm` 设置磁盘参数
+- `mkswap` 建立交换分区
+- `swapon` 使用交换空间
+- `swapoff` 关闭系统交换分区
+- `sync` 写入磁盘
+- `e` label：设置卷标
+- `badblocks` 检查磁盘
+- `quota` 显示磁盘已使用的空间与限制
+- `quotacheck` 检查磁盘的使用空间与限制
+- `quotaoff` 关闭磁盘空间限制
+- `quotaon` 开启磁盘空间限制
+- `quotastats` 显示磁盘空间限制
+- `repquota` 检查磁盘空间限制的状态
+- `mdadm` RAID设置工具
+- `tune` fs：文件系统调整
+- `mkisofs` 建立ISO 9660映象文件
+- `cfdisk` 磁盘分区
+- `sfdisk` 硬盘分区工具程序
+- `parted` 磁盘分区工具
+- `mkinitrd` 建立要载入ramdisk的映象文件
+- `ssm` 命令行集中存储管理工具
+- 使用xfs管理命令
+- LVM命令列表
+
+## Linux进程管理命令
+- `accton` 打开或关闭进程统计
+- `lastcomm` 显示以前使用过的命令的信息
+- `sa` 报告、清理并维护进程统计文件
+- `at` 定时运行命令
+- `atq` 显示目前使用at命令后待执行的命令队列
+- `atrm` 删除at命令中待执行的命令队列
+- `batch` 在系统负载水平允许的时候执行命令
+- `bg` 后台运行命令
+- `fg` 挂起程序
+- `jobs` 显示后台程序
+- `kill` 杀掉进程
+- `crontab` 设置计时器
+- `ps` 查看权限
+- `pstree` 显示进程状态树
+- `top` 显示进程
+- `nice` 改变优先权等级
+- `renice` 修改优先权等级
+- `sleep` 暂停进程
+- `nohup` 用户退出系统之后继续工作
+- `pgrep` 查找匹配条件的进程
+- `fuser` 用文件或者套接口表示进程
+- `chkconfig` 设置系统的各种服务
+- `strace` 跟踪一个进程的系统调用或信号产生的情况
+- `ltrace` 跟踪进程调用库函数的情况
+- `vmstat` 报告虚拟内存统计信息
+- `mpstat` 监测CPU（包括多CPU）性能
+- `iostat` 监测I/O性能
+- `sar` 系统活动情况报告
+- `pidof` 查找正在运行进程的进程ID（PID）
+- `ntsysv` 设置系统服务
+
+## Linux网络管理命令
+- `arp` 管理系统中的ARP高速缓存
+- `arpwatch` 监听ARP记录
+- `arping` 发送ARP请求到一个相邻主机
+- `arpd` 收集免费arp信息的一个守护进程
+- `finger` 查找并显示用户信息
+- `ifconfig` 设置网络接口
+- `iwconfig` 设置无线网卡
+- `iw` 新一代无线网络配置工具
+- `hostname` 显示主机名
+- `ifup` 激活网络设备
+- `ifdown` 禁用网络设备
+- `mii` tool：调整网卡模式
+- `route` 设置路由表
+- `netstat` 查看网络连接
+- `ping` 检测主机的连通性
+- `minicom` 设置调制解调器
+- `pppd` 建立PPP连接
+- `pppstats` 显示PPP连接状态
+- `chat` 拨号命令
+- `traceroute` 检查数据包所经过的路由
+- `tracepath` 追踪连接到目标地址所经过的路由
+- `rcp` 远程复制
+- `tcpdump` 网络数据分析器
+- `ipcalc` IP地址计算器
+- `netreport` 监视网络状态
+- `ip` 网络集成命令工具
+- `pppoe` setup：设置ADSL
+- `pppoe` start：激活ADSL连接
+- `pppoe` stop：断开ADSL连接
+- `pppoe` status：检测ADSL连接状态
+- `wget` 下载文件
+- `ngrep` 监控网络接口
+- `lsof` 查看打开的文件
+- `ethtool` 查询及设置网卡参数
+- `netconf` 设置各项网络功能
+- `tc` 显示和维护流量控制设置
+- `telnet` 远程登录
+- `rlogin` 远程登录命令
+- `rsh` 远程登录的Shell
+- `usernetctl` 让普通用户控制网络接口
+- `nmcli` NetworkManager命令行网络接口配置工具
+- `nmtui` 基于Curses的用户界面nmtui
+- `nc` netcat，Linux下用于调试和检查网络的工具包
+- `lnstat` 显示Linux系统的网络状态
+- `ss` 显示网络状态信息
+- `rexec` 在指定的远程Linux系统主机上执行命令
+
+## Linux用户管理命令
+- `useradd` 建立用户
+- `userdel` 删除用户
+- `usermod` 修改已有用户的信息
+- `passwd` 设置密码
+- `chage` 密码老化
+- `groupadd` 添加组
+- `groupdel` 删除组账户
+- `groupmod` 修改组
+- `vipw` 编辑/etc/passwd文件
+- `vigr` 编辑/etc/group文件
+- `newgrp` 转换组
+- `groups` 显示组
+- `gpasswd` 添加组
+- `whoami` 显示当前用户名称
+- `who` 显示登录用户
+- `id` 显示用户信息
+- `su` 切换身份
+- `pwck` 检测账户
+- `grpck` 检测用户组账号信息的完整性
+- `chsh` 设置Shell
+- `chfn` 修改用户信息
+- `ac` 显示用户在线时间的统计信息
+- `grpconv` 开启群组的投影密码
+- `grpunconv` 关闭群组的投影密码
+- `lastlog` 显示最近登录用户的用户名、登录端口和登录时间
+- `logname` 显示当前用户的名称
+- `users` 显示当前登录到系统的用户
+- `lastb` 显示登录系统失败用户的相关信息
+
+## Linux的备份和压缩命令
+- `tar` 备份文件
+- `dump` 备份文件系统
+- `cpio` copy in/out）：建立、还原备份文件
+- `restore` 还原备份下来的文件或整个文件系统（一个分区）
+- `bunzip` ：解压缩.bz2文件
+- `bzip` ：解压缩.bz2文件
+- `bzgrep` 使用正则表达式搜索.bz2压缩包中的文件
+- `unzip` 解压缩.zip文件
+- `bzip` recover：修复损坏的.bz2文件
+- `gzip` 压缩文件
+- `compress` 压缩、解压文件
+- `gzexe` 压缩执行文件
+- `lha` 压缩或解压缩文件
+- `unarj` 解压缩文件
+- `zip` 压缩文件
+- `zipinfo` 显示压缩文件的信息
+
+## Linux系统管理命令
+- `apmd` 高级电源管理
+- `apmsleep` APM进入休眠状态
+- `apropos` 查找使用手册的名字和相关描述
+- `arch` 输出主机的体系结构
+- `alias` 设置别名
+- `cd` 切换目录
+- `clear` 清空终端屏幕
+- `clock` 系统RTC时间设置
+- `cal` 显示日历
+- `chroot` 改变根目录
+- `date` 显示或设置系统时间
+- `dmesg` 显示开机信息
+- `dircolors` 设置ls命令在显示目录或文件时所用的色彩
+- `depmod` 分析模块
+- `echo` 显示文本行
+- `exec` 执行完命令后交出控制权
+- `exit` 退出Shell
+- `eject` 弹出介质
+- `enable` 启动或关闭Shell命令
+- `fc` 修改或执行命令
+- `fgconsole` 显示虚拟终端的数目
+- `free` 显示内存信息
+- `fwhois` 显示用户的信息
+- `getty` 设置终端模式
+- `gitps` 显示程序情况
+- `logwatch` 可定制和可插入式的日志监视系统
+- `logsave` 把一个命令的输出输出到一个指定的日志文件中
+- `GRUB` 引导加载程序
+- `halt` 关闭系统
+- `history` 显示历史命令
+- `hwclock` 显示与设定硬件时钟
+- `init` 进程处理初始化
+- `last` 显示登录用户信息
+- `lilo` 引导管理器
+- `login` 登录系统
+- `local` 显示本地支持的语言系统信息
+- `logout` 退出系统
+- `logrotate` 处理Log文件
+- `lsmod` 显示Linux内核的模块信息
+- `man` 格式化和显示在线手册
+- `manpath` 设置man手册的查询路径
+- `modinfo` 显示内核信息
+- `modprobe` 自动处理可载入模块
+- `pmap` 显示程序的内存信息
+- `procinfo` 显示系统状态
+- `pwd` 显示工作目录
+- `reboot` 重新启动系统
+- `rlogin` 远程登录
+- `rmmod` 删除模块
+- `rpm` 软件包管理
+- `shutdown` 令：系统关机命令
+- `suspend` 暂停执行Shell
+- `nproc` 打印当前进程可用的处理器数
+- `tload` 显示系统负载
+- `uname` 显示系统信息
+- `authconfig` 配置系统的认证信息
+- `declare` 显示或者设定Shell变量
+- `export` 设置或者显示环境变量
+- `hostid` 打印出当前主机的标识
+- `insmod` 载入模块
+- `rdate` 显示其他主机的日期与时间
+- `runlevel` 显示执行等级
+- `set` 设置Shell
+- `setenv` 查询或显示环境变量
+- `setserial` 设置或显示串口的相关信息
+- `setup` 设置公用程序
+- `symlinks` 维护符号链接的工具程序
+- `swatch` 系统监控程序
+- `sync` 将内存缓冲区内的数据写入磁盘
+- `startx` 启动X Window
+- `sysctl` 设置系统核心参数
+- `timeconfig` 设置时区
+- `ulimit` 控制Shell程序的资源
+- `unalias` 删除别名
+- `unset` 删除变量或函数
+- `up` date：软件包升级
+- `uptime` 告知系统运行了多长时间
+- `mouseconfig` 设置鼠标相关参数
+- `bind` 显示或设置键盘按键及其相关的功能
+- `kbdconfig` 设置键盘类型
+- `snapscreenshot` 命令行截图
+- `mt` 磁带机控制
+- `cdrecord` CD刻录工具
+- `dvdrecord` DVD刻录工具
+- `lspci` 查看硬件插槽
+- `sane` find-scanner：扫描仪搜索
+- `scanimage` 检测扫描仪型号
+- `mtools` 命令集
+- `whereis` 查找文件
+- `ytalk` 与其他用户交谈
+- `apt` 软件包在线管理
+- `yum` 在线管理软件包
+- `vlock` 锁定终端
+- `wait` 等待程序返回状态
+- `watch` 将结果输出到标准输出设备
+- `rsync` 远程数据同步工具
+- `&` 将任务放在后台执行
+- `screen` 多重视窗管理程序
+- `lsb` release：显示LSB和特定版本的相关信息
+- `lscpu` 查看 CPU 信息
+- `blkid` 查看块设备
+- `journalctl` 日志管理
+- `lsblk` 列出块设备
+- `systemd` 服务管理命令组
+- `GRUB2`
+
+## Linux服务器管理命令
+
+### DNS服务器管理命令
+- `named` 域名服务器管理命令
+- `rndc` DNS服务器控制
+- `named` checkconf：检查DNS配置
+- `named` checkzone：检查区域文件的合法性
+- `dig` 发送域名查询信息包到域名服务器
+- `nslookup` 交互式查询名称服务器
+- `host` 使用域名服务器查询主机名字
+- `dnssec` keygen：DNSSEC密钥生成工具
+- `dnssec` signkey：DNSSEC密钥集签名工具
+- `dnssec` makekeyset：DNSSEC区域签名工具
+- `dnssec` signzone：DNSSEC区域签名工具
+- `dlint` Bind DNS服务器辅助工具
+- `dnstop` Bind DNS服务器辅助工具
+
+### NFS服务器管理命令
+- `nfsd` 启动停止NFS服务器
+- `portmap` 将RPC程序号转换为因特网端口号
+- `rpcinfo` 报告远程过程调用（RPC）服务器的状态
+- `showmount` 显示远程已安装文件系统的所有客户机的列表
+- `umount` 删除当前已挂载的远程文件系统
+- `mount` 将已命名的文件系统连接到指定的挂载点
+- `automount` 安装自动安装点
+- `mountall` 挂载一组文件系统
+- `exportfs` 重新分享/etc/exports变更的目录资源
+
+### Samba服务器管理命令
+- `testparm` 检查smb.conf配置文件的内部正确性
+- `smbd` samba daemon)：Samba服务器程序
+- `smbclient` 类似FTP操作方式的访问SMB/CIFS服务器资源的客户端
+- `smbstatus` 报告当前Samba的连接状态
+- `smbmount` 装载一个smbfs文件系统
+- `smbpasswd` 设置用户的SMB密码
+
+### SSH服务器管理命令
+- `sshd` OpenSSH守护进程
+- `ssh` keygen：生成、管理和转换认证密钥
+- `ssh` SSH命令行登录工具
+- `sftp` 安全互动FTP
+- `scp` 将文件复制到远程主机或本地主机
+- `squid` 代理服务器squid守护进程
+
+### DHCP服务器管理命令
+- `dhcpd` DHCP服务器守护进程
+- `dhclient` DHCPv6客户端守护进程
+- `dhcp` c：DHCPv6客户端守护进程
+
+### E-mail服务器管理命令
+- `sendmail` 为本地或网络交付传送邮件
+- `mail` E-mail管理程序
+- `mailq` 显示待寄邮件的清单
+- `mailstats` 显示关于邮件流量的统计信息
+- `mutt` 电子邮件管理程序
+
+### Linux防火墙管理工具iptables和firewalld
+- `iptables` Linux防火墙管理工具
+- `ip` tables：IPv6版本的iptables工具
+- `iptables` save：iptables列表存储
+- `iptables` restore：装载由iptables-save保存的规则集
+- `firewall` cmd：下一代防火墙管理工具
+- `arptables` 管理ARP包过滤的软件
+
+### SELinux管理命令
+- `setenforce` 设置SELinux模式
+- `getenforce` 查看SELinux模式
+- `setsebool` 设置SELinux布尔值
+- `getsebool` 查看SELinux布尔值
+- `togglesebool` 翻转SELinux布尔值
+- `sestatus` SELinux状态查看工具
+- `avcstat` 显示AVC统计信息
+- `audit` why：转换审计消息
+- `audit` allow：生成策略允许规则
+- `load` policy：装载策略
+- `semanage` 管理SELinux策略
+- `semodule` 管理策略模块
+- `chcat` 改变语境类别
+- `restorecon` 恢复文件安全语境
+- `chcon` 改变文件安全语境
+- `setfiles` 设置文件安全语境
+- `seinfo` 提取策略的规则数量统计信息
+- `sesearch` 搜索policy.conf或二进制策略中特别的类型
+- `checkmodule` 编译策略模块
+- `sealert` SELinux信息诊断客户端工具
+- `selinuxenabled` 查询系统的SELinux是否启用
+
+
+### 虚拟化管理命令
+- `xen` 拟化管理命令
+- KVM/Qemu虚拟机管理命令
+
+## Linux打印管理命令
+- `cupsd` 通用打印程序守护进程
+- `cupsaccept` 指示打印系统接受发往指定目标打印机的打印任务
+- `lpadmin` 配置LP打印服务
+- `lp` 打印文件
+- `lpstat` 显示行式打印机的状态信息
+- `lpr` 排队打印作业
+- `lprm` 从打印队列中删除任务
+- `lpc` 控制打印机
+- `lpq` 检查假脱机队列
+- `lpinfo` 显示驱动和设备
+- `lpmove` 将作业从一个队列移动到另一个队列
+- `cancel` 取消已存在的打印任务
+- `cupsdisable` 禁用指定的打印机或类
+- `cupsreject` 指示打印系统拒绝发往指定目标打印机的打印任务
+- `cupsenable` 启动指定的打印机
+
+## Linux库应用命令
+- `ldconfig` 配置查找共享库
+- `nm` 列举目标文件中的符号名
+- `ar` 建立修改文件或从文件中抽取成员
+- `strip` 去除目标文件中的无用信息
+- `objdump` 展开目标文件、静态库和共享库中的信息
+- `ldd` 显示共享库的依赖情况
+- `patch` 令：修补文件
+- `ld` 连接器
+
+## Linux开发应用命令
+- `as` 标准GNU汇编程序
+- `nasm` 汇编器
+- `gcc` C/C++编译器
+- `make` 维护和编译软件或软件包
+- `gdb` GUN调试器
+- `gdbserver` 远端GNU服务器
+- `autoconf` 产生配置脚本
+- `autoheader` 为configure产生模板头文件
+- `autoreconf` 更新已经生成的配置文件
+- `autoscan` 产生初步的configure.in文件
+- `autoupdate` 更新configure.in文件
+- `automake` 自动生成Makefile.in的工具
+- `aclocal` 生成aclocal.m4文件
+- `configure` 生成Makefile文件
 
 
 Vim编辑器
