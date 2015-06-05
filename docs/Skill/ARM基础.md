@@ -2755,12 +2755,12 @@ void led_init(void){
 
 void led_on(int no){
     if(no > 3 || no < 0) return;
-    GPM4DAT &= ~(1 << no);
+    GPM4DAT &= ~(1 << no); //no位 为0
 }
 
 void led_off(int no){
     if(no > 3 || no < 0) return;
-    GPM4DAT |= (1 << no);
+    GPM4DAT |= (1 << no); //no位 为1
 }
 ```
 
