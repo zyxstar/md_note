@@ -592,9 +592,17 @@ gcc -o hello hello.o               #链接ld
 ## GDB
 - [linux下GDB教程.pdf](https://gitcafe.com/zyxstar/md_note/blob/master/data/linux下GDB教程.pdf)
 
+```shell
+gcc -g main.c main
+gdb main
+> set args val
+> b file.c:line
+> r
+> p variable
+```
+
 ## Make
 - [什么是makefile.doc](https://gitcafe.com/zyxstar/md_note/blob/master/data/什么是makefile.doc)
-
 
 ## 数据结构
 - `#if 0\#else\#endif`条件注释，有效规避多行注释不能嵌套问题
