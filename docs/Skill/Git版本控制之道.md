@@ -1155,14 +1155,14 @@ git push -u origin wechat:wechat
 git push -u build wechat:wechat   #将功能分支提交到build的同名分支，用于测试
 ```
 
-## 测试人员首次配置某功能测试环境
+## 首次配置某功能测试环境
 > 配置多个单功能测试环境（映射到本地多个目录），方便针对不同功能去做测试
 
 ```shell
 git clone git@114.242.131.210:root/testbuild.git feature_wechat
 ```
 
-## 测试人员针对新功能进行测试
+## 测试员对新功能进行测试
 ```shell
 cd feature_wechat
 git pull origin wechat:wechat     #将build中的wechat分支pull下来
@@ -1184,7 +1184,7 @@ git push -u build wechat:wechat
 git clone git@114.242.131.210:root/testbuild.git build
 ```
 
-## 部署单个功能到测试集成环境
+## 部署功能到集成测试环境
 > 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，bug的修复同上
 
 ```shell
@@ -1195,26 +1195,6 @@ git merge --no-ff wechat
 grep -rn "<<<<<<" ./*                   #查找冲突，并解决
 ...                                     #进行必要的环境配置
 ngnix -s reload                         #将集成测试环境运行起来
-```
-
-## 由测试环境生成生产环境可用版本
-> 确保上面的集成测试无问题后
-
-```shell
-cd build
-git checkout master
-git tag R1.0 master
-git push -u origin R1.0:R1.0            #将发布tag也push到orgin上同名tag
-```
-
-## 部署生产版本
-> 进入生产环境
-
-```shell
-cd production
-git pull origin R1.0:R1.0
-...                                     #进行必要的环境配置
-ngnix -s reload                         #将生成环境重启
 ```
 
 ## 单个功能测试通过
@@ -1234,6 +1214,25 @@ git branch -d -r origin/wechat          #删除本地映射的远程分支
 git push --delete origin wechat         #真实的删除orign上的同名分支
 ```
 
+## 制作生产环境可用版本
+> 确保上面的集成测试无问题后，由测试环境制作新tag
+
+```shell
+cd build
+git checkout master
+git tag R1.0 master
+git push -u origin R1.0:R1.0            #将发布tag也push到orgin上同名tag
+```
+
+## 部署生产版本
+> 进入生产环境
+
+```shell
+cd production
+git pull origin R1.0:R1.0
+...                                     #进行必要的环境配置
+ngnix -s reload                         #将生成环境重启
+```
 
 ## [篇外]临时接替开发
 > 其他开发人员临时接替开发功能wechat
