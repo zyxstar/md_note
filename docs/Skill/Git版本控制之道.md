@@ -1191,8 +1191,11 @@ git clone git@114.242.131.210:root/testbuild.git build
 cd build
 git checkout master
 git pull origin wechat:wechat
+git diff wechat                         #做一下codeReview，本处的冲突有可能是最多的
+                                        #有问题时需要开发人员修复后重新提交
 git merge --no-ff wechat
-grep -rn "<<<<<<" ./*                   #查找冲突，并解决
+grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
+                                        #必要时，需要开发人员修复后重新提交
 ...                                     #进行必要的环境配置
 ngnix -s reload                         #将集成测试环境运行起来
 ```
@@ -1220,8 +1223,9 @@ git push --delete origin wechat         #真实的删除orign上的同名分支
 ```shell
 cd build
 git checkout master
-git tag R1.0 master
-git push -u origin R1.0:R1.0            #将发布tag也push到orgin上同名tag
+git push -u origin master:master        #提交稳定版本
+git tag R1.0.1 master                   #以后依据它来编写特征列表
+git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
 ```
 
 ## 部署生产版本
@@ -1229,7 +1233,7 @@ git push -u origin R1.0:R1.0            #将发布tag也push到orgin上同名tag
 
 ```shell
 cd production
-git pull origin R1.0:R1.0
+git pull origin master:master
 ...                                     #进行必要的环境配置
 ngnix -s reload                         #将生成环境重启
 ```
