@@ -4518,9 +4518,12 @@ int main(void){
 
 上面例子是直接对管道描述符调用`read/write`，更好的方法是将描述符复制为 __标准输入和标准输出__
 
+
 ```c
 dup2(fd[0], STDIN_FILENO);//把fd[0]复制到标准输入
 ```
+
+> `/usr/bin/mpg123 - >/dev/null 2>&1`，`-`表示某程序从标准输入得到数据源
 
 ### TELL/WAIT实现2
 ```c

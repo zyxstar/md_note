@@ -328,6 +328,10 @@ hexdump
           >00000000  2f 65 74 63 2f 70 61 73 73 77 64 0a              |/etc/passwd.|
           >0000000c
 
+          #还原文件
+          for buff in $(cat a.hex |cut -c10-58) ; do printf "\\x$buff"; done > a.txt
+          awk '{for(i=2;i<=17;i++) printf "%c",strtonum("0X"$i)}' a.hex > a.txt
+
 echo -e "\x68\x65\x6c\x6c\x6f"   #16进制转换到字符串
 
 less      #分屏，可前翻

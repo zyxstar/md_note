@@ -1101,6 +1101,184 @@ git subtree pull --prefix=public/download --squash resource master
 git push origin master
 ```
 
+团队协作建议
+===================
+## 创建个人的项目
+- 在gitlab中去`fork`basic项目（basic更新后需通知所有人fetch)
+- `clone`刚才的`fork`项目到指定的项目目录
+- 并将base.git/build.git源加到remote(该源需要对该开发人员开放fetch/push权限)
+
+```shell
+git clone git@114.242.131.210:zyx/testbasic.git zyxproj
+git remote add basic git@114.242.131.210:root/testbasic.git
+git remote add build git@114.242.131.210:root/testbuild.git
+```
+
+## 开发新功能时
+- 当某开发人员需要同时进行多个新功能时，需要创建多个分支，分别进行checkout后工作
+- 确保master是本人的最稳定的分支，随时可以提交到build环境的版本
+- 以下以需要开发一个wechat的功能为示例
+
+```shell
+git branch wechat master          #基于master(或其它)分支，创建新工作分支
+git branch
+git checkout wechat               #进入分支开始工作
+```
+
+## 保存开发任务
+```shell
+git add .
+git commit -a
+git push -u origin wechat:wechat  #push当前分支到origin的同名分支
+git branch -r
+```
+
+## [篇外]更新basic源
+> 当自己开发中，需要fetch basic项目时(basic项目有更新)
+
+```shell
+git fetch basic master:tmp        #将basic fetch到临时分支
+git checkout master               #进入需要合并的分支
+git diff tmp                      #与basic的更新进行比较
+git merge --no-ff tmp             #确认无问题后进行合并
+git push -u origin master:master  #解决完冲突，并git commit后提交
+git checkout wechat               #对其它需要合并的分支进行同样处理
+git diff tmp
+git merge --no-ff tmp
+git push -u origin wechat:wechat
+git branch -d tmp                 #合并完成后，删除临时分支
+```
+
+## 开发任务自测完成时
+```shell
+git push -u origin wechat:wechat
+git push -u build wechat:wechat   #将功能分支提交到build的同名分支，用于测试
+```
+
+## 测试人员首次配置某功能测试环境
+> 配置多个单功能测试环境（映射到本地多个目录），方便针对不同功能去做测试
+
+```shell
+git clone git@114.242.131.210:root/testbuild.git feature_wechat
+```
+
+## 测试人员针对新功能进行测试
+```shell
+cd feature_wechat
+git pull origin wechat:wechat     #将build中的wechat分支pull下来
+git branch wechat
+...                               #进行必要的环境配置，如bundle install
+rails s                           #将单功能测试环境运行起来(或将feature_wechat目录配置到ngnix中)
+```
+
+## 开发人员修复bug
+```shell
+git checkout wechat
+...                               #修复bug并自测完
+git push -u origin wechat:wechat
+git push -u build wechat:wechat
+```
+
+## 首次部署集成测试环境
+```shell
+git clone git@114.242.131.210:root/testbuild.git build
+```
+
+## 部署单个功能到测试集成环境
+> 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，bug的修复同上
+
+```shell
+cd build
+git checkout master
+git pull origin wechat:wechat
+git merge --no-ff wechat
+grep -rn "<<<<<<" ./*                   #查找冲突，并解决
+...                                     #进行必要的环境配置
+ngnix -s reload                         #将集成测试环境运行起来
+```
+
+## 由测试环境生成生产环境可用版本
+> 确保上面的集成测试无问题后
+
+```shell
+cd build
+git checkout master
+git tag R1.0 master
+git push -u origin R1.0:R1.0            #将发布tag也push到orgin上同名tag
+```
+
+## 部署生产版本
+> 进入生产环境
+
+```shell
+cd production
+git pull origin R1.0:R1.0
+...                                     #进行必要的环境配置
+ngnix -s reload                         #将生成环境重启
+```
+
+## 单个功能测试通过
+```shell
+git checkout master                     #切到主分支
+git merge --no-ff wechat                #合并功能分支
+grep -rn "<<<<<<" ./*                   #查找冲突，如存在冲突，解决后git commit
+git push -u origin master:master        #push 主分支到origin
+
+git tag wechat1.0 master                #自测完成后，对当前分支打上功能tag
+git tag
+git push -u origin wechat1.0:wechat1.0  #将tag也push到orgin上同名tag
+
+git checkout master                     #切到主分支
+git branch -d wechat                    #删除本地工作分支
+git branch -d -r origin/wechat          #删除本地映射的远程分支
+git push --delete origin wechat         #真实的删除orign上的同名分支
+```
+
+
+## [篇外]临时接替开发
+> 其他开发人员临时接替开发功能wechat
+
+```shell
+git clone git@114.242.131.210:zyx/testbasic.git xxxproj
+cd xxxproj
+git pull origin wechat:wechat
+...                               #开发新功能
+...                               #接下同正常开发
+git push -u origin wechat:wechat
+git push -u build wechat:wechat   #提交到build的同名分支，用于测试
+...                               #bug修复过程
+```
+
+## [篇外]基于某tag再进行开发时
+> 发现之前的方案其实还不错，所以记得将有意义的尝试打上tag
+
+```shell
+git branch wechat_old wechat1.0
+git branch
+git checkout wechat_old
+...                                #工作进行时，单独提交分支
+...                                #完成后打tag，合并(可能合并多个分支)，删除分支
+```
+
+## [篇外]当发现master存在bug时
+```shell
+git branch bugfix master
+git branch
+git checkout bugfix
+...                                #工作进行时，单独提交分支
+...                                #合并(可能合并多个分支)，删除分支
+```
+
+## 数据库脚本??
+- 时间序的创建更新脚本
+- 配置数据录入
+- 整个schema.rb版本
+
+## 有如basic存在必要??
+- gem
+- subtree
+- 拆分项目
+
 
 GitHub
 ======
@@ -1110,7 +1288,7 @@ GitHub
 >    - 每个功能创建一个特性分支，起一个描述性的分支名（比如：new-oauth2-scopes），并且push到远程。
 >    - 本地commit到这个分支，并且经常push到远程同名分支。
 >    - 需要反馈或功能完成时，发pull request。相关人员review之后合并回master。新merge之后deploy master代码。
->    - master分支随时可以deploy这时Github Flow的核心。就是说所有merge到master分支的代码都需要测试和构建通过。
+>    - master分支随时可以deploy这是Github Flow的核心。就是说所有merge到master分支的代码都需要测试和构建通过。
 >    - 从master分支分出功能分支。描述性的分支名的好处是大家都可以很容易通过branch list知道其他人在做什么。
 >    - 经常把本地代码push到远程的好处是不但可以起到备份作用，也可以让其他了解你的工作进展状况。并且不会影响其他同事。
 >    - 在Github，Pull Request被当成issue系统和code review系统，基本上都是用pull request来沟通的。
