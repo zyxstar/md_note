@@ -1169,7 +1169,7 @@ cd feature_wechat
 git pull origin wechat:wechat     #将build中的wechat分支pull下来
 git branch wechat
 ...                               #进行必要的环境配置，如bundle install
-rails s                           #将单功能测试环境运行起来(或将feature_wechat目录配置到ngnix中)
+rails s                           #将单功能测试环境运行起来(或将feature_wechat目录配置到nginx中)
 ```
 
 ## 开发人员修复bug
@@ -1201,7 +1201,7 @@ git merge --no-ff wechat
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
 ...                                     #进行必要的环境配置
-ngnix -s reload                         #将集成测试环境运行起来
+nginx -s reload                         #将集成测试环境运行起来
 ```
 
 ## 制作生产环境可用版本
@@ -1222,7 +1222,7 @@ git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
 cd production
 git pull origin master:master
 ...                                     #进行必要的环境配置
-ngnix -s reload                         #将生成环境重启
+nginx -s reload                         #将生成环境重启
 ```
 
 ## 开发人员后续处理
