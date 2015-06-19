@@ -1104,14 +1104,15 @@ git push origin master
 团队协作建议
 ===================
 ## 创建个人的项目
-- 在gitlab中去`fork`basic项目（basic更新后需通知所有人fetch)
+- 在gitlab中去`fork`团队的proj.git项目（该项目更新后需通知所有人fetch)
+- proj.git项目的master分支被保护，不允许普通开发人员push
 - `clone`刚才的`fork`项目到指定的项目目录
-- 并将base.git/build.git源加到remote(该源需要对该开发人员开放fetch/push权限)
+- 并将proj.git源加到remote(该源需要对该开发人员开放fetch/push权限)
 
 ```shell
-git clone git@114.242.131.210:zyx/testbasic.git zyxproj
-git remote add basic git@114.242.131.210:root/testbasic.git
-git remote add build git@114.242.131.210:root/testbuild.git
+git clone git@114.242.131.210:zyx/proj.git zyxproj
+cd zyxproj
+git remote add build git@114.242.131.210:root/proj.git
 ```
 
 ## 开发新功能时
@@ -1133,17 +1134,17 @@ git push -u origin wechat:wechat  #push当前分支到origin的同名分支
 git branch -r
 ```
 
-## [篇外]更新basic源
-> 当自己开发中，需要fetch basic项目时(basic项目有更新)
+## [篇外]fetch项目源
+> 当自己开发中，需要fetch proj.git项目时(项目有更新)
 
 ```shell
-git fetch basic master:tmp        #将basic fetch到临时分支
+git fetch build master:tmp        #将build fetch到临时分支
+git diff master tmp               #与build的更新进行比较
 git checkout master               #进入需要合并的分支
-git diff tmp                      #与basic的更新进行比较
 git merge --no-ff tmp             #确认无问题后进行合并
 git push -u origin master:master  #解决完冲突，并git commit后提交
+git diff wechat tmp
 git checkout wechat               #对其它需要合并的分支进行同样处理
-git diff tmp
 git merge --no-ff tmp
 git push -u origin wechat:wechat
 git branch -d tmp                 #合并完成后，删除临时分支
@@ -1159,7 +1160,7 @@ git push -u build wechat:wechat   #将功能分支提交到build的同名分支�
 > 配置多个单功能测试环境（映射到本地多个目录），方便针对不同功能去做测试
 
 ```shell
-git clone git@114.242.131.210:root/testbuild.git feature_wechat
+git clone git@114.242.131.210:root/proj.git feature_wechat
 ```
 
 ## 测试员对新功能进行测试
@@ -1180,41 +1181,27 @@ git push -u build wechat:wechat
 ```
 
 ## 首次部署集成测试环境
+> 测试人员测试与开发人员修复是一个反复过程，直至所有bug修复完，才进入本环节
+
 ```shell
-git clone git@114.242.131.210:root/testbuild.git build
+git clone git@114.242.131.210:root/proj.git build
 ```
 
 ## 部署功能到集成测试环境
-> 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，bug的修复同上
+> 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，如果还存在bug的，则修复过程同上
 
 ```shell
 cd build
 git checkout master
 git pull origin wechat:wechat
-git diff wechat                         #做一下codeReview，本处的冲突有可能是最多的
+git diff master wechat                  #做一下codeReview(gitlab中进行compare)
+                                        #本处的冲突有可能是最多的
                                         #有问题时需要开发人员修复后重新提交
 git merge --no-ff wechat
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
 ...                                     #进行必要的环境配置
 ngnix -s reload                         #将集成测试环境运行起来
-```
-
-## 单个功能测试通过
-```shell
-git checkout master                     #切到主分支
-git merge --no-ff wechat                #合并功能分支
-grep -rn "<<<<<<" ./*                   #查找冲突，如存在冲突，解决后git commit
-git push -u origin master:master        #push 主分支到origin
-
-git tag wechat1.0 master                #自测完成后，对当前分支打上功能tag
-git tag
-git push -u origin wechat1.0:wechat1.0  #将tag也push到orgin上同名tag
-
-git checkout master                     #切到主分支
-git branch -d wechat                    #删除本地工作分支
-git branch -d -r origin/wechat          #删除本地映射的远程分支
-git push --delete origin wechat         #真实的删除orign上的同名分支
 ```
 
 ## 制作生产环境可用版本
@@ -1229,7 +1216,7 @@ git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
 ```
 
 ## 部署生产版本
-> 进入生产环境
+> 进入生产环境，生产环境考虑能否有preview
 
 ```shell
 cd production
@@ -1238,18 +1225,33 @@ git pull origin master:master
 ngnix -s reload                         #将生成环境重启
 ```
 
+## 开发人员后续处理
+```shell
+...                                     #重新fetch与merge项目源到master与wechat上
+
+git tag wechat1.0 master                #对当前分支打上功能tag
+git tag
+git push -u origin wechat1.0:wechat1.0  #将tag也push到orgin上同名tag
+
+git checkout master                     #切到主分支
+git branch -d wechat                    #删除本地工作分支
+git branch -d -r origin/wechat          #删除本地映射的远程分支
+git push --delete origin wechat         #真实的删除orign上的同名分支
+```
+
+
 ## [篇外]临时接替开发
 > 其他开发人员临时接替开发功能wechat
 
 ```shell
-git clone git@114.242.131.210:zyx/testbasic.git xxxproj
+git clone git@114.242.131.210:zyx/proj.git xxxproj
 cd xxxproj
 git pull origin wechat:wechat
-...                               #开发新功能
-...                               #接下同正常开发
+...                                     #开发新功能
+...                                     #接下同正常开发
 git push -u origin wechat:wechat
-git push -u build wechat:wechat   #提交到build的同名分支，用于测试
-...                               #bug修复过程
+git push -u build wechat:wechat         #提交到build的同名分支，用于测试
+...                                     #bug修复过程
 ```
 
 ## [篇外]基于某tag再进行开发时
@@ -1277,10 +1279,10 @@ git checkout bugfix
 - 配置数据录入
 - 整个schema.rb版本
 
-## 有如basic存在必要??
+## 拆分项目??
 - gem
 - subtree
-- 拆分项目
+- 基础模块 与 view ？
 
 
 GitHub
