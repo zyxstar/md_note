@@ -4518,9 +4518,12 @@ int main(void){
 
 上面例子是直接对管道描述符调用`read/write`，更好的方法是将描述符复制为 __标准输入和标准输出__
 
+
 ```c
 dup2(fd[0], STDIN_FILENO);//把fd[0]复制到标准输入
 ```
+
+> `/usr/bin/mpg123 - >/dev/null 2>&1`，`-`表示某程序从标准输入得到数据源
 
 ### TELL/WAIT实现2
 ```c
@@ -5945,6 +5948,7 @@ void vsyslog(int priority,const char *format ,va_list arg);
 ## 套接字描述符
 > 套接字是一个抽象文件描述，最常见的是传输层的套接字（TCP、UDP），也可以是链路层套接字(使用`SOCK_PACKET`，比如制作ICMP包)
 
+> `tcpdump -i eth0 -n -w /tmp/cap0`产生文件可供wireshark使用
 
 ```c
 #include <sys/socket.h>

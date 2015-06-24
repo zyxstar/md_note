@@ -740,7 +740,7 @@ exit #退出刚才切入的根
 
 fastboot刷机
 ============
-制作启动SD卡
+制作启动SD卡(下面使用Fusing_Tool,也可使用`dd`来制作)
 
 ```shell
 x210_Fusing_Tool uboot_inand.bin /dev/sdb
@@ -2702,7 +2702,7 @@ reset:
 ```make
 TARGET          :=arm
 BIN             :=$(TARGET).bin
-START           :=start.o main.o 
+START           :=start.o main.o
 OBJS            :=hardware.o chip_id.o led.o
 LD_ADDR         :=0x50000000
 LD_LDS          :=./ld.lds
@@ -2781,12 +2781,12 @@ void led_init(void){
 
 void led_on(int no){
     if(no > 3 || no < 0) return;
-    GPM4DAT &= ~(1 << no);
+    GPM4DAT &= ~(1 << no); //no位 为0
 }
 
 void led_off(int no){
     if(no > 3 || no < 0) return;
-    GPM4DAT |= (1 << no);
+    GPM4DAT |= (1 << no); //no位 为1
 }
 ```
 
