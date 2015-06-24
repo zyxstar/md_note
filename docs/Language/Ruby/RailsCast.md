@@ -4,23 +4,27 @@
 
 ```shell
 curl -L get.rvm.io | bash -s stable
-source ~/.bashrc
-source ~/.bash_profile
-sed -i -e 's/ftp\.ruby-lang\.org\/pub\/ruby/ruby\.taobao\.org\/mirrors\/ruby/g' ~/.rvm/config/db
+#如果不成功，按照出错说明去处理
+#source ~/.bashrc
+#source ~/.bash_profile
+#sed -i -e 's/ftp\.ruby-lang\.org\/pub\/ruby/ruby\.taobao\.org\/mirrors\/ruby/g' ~/.rvm/config/db
+
+#目前版本需要将用户加入到rvm组
+gpasswd -a root rvm
+gpasswd -a nginx rvm
 
 rvm list known
 
-rvm install 1.9.3
-rvm use 1.9.3
+rvm install 2.2.1
 rvm list
-rvm gemset create r3217
+
+rvm use 2.2.1@r4.2 --create --default
 rvm gemset list
-rvm use 1.9.3@r3217 --default
 
 gem source -r https://rubygems.org/
 gem source -a https://ruby.taobao.org
 
-gem install rails -v='3.2.17' --no-rdoc --no-ri
+gem install rails -v='4.2' --no-rdoc --no-ri
 
 ```
 
