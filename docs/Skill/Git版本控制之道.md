@@ -1064,6 +1064,13 @@ git commit -a
 git push origin master
 ```
 
+> 出现ssh连接"The authenticity of host can't be established"
+
+```shell
+sudo vim /etc/ssh/ssh_config
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
+```
 
 Git subtree试用
 ===============
@@ -1157,17 +1164,18 @@ git push -u build wechat:wechat   #将功能分支提交到build的同名分支�
 ```
 
 ## 首次配置某功能测试环境
-> 配置多个单功能测试环境（映射到本地多个目录），方便针对不同功能去做测试
+> 配置功能测试环境，需要测试不同功能分支时，需要先`git checkout`
+> 也可映射到本地多个目录，方便针对不同功能去做测试
 
 ```shell
-git clone git@114.242.131.210:root/proj.git feature_wechat
+git clone git@114.242.131.210:root/proj.git build
 ```
 
 ## 测试员对新功能进行测试
 ```shell
-cd feature_wechat
-git pull origin wechat:wechat     #将build中的wechat分支pull下来
-git branch wechat
+cd build
+git fetch origin wechat:wechat    #将build中的wechat分支fetch下来
+git checkout wechat               #签出wechat分支
 ...                               #进行必要的环境配置，如bundle install
 rails s                           #将单功能测试环境运行起来(或将feature_wechat目录配置到nginx中)
 ```
@@ -1184,16 +1192,16 @@ git push -u build wechat:wechat
 > 测试人员测试与开发人员修复是一个反复过程，直至所有bug修复完，才进入本环节
 
 ```shell
-git clone git@114.242.131.210:root/proj.git build
+git clone git@114.242.131.210:root/proj.git proj
 ```
 
 ## 部署功能到集成测试环境
 > 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，如果还存在bug的，则修复过程同上
 
 ```shell
-cd build
+cd proj
 git checkout master
-git pull origin wechat:wechat
+git fetch origin wechat:wechat
 git diff master wechat                  #做一下codeReview(gitlab中进行compare)
                                         #本处的冲突有可能是最多的
                                         #有问题时需要开发人员修复后重新提交
@@ -1201,6 +1209,9 @@ git merge --no-ff wechat
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
 ...                                     #进行必要的环境配置
+bundle install
+RAILS_ENV=production rake assets:precompile
+git stash                               #产生的新文件不做版本管理
 nginx -s reload                         #将集成测试环境运行起来
 ```
 
@@ -1208,7 +1219,7 @@ nginx -s reload                         #将集成测试环境运行起来
 > 确保上面的集成测试无问题后，由测试环境制作新tag
 
 ```shell
-cd build
+cd proj
 git checkout master
 git push -u origin master:master        #提交稳定版本
 git tag R1.0.1 master                   #以后依据它来编写特征列表
@@ -1216,13 +1227,15 @@ git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
 ```
 
 ## 部署生产版本
-> 进入生产环境，生产环境考虑能否有preview
+> 进入生产环境，生产环境中最好配置一个preview环境
 
 ```shell
 cd production
 git pull origin master:master
 ...                                     #进行必要的环境配置
-nginx -s reload                         #将生成环境重启
+bundle install
+RAILS_ENV=production rake assets:precompile
+nginx -s reload                         #将集成测试环境运行起来
 ```
 
 ## 开发人员后续处理
@@ -1246,7 +1259,7 @@ git push --delete origin wechat         #真实的删除orign上的同名分支
 ```shell
 git clone git@114.242.131.210:zyx/proj.git xxxproj
 cd xxxproj
-git pull origin wechat:wechat
+git fetch origin wechat:wechat
 ...                                     #开发新功能
 ...                                     #接下同正常开发
 git push -u origin wechat:wechat
@@ -1309,4 +1322,8 @@ GitHub
 
 
 
-<!-- $git rm --cached FILENAME -->
+<!--
+$ git rm --cached FILENAME
+git clone gituser@123.57.253.111:/var/data/repo/sdjfood.git
+
+-->
