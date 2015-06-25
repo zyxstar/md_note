@@ -953,7 +953,7 @@ ps      #当前终端上进程
    e    #显示shell环境信息
    f    #格式化父子进程的显示
    l    #较长、较详细的将该 PID 的的资讯列出
-   j    #工作的格式
+   j    #job的格式
    axjf #连同部分程序树状态
 
 ps -l
@@ -1567,6 +1567,14 @@ ssh <username>@<ip>        #如果不写<username>，默认是root用户
 ssh-keygen                 #产生密钥对
 ssh-copy-id -i <sshhostip> #输入相应登录密码后，将放置对方 /.ssh/authorized_keys中
 
+```
+
+> 出现ssh连接"Host key verification failed ... The authenticity of host can't be established"
+
+```shell
+vim /etc/ssh/ssh_config
+  StrictHostKeyChecking no
+  UserKnownHostsFile /dev/null
 ```
 
 > 有关加密
