@@ -1047,7 +1047,7 @@ git --bare init proj1.git                      #创建项目
 - 客户端设置
 
 ```shell
-ssh-keygen                                     #生成ssh key,该过程中一直回车
+ssh-keygen -C "user1@a.com"                    #生成ssh key,该过程中一直回车
 ssh-copy-id -i gituser@192.168.0.3             #假设服务器192.168.0.3,该过程需输入gituser密码
                                                #如不设置,将每次push/pull时要求输入gituser密码
 
@@ -1124,7 +1124,6 @@ git remote add build git@114.242.131.210:root/proj.git
 
 ## 开发新功能时
 - 当某开发人员需要同时进行多个新功能时，需要创建多个分支，分别进行checkout后工作
-- 确保master是本人的最稳定的分支，随时可以提交到build环境的版本
 - 以下以需要开发一个wechat的功能为示例
 
 ```shell
@@ -1168,16 +1167,25 @@ git push -u build wechat:wechat   #将功能分支提交到build的同名分支�
 > 也可映射到本地多个目录，方便针对不同功能去做测试
 
 ```shell
-git clone git@114.242.131.210:root/proj.git build
+git clone git@114.242.131.210:root/proj.git feature_xxx
 ```
 
 ## 测试员对新功能进行测试
 ```shell
-cd build
-git fetch origin wechat:wechat    #将build中的wechat分支fetch下来
+cd feature_xxx
+
+git fetch origin wechat:wechat    #首次测试将proj.git中的wechat分支fetch下来
 git checkout wechat               #签出wechat分支
+
+    #再次测试时直接fetch可能会被挂住，先fetch到临时分支再合并
+    git fetch origin wechat:tmp
+    git checkout wechat
+    git diff wechat tmp --
+    git merge tmp
+    git branch -d tmp
+
 ...                               #进行必要的环境配置，如bundle install
-rails s                           #将单功能测试环境运行起来(或将feature_wechat目录配置到nginx中)
+rails s                           #将单功能测试环境运行起来(或将feature_xxx目录配置到nginx中)
 ```
 
 ## 开发人员修复bug
@@ -1208,10 +1216,13 @@ git diff master wechat                  #做一下codeReview(gitlab中进行comp
 git merge --no-ff wechat
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
+
+git commit -a                           #提交合并后的分支
+git branch build master                 #创建其于master的build的分支(该分支永远不会提交到远程)
+git checkout build                      #签出其分支
 ...                                     #进行必要的环境配置
 bundle install
 RAILS_ENV=production rake assets:precompile
-git stash                               #产生的新文件不做版本管理
 nginx -s reload                         #将集成测试环境运行起来
 ```
 
@@ -1224,6 +1235,7 @@ git checkout master
 git push -u origin master:master        #提交稳定版本
 git tag R1.0.1 master                   #以后依据它来编写特征列表
 git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
+git branch -d build_x                   #删除之前用于运行集成环境的build分支
 ```
 
 ## 部署生产版本
@@ -1231,7 +1243,10 @@ git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
 
 ```shell
 cd production
+git checkout master
 git pull origin master:master
+git checkout production                 #切到production分支，它由master生成
+git merge master
 ...                                     #进行必要的环境配置
 bundle install
 RAILS_ENV=production rake assets:precompile
@@ -1250,6 +1265,7 @@ git checkout master                     #切到主分支
 git branch -d wechat                    #删除本地工作分支
 git branch -d -r origin/wechat          #删除本地映射的远程分支
 git push --delete origin wechat         #真实的删除orign上的同名分支
+git push --delete build wechat          #真实的删除build上的同名分支
 ```
 
 
@@ -1286,6 +1302,13 @@ git checkout bugfix
 ...                                #工作进行时，单独提交分支
 ...                                #合并(可能合并多个分支)，删除分支
 ```
+
+## 提示
+- 除非有充分理由，否则不要使用`git pull`，以`git fetch`,`git diff`,`git merge`取代
+- 在需要工作时，首先确认当前分支是什么，切换到合适分支下再工作
+- 在build目录下做测试时，只会产生`git fetch`等相关操作，不应产生`git push`操作
+- 开发人员的`master`分支，只会从`proj.git`上`git fetch/git merge`，该`master`只作新功能/bug修复时的被branch，开发人员不应将功能/bug修复分支合并到自己的`master`分支
+- `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了新的gem包
 
 ## 数据库脚本??
 - 时间序的创建更新脚本
