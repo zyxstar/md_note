@@ -687,6 +687,9 @@ sudo apt-get update
 
 [更新源](http://wiki.ubuntu.org.cn/%E6%BA%90%E5%88%97%E8%A1%A8)
 
+更新后需要`sudo apt-get update`
+
+不能成功时，删除`/var/lib/apt/lists/partial/`下的失败项
 
 ## 搜索程序
 ```shell
