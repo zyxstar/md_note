@@ -1173,8 +1173,17 @@ git clone git@114.242.131.210:root/proj.git feature_xxx
 ## 测试员对新功能进行测试
 ```shell
 cd feature_xxx
-git fetch origin wechat:wechat    #将proj.git中的wechat分支fetch下来
+
+git fetch origin wechat:wechat    #首次测试将proj.git中的wechat分支fetch下来
 git checkout wechat               #签出wechat分支
+
+    #再次测试时直接fetch可能会被挂住，先fetch到临时分支再合并
+    git fetch origin wechat:tmp
+    git checkout wechat
+    git diff wechat tmp --
+    git merge tmp
+    git branch -d tmp
+
 ...                               #进行必要的环境配置，如bundle install
 rails s                           #将单功能测试环境运行起来(或将feature_xxx目录配置到nginx中)
 ```
@@ -1295,6 +1304,7 @@ git checkout bugfix
 - 除非有充分理由，否则不要使用`git pull`，以`git fetch`,`git diff`,`git merge`取代
 - 在需要工作时，首先确认当前分支是什么，切换到合适分支下再工作
 - 在build目录下做测试时，只会产生`git fetch`等相关操作，不应产生`git push`操作
+- 开发人员的`master`分支，只会从`proj.git`上`git fetch/git merge`，该`master`只作新功能/bug修复时的被branch，开发人员不应将功能/bug修复分支合并到自己的`master`分支
 - `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了新的gem包
 
 ## 数据库脚本??

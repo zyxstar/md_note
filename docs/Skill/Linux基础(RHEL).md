@@ -661,6 +661,8 @@ ubuntu中使用`apt-get`
 apt-cache search package 搜索包
 apt-cache show package 获取包的相关信息，如说明、大小、版本等
 sudo apt-get install package 安装包
+sudo apt-get install package=version 安装指定版本
+apt-show-versions -p packagename 查看当前特定软件版本
 sudo apt-get install package - - reinstall 重新安装包
 sudo apt-get -f install 修复安装"-f = ——fix-missing"
 sudo apt-get remove package 删除包
@@ -675,6 +677,8 @@ sudo apt-get build-dep package 安装相关的编译环境
 apt-get source package 下载该包的源代码
 sudo apt-get clean && sudo apt-get autoclean 清理无用的包
 sudo apt-get check 检查是否有损坏的依赖
+
+dpkg -i file.deb  直接利用包管理器安装包
 ```
 
 当出现`E: Sub-process /usr/bin/dpkg returned an error code (1)`
@@ -1459,6 +1463,16 @@ nslookup <domain>             #根据域名查看ip，附带检查dns效果
 
 system-config-network         #GUI方式配置，RHEL6有问题
                               #可把它关闭`/etc/init.d/NetWorkManager stop`
+```
+
+查看指定端口
+
+```
+# 查看哪些进程打开了指定端口port（对于守护进程必须以root用户执行才能查看到）
+lsof -i:<port>
+
+# 查看哪些进程打开了指定端口port，最后一列是进程ID（此方法对于守护进程作用不大）
+netstat -nap|grep <port>
 ```
 
 > 常用服务端口号，可通过`grep 3306 /etc/services`查看某端口的服务，小于1024的端口要启动时，启动者身份必须是root才行

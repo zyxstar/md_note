@@ -106,7 +106,6 @@ http {
         access_log off;
     }
     server {
-        listen       81;
         ...
     }
 }
@@ -116,6 +115,21 @@ http {
 - 生产环境中也需要git源（机器紧张时，可将git源配置在生产环境中），用于`git fetch`代码
 - `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了新的gem包
 - 监控生产环境可使用`newrelic/oneapm/ganglia`等工具
+
+## mysql数据库
+```shell
+apt-get install mysql-server mysql-client
+```
+
+shell进入mysql
+
+```shell
+mysql -u root -p
+show databases;
+use mysql;
+show tables;
+```
+
 
 Rails Cast
 ===========
