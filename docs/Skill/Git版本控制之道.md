@@ -1243,7 +1243,10 @@ git branch -d build_x                   #删除之前用于运行集成环境的
 
 ```shell
 cd production
+git checkout master
 git pull origin master:master
+git checkout production                 #切到production分支，它由master生成
+git merge master
 ...                                     #进行必要的环境配置
 bundle install
 RAILS_ENV=production rake assets:precompile

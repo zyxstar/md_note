@@ -50,13 +50,16 @@ passenger-install-nginx-module
 ## 创建网站目录
 ```shell
 mkdir /var/www
-git clone git@url:somebody/proj.git
-cd /var/www/proj
+git clone git@url:somebody/proj.git rails_app
+cd /var/www/rails_app
+git branch production master
+git checkout production
+
 ...                                       #一些配置
 
-chown www:www -R /var/www/
-chmod g+w -R /var/www/
-chmod g+s -R /var/www/
+chown www:www -R /var/www/rails_app
+chmod g+w -R /var/www/rails_app
+chmod g+s -R /var/www/rails_app
 ```
 
 ## nginx配置
@@ -113,12 +116,13 @@ http {
 
 ## 提示
 - 生产环境中也需要git源（机器紧张时，可将git源配置在生产环境中），用于`git fetch`代码
-- `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了新的gem包
+- `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了过于新的gem包
 - 监控生产环境可使用`newrelic/oneapm/ganglia`等工具
 
 ## mysql数据库
 ```shell
-apt-get install mysql-server mysql-client
+apt-get install mysql-server
+apt-get install mysql-client
 ```
 
 shell进入mysql
@@ -130,6 +134,21 @@ use mysql;
 show tables;
 ```
 
+## 部署项目
+```shell
+cd /var/www/rails_app
+git checkout master
+git pull origin master
+git checkout production
+git diff production master --
+git merge master
+
+bundle install
+rake db:migrate
+
+RAILS_ENV=production rake assets:precompile
+/opt/nginx/sbin/nginx -s reload
+```
 
 Rails Cast
 ===========
