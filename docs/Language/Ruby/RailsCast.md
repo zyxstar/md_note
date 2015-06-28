@@ -43,23 +43,32 @@ passenger-install-nginx-module
 ```
 
 ## 创建www用户
-并将其`/etc/passwd`中的用户`www`的登录shell设置为`/usr/sbin/nologin`
+```shell
+adduser www
+#并将其`/etc/passwd`中的用户`www`的登录shell设置为`/usr/sbin/nologin`
 
-`gpasswd -a root www`将root加入到`www`组
+#将相关用户加到www组
+gpasswd -a root www
+gpasswd -a zyx www      #平时操作的用户
+gpasswd -a nobody www
+```
 
 ## 创建网站目录
 ```shell
 mkdir /var/www
 git clone git@url:somebody/proj.git rails_app
+
+chown www:www -R /var/www/rails_app
+chmod g+w -R /var/www/rails_app
+chmod g+s -R /var/www/rails_app
+setfacl -R -m d:g:www:rw /var/www/rails_app
+
 cd /var/www/rails_app
 git branch production master
 git checkout production
 
 ...                                       #一些配置
 
-chown www:www -R /var/www/rails_app
-chmod g+w -R /var/www/rails_app
-chmod g+s -R /var/www/rails_app
 ```
 
 ## nginx配置
@@ -135,6 +144,8 @@ show tables;
 ```
 
 ## 部署项目
+以下的可使用普通用户执行
+
 ```shell
 cd /var/www/rails_app
 git checkout master
@@ -142,11 +153,12 @@ git pull origin master
 git checkout production
 git diff production master --
 git merge master
+#chmod g+w -R /var/www/rails_app
 
 bundle install
 rake db:migrate
-
 RAILS_ENV=production rake assets:precompile
+
 /opt/nginx/sbin/nginx -s reload
 ```
 
