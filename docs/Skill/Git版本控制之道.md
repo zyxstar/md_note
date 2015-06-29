@@ -1209,11 +1209,11 @@ git clone git@114.242.131.210:root/proj.git proj
 ```shell
 cd proj
 git checkout master
-git fetch origin wechat:wechat
-git diff master wechat                  #做一下codeReview(gitlab中进行compare)
+git fetch origin wechat:tmp
+git diff master tmp                  #做一下codeReview(gitlab中进行compare)
                                         #本处的冲突有可能是最多的
                                         #有问题时需要开发人员修复后重新提交
-git merge --no-ff wechat
+git merge --no-ff tmp
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
 
@@ -1224,6 +1224,8 @@ git checkout build                      #签出其分支
 bundle install
 RAILS_ENV=production rake assets:precompile
 nginx -s reload                         #将集成测试环境运行起来
+
+git branch -d tmp
 ```
 
 ## 制作生产环境可用版本
