@@ -44,8 +44,7 @@ passenger-install-nginx-module
 
 ## 创建www用户
 ```shell
-adduser www
-#并将其`/etc/passwd`中的用户`www`的登录shell设置为`/usr/sbin/nologin`
+useradd -d /var/www -s /usr/sbin/nologin www
 
 #将相关用户加到www组
 gpasswd -a root www
