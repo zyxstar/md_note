@@ -1119,7 +1119,7 @@ git push origin master
 ```shell
 git clone git@114.242.131.210:zyx/proj.git zyxproj
 cd zyxproj
-git remote add build git@114.242.131.210:root/proj.git
+git remote add proj git@114.242.131.210:root/proj.git
 ```
 
 ## 开发新功能时
@@ -1144,8 +1144,8 @@ git branch -r
 > 当自己开发中，需要fetch proj.git项目时(项目有更新)
 
 ```shell
-git fetch build master:tmp        #将build fetch到临时分支
-git diff master tmp               #与build的更新进行比较
+git fetch proj master:tmp         #将proj fetch到临时分支
+git diff master tmp               #与proj的更新进行比较
 git checkout master               #进入需要合并的分支
 git merge --no-ff tmp             #确认无问题后进行合并
 git push -u origin master:master  #解决完冲突，并git commit后提交
@@ -1159,7 +1159,7 @@ git branch -d tmp                 #合并完成后，删除临时分支
 ## 开发任务自测完成时
 ```shell
 git push -u origin wechat:wechat
-git push -u build wechat:wechat   #将功能分支提交到build的同名分支，用于测试
+git push -u proj wechat:wechat   #将功能分支提交到proj的同名分支，用于测试
 ```
 
 ## 首次配置某功能测试环境
@@ -1193,7 +1193,7 @@ rails s                           #将单功能测试环境运行起来(或将fe
 git checkout wechat
 ...                               #修复bug并自测完
 git push -u origin wechat:wechat
-git push -u build wechat:wechat
+git push -u proj wechat:wechat
 ```
 
 ## 首次部署集成测试环境
@@ -1204,7 +1204,7 @@ git clone git@114.242.131.210:root/proj.git proj
 ```
 
 ## 部署功能到集成测试环境
-> 确保单个功能测试没问题后，才能合并到build的master分支，接下来进行的是集成测试，如果还存在bug的，则修复过程同上
+> 确保单个功能测试没问题后，才能合并到集成环境的master分支，接下来进行的是集成测试，如果还存在bug的，则修复过程同上
 
 ```shell
 cd proj
@@ -1235,7 +1235,7 @@ git checkout master
 git push -u origin master:master        #提交稳定版本
 git tag R1.0.1 master                   #以后依据它来编写特征列表
 git push -u origin R1.0.1:R1.0.1        #将发布tag也push到orgin上同名tag
-git branch -d build_x                   #删除之前用于运行集成环境的build分支
+git branch -d build                     #删除之前用于运行集成环境的build分支
 ```
 
 ## 部署生产版本
@@ -1279,7 +1279,7 @@ git fetch origin wechat:wechat
 ...                                     #开发新功能
 ...                                     #接下同正常开发
 git push -u origin wechat:wechat
-git push -u build wechat:wechat         #提交到build的同名分支，用于测试
+git push -u proj wechat:wechat         #提交到proj的同名分支，用于测试
 ...                                     #bug修复过程
 ```
 
@@ -1306,7 +1306,7 @@ git checkout bugfix
 ## 提示
 - 除非有充分理由，否则不要使用`git pull`，以`git fetch`,`git diff`,`git merge`取代
 - 在需要工作时，首先确认当前分支是什么，切换到合适分支下再工作
-- 在build目录下做测试时，只会产生`git fetch`等相关操作，不应产生`git push`操作
+- 在feature目录下做测试时，只会产生`git fetch`等相关操作，不应产生`git push`操作
 - 开发人员的`master`分支，只会从`proj.git`上`git fetch/git merge`，该`master`只作新功能/bug修复时的被branch，开发人员不应将功能/bug修复分支合并到自己的`master`分支
 - `Gemfile`书写时，必须将版本号写上，防止将来`bundle install`时引用了新的gem包
 

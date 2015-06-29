@@ -944,13 +944,20 @@ a8共有7种模式(a9还有一个安全模式)
 >
 > 各种模式下权限和可以访问的寄存器不同。
 
-操作系统中一般用软中断指令实现系统调用
+操作系统中一般用软中断指令实现系统调用，操作系统陷入内核时是在svc模式工作
 
 ```plain
 软件：用户态------------------------------->内核态--------->用户态
      open---->syscall---->swi/svc--------->sys_open------>open
 硬件：user模式----------------------------->svc模式------->user模式
 ```
+
+[ARM_Architecture_Reference_Manual.pdf](../../data/ARM_Architecture_Reference_Manual.pdf) P54
+
+- linux kernal要求启动时，需要在svc模式，所以uboot也是在svc模式下工作，我们写的裸板程序也是在svc下
+- linux内核使用high vector address，除了reset，其它的都使用high vector address，因为normal address对应的物理地址在irom中，不能被修改
+- arm 11支持implementation defined 向量表中断 能直接跳转到中断处理函数（向量中断处理器只能单核），arm a9多核，所以不支持，只能自己做路由
+- 在执行`swi`时，通过`lr`得上一条指令`swi <no>`，通过字面解析得到no
 
 
 ## 寄存器
@@ -2811,6 +2818,7 @@ int main(void){
 ```
 
 ## LCD
+### 概述
 ![img](../../imgs/display_contorller01.png)
 
 ```plain
@@ -2829,7 +2837,7 @@ display controller  --> (24bit data线 rgb各8)-->    lcd
 - 上层为用户态，中层为内核，下层为硬件
 - 用户态`open(/dev/fb0)`得到的`fd`再做`mmap()`后（在进程的虚拟地址空间中分配空间[mem子系统找 0~3G位置]，得到显存地址`v2`
 - 内核层需要两个子系统，`framebuffer`与`memory`，fb子系统负责管理fb设备，需要在内核中注册，每个设备对应一个屏幕结构体，对应一个驱动；驱动用到的内存，需要`mem`子系统给分配（内核用 >3G的位置），将得到两个内存地址，一个物理地址`p1`(用于dma)，一个虚拟地址`v1`(自己使用)，并修改页表，使用`v2`对应`p1`
-- 由`display controller`通过24位数据线与4位时序线连接`lcd`
+- 由`display controller`通过 24位数据线 与 4位时序线 连接`lcd`
 
 - 像素点格式
     - RGB888------>[8|8R|8G|8B]  大小为 480 * 800 * 4  可用`int`表示
@@ -2843,78 +2851,176 @@ display controller  --> (24bit data线 rgb各8)-->    lcd
     - 存在平面 alpha值存在寄存器中(更常用)
     - 像素混合 alpha存在像素点中
 
+- `display controller`有窗口管理器(管理图层 FIFO 混合)
+    - 对于android
+        + 第一层是桌面（不可alpha混合）
+        + 第二层是图标（可alpha混合 值为0~15）
+        + 第三层是应用启动后界面
+        + 更多的图层由软件解决计算后放到某一层
+    - 每一层还有3个buffer 供dma访问 用于提高播放影片体验
+    - buffer用于硬件加速 局部显示（每一层都注册为一个设备）
+    - dma中有5个通道，前3个可以直接从 `local path`或`显存`取数据，后两个只能从`显存`取数据
+        + 一般通道对应同号窗口
 
-   支持窗口管理器(管理图层 FIFO 混合)
-   m个buffer用于硬件加速 局部显示（每一层都注册为一个设备）
-      android 第一层是桌面（不可alpha混合）
-              第二层是图标（可alpha混合 值为0~15）
-              第三层是应用启动后界面
-              更多的图层由软件解决计算后放到第三层
-      每一层还有3个buffer 供dma访问 用于提高播放影片体验
+### 设置GPIO
+```c
+void gpio_for_lcd(void){
+  //把gpio初始化为lcd功能
+  GPF0CON = 0x22222222;
+  GPF1CON = 0x22222222;
+  GPF2CON = 0x22222222;
+  GPF3CON &= ~0xffff;
+  GPF3CON |= 0x2222;
+}
+```
 
-4条时序线
-  VCLK 发送频率 一个像素点一个信号 33.3Mhz
-  HSYNC 行同步信号
-  VSYNC 垂直同步信号 一帧（屏）数据
-  VDEN 通知是否发送有效点
+### 设置时钟
+设置分频器与选择器，得到33.3mhz
 
-  移植LCD分辨率(`time_for_lcd()`)
+```c
+void clock_for_lcd(void){
+  CLK_DIV_LCD &= ~0xf;
+  CLK_DIV_LCD |= 7;
+  CLK_SRC_LCD0 &= ~0xf;
+  CLK_SRC_LCD0 |= 6;
 
-    每行的空像素点 
-      1       2        有效800     3
-      HSPW+1  HBPW+1   HOZVAL+1    HFPD+1
+  CLK_SRC_MASK_LCD |= 1;
 
-    每屏的空行
-      1 VSPW+1
-      2 VBPD+1
-      有效480  LINEVAL+1
-      3 VFPD+1
+  CLK_GATE_IP_LCD |= 1;
 
+  LCDBLK_CFG |= 1 << 1;
 
-
-
-
-
-p1887 1806
-WINCON0
-
-ENLOCAL_F [22] RW Selects Data access method. 
-                  0 = Dedicated DMA           V
-                  1 = Local Path 
-15-18 各种交换 
-888 BSWP=0 HWSWP=0 WAWP=1
-565      0       1      0
-
-
-
-dma中有5个通道，前3个可以直接从 local path或显存取数据，后两个只能从显存取数据
- 一般通道对应同号窗口
-
-双选 
-通道需要选择窗口
-窗口也需要选择通道
-
-VIDOSD0C 显存大小
-
-用户态程序
-mkimage(bmp jpeg --> rgb[888/565])
-  libjpeg.so.6
-
-./mkimage mm/20.jpg 20_888.raw
-然后放入framebuffer (dwn到某地址，在lcd中指定该地址为窗口地址)
+  while(CLK_DIV_STAT_LCD & 1);
+}
+```
 
 
+### 4条时序线
+> 是移植LCD分辨率需要注意的(更常用)，只需修改代码中的`time_for_lcd()`
 
+- `VCLK` 发送频率 一个像素点一个信号 33.3Mhz
+- `HSYNC` 行同步信号
+- `VSYNC` 垂直同步信号 一帧（屏）数据
+- `VDEN` 通知是否发送有效点
 
+```plain
+每行的空像素点
+  1       2        有效800     3
+  HSPW+1  HBPW+1   HOZVAL+1    HFPD+1
 
+每屏的空行
+  1 VSPW+1
+  2 VBPD+1
+  有效480  LINEVAL+1
+  3 VFPD+1
+```
 
+![img](../../imgs/display_contorller02.png)
 
-监控 jpeg
-yuv（vs rgb）压缩视频 每4个像素点存一个Y，u和v每一像素存一个
-yuv420
+见[SEC_Exynos4412_Users+Manual_Ver.1.00.00.pdf](../../data/SEC_Exynos4412_Users+Manual_Ver.1.00.00.pdf) P1148
 
-摄像头uvc标准
+![img](../../imgs/display_contorller03.png)
 
+见[S700-AT070TN92.pdf](../../data/S700-AT070TN92.pdf) P13
+
+```c
+void time_for_lcd(void){
+  //VCLK = 33.3M
+  VIDCON0 = (2 << 6) | 3;
+
+  //VS HS需要翻转
+  //VDEN高电平有效，不需要翻转
+  //VCLK 上升沿
+  VIDCON1 = (1 << 9) | (1 << 7) | (1 << 6) | (1 << 5);
+
+  //VSPW+1 = tvpw = 10
+  //VBPD+1 = tvb-tvpw = 13
+  //LINEVAL+1 = tvd = 480
+  //VFPD+1 = tvfp = 22
+  //HSPW+1 = hpw = 20
+  //HBPD+1 = thb-hpw = 26
+  //HOZVAL+1 = thd = 800
+  //HFPD+1 = thfp = 210
+  VIDTCON0 = (12 << 16) | (21 << 8) | (9);
+  VIDTCON1 = (25 << 16) | (209 << 8) | (19);
+  VIDTCON2 = (479 << 11) | 799;
+}
+```
+
+### 配置窗口
+> 窗口0不需要设置alpha
+
+```c
+void win0_init(unsigned int addr){
+#ifdef BPP565
+  WINCON0 = (1 << 16) | (5 << 2) | 1;
+  VIDOSD0C = (800 * 480 * 2) >> 2;
+#else
+  WINCON0 = (1 << 15) | (11 << 2) | 1;
+  VIDOSD0C = (800 * 480 * 4) >> 2;
+#endif
+  //channel0
+  SHADOWCON &= ~(1 << 10);
+  SHADOWCON &= ~(1 << 5);
+  SHADOWCON |= 1;
+
+  //channel0 ----> win0
+  WINCHMAP2 &= ~(7 << 16);
+  WINCHMAP2 |= (1 << 16);
+
+  //win0 ---> channel0
+  WINCHMAP2 &= ~(7 << 0);
+  WINCHMAP2 |= (1 << 0);
+
+  VIDOSD0A = 0;
+  VIDOSD0B = (799 << 11) | (479);
+
+  //win0 buffer0
+  VIDW00ADD0B0 = addr;
+  VIDW00ADD1B0 = addr + VIDOSD0C * 4;
+}
+```
+
+- `ENLOCAL_F [22]`需选择dma模式  `SEC_Exynos4412_Users+Manual_Ver.1.00.00.pdf` P1879
+- `WINCON0[15:18]`用于swap `SEC_Exynos4412_Users+Manual_Ver.1.00.00.pdf` P1806
+    - BPP888 BSWP=0 HWSWP=0 WAWP=1
+    - BPP565 BSWP=0 HWSWP=1 WAWP=0
+- 通道与窗口需要双向选择
+- `VIDOSD0C`是显存大小
+- 制作framebuffer所需的图像
+    - `mkimage`(bmp jpeg --> rgb[888/565])[依赖libjpeg.so.6]
+    - `./mkimage mm/20.jpg 20_888.raw`，然后供dnw下载
+
+- 同样去配置第2、3、n个窗口，它们可以配置alpha
+
+### 画点
+```c
+void draw_point(unsigned int addr, int x, int y, int r, int g, int b){
+#ifdef BPP565
+  unsigned short *v = (void *)addr;
+  *(v + 800 * y + x) = (r << 11) | (g << 5) | (b);
+#else
+  unsigned int *v = (void *)addr;
+  *(v + 800 * y + x) = (r << 16) | (g << 8) | (b);
+#endif
+}
+```
+
+### 有关亮度
+亮度可由像素或背光控制
+
+背光控制一般使用PWM控制MP1518，而friendly arm使用单片机控制，4412通过gpio来通信
+
+## MMU
+[DDI0388I_cortex_a9_r4p1_trm.pdf](../../data/DDI0388I_cortex_a9_r4p1_trm.pdf) P109
+
+[DEN0013C_cortex_a_series_PG.pdf](../../data/DEN0013C_cortex_a_series_PG.pdf) P141
+
+- 一个进程一个页表
+- 页表也存在内存中（它本身通过cp15的c2 (ttbr) 访问物理内存）
+- 段映射 一级映射 共4k个32bit条目  虚拟地址的高12位作为数组下标（负责1M内存）
+  + 物理地址也按1M分段
+  + 虚拟地址低20位与物理地址低20位 一样
 
 
 
@@ -2939,6 +3045,16 @@ sync
 tools/write4412boot /media/88DE-4A63/images/Superboot4412.bin /dev/sdb
 
 http://codepad.org/
+
+
+
+监控 jpeg
+yuv（vs rgb）压缩视频 每4个像素点存一个Y，u和v每一像素存一个
+yuv420
+摄像头uvc标准
+工控
+  omap 飞思卡尔
+
 -->
 
 
@@ -2947,59 +3063,10 @@ http://codepad.org/
 
 
 
-kernel与uboot都在 svc模式
-app               user
-
-
-
-arm手册
-p54
-swi软中断，确保进入svc模式
-除了reset,其它只能进入high vector address,需要mmu
-  因为normal的地址空间在irom中,不能修改
-arm 11支持implementation defined 向量表中断 能直接跳转到中断处理函数（向量中断处理器只能单核）
-  a9多核，所以不支持，只能自己做路由
-
-linux内核使用high vector address
-
-在执行 swi的执行代码中，通过lr 得到上一条`swi no` 中的`no`
-
-
-a9手册 mmu p142
-一个进程一个页表
-页表存在内存中（它本身通过cp15的c2 (ttbr) 访问物理内存）
-
-段映射 一级映射 共4k个32bit条目  虚拟地址的高12位作为数组下标（负责1M内存）
-  物理地址也按1M分段
-  虚拟地址低20位与物理地址低20位 一样
-
-页映射 需要二级映射
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-亮度可由像素或背光控制
-  背光一般使用PWM控制 MP1518
-  背光friendly arm 使用单片机控制， 4412通过gpio来通信
-
-
-工控
-  omap 飞思卡尔
 
 
 
