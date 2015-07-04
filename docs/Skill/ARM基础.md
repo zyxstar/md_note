@@ -3022,6 +3022,324 @@ void draw_point(unsigned int addr, int x, int y, int r, int g, int b){
   + 物理地址也按1M分段
   + 虚拟地址低20位与物理地址低20位 一样
 
+- linux 用4k 小页映射
+- 分页是管理机制与硬件无关
+- 页表里存物理地址，虚拟地址是偏移地址
+- 二级页表有256个条目
+    - 虚拟地址与物理地址低12位一样
+    - 高12位一级查询，中8位二级查询
+- 查表由硬件完成
+
+### 段映射代码
+
+```c
+#include <common.h>
+#include <mmu.h>
+
+//va=0x12345678
+//pa=0x02200044
+//0x123xxxxx---->0x022xxxxx
+//功能：通过修改（或创建）页表的一个条目来实现va到pa的映射
+void mmap_section(unsigned int *ttb, unsigned int *va, unsigned int *pa){
+    int index = ((unsigned int)va) >> 20;
+    int section = ((unsigned int)pa) >> 20;
+
+    //ttb[index] = ((unsigned int)pa & 0xfff00000) | 2;
+    ttb[index] = (section << 20) | 2;
+}
+
+void page_table_create(unsigned int *ttb){
+  //pa[0x40000000, 0x80000000]
+  //pa[0x10000000, 0x14000000] 
+  unsigned int pa, va;
+
+  for(va = 0; va < 0x80000000; va += 0x100000) {
+    pa = va;
+    mmap_section(ttb, (void *)va, (void *)pa);
+  }
+
+  //domain域 16个域，并不做权限检查
+  //32[3031|||....||67|45|23|01]
+  //参考DDI0406C_arm_architecture_reference_manual.pdf P1541 P1708 
+  __asm__ __volatile__(
+    "mrc p15, 0, r0, c3, c0, 0\n"
+    "orr r0, r0, #3\n"
+    "mcr p15, 0, r0, c3, c0, 0\n"
+    "mcr p15, 0, %0, c2, c0, 0\n"
+    :
+    :"r"(ttb)
+    :"r0"
+  );  
+}
+
+//参考DDI0388I_cortex_a9_r4p1_trm.pdf P74
+void mmu_enable(void){
+  __asm__ __volatile__(
+    "mrc p15, 0, r0, c1, c0, 0\n" 
+    "orr r0, r0, #1\n"
+    "mcr p15, 0, r0, c1, c0, 0\n"
+    :::"r0"
+  );
+}
+
+void mmu_disable(void){
+  __asm__ __volatile__(
+    "mrc p15, 0, r0, c1, c0, 0\n" 
+    "bic r0, r0, #1\n"
+    "mcr p15, 0, r0, c1, c0, 0\n"
+    :::"r0"
+  );
+}
+
+
+int main(void){
+  int *p = (void *)0x71288888;
+
+  *p = 300;
+  //物理地址==虚拟地址
+  //0x712xxxxx--->0x712xxxxx
+  page_table_create((void *)0x60000000);
+  //va=0x123xxxxx
+  //pa=0x712xxxxx 
+  mmap_section((void *)0x60000000, (void *)0x12345678, (void *)0x71234568);
+
+  mmu_enable();
+
+  printf("i am ok\n");
+
+  printf("%d\n", *(int *)0x12388888);
+  printf("%d\n", *(int *)0x71288888);
+
+  return 0;
+}
+```
+
+## 未定义异常
+```asm
+.global _start
+_start:
+
+  b reset         @0x50000000---->0xffff0000
+  b unde          @0x50000004---->0xffff0004  需要通过mmu将其映射到高端向量表
+                  @指令格式为 [cond 4|opcode 4| 24 offset] offset可正负跳转 前后可跳转8M指令 32M字节
+reset:            @svc_mode 启动时为svc模式
+  stmfd sp!, {r0-r12, lr}
+
+  @设置高端向量表
+  mrc p15, 0, r0, c1, c0, 0
+  orr r0, r0, #(1 << 13)
+  mcr p15, 0, r0, c1, c0, 0
+
+  bl main
+  ldmfd sp!, {r0-r12, pc}
+  @mov pc, lr
+  @bx lr
+unde:                         @unde_mode
+  mov sp, #0x51000000         @设置栈的起始地始，该空间手工分配
+  stmfd sp!, {r0-r12, lr}     @保存现场到栈中
+                              @bl do_unde ;do_unde是一个c语言的unde处理函数，但此时不能使用相对跳转，只能使用绝对跳转
+  mov lr, pc                  @将pc放入lr;该处使用绝对跳转,不像bl可以直接将pc放入到lr,需手工完成
+  ldr pc, _unde_handler       @pc=do_unde
+  ldmfd sp!, {r0-r12, lr}     @从栈中恢复现场
+  movs pc, lr                 @从未定义异常模式返回
+_unde_handler:                @为了确保得到函数的绝对地址
+  .word do_unde
+
+```
+
+```c
+void *memcpy(void *dest, const void *src, int count){
+    char *tmp = dest;
+    const char *s = src;
+
+    while (count--)
+        *tmp++ = *s++;
+    return dest;
+}
+
+void do_unde(void){
+  int c;
+
+  __asm__ __volatile__(
+    "mrs %0, cpsr\n"
+    :"=&r"(c)
+  );
+
+  printf("%s %x\n", __FUNCTION__, c);
+}
+
+int main(void){
+  page_table_create((void *)0x60000000);
+  //0xfffxxxxx---->0x712xxxxx
+  //0xffffxxxx---->0x712fxxxx
+  mmap_section((void *)0x60000000, (void *)0xfff00000, (void *)0x71234568);
+  mmu_enable();
+  
+  //通过内存拷贝，将处理指令，拷贝到高端向量表指定的地方
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
+
+  __asm__ __volatile__(   //在代码段写入无效指令
+    ".word 0x77777777\n"
+  );
+
+  printf("i am ok\n");
+
+  return 0;
+}
+```
+
+## 软中断
+```asm
+.global _start
+_start:
+
+  b reset  @0x50000000----->0xffff0000
+  b unde   @0x50000004----->0xffff0004
+  b swi    @0x50000008----->0xffff0008
+reset:     @svc_mode
+  stmfd sp!, {r0-r12, lr}
+
+  @设置高端向量表
+  mrc p15, 0, r0, c1, c0, 0
+  orr r0, r0, #(1 << 13)
+  mcr p15, 0, r0, c1, c0, 0
+
+  bl main
+  ldmfd sp!, {r0-r12, pc}
+  @mov pc, lr
+  @bx lr
+swi:@svc
+  @mov sp, #0x52000000              @设置栈空间
+  stmfd sp!, {r0-r12, lr}
+  ldr r0, [lr, #-4]                 @r0=*(lr - 4) 得到lr中指令的前一条指令
+  bic r0, r0, #0xff000000           @取它的低24位，根据APCS，r0可用于传参
+  mov lr, pc
+  ldr pc, _swi_handler
+  ldmfd sp!, {r0-r12, lr}
+  movs pc, lr
+_swi_handler:
+  .word do_swi
+unde:@unde_mode
+  mov sp, #0x51000000
+  stmfd sp!, {r0-r12, lr}
+  mov lr, pc
+  ldr pc, _unde_handler@pc=do_unde
+  ldmfd sp!, {r0-r12, lr}
+  movs pc, lr
+_unde_handler:
+  .word do_unde
+```
+
+```c
+void *memcpy(void *dest, const void *src, int count){
+    char *tmp = dest;
+    const char *s = src;
+
+    while (count--)
+        *tmp++ = *s++;
+    return dest;
+}
+
+void myread(void){
+  printf("myread\n");
+}
+
+void myopen(void){
+  printf("myopen\n");
+}
+
+void myclose(void){
+  printf("myclose\n");
+}
+
+void (*vector[])(void) = {myopen, myread, myclose};
+
+//r0 r1 r2 r3 ---- sp
+void do_swi(int no){//这里就可以得到swi的编号
+  int c;
+
+  void (*handler)(void) = vector[no];
+  handler();
+
+  __asm__ __volatile__(
+    "mrs %0, cpsr\n"
+    :"=&r"(c)
+  );
+
+  printf("%s %x\n", __FUNCTION__, c);
+}
+
+void do_unde(void){
+  int c;
+
+  __asm__ __volatile__(
+    "mrs %0, cpsr\n"
+    :"=&r"(c)
+  );
+
+  printf("%s %x\n", __FUNCTION__, c);
+}
+//假设上面是内核态程序
+//----------------------------------------------
+//假设下面是用户态程序
+int main(void){
+  page_table_create((void *)0x60000000);
+  //0xfffxxxxx---->0x712xxxxx
+  //0xffffxxxx---->0x712fxxxx
+  mmap_section((void *)0x60000000, (void *)0xfff00000, (void *)0x71234568);
+  mmu_enable();
+
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
+  //open--------swi---------------->sys_open
+  //usr---------------------------->svc
+  
+  //svc
+  __asm__ __volatile__(
+    ".word 0x77777777\n"
+    "swi 0\n"//[cond 4|4 opcode| no 24]
+    "swi 1\n"
+    "swi 2\n"
+  );
+
+  printf("i am ok\n");
+
+  return 0;
+}
+```
+
+
+
+
+
+
+
+## 中断处理
+
+- 用户态是看不到中断的，只在内核
+- 中断控制器
+    - GIC：多核系统使用   arm-a9
+    - VIC：有向量表      arm-a8 arm11
+    - NVIC：可嵌套，有向量表（实时系统）  arm-m
+
+- 中断优先级 越小越优先
+
+- 中断分类（指GIC控制器）
+    - SGI 软件产生的中断[0,15] * 4，也需要走GIC，一个CPU相关于16个中断源，向其它CPU发中断
+        - 用于CPU间交互，不同于swi
+    - PPI 私有中断[16,31] * 4
+    - SPI 共享中断[32,1024]
+
+- 中断状态
+    - pending
+    - active
+    - inactive
+
+> PCLK当作133M
+
+
+
+
+
 
 
 <script>
@@ -3055,6 +3373,10 @@ yuv420
 工控
   omap 飞思卡尔
 
+锁是通过硬件来实现的
+
+gcc -m32 编译成32位
+smp.c切换CPU
 -->
 
 
