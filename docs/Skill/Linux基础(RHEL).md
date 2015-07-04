@@ -1444,6 +1444,24 @@ DNS2
 service network restart
 ```
 
+## ubuntu下设置
+```shell
+sudo vim /etc/network/interfaces
+
+    # The primary network interface
+    auto eth0
+    iface eth0 inet static
+    address 192.168.3.90
+    gateway 192.168.3.2
+    netmask 255.255.255.0
+    network 192.168.3.0
+    broadcast 192.168.3.255
+
+sudo /etc/init.d/networking restart
+
+sudo nm-connection-editor & #图形化配置
+```
+
 ## 其它
 ```shell
 lsof -i:80                    #查看80端口是否启动

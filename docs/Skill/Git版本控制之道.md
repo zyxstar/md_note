@@ -1210,14 +1210,15 @@ git clone git@114.242.131.210:root/proj.git proj
 cd proj
 git checkout master
 git fetch origin wechat:tmp
-git diff master tmp                  #做一下codeReview(gitlab中进行compare)
+git diff master tmp                     #做一下codeReview(gitlab中进行compare)
                                         #本处的冲突有可能是最多的
                                         #有问题时需要开发人员修复后重新提交
 git merge --no-ff tmp
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
+    #如果需要解决冲突，则还需要提交
+    git commit -a
 
-git commit -a                           #提交合并后的分支
 git branch build master                 #创建其于master的build的分支(该分支永远不会提交到远程)
 git checkout build                      #签出其分支
 ...                                     #进行必要的环境配置
