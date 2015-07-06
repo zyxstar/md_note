@@ -2948,7 +2948,7 @@ void time_for_lcd(void){
 ```
 
 ### 配置窗口
-> 窗口0不需要设置alpha
+> 窗口0不需要设置alpha,窗口1需要
 
 ```c
 void win0_init(unsigned int addr){
@@ -2978,6 +2978,39 @@ void win0_init(unsigned int addr){
   //win0 buffer0
   VIDW00ADD0B0 = addr;
   VIDW00ADD1B0 = addr + VIDOSD0C * 4;
+}
+
+void win1_init(unsigned int addr){
+#ifdef BPP565
+  WINCON1 = (1 << 16) | (5 << 2) | 1;
+  VIDOSD1D = (800 * 480 * 2) >> 2;
+#else
+  WINCON1 = (1 << 15) | (11 << 2) | 1;
+  VIDOSD1D = (800 * 480 * 4) >> 2;
+#endif
+  //channel1 
+  SHADOWCON &= ~(1 << 11);
+  SHADOWCON &= ~(1 << 6);
+  SHADOWCON |= 1 << 1;
+
+  //channel1 ----> win1
+  WINCHMAP2 &= ~(7 << 19);
+  WINCHMAP2 |= (2 << 19);
+
+  //win1 ---> channel1
+  WINCHMAP2 &= ~(7 << 3);
+    WINCHMAP2 |= (2 << 3);
+  
+  VIDOSD1A = 0;
+  VIDOSD1B = (799 << 11) | (479);
+
+  VIDOSD1C = 0x777 << 12;
+  //alpha0 ---> [12----23]
+  //alpha1 ---> [0----11]
+
+  //win1 buffer0
+  VIDW01ADD0B0 = addr;
+  VIDW01ADD1B0 = addr + VIDOSD1D * 4;
 }
 ```
 
@@ -3132,8 +3165,6 @@ reset:            @svc_mode 启动时为svc模式
 
   bl main
   ldmfd sp!, {r0-r12, pc}
-  @mov pc, lr
-  @bx lr
 unde:                         @unde_mode
   mov sp, #0x51000000         @设置栈的起始地始，该空间手工分配
   stmfd sp!, {r0-r12, lr}     @保存现场到栈中
@@ -3196,7 +3227,7 @@ _start:
   b reset  @0x50000000----->0xffff0000
   b unde   @0x50000004----->0xffff0004
   b swi    @0x50000008----->0xffff0008
-reset:     @svc_mode
+reset:    
   stmfd sp!, {r0-r12, lr}
 
   @设置高端向量表
@@ -3206,10 +3237,8 @@ reset:     @svc_mode
 
   bl main
   ldmfd sp!, {r0-r12, pc}
-  @mov pc, lr
-  @bx lr
-swi:@svc
-  @mov sp, #0x52000000              @设置栈空间
+swi:                                @svc_mode
+  mov sp, #0x52000000 
   stmfd sp!, {r0-r12, lr}
   ldr r0, [lr, #-4]                 @r0=*(lr - 4) 得到lr中指令的前一条指令
   bic r0, r0, #0xff000000           @取它的低24位，根据APCS，r0可用于传参
@@ -3219,7 +3248,7 @@ swi:@svc
   movs pc, lr
 _swi_handler:
   .word do_swi
-unde:@unde_mode
+unde:                 
   mov sp, #0x51000000
   stmfd sp!, {r0-r12, lr}
   mov lr, pc
@@ -3307,12 +3336,6 @@ int main(void){
 }
 ```
 
-
-
-
-
-
-
 ## 中断处理
 
 - 用户态是看不到中断的，只在内核
@@ -3324,7 +3347,7 @@ int main(void){
 - 中断优先级 越小越优先
 
 - 中断分类（指GIC控制器）
-    - SGI 软件产生的中断[0,15] * 4，也需要走GIC，一个CPU相关于16个中断源，向其它CPU发中断
+    - SGI 软件（CPU）产生的中断[0,15] * 4，也需要走GIC，一个CPU相关于16个中断源，向其它CPU发中断
         - 用于CPU间交互，不同于swi
     - PPI 私有中断[16,31] * 4
     - SPI 共享中断[32,1024]
@@ -3334,12 +3357,333 @@ int main(void){
     - active
     - inactive
 
-> PCLK当作133M
+
+### WDT重启
+```asm
+.global _start
+_start:
+
+  b reset           @0x50000000----->0xffff0000
+  b unde            @0x50000004----->0xffff0004
+  b swi             @0x50000008----->0xffff0008
+  .word 0x00,0x00,0x00     @填入空间
+  b irq             @0x50000018----->0xffff0008
+reset:  @svc_mode
+  stmfd sp!, {r0-r12, lr}
+
+  @设置高端向量表
+  mrc p15, 0, r0, c1, c0, 0
+  orr r0, r0, #(1 << 13)
+  mcr p15, 0, r0, c1, c0, 0
+
+  bl main
+  ldmfd sp!, {r0-r12, pc}
+irq:  @irq_mode
+  mov sp, #0x52000000
+  stmfd sp!, {r0-r12, lr}
+  mov lr, pc
+  ldr pc, _irq_handler
+  ldmfd sp!, {r0-r12, lr} 
+  subs pc, lr, #4
+_irq_handler:
+  .word do_irq
+swi:  @svc
+  @mov sp, #0x52000000
+  stmfd sp!, {r0-r12, lr}
+  ldr r0, [lr, #-4]@r0=*(lr - 4)
+  bic r0, r0, #0xff000000
+  mov lr, pc
+  ldr pc, _swi_handler
+  ldmfd sp!, {r0-r12, lr}
+  movs pc, lr
+_swi_handler:
+  .word do_swi
+unde:@unde_mode
+  mov sp, #0x51000000
+  stmfd sp!, {r0-r12, lr}
+  mov lr, pc
+  ldr pc, _unde_handler
+  ldmfd sp!, {r0-r12, lr}
+  movs pc, lr
+_unde_handler:
+  .word do_unde
+```
+
+PCLK当作133M
+
+```c
+void wdt_init(int ms){
+  //133M / 133 / 64 = 15625hz
+  WTCON = (132 << 8) | (2 << 3);
+  WTCNT = 16 * ms;  
+  WTDAT = 16 * ms;
+}
+
+void wdt_enable(void){
+  WTCON |= 1 << 5;
+}
+
+void wdt_disable(void){
+  WTCON &= ~(1 << 5);
+}
+
+void wdt_feed(int ms){
+  WTCNT = 16 * ms;
+}
+
+void wdt_reset_init(int ms){
+  wdt_init(ms);
+  WTCON &= ~7;
+  WTCON |= 1;
+
+  AUTOMATIC_WDT_RESET_DISABLE = 0;
+  MASK_WDT_RESET_REQUEST = 0;
+}
 
 
+int main(void){
+  page_table_create((void *)0x60000000);
+  mmu_enable();
 
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
 
+  wdt_reset_init(4000);// < 65535 / 16
+  wdt_enable();
+  uart_init(0);
 
+  while(1){  //指定时间内未feed则重启
+    wdt_feed(4000); 
+    ugetchar();
+    printf("feed ok\n");
+  } 
+
+  return 0;
+}
+```
+
+### WDT中断
+asm部分同前
+
+```c
+static struct irq_info irq_vector[128];
+
+void request_irq(int irq_no, void (*handler)(struct irq_info *i), int flag){
+  irq_vector[irq_no].flag = flag;
+  irq_vector[irq_no].irq_no = irq_no; 
+  irq_vector[irq_no].handler = handler;
+}
+
+void do_irq(void){
+  //1.能够知道是谁产生了中断
+  //2.通知gic把中断状态切换到active
+  //3.每次中断中只能读一次
+  int id;
+
+  id = ICCIAR_CPU0;   
+
+  irq_vector[id & 0x3ff].handler(irq_vector + (id & 0x3ff));  
+
+  //1.通知中断控制器把中断设置为inactive
+  ICCEOIR_CPU0 = id;
+}
+
+void wdt_init(int ms){
+  //133M / 133 / 64 = 15625hz
+  WTCON = (132 << 8) | (2 << 3);
+  WTCNT = 16 * ms;  
+  WTDAT = 16 * ms;
+}
+
+void wdt_enable(void){
+  WTCON |= 1 << 5;
+}
+
+void wdt_disable(void){
+  WTCON &= ~(1 << 5);
+}
+
+void do_wdt(struct irq_info *i){
+  printf("wdt wdt flag = %d\n", i->flag);
+  WTCLRINT = 1; //重置中断源
+}
+
+void wdt_irq_init(int ms){
+  wdt_init(ms);
+  WTCON &= ~7;
+    WTCON |= 1 << 2;
+  //根据Exynos4412手册9.2章节，看门狗的中断ID为75
+  //gic 
+  //1.使能cpu接口
+  ICCICR_CPU0 = 1;
+  //2.设置门槛
+  ICCPMR_CPU0 = 0xff;
+  //3.使能中断分配器
+  ICDDCR = 1; 
+  //4.打开相应的中断
+  ICDISER2_CPU0 |= 1 << (75 - 64);
+  //5.设置中断优先级
+  ICDIPR18_CPU0 &= ~(0xff << 24);
+  ICDIPR18_CPU0 |= 0x12 << 24;
+  //6.选择目标cpu
+  ICDIPTR18_CPU0 &= ~(0xff << 24);
+  ICDIPTR18_CPU0 |= 1 << 24;
+  
+  request_irq(75, do_wdt, 100);
+  
+  #if 0
+  //所有arm都支持
+  __asm__ __volatile__(
+    "mrs r0, cpsr\n"
+    "bic r0, r0, #(1 << 7)\n"
+    "msr cpsr, r0\n"
+    :::"r0"
+  );
+  #endif
+  //>=V6的cpu才支持
+  __asm__ __volatile__("cpsie i");
+}
+
+int main(void){
+  page_table_create((void *)0x60000000);
+  mmu_enable();
+
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
+
+  wdt_irq_init(1000);// < 65535 / 16
+  wdt_enable();
+
+  return 0;
+}
+```
+
+SPI中断源
+
+> linux处理中断
+> - 上半部分 响应中断 安排任务
+> - 下半部分 处理任务（内核软中断 工作队列 tasklet）
+
+## SGI中断
+不需要清中断
+
+```c
+void do_sgi0(struct irq_info *i){
+  printf("sig0 sig0 ... %d\n", i->flag);
+}
+
+void sgi_init(void){
+  //cpu0_sgi0
+  //gic
+  //1.使能cpu接口
+  ICCICR_CPU0 = 1;
+  //2.设置门槛
+  ICCPMR_CPU0 = 0xff;
+  //3.使能中断分配器
+  ICDDCR = 1; 
+  //4.打开中断
+  #define ICDISER0_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x0100))
+  ICDISER0_CPU0 |= 1;//enable cpu0_sgi0
+  //5.设置中断优先级
+  #define ICDIPR0_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x0400))
+  ICDIPR0_CPU0 &= ~0xff;
+  ICDIPR0_CPU0 |= 0x23;
+  //6.选择目标cpu
+  #define ICDIPTR0_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x0800))
+  ICDIPTR0_CPU0 &= ~0xff;
+  ICDIPTR0_CPU0 |= 1;//cpu0
+
+  request_irq(0, do_sgi0, 300);
+
+  __asm__ __volatile__("cpsie i");
+}
+
+void sgi_generate(int irq_no){
+  #define ICDSGIR (*(volatile unsigned int *)(0x10490000 + 0x0F00))
+  ICDSGIR = (1 << 16) | irq_no;
+}
+
+int main(void){
+  page_table_create((void *)0x60000000);
+  mmu_enable();
+
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
+
+  sgi_init();
+  
+  while(1){
+    sgi_generate(0);  
+    udelay(1000000);      
+  }
+
+  return 0;
+}
+```
+
+## 外部中断
+```c
+void do_eint(struct irq_info *i){//有bug，需根据位来判断
+  switch((EXT_INT43_PEND >> 2) & 0xf){
+    case 1:
+      printf("button0 %d\n", i->flag);
+      break;
+    case 2:
+      printf("button1 %d\n", i->flag);
+      break;
+    case 4:
+      printf("button2\n");
+      break;
+    case 8:
+      printf("button3\n");
+      break;
+    default:
+      break;
+  }
+  
+  EXT_INT43_PEND = EXT_INT43_PEND; //清中断
+}
+
+//通过电路图 eint26-29  gpx3_2-5
+void eint_init(void){
+  GPX3CON |= 0xffff << 8;
+  //eint43[2,3,4,5]
+  EXT_INT43CON &= ~(0xffff << 8);
+  EXT_INT43CON |= 0x2222 << 8;
+  EXT_INT43_MASK &= ~(0xf << 2);
+  EXT_INT43_PEND = EXT_INT43_PEND;
+
+  request_irq(64, do_eint, 200);
+
+  //gic 
+  //1.使能cpu接口
+  ICCICR_CPU0 = 1;
+  //2.设置门槛
+  ICCPMR_CPU0 = 0xff;
+  //3.使能中断分配器
+  ICDDCR = 1; 
+  //4.使能中断
+  #define ICDISER2_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x0108))
+  ICDISER2_CPU0 |= 1;
+  //5.设置优先级
+  #define ICDIPR16_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x440))
+  ICDIPR16_CPU0 &= ~0xff;
+  //6.选择目标cpu
+  #define ICDIPTR16_CPU0 (*(volatile unsigned int *)(0x10490000 + 0x840))
+  ICDIPTR16_CPU0 &= ~0xff;
+  ICDIPTR16_CPU0 |= 1;
+
+  __asm__ __volatile__("cpsie i");
+}
+
+int main(void){
+  page_table_create((void *)0x60000000);
+  mmu_enable();
+
+  memcpy((void *)0xffff0000, (void *)0x50000000,  50 * 4); 
+
+  eint_init();
+  
+  return 0;
+}
+```
 
 
 <script>
