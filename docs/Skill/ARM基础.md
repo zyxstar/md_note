@@ -3724,6 +3724,47 @@ smp.c切换CPU
 -->
 
 
+4412手册27章
+rtc需要单独32768hz晶振(XTAL)
+  寄存器使用bcd码 真实时间
+  alarm寄存器 时间与真实时间一样时，则产生中断
+
+手册其中BCDDAYWEEK BCDDAY地址反了
+
+main 也接受 start.s中的r0 为参
+main
+传参不能破坏r0
+链接地址 链接脚本
+
+
+
+
+
+
+模数转换 adc
+不支持数模转换
+
+0v-1.8v  ----->  0-0xfff
+
+
+APB 133M
+PCLK 就是APB 不是66M(6410的)
+
+
+ADCDLY 延迟 保证采样稳定
+
+
+
+
+time4
+TCNT0减到0产生中断
+TCMP0信号翻转
+一是定时
+二是产生信号
+
+
+
+死区 用于缓冲 类似十字路口 有一段时间均为红灯
 
 
 
@@ -3736,3 +3777,155 @@ smp.c切换CPU
 
 
 
+
+
+
+iic   eeprom
+      ft5206  触摸屏
+      mma7660 重力传感
+
+多主系统
+每个iic设备 7 位地址
+半双工
+有时钟线，波特率可变
+抢主 谁先发出0谁就是主
+发送数据 从高位到低位
+软件寻址
+
+内核写eeprom驱动时
+  不需要理解iic驱动
+  只需写eeprom driver 使用iic core中的 `i2c_transfer`
+  用户态使用/dev/eeprom
+
+USB ehci轮询
+是单主系统
+
+otg 可做主（与打印机连）可做从（与PC连）
+连接前确定下来，工作中不可切换
+
+
+串口 一对一
+全双工
+提前确定波特率 无时钟线
+
+
+spi     nrf24l01 无线
+线：
+  MOSI
+  MISO
+  SCLK
+  CS 片选(硬件寻址)
+spi不能交叉连接
+
+
+
+spi icc均高位先发
+
+
+
+
+
+
+
+
+android
+part1 18~32
+part2 33~
+
+
+./gen-img.sh(研究)
+三个镜像
+ramdisk.img
+system.img
+userdata.img[4 8 16g]
+
++内核
+
+
+
+
+只有汇编可以操作内核（但C/C++直接可以编译成汇编）
+
+
+ramdisk--->/
+           /system 系统目录（用户不能uninstall）除非root后rm
+           /data   家目录
+
+c语言必须以动态库方式出现
+  HAL NDK *.so
+
+Native executable本地程序只能在命令行下运行
+
+
+gperf 产生高效C++代码
+
+out目录
+  /target  arm平台
+  /host    x86平台
+
+  /taget/production/4412
+  目录 －>   img
+  root ramdisk
+  data userdata
+  system system
+
+    
+     system/app 自带软件apk
+     system/framework jar包
+     system/lib .so
+
+     system/bin 部分是toolsbox提供
+                其它用busybox提供
+
+
+刷机
+  mkfs.vfat -F 32 /dev/sdb1 -n sdname
+
+
+  光盘里android_image_arch    p1
+  +编译出镜像
+
+  dd seek=1 默认输出跳过512字节 p2
+
+  zImage p3
+
+adb
+  adb devices 看到android开发板
+  adb shell [cmd]
+  exit
+  adb kill-server
+  adb start-server
+
+
+根目录在内存里
+  ramdisk 在这里创建文件重启将无
+> mount -o remount, rw /system
+  只读分区再次挂载为读写
+
+有自己的分区
+  data
+  system
+
+
+
+@pc: abd remount 重新全部挂载成rw
+
+
+adb push file /system/
+adb pull /system/file ./
+
+本地程序
+arm-linux-gcc 使用 -static
+否则
+  androidsrc (需要android源码)
+    Android.mk
+    mmm /dir/to/dev
+      将产生到out/../bin/
+    adb push 
+  ndk (add path) p4
+    ndk-build
+    
+
+
+
+du -sh file
