@@ -3721,7 +3721,10 @@ yuv420
 
 gcc -m32 编译成32位
 smp.c切换CPU
--->
+
+
+
+
 
 
 4412手册27章
@@ -3744,7 +3747,7 @@ main
 模数转换 adc
 不支持数模转换
 
-0v-1.8v  ----->  0-0xfff
+0v-1.8v  - - - - - >  0-0xfff
 
 
 APB 133M
@@ -3847,7 +3850,7 @@ userdata.img[4 8 16g]
 只有汇编可以操作内核（但C/C++直接可以编译成汇编）
 
 
-ramdisk--->/
+ramdisk- - ->/
            /system 系统目录（用户不能uninstall）除非root后rm
            /data   家目录
 
@@ -3929,3 +3932,4 @@ arm-linux-gcc 使用 -static
 
 
 du -sh file
+-->
