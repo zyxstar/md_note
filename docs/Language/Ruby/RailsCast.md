@@ -4,6 +4,7 @@
 ===========
 
 ## rails rvm安装
+以root用户执行
 
 ```shell
 curl -L get.rvm.io | bash -s stable
@@ -31,6 +32,8 @@ gem install rails -v='4.2' --no-rdoc --no-ri
 ```
 
 ## 安装passenger
+以root用户执行
+
 ```shell
 gem install passenger
 passenger-install-nginx-module
@@ -40,9 +43,13 @@ passenger-install-nginx-module
 #sudo dd if=/dev/zero of=/swap bs=1M count=1024
 #sudo mkswap /swap
 #sudo swapon /swap
+
+#可考虑将/opt/nginx/sbin放入PATH中
 ```
 
 ## 创建www用户
+以root用户执行
+
 ```shell
 useradd -d /var/www -s /usr/sbin/nologin www
 
@@ -53,14 +60,18 @@ gpasswd -a nobody www
 ```
 
 ## 创建网站目录
+以普通用户执行
+
 ```shell
-mkdir /var/www
+sudo mkdir /var/www
+
+#配置该用户的git config与ssh key
 git clone git@url:somebody/proj.git rails_app
 
-chown www:www -R /var/www/rails_app
-chmod g+w -R /var/www/rails_app
-chmod g+s -R /var/www/rails_app
-setfacl -R -m d:g:www:rw /var/www/rails_app
+sudo chown www:www -R /var/www/rails_app
+sudo chmod g+w -R /var/www/rails_app
+sudo chmod g+s -R /var/www/rails_app
+sudo setfacl -R -m d:g:www:rw /var/www/rails_app
 
 cd /var/www/rails_app
 git branch production master
@@ -131,6 +142,7 @@ http {
 ```shell
 apt-get install mysql-server
 apt-get install mysql-client
+apt-get install libmysqlclient-dev
 ```
 
 shell进入mysql
@@ -155,10 +167,47 @@ git merge master
 #chmod g+w -R /var/www/rails_app
 
 bundle install
+
+rake db:setup #首次建立数据库
 rake db:migrate
+
 RAILS_ENV=production rake assets:precompile
 
-/opt/nginx/sbin/nginx -s reload
+sudo /opt/nginx/sbin/nginx -s reload
+```
+
+>[有关bundle](http://blog.csdn.net/huaishu/article/details/38778777)
+
+> 有关rake db(加上`RAILS_ENV=?`执行后,则在指定环境下的数据库产生影响)
+
+```shell
+rake db:charset 检索当前环境下数据库的字符设置
+rake db:collation 检索当前环境下数据库的校对
+rake db:create 依照目前的 RAILS_ENV 环境建立数据库
+rake db:create:all 建立所有环境的数据库
+rake db:drop 依照目前的 RAILS_ENV 环境删除数据库
+rake db:drop:all 删除所有环境的数据库
+rake db:migrate 执行Migration动作
+rake db:rollback STEP=n 恢复上N个 Migration 动作
+rake db:migrate:up VERSION=20080906120000 执行特定版本的Migration
+rake db:migrate:down VERSION=20080906120000 恢复特定版本的Migration
+rake db:version 目前数据库的Migration版本
+rake db:seed 执行 db/seeds.rb 加载种子数据
+```
+
+## 分割日志
+```shell
+vim /etc/logrotate.conf
+
+    /opt/nginx/logs/access.log /opt/nginx/logs/error.log /var/www/rails_app/log/production.log{
+      daily
+      missingok
+      rotate 7
+      dateext
+      copytruncate
+    }
+
+logrotate -f /etc/logrotate.conf
 ```
 
 Rails Cast

@@ -1,5 +1,11 @@
 > 2015-02-08
 
+[man手册online](http://linux.die.net/man/)
+
+[man手册online2](http://man7.org/linux/man-pages/index.html)
+
+[kernel](https://www.kernel.org/)
+
 文件IO
 ===========
 本章所说的函数经常被称为 __不带缓冲的IO__，指每个`read`和`write`都调用内核中的一个 __系统调用__，其实还存在一个内核的缓冲区高速缓存，`read`和`write`的数据都要被内核缓冲，此处的不带缓冲，指的是在用户的进程中对这两个函数不会自动缓冲

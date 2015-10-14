@@ -1185,7 +1185,7 @@ git checkout wechat               #签出wechat分支
     git branch -d tmp
 
 ...                               #进行必要的环境配置，如bundle install
-rails s                           #将单功能测试环境运行起来(或将feature_xxx目录配置到nginx中)
+rails s -b 0.0.0.0                #将单功能测试环境运行起来(或将feature_xxx目录配置到nginx中)
 ```
 
 ## 开发人员修复bug
@@ -1216,12 +1216,18 @@ git diff master tmp                     #做一下codeReview(gitlab中进行comp
 git merge --no-ff tmp
 grep -rn "<<<<<<" ./*                   #查找合并后冲突，并解决
                                         #必要时，需要开发人员修复后重新提交
+
+ls db/migrate/ | awk -F'_' '{if(last==$1) printf("%s*", $1); last=$1; }' | xargs -n1 find db/migrate -name
+ls db/migrate/ | awk -F'_' '{for(i=2;i<NF;i++) printf("%s_", $i);print $NF}'| sort | awk '{if(last==$0) printf("*%s", $0); last=$0; }' | xargs -n1 find db/migrate -name
+                                        #查找有没有命名[编号与表名]冲突的migrate
+                                        #如果有,需要提交方修改后再提交
+
     #如果需要解决冲突，则还需要提交
     git commit -a
 
 git branch build master                 #创建其于master的build的分支(该分支永远不会提交到远程)
 git checkout build                      #签出其分支
-...                                     #进行必要的环境配置
+...                                     #进行必要的环境配置 如rake db:??
 bundle install
 RAILS_ENV=production rake assets:precompile
 nginx -s reload                         #将集成测试环境运行起来
