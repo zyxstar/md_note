@@ -1,9 +1,7 @@
 > 2014-11-01
 
-
-> [函数式思维: 为什么函数式编程越来越受关注](http://www.ibm.com/developerworks/cn/java/j-ft20/)
-
-> [coolshell上函数式编程](http://coolshell.cn/articles/10822.html)
+- [函数式思维: 为什么函数式编程越来越受关注](http://www.ibm.com/developerworks/cn/java/j-ft20/)
+- [coolshell上函数式编程](http://coolshell.cn/articles/10822.html)
 
 高阶函数
 =========

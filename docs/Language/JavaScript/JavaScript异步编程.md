@@ -1,6 +1,6 @@
 > 2014-11-01
 
-> 摘自《Async JavaScript》
+- 摘自《Async JavaScript》
 
 异步事件
 =========
