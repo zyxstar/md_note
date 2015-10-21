@@ -26,10 +26,16 @@
 - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md) <span>2014-08-01</span>
 - [C语言(Uplooking).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2FC%25E8%25AF%25AD%25E8%25A8%2580%2528Uplooking%2529.md) <span>2014-11-01</span>
 - [C拾遗.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2FC%25E6%258B%25BE%25E9%2581%2597.md) <span>2014-09-04</span>
+- [俄罗斯方块.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E4%25BF%2584%25E7%25BD%2597%25E6%2596%25AF%25E6%2596%25B9%25E5%259D%2597.md) <span>2014-11-05</span>
 
 ## JavaScript
-- [JavaScriptCollected.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScriptCollected.md) <span>2013-06-18</span>
+- [JavaScript语言核心.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E6%25A0%25B8%25E5%25BF%2583.md) <span>2013-06-18</span>
 - [JavaScript语言精髓(周爱民).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E8%25AF%25AD%25E8%25A8%2580%25E7%25B2%25BE%25E9%25AB%2593%2528%25E5%2591%25A8%25E7%2588%25B1%25E6%25B0%2591%2529.md) <span>2009-11-16</span>
+- [JavaScript函数式介绍.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E5%2587%25BD%25E6%2595%25B0%25E5%25BC%258F%25E4%25BB%258B%25E7%25BB%258D.md) <span>2014-11-01</span>
+- [JavaScript函数式编程.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E5%2587%25BD%25E6%2595%25B0%25E5%25BC%258F%25E7%25BC%2596%25E7%25A8%258B.md) <span>2015-10-18</span>
+- [JavaScript异步编程.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E5%25BC%2582%25E6%25AD%25A5%25E7%25BC%2596%25E7%25A8%258B.md) <span>2014-11-01</span>
+- [JavaScript项目构建.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E9%25A1%25B9%25E7%259B%25AE%25E6%259E%2584%25E5%25BB%25BA.md) <span>2014-11-01</span>
+- [中国象棋.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2F%25E4%25B8%25AD%25E5%259B%25BD%25E8%25B1%25A1%25E6%25A3%258B.md) <span>2011-07-01</span>
 
 ## Python
 - [PythonCookBook.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FPython%2FPythonCookBook.md) <span>2011-03-22</span>
