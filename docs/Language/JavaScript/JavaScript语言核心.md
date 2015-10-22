@@ -2592,7 +2592,7 @@ js中，经常需要在方法调用时传入"静态方法"的回调函数，有�
     alert(result3);
 
 
-下面有关[闭包中作用域的例子](#TOC4.3.6)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
+下面有关[闭包中作用域的例子](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E5%2587%25BD%25E6%2595%25B0%25E5%25BC%258F%25E4%25BB%258B%25E7%25BB%258D.md#TOC3.6)，返回的是一个函数数组，需要依次调用每个函数，还可以写成：
 
 <!--language: !js-->
 
@@ -2611,7 +2611,7 @@ js中，经常需要在方法调用时传入"静态方法"的回调函数，有�
 
 
 #### curry参数
-参见[curry化](#TOC4.6)
+参见[curry化](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FJavaScript%2FJavaScript%25E5%2587%25BD%25E6%2595%25B0%25E5%25BC%258F%25E4%25BB%258B%25E7%25BB%258D.md#TOC6)
 
 ## 扩展性
 
@@ -2781,10 +2781,10 @@ js允许给语言的基本类型增加方法，通过给`Object.prototype`添加
 
 <script>
 
-(function fix_toc(){
-    if(typeof expand_toc !== 'function') setTimeout(fix_toc,500);
-    else expand_toc('md_toc',2);
-})();
+// (function fix_toc(){
+//     if(typeof expand_toc !== 'function') setTimeout(fix_toc,500);
+//     else expand_toc('md_toc',2);
+// })();
 
 </script>
 
