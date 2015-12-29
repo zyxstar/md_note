@@ -581,6 +581,87 @@ console.log(result);
 //=> [{title: "SICP", isbn: "0262510871", edition: 2},]
 ```
 
+变量的作用域和闭包
+=================
+__绑定（binding）__ 指通过`var`关键字、函数参数、`this`传递、或属性分配给javascript中的 __值分配名字__ 的行为
+
+## 词法作用域
+指一个变量的可见性，及其文本表述的模拟值，简单情况下，变量的查找开始于最接近的绑定上下文而向外扩展，直到找到第一个绑定
+
+## 动态作用域
+很少语言使用动态作用域作为绑定解析方案，模拟一个原生的动态作用域机制只需非常少代码
+
+<!-- run -->
+
+```js
+//= require underscore.1.6.0
+//= require fake
+var globals = {};
+
+function makeBindFun(resolver) {
+  return function(k, v) {
+    var stack = globals[k] || [];
+    globals[k] = resolver(stack, v);
+    return globals;
+  };
+}
+
+var stackBinder = makeBindFun(function(stack, v) {
+  stack.push(v);
+  return stack;
+});
+
+var stackUnbinder = makeBindFun(function(stack) {
+  stack.pop();
+  return stack;
+});
+
+var dynamicLookup = function(k) {
+  var slot = globals[k] || [];
+  return _.last(slot);
+};
+
+stackBinder('a', 1);
+stackBinder('b', 100);
+console.log(dynamicLookup('a'));
+//=> 1
+
+console.log(globals);
+//=> {'a': [1], 'b': [100]}
+```
+
+在动态作用域的方案中，在栈顶的值是绑定的当前值，如果再绑定一次
+
+<!-- run -->
+
+```js
+//= require underscore.1.6.0
+//= require functional_study
+//= require fake
+stackBinder('a', 1);
+stackBinder('b', 100);
+
+stackBinder('a', '*');
+
+console.log(dynamicLookup('a'));
+//=> '*'
+
+console.log(globals);
+//=> {'a': [1, '*'], 'b': [100]}
+```
+
+动态作用域缺点：任何给定的绑定的值，在确定调用其函数之前，都是不可知的。
+
+上述代码中，不得不显式的“取消”动态绑定，而在支持动态绑定的语言中，这个任务在关闭动态绑定的上下文中自动完成
+
+## 闭包
+闭包能够捕获作用域内的外部绑定（如，不是自己的参数），这些绑定是为之后使用（即使在该作用域已结束）
+
+闭包背后的基本原理是，如果一个函数包含内部函数，那么它些内部函数都可以看到该函数声明的变量，这些变量称为自由变量，可以被内部函数捕获，从高阶函数的`return`实现“越狱”，以供以后使用
+
+
+
+
 
 <hr/>
 

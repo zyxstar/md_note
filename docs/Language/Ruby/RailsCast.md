@@ -119,18 +119,90 @@ http {
 
     server {
         listen       80;
-        server_name  localhost;
+        server_name  www.domain.cn, domain.cn;
         root /var/www/rails_app/public;
+        rails_env production;
         passenger_enabled on;
         passenger_intercept_errors on;
-        rails_env production;
+        passenger_buffer_response off;
         client_max_body_size 500m;
-        access_log off;
+        #access_log off;
     }
     server {
         ...
     }
 }
+```
+
+### 使用https
+使用Let's Encrypt为网站设置为https访问
+
+#### 生成pem
+> 确保网站的DNS服务器不能是 hichina dnspod cloudxns，而alidns没问题(有问题时，多试几次)
+
+```
+git clone https://github.com/letsencrypt/letsencrypt
+cd letsencrypt
+
+./letsencrypt-auto certonly --webroot -w /var/www/rails_app/public -d www.domain.cn -d domain.cn --server https://acme-v01.api.letsencrypt.org/directory
+```
+
+#### 设置nginx
+设置nginx的ssl，并将普通的80端口设置跳转
+
+```
+server {
+    listen 443 ssl;
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;
+    ssl_certificate  /etc/letsencrypt/live/www.domain.cn/fullchain.pem;
+    ssl_certificate_key  /etc/letsencrypt/live/www.domain.cn/privkey.pem;
+    server_name  domain.cn,www.domain.cn;
+    root /var/www/rails_app/public;
+    rails_env production;
+    passenger_enabled on;
+    passenger_intercept_errors on;
+    passenger_buffer_response off;
+    client_max_body_size 500m;
+    #access_log off;
+}
+server {
+    listen      80;
+    server_name    www.domain.cn,domain.cn;
+    rewrite ^(.*)$  https://www.domain.cn permanent;
+}
+```
+
+#### 检测
+
+```
+https://www.ssllabs.com/ssltest/analyze.html?d=domain.cn
+```
+
+根据`https://weakdh.org/sysadmin.html`文档，产生dhparams.pem
+
+```shell
+openssl dhparam -out dhparams.pem 2048
+```
+
+再次设置nginx
+
+```
+server{
+    listen 443 ssl;
+    ...
+    ssl_ciphers 'ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-DSS-AES128-GCM-SHA256:kEDH+AESGCM:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-DSS-AES128-SHA256:DHE-RSA-AES256-SHA256:DHE-DSS-AES256-SHA:DHE-RSA-AES256-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:AES:CAMELLIA:DES-CBC3-SHA:!aNULL:!eNULL:!EXPORT:!DES:!RC4:!MD5:!PSK:!aECDH:!EDH-DSS-DES-CBC3-SHA:!EDH-RSA-DES-CBC3-SHA:!KRB5-DES-CBC3-SHA';
+    ssl_dhparam /path/to/dhparams.pem;
+    ssl_prefer_server_ciphers on;
+}
+```
+
+重启nginx
+
+#### 续签
+Let's Encrypt要求每三个月续签一次，去做个定时任务每月一号执行
+
+```
+0 0 1 * * /var/www/letsencrypt/letsencrypt-auto --renew certonly -d www.domain.cn -d domain.cn
 ```
 
 ## 提示
@@ -168,8 +240,8 @@ git merge master
 
 bundle install
 
-rake db:setup #首次建立数据库
-rake db:migrate
+RAILS_ENV=production rake db:setup #首次建立生产环境数据库
+RAILS_ENV=production rake db:migrate
 
 RAILS_ENV=production rake assets:precompile
 
