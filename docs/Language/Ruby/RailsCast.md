@@ -251,6 +251,8 @@ sudo /opt/nginx/sbin/nginx -s reload
 >[有关bundle](http://blog.csdn.net/huaishu/article/details/38778777)
 
 > 有关rake db(加上`RAILS_ENV=?`执行后,则在指定环境下的数据库产生影响)
+>
+> 如果修改了migration，需要先rake db:rollback，然后再git merge修改后的文件，再执行rake db:migrate
 
 ```shell
 rake db:charset 检索当前环境下数据库的字符设置
