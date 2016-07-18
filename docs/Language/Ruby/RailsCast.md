@@ -282,6 +282,7 @@ vim /etc/logrotate.conf
     }
 
 logrotate -f /etc/logrotate.conf
+sudo service cron restart
 ```
 
 Rails Cast
