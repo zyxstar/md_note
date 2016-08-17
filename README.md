@@ -7,6 +7,7 @@
 - [AnalysisPatterns(MartinFowler).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fcoding.net%2Fu%2Fcdcnm%2Fp%2Fmd_note%2Fgit%2Fraw%2Fmaster%2Fdocs%2FAnalysis%2FAnalysisPatterns%2528MartinFowler%2529.md) <span>2016-08-07</span>
 - [用例驱动的UML对象建模(ICONIX).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fcoding.net%2Fu%2Fcdcnm%2Fp%2Fmd_note%2Fgit%2Fraw%2Fmaster%2Fdocs%2FAnalysis%2F%25E7%2594%25A8%25E4%25BE%258B%25E9%25A9%25B1%25E5%258A%25A8%25E7%259A%2584UML%25E5%25AF%25B9%25E8%25B1%25A1%25E5%25BB%25BA%25E6%25A8%25A1%2528ICONIX%2529.md) <span>2009-01-30</span>
 - [系统分析UML实务(MDA).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fcoding.net%2Fu%2Fcdcnm%2Fp%2Fmd_note%2Fgit%2Fraw%2Fmaster%2Fdocs%2FAnalysis%2F%25E7%25B3%25BB%25E7%25BB%259F%25E5%2588%2586%25E6%259E%2590UML%25E5%25AE%259E%25E5%258A%25A1%2528MDA%2529.md) <span>2009-06-03</span>
+- [软件方法(潘家宇).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fcoding.net%2Fu%2Fcdcnm%2Fp%2Fmd_note%2Fgit%2Fraw%2Fmaster%2Fdocs%2FAnalysis%2F%25E8%25BD%25AF%25E4%25BB%25B6%25E6%2596%25B9%25E6%25B3%2595%2528%25E6%25BD%2598%25E5%25AE%25B6%25E5%25AE%2587%2529.md) <span>2016-08-17</span>
 
 # Design
 - [EffectiveUML(RobertC.Martin).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fcoding.net%2Fu%2Fcdcnm%2Fp%2Fmd_note%2Fgit%2Fraw%2Fmaster%2Fdocs%2FDesign%2FEffectiveUML%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
