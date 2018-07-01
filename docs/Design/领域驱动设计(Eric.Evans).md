@@ -1133,24 +1133,6 @@ Intention-Revealing Interface清楚的表明了用途，Side-Effect-Free Functio
 
 在做每个决定时，要问“这是根据当前模型和代码中的一组特定关系做出的权宜之计呢，还是反映了底层领域的某种轮廓”
 
-## 模式:Standalone Class
-互相依赖性使模型和设计变得难以理解、测试和维护，而且互相依赖性很容易越积越多
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 <!--
 
@@ -1174,6 +1156,28 @@ http://www.umlchina.com/qa/Index1.htm
 http://www.zhangxun.com/
 http://www.infoq.com/cn/news/2008/03/ddd-di-aop
  -->
+
+
+
+
+## 模式:Standalone Class
+互相依赖性使模型和设计变得难以理解、测试和维护，而且互相依赖性很容易越积越多
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
