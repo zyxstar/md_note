@@ -1134,29 +1134,6 @@ Intention-Revealing Interface清楚的表明了用途，Side-Effect-Free Functio
 在做每个决定时，要问“这是根据当前模型和代码中的一组特定关系做出的权宜之计呢，还是反映了底层领域的某种轮廓”
 
 
-<!--
-
-
-
-> DDD vs 四色建模
-http://www.jdon.com/36343
-http://www.jdon.com/tags/427
-http://www.cnblogs.com/netfocus/archive/2011/01/17/1937779.html
-http://www.cnblogs.com/netfocus/archive/2011/03/05/1971899.html
-http://www.cnblogs.com/netfocus/archive/2011/07/10/2102099.html
-http://www.cnblogs.com/netfocus/archive/2011/10/10/2204949.html
-http://www.cnblogs.com/bluedoctor/p/3809163.html
-http://www.cnblogs.com/xishuai/p/3800656.html
-http://www.cnblogs.com/xishuai/p/3827216.html
-http://blog.csdn.net/bluishglc/article/details/6681253
-http://blog.csdn.net/bluishglc/article/details/6616914
-http://blog.csdn.net/bluishglc/article/details/6274841
-http://www.cnblogs.com/jesse2013/p/the-first-glance-of-ddd.html
-http://www.umlchina.com/qa/Index1.htm
-http://www.zhangxun.com/
-http://www.infoq.com/cn/news/2008/03/ddd-di-aop
- -->
-
 
 
 
@@ -1177,6 +1154,25 @@ http://www.infoq.com/cn/news/2008/03/ddd-di-aop
 
 
 
+
+
+## 附 DDD vs 四色建模
+- http://www.jdon.com/36343
+- http://www.jdon.com/tags/427
+- http://www.cnblogs.com/netfocus/archive/2011/01/17/1937779.html
+- http://www.cnblogs.com/netfocus/archive/2011/03/05/1971899.html
+- http://www.cnblogs.com/netfocus/archive/2011/07/10/2102099.html
+- http://www.cnblogs.com/netfocus/archive/2011/10/10/2204949.html
+- http://www.cnblogs.com/bluedoctor/p/3809163.html
+- http://www.cnblogs.com/xishuai/p/3800656.html
+- http://www.cnblogs.com/xishuai/p/3827216.html
+- http://blog.csdn.net/bluishglc/article/details/6681253
+- http://blog.csdn.net/bluishglc/article/details/6616914
+- http://blog.csdn.net/bluishglc/article/details/6274841
+- http://www.cnblogs.com/jesse2013/p/the-first-glance-of-ddd.html
+- http://www.umlchina.com/qa/Index1.htm
+- http://www.zhangxun.com/
+- http://www.infoq.com/cn/news/2008/03/ddd-di-aop
 
 
 
