@@ -7,20 +7,8 @@
 用它来做什么
 ==============
 
-本文档也是用该工具展示的，在Github的[地址](https://gitcafe.com/zyxstar/md_note/raw/master/docs/Manual.md)
-
 - 读书的整理
-    - [编程范式与OOP思想(郑晖).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FDesign%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%25E4%25B8%258EOOP%25E6%2580%259D%25E6%2583%25B3%2528%25E9%2583%2591%25E6%2599%2596%2529.md)
-    - [征服C指针(前桥和弥).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E5%25BE%2581%25E6%259C%258DC%25E6%258C%2587%25E9%2592%2588%2528%25E5%2589%258D%25E6%25A1%25A5%25E5%2592%258C%25E5%25BC%25A5%2529.md)
-    - [RubyProgramming.md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyProgramming.md)
-
 - 课堂的笔记
-    - [需求分析训练营(徐锋).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FAnalysis%2F%25E9%259C%2580%25E6%25B1%2582%25E5%2588%2586%25E6%259E%2590%25E8%25AE%25AD%25E7%25BB%2583%25E8%2590%25A5%2528%25E5%25BE%2590%25E9%2594%258B%2529.md)
-    - [编程范式(stanford_cs107).md](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FLanguage%2FC%2F%25E7%25BC%2596%25E7%25A8%258B%25E8%258C%2583%25E5%25BC%258F%2528stanford_cs107%2529.md)
-
-
-- [更多...](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2FREADME.md)
-
 
 快速使用(只需2步)
 =================
@@ -31,15 +19,15 @@
 > 可由gibhub来支持相应的版本控制
 
 ## 第2步：查看文档
-取得第1步的url地址，将其urlencode编码，作为"http://chinapub.duapp.com/gen_md"的"src"参数，进行GET请求
+取得第1步的url地址，将其urlencode编码，作为"http://doc.pigfeet.cn/gen_md"的"src"参数，进行GET请求
 
-如[我就是一个查看文档的链接](http://chinapub.duapp.com/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FManual.md)
+如[我就是一个查看文档的链接](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fgitcafe.com%2Fzyxstar%2Fmd_note%2Fraw%2Fmaster%2Fdocs%2FManual.md)
 
-> 不知道什么是urlencode? [看这里](http://tool.chinaz.com/Tools/URLEncode.aspx)；还需要更详细的参数说明，请[移步这里](http://chinapub.duapp.com/usage)
+> 不知道什么是urlencode? [看这里](http://tool.chinaz.com/Tools/URLEncode.aspx)；还需要更详细的参数说明，请[移步这里](http://doc.pigfeet.cn/usage)
 
 ## 测试一下
 
-<form  method='get' action='http://chinapub.duapp.com/gen_md' target='_blank'>
+<form  method='get' action='http://doc.pigfeet.cn/gen_md' target='_blank'>
 <label for='txt_src'>填入一个网络地址，比如Python-Markdown在Github上的说明</label><br/>
 <input type='text' name='src' id='txt_src' style="width:80%" value='https://raw.githubusercontent.com/trentm/python-markdown2/master/README.md'/>
 <input type='submit' value="生成"/>
