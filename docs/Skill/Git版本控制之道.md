@@ -1354,8 +1354,16 @@ GitHub
 
 
 
-<!--
-$ git rm --cached FILENAME
-git clone gituser@123.57.253.111:/var/data/repo/sdjfood.git
+## 其它
+- 增加git源
 
--->
+```
+git remote add alicode git@code.aliyun.com:some/proj.git
+```
+
+- 删除.gitignore中已提交的文件
+
+```
+git rm --cached stupid.txt         #从版本库中rm 文件，working dicrectory中仍然保留
+git rm -r --cached directory_name  #删除目录下所有文件包括子目录中的 
+```

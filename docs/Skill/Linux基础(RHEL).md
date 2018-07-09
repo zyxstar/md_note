@@ -407,6 +407,8 @@ find <path>
     -i               #llignore
     -o               #or
     !                #not
+
+du -mh --max-depth=1 |sort -nr  #查找大文件，一层层往下查
 ```
 
 ## 创建
@@ -760,6 +762,32 @@ curl -d "user=nickwolfe&password=12345" http://www.linuxidc.com/login.cgi    #ht
 #表单中上传文件
 curl -F upload=@localfile -F nick=go http://cgi2.tky.3web.ne.jp/~zzh/up_file.cgi
 
+
+-G --get get请求
+-I 取得head信息
+-F --form表单提交
+    -F description='aa'
+    -F media=@test.jpg #上传文件
+-d --data 提交数据
+    -d '{"media_id":"61224425"}' #json数据
+    -X POST --data "data=xxx" example.com/form.cgi #表单
+    -X POST --data-urlencode "date=April 1" example.com/form.cgi
+    -G --data-urlencode "port=4546" --data-urlencode "content=content" example.com/form.cgi #url编码
+-H --header 请求时加入头部信息
+    -H "Host:man.linuxde.net" -H "accept-language:zh-cn"
+-i --include 输出时带出header
+--cookie "user=root;pass=123456"
+    --cookie-jar cookie_file #cookie在文件中
+-A "Mozilla/5.0"
+    --user-agent "Mozilla/5.0"
+-k 允许不使用证书到SSL站点
+-o [文件名] #相当于wget
+-L 自动跳转到新网址
+-v 显示一次http通信的整个过程，包括端口连接和http request头信息
+    --trace output.txt www.sina.com
+    --trace-ascii output.txt www.sina.com
+-X http动词
+    -X POST
 ```
 
 用户管理
@@ -770,6 +798,13 @@ useradd <username>
 useradd -u <uid> <username>
 useradd -g <gid> <username>             #创建时指定主属组
 useradd -G <gid>[,<gid>...] <username>  #创建时指定附属组
+```
+
+## 创建sudo用户
+```shell
+sudo adduser rootzyx
+sudo adduser rootzyx sudo
+sudo usermod -aG sudo rootzyx
 ```
 
 ## 查看
@@ -852,6 +887,12 @@ finger <username>
 ```shell
 write <username> <tty>
 wall
+```
+
+审核登录用户
+
+```
+who /var/log/wtmp 
 ```
 
 组管理
@@ -1494,6 +1535,10 @@ lsof -i:<port>
 
 # 查看哪些进程打开了指定端口port，最后一列是进程ID（此方法对于守护进程作用不大）
 netstat -nap|grep <port>
+
+sudo lsof -i tcp:80  #查看占用80端口的进程
+sudo netstat -an | grep 80 #查看80端口是否被监听
+sudo netstat -anp tcp | grep smbd  #查看smbd占用端口号
 ```
 
 > 常用服务端口号，可通过`grep 3306 /etc/services`查看某端口的服务，小于1024的端口要启动时，启动者身份必须是root才行

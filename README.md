@@ -16,6 +16,7 @@
 - [OOD_principles(RobertC.Martin).md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2FOOD_principles%2528RobertC.Martin%2529.md) <span>2009-09-06</span>
 - [Unix编程艺术.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2FUnix%25E7%25BC%2596%25E7%25A8%258B%25E8%2589%25BA%25E6%259C%25AF.md) <span>2015-05-28</span>
 - [对象模型-策略.模式.应用(Peter.Coad).md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2F%25E5%25AF%25B9%25E8%25B1%25A1%25E6%25A8%25A1%25E5%259E%258B-%25E7%25AD%2596%25E7%2595%25A5.%25E6%25A8%25A1%25E5%25BC%258F.%25E5%25BA%2594%25E7%2594%25A8%2528Peter.Coad%2529.md) <span>2009-06-30</span>
+- [实现领域驱动设计.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FDesign%2F%25E5%25AE%259E%25E7%258E%25B0%25E9%25A2%2586%25E5%259F%259F%25E9%25A9%25B1%25E5%258A%25A8%25E8%25AE%25BE%25E8%25AE%25A1.md) <span>2018-02-22</span>
 
 # OS
 - [深入理解计算机系统(csapp).md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FOS%2F%25E6%25B7%25B1%25E5%2585%25A5%25E7%2590%2586%25E8%25A7%25A3%25E8%25AE%25A1%25E7%25AE%2597%25E6%259C%25BA%25E7%25B3%25BB%25E7%25BB%259F%2528csapp%2529.md) <span>2014-12-31</span>
@@ -39,6 +40,7 @@
 ## Ruby
 - [RubyProgramming.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyProgramming.md) <span>2012-12-18</span>
 - [RubyPlatform.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRubyPlatform.md) <span>2012-12-18</span>
+- [RailsTips.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRailsTips.md) <span></span>
 - [RailsCast.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FLanguage%2FRuby%2FRailsCast.md) <span>2014-05-17</span>
 
 ## JavaScript
@@ -58,8 +60,10 @@
 - [Git版本控制之道.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FGit%25E7%2589%2588%25E6%259C%25AC%25E6%258E%25A7%25E5%2588%25B6%25E4%25B9%258B%25E9%2581%2593.md) <span>2014-10-29</span>
 - [UnitTesting.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FUnitTesting.md) <span>2010-07-26</span>
 - [DataBase.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FDataBase.md) <span>2009-10-25</span>
+- [Seaz.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FSeaz.md) <span></span>
 - [项目进度估算.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2F%25E9%25A1%25B9%25E7%259B%25AE%25E8%25BF%259B%25E5%25BA%25A6%25E4%25BC%25B0%25E7%25AE%2597.md) <span>2016-08-03</span>
 - [LinuxCommands.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FLinuxCommands.md) <span></span>
+- [Docker.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FDocker.md) <span></span>
 - [VMwareNetSetting.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FVMwareNetSetting.md) <span></span>
 - [RenHealthInfrastructure.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2FRenHealthInfrastructure.md) <span>2014-09-20</span>
 - [网络基础.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FSkill%2F%25E7%25BD%2591%25E7%25BB%259C%25E5%259F%25BA%25E7%25A1%2580.md) <span></span>
@@ -68,5 +72,15 @@
 - [Backbone_intro.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_intro.md) <span>2013-07-01</span>
 - [Backbone_sample_MVC.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_sample_MVC.md) <span>2013-11-08</span>
 - [Backbone_simple_MV.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FFramework%2FBackbone_simple_MV.md) <span>2013-11-08</span>
+
+# Manager
+- [论语.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E8%25AE%25BA%25E8%25AF%25AD.md) <span></span>
+- [德鲁克.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E5%25BE%25B7%25E9%25B2%2581%25E5%2585%258B.md) <span></span>
+- [OKR工作法.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2FOKR%25E5%25B7%25A5%25E4%25BD%259C%25E6%25B3%2595.md) <span></span>
+- [格鲁夫.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E6%25A0%25BC%25E9%25B2%2581%25E5%25A4%25AB.md) <span></span>
+- [系统思考.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E7%25B3%25BB%25E7%25BB%259F%25E6%2580%259D%25E8%2580%2583.md) <span></span>
+- [五分钟CEO.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E4%25BA%2594%25E5%2588%2586%25E9%2592%259FCEO.md) <span></span>
+- [阿米巴Amoeba.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E9%2598%25BF%25E7%25B1%25B3%25E5%25B7%25B4Amoeba.md) <span></span>
+- [麦肯锡问题分析.md](http://doc.pigfeet.cn/gen_md?src=https%3A%2F%2Fraw.githubusercontent.com%2Fzyxstar%2Fmd_note%2Fmaster%2Fdocs%2FManager%2F%25E9%25BA%25A6%25E8%2582%25AF%25E9%2594%25A1%25E9%2597%25AE%25E9%25A2%2598%25E5%2588%2586%25E6%259E%2590.md) <span></span>
 
 <style type="text/css">li span{font-size:0.95em;color:#555;font-family:'sans-serif';padding-left:5px;}</style>
