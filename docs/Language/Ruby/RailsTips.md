@@ -65,7 +65,7 @@ end
 
 - Rails里面改变validate错误信息默认的属性名字
 
-```
+```ruby
 class User < ActiveRecord::Base
   validates :name, :presence => true
 
@@ -83,14 +83,14 @@ end
 
 - 寻找Array中满足条件的第一个值
 
-```
+```ruby
 [1,2,3].select {|x| x > 1 }.first #X
 [1,2,3].find {|x| x > 1 } #V
 ```
 
 - 使用reverse循环的时候应该使用reverse_each方法
 
-```
+```ruby
 [1,2,3].reverse.each {|x| x+1 } #X
 [1,2,3].reverse_each {|x| x+1 } #V
 ```
@@ -104,7 +104,7 @@ end
 
 - map后面做flatten操作
 
-```
+```ruby
 [1,2,3].map {|x| [x,x+1] }.flatten #X
 [1,2,3].flat_map {|x| [x, x+1]} #V
 ```
@@ -112,7 +112,7 @@ end
 
 - Ruby 2.0 新特性 Keyword Argument
 
-```
+```ruby
 def log(msg, level: "ERROR", time: Time.now)
   puts "#{ time.ctime } [#{ level }] #{ msg }"
 end
@@ -132,7 +132,7 @@ end
 
 - rubygems覆盖了ruby的require方法来实现加载gem的功能，RubyGems首先使用Ruby的require方法从loadpath里去找，通过require找不到的话,rubygems会从Gems文件里面找，如果找到的话，将会激活这个gem，然后把这个gem加到load path里面去
 
-```
+```shell
 2.2.6 :001 > spec = Gem::Specification.find_by_path('active_support')
  => #<Gem::Specification:0x76bec0 activesupport-4.2.0>
 2.2.6 :002 > $LOAD_PATH
@@ -146,14 +146,14 @@ end
 
 - 使用symbol排序的话，默认会带上表名，这是一个非常好的习惯。如果不带上表名，在多个表连接查询的时候，另外的表也有同样的字段的话，这个排序将会出现混淆
 
-```
+```ruby
 Motel.order(:name).to_sql=> SELECT "motels".* FROM "motels" ORDER BY "motels"."name" ASC
 Motel.order(name: :desc).to_sql=> SELECT "motels".* FROM "motels" ORDER BY "motels"."name" DESC
 ```
 
 - 占位符
 
-```
+```ruby
 variables = {:animal => 'fox', :action => 'jumps'}
 template = "The quick brown %{animal} %{action} over the lazy dog"
 puts template % variables
@@ -161,7 +161,7 @@ puts template % variables
 
 - 字符串替换
 
-```
+```ruby
 replacements = {'dog' => 'pig', 'fox' => 'cat'}
 replacements.default_proc = ->(h, k) { k }
 puts quote.gsub(/\w+/, replacements)
@@ -169,7 +169,7 @@ puts quote.gsub(/\w+/, replacements)
 
 - 定义非ActiveRecord子类
 
-```
+```ruby
 class Error
   include ActiveModel::Validations
   include ActiveModel::Conversion
@@ -193,7 +193,7 @@ end
 
 - 定义redis存储类
 
-```
+```ruby
 require 'ohm'
 require 'ohm/contrib'
 

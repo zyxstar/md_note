@@ -9,7 +9,7 @@ Seaz摘要
 
 ## 数据表设计
 
-![img](../imgs/seaz/001.png)
+![img](../../imgs/seaz/001.png)
 
 ### 组织
 
@@ -126,7 +126,7 @@ end
 
 ## 其它
 - 组织可按多个层次和维度`[行政|财务|党政|...]` 进行划分
-- ![img](../imgs/seaz/003.png)
+- ![img](../../imgs/seaz/003.png)
 - 岗位的树型结构，岗位具有定编，安全等级（权限设计的补充）
 - 人员可兼岗，方便一岗多人，一人多岗
 
@@ -134,7 +134,7 @@ end
 # 权限控制
 
 ## 数据表设计
-![img](../imgs/seaz/002.png)
+![img](../../imgs/seaz/002.png)
 
 
 ```ruby
@@ -275,7 +275,7 @@ end
 ## 数据表设计
 - 此处全是元数据配置信息
 
-![img](../imgs/seaz/004.png)
+![img](../../imgs/seaz/004.png)
 
 
 ```ruby
@@ -389,7 +389,7 @@ end
 
 ## 数据表设计
 
-![img](../imgs/seaz/005.png)
+![img](../../imgs/seaz/005.png)
 
 ```ruby
 
